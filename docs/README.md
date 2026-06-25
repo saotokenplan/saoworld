@@ -11,6 +11,9 @@
 - `research/`
   - 技术选型与服务端技术栈调研
   - 适合做引擎、后端和基础设施决策时参考
+- `specs/`
+  - 基于前面讨论继续细化出的详细规范包
+  - 适合直接作为拆任务、建仓库和写代码的输入
 
 ## 建议阅读顺序
 
@@ -22,3 +25,4 @@
 6. `dev-loop/loop-engineering-plan.md`
 7. `research/stack-research-ai-game-dev.md`
 8. `research/service-stack-comparison.md`
+9. `specs/README.md`

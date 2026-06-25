@@ -1,0 +1,172 @@
+# Gate Registry（门禁注册表）
+#
+# 用途：
+# - 统一管理每一个 gate 的“覆盖风险 / 成本 / 命中 / 误报”
+# - 作为二层 Loop 的输入：决定该新增、修复、降噪还是退役 gate
+# - 作为发布门禁预算的依据：控制 CI 总耗时
+#
+# 字段说明：
+# - id: 唯一标识（建议稳定，不随名称变化）
+# - name: 可读名称
+# - type: static / unit / integration / e2e / nonfunctional / content
+# - owner: 负责人（人/agent 名称均可）
+# - command: 在 CI 中执行的命令（或脚本路径）
+# - scope: 触发范围（哪些路径/模块变更会触发）
+# - risk_coverage: 覆盖的风险类型标签
+# - cost:
+#   - expected_seconds: 期望耗时（用于预算）
+#   - flakiness_budget: 可接受的偶发失败率（例如 0.5%）
+# - signal:
+#   - severity: gate 失败的严重级别（blocker/warn）
+#   - precision_target: 目标命中率（有效拦截 / 总拦截）
+# - lifecycle:
+#   - status: active / deprecated / retired
+#   - created_at: YYYY-MM-DD
+#   - last_hit_at: YYYY-MM-DD（可由统计任务回填）
+#   - hit_30d: 30 天命中次数（可回填）
+#   - false_positive_30d: 30 天误报次数（可回填）
+# - links:
+#   - docs: 对应文档
+#   - runbook: 故障处理说明
+#   - issues: 相关 issue 列表
+#
+# 标签建议（risk_coverage）：
+# - style, type-safety, dependency, security, regression
+# - crash, performance, save-load, data-integrity
+# - world-consistency, reward-boundary, content-safety, duplication, playability
+
+registry_version: 1
+gate_budget:
+  pr_total_seconds: 900          # PR 总门禁预算（15 分钟）
+  nightly_total_seconds: 7200    # 夜间/定时任务预算（2 小时）
+
+gates:
+  - id: G-STATIC-001
+    name: Lint
+    type: static
+    owner: QA Agent
+    command: "npm run lint"
+    scope:
+      paths: ["web/**", "services/**", "tools/**"]
+      trigger: "on_pr"
+    risk_coverage: ["style", "regression"]
+    cost:
+      expected_seconds: 60
+      flakiness_budget: 0.005
+    signal:
+      severity: blocker
+      precision_target: 0.90
+    lifecycle:
+      status: active
+      created_at: "2026-06-24"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/system-design/gates.md#lint"
+      runbook: "docs/runbook/gates/lint.md"
+      issues: []
+
+  - id: G-STATIC-002
+    name: Typecheck
+    type: static
+    owner: QA Agent
+    command: "npm run typecheck"
+    scope:
+      paths: ["web/**", "services/**"]
+      trigger: "on_pr"
+    risk_coverage: ["type-safety", "regression"]
+    cost:
+      expected_seconds: 90
+      flakiness_budget: 0.005
+    signal:
+      severity: blocker
+      precision_target: 0.92
+    lifecycle:
+      status: active
+      created_at: "2026-06-24"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/system-design/gates.md#typecheck"
+      runbook: "docs/runbook/gates/typecheck.md"
+      issues: []
+
+  - id: G-CONTENT-001
+    name: World Consistency Check
+    type: content
+    owner: Rule Engine
+    command: "python tools/content_check/world_consistency.py --input content/ --rules content/world-rules/"
+    scope:
+      paths: ["content/**"]
+      trigger: "on_pr"
+    risk_coverage: ["world-consistency", "regression"]
+    cost:
+      expected_seconds: 120
+      flakiness_budget: 0.002
+    signal:
+      severity: blocker
+      precision_target: 0.80
+    lifecycle:
+      status: active
+      created_at: "2026-06-24"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/system-design/gates.md#world-consistency"
+      runbook: "docs/runbook/gates/world_consistency.md"
+      issues: []
+
+  - id: G-CONTENT-002
+    name: Reward Boundary Check
+    type: content
+    owner: Rule Engine
+    command: "python tools/content_check/reward_boundary.py --input content/ --budget content/world-rules/reward_budget.yaml"
+    scope:
+      paths: ["content/**"]
+      trigger: "on_pr"
+    risk_coverage: ["reward-boundary", "data-integrity"]
+    cost:
+      expected_seconds: 90
+      flakiness_budget: 0.002
+    signal:
+      severity: blocker
+      precision_target: 0.85
+    lifecycle:
+      status: active
+      created_at: "2026-06-24"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/system-design/gates.md#reward-boundary"
+      runbook: "docs/runbook/gates/reward_boundary.md"
+      issues: []
+
+  - id: G-E2E-001
+    name: Critical Path E2E
+    type: e2e
+    owner: QA Agent
+    command: "bash tools/playtest/run_critical_path.sh"
+    scope:
+      paths: ["game/**", "services/**", "content/**"]
+      trigger: "nightly"
+    risk_coverage: ["playability", "regression", "crash"]
+    cost:
+      expected_seconds: 600
+      flakiness_budget: 0.01
+    signal:
+      severity: blocker
+      precision_target: 0.70
+    lifecycle:
+      status: active
+      created_at: "2026-06-24"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/system-design/gates.md#critical-e2e"
+      runbook: "docs/runbook/gates/critical_e2e.md"
+      issues: []
