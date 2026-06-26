@@ -16,13 +16,13 @@
 
 ## 当前定位
 
-- 本文档是 OpenAPI 草案的入口说明，不是已经补齐完成的正式 OpenAPI 成品。
+- 本文档是 OpenAPI 草案的入口说明与维护索引，单文件草案见 `docs/30-api/openapi-v1-draft.yaml`。
 - 当前接口边界、服务职责和数据约束仍以 `docs/20-specs/backend-data-spec.md` 为准。
-- 本文档回答“OpenAPI 草案准备怎么组织、现阶段已具备哪些输入、下一步先补什么”。
+- 本文档回答“OpenAPI 草案怎么组织、现阶段已完成到哪里、下一步还缺什么”。
 
 ## 当前状态
 
-- 当前已建立 OpenAPI 草案入口，但尚未形成可直接导入工具链的完整 OpenAPI 文件。
+- 当前已形成首版单文件 OpenAPI 草案：`docs/30-api/openapi-v1-draft.yaml`。
 - 当前已经具备的上游输入包括：
   - `docs/30-api/api-overview.md`
   - `docs/30-api/api-permissions.md`
@@ -36,14 +36,14 @@
   - 更完整的通用 schema 复用层
   - 过滤、排序、审计字段和安全定义细化
   - 按服务拆分后的 path 与 tag 进一步展开
-  - 更接近可导入工具链的单文件 OpenAPI 组织形态
+  - 针对第二批和第三批接口的更细样例与字段收敛
 
 ## 草案收敛原则
 
-- 先收敛接口入口、角色、错误码和样例，再生成完整 OpenAPI 结构。
+- 先收敛接口入口、角色、错误码和样例，再生成单文件 OpenAPI 结构。
 - 若 `docs/30-api/` 与 `docs/20-specs/backend-data-spec.md` 冲突，以后者为准。
 - OpenAPI 草案应优先覆盖最小实施路径相关接口，不要求一开始追求全量覆盖。
-- 每次新增接口样例、权限约束或错误码后，应判断是否需要同步更新本文档和后续 OpenAPI 结构。
+- 每次新增接口样例、权限约束或错误码后，应判断是否需要同步更新本文档与 `docs/30-api/openapi-v1-draft.yaml`。
 
 ## 建议的草案结构
 
@@ -95,7 +95,7 @@
 
 ## 第一批草案正文
 
-以下内容仍是文档级草案，不是已经定稿的单文件 OpenAPI 成品；目的是先把第一批投票链路的 `paths`、`components` 和复用约定收敛出来。
+以下内容是从首版单文件草案中拆解出来的阅读片段，方便按接口组查看；权威的单文件整合结果见 `docs/30-api/openapi-v1-draft.yaml`。
 
 ### 顶层片段
 
@@ -1157,8 +1157,8 @@ paths:
 
 1. 继续收敛分页、过滤、审计字段、幂等和安全作用域等通用复用层。
 2. 为第二批和第三批接口补独立请求响应样例文档，减少目前“最小字段”带来的抽象度。
-3. 把当前文档中的三批 `paths` 与 `components` 合并为更接近单文件 OpenAPI 的连续结构。
-4. 最后决定输出单文件 OpenAPI 还是按服务拆分草案。
+3. 继续把 `docs/30-api/openapi-v1-draft.yaml` 从文档级草案细化为更接近可导入工具链的完整定义。
+4. 最后决定是在保留单文件草案的同时，再按服务拆分子草案。
 
 ## 与其他文档的关系
 
@@ -1170,5 +1170,7 @@ paths:
   - 提供错误响应和状态码输入。
 - `docs/30-api/api-examples-vote.md`
   - 提供第一批接口样例输入。
+- `docs/30-api/openapi-v1-draft.yaml`
+  - 当前单文件 OpenAPI 草案输出。
 - `docs/20-specs/backend-data-spec.md`
   - 作为更高权威的执行规范，约束 OpenAPI 草案的最终边界。
