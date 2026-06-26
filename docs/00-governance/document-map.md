@@ -61,7 +61,7 @@
 | `docs/20-specs/README.md` | 详细规范入口，说明执行顺序 | 定位明确，承上启下 | 保留 | 明确写清后续拆任务、建仓、写代码统一以 `20-specs/` 为准 |
 | `docs/20-specs/product-spec.md` | 产品边界、玩法闭环、投票治理、MVP、验收 | 成熟度高，是产品执行基线之一 | 强烈保留 | 作为产品唯一执行基线，其他需求文档引用它而不是重复定义 |
 | `docs/20-specs/content-generation-spec.md` | AI 内容生成输入输出、审核规则、生命周期 | 落地性较强，对 AI 生成约束有实际价值 | 强烈保留 | 补充 schema 示例、输入输出样例和失败案例 |
-| `docs/20-specs/backend-data-spec.md` | 服务边界、数据模型、API 方向、事件与异步任务 | 成熟度高，但仍缺 API 细节与字段字典 | 强烈保留 | 补 OpenAPI、错误码表、枚举表、ER 图和迁移策略 |
+| `docs/20-specs/backend-data-spec.md` | 服务边界、核心数据模型（字段类型/约束/索引）、状态机、枚举值、API 约定、事件与异步任务 | API 契约、权限矩阵、错误码已对齐 OpenAPI；数据模型已有字段字典和状态机 | 强烈保留 | 待补：异步任务/事件 payload schema、ER 图和迁移策略（实施阶段生成） |
 | `docs/20-specs/agent-loop-spec.md` | Agent 角色、需求包、门禁、日志、回滚流程 | 体系完整，但偏治理目标态 | 保留 | 明确哪些是当前阶段必须做，哪些是演进目标 |
 | `docs/20-specs/engineering-conventions.md` | 仓库结构、命名、配置、测试、发布协作规范 | 很有价值，但与当前仓库现状尚未完全对齐 | 保留 | 增加当前仓库适配版，避免直接引用未来目录造成误导 |
 | `docs/40-dev-loop/ai-coding-game-dev-loop-plan.md` | AI-first 游戏研发流程与多 Agent 编排 | 方法论完整，但依赖大量尚未存在资产 | 保留 | 定位为演进路线图，补充当前可执行最小版本 |

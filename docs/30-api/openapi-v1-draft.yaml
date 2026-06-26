@@ -47,14 +47,7 @@ paths:
                 success:
                   $ref: '#/components/examples/VoteCurrentSuccess'
         '403':
-          description: 当前访问令牌缺少投票查询作用域
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                insufficientScope:
-                  $ref: '#/components/examples/InsufficientScopeError'
+          $ref: '#/components/responses/InsufficientScope'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -117,7 +110,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ValidationErrorResponse'
               examples:
                 invalidRequest:
                   $ref: '#/components/examples/VoteSubmitInvalidArgumentError'
@@ -165,7 +158,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/RateLimitedErrorResponse'
               examples:
                 rateLimited:
                   $ref: '#/components/examples/VoteRateLimitedError'
@@ -201,25 +194,11 @@ paths:
                 pageBoundary:
                   $ref: '#/components/examples/VoteHistoryPageBoundarySuccess'
         '400':
-          description: 查询参数不合法
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                invalidPagination:
-                  $ref: '#/components/examples/InvalidPaginationError'
+          $ref: '#/components/responses/InvalidPagination'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          description: 当前访问令牌缺少历史结果查询作用域
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                insufficientScope:
-                  $ref: '#/components/examples/InsufficientScopeError'
+          $ref: '#/components/responses/InsufficientScope'
   /api/v1/content/updates:
     get:
       tags: [content]
@@ -249,31 +228,17 @@ paths:
                 pageBoundary:
                   $ref: '#/components/examples/ContentUpdatesPageBoundarySuccess'
         '400':
-          description: 分页参数不合法
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                invalidPagination:
-                  $ref: '#/components/examples/InvalidPaginationError'
+          $ref: '#/components/responses/InvalidPagination'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          description: 当前访问令牌缺少内容查询作用域
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                insufficientScope:
-                  $ref: '#/components/examples/InsufficientScopeError'
+          $ref: '#/components/responses/InsufficientScope'
         '503':
           description: 内容更新服务暂不可用
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/DomainServiceUnavailableErrorResponse'
               examples:
                 updatesUnavailable:
                   $ref: '#/components/examples/ContentUpdatesUnavailableError'
@@ -305,7 +270,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/PathParameterErrorResponse'
               examples:
                 invalidContentPackageId:
                   $ref: '#/components/examples/InvalidContentPackageIdError'
@@ -368,11 +333,11 @@ paths:
                 idempotentReplay:
                   $ref: '#/components/examples/ReleaseContentPackageResponseIdempotentReplay'
         '400':
-          description: 发布请求参数不合法
+          description: 发布请求参数不合法（参数校验错误或缺少 reason）
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/OpsWriteValidationErrorResponse'
               examples:
                 reasonRequired:
                   $ref: '#/components/examples/ReasonRequiredError'
@@ -520,25 +485,11 @@ paths:
                 pageBoundary:
                   $ref: '#/components/examples/RegionListPageBoundarySuccess'
         '400':
-          description: 分页参数不合法
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                invalidPagination:
-                  $ref: '#/components/examples/InvalidPaginationError'
+          $ref: '#/components/responses/InvalidPagination'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          description: 当前访问令牌缺少世界查询作用域
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                insufficientScope:
-                  $ref: '#/components/examples/InsufficientScopeError'
+          $ref: '#/components/responses/InsufficientScope'
   /api/v1/world/regions/{region_id}:
     get:
       tags: [world]
@@ -567,7 +518,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/PathParameterErrorResponse'
               examples:
                 invalidRegionId:
                   $ref: '#/components/examples/InvalidRegionIdError'
@@ -620,31 +571,17 @@ paths:
                 pageBoundary:
                   $ref: '#/components/examples/QuestListPageBoundarySuccess'
         '400':
-          description: 分页参数不合法
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                invalidPagination:
-                  $ref: '#/components/examples/InvalidPaginationError'
+          $ref: '#/components/responses/InvalidPagination'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          description: 当前访问令牌缺少任务查询作用域
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                insufficientScope:
-                  $ref: '#/components/examples/InsufficientScopeError'
+          $ref: '#/components/responses/InsufficientScope'
         '503':
           description: 任务列表服务暂不可用
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/DomainServiceUnavailableErrorResponse'
               examples:
                 questListUnavailable:
                   $ref: '#/components/examples/QuestListUnavailableError'
@@ -686,11 +623,11 @@ paths:
                 idempotentReplay:
                   $ref: '#/components/examples/CreateVoteCycleIdempotentReplay'
         '400':
-          description: 创建投票周期请求参数不合法
+          description: 创建投票周期请求参数不合法（参数校验错误或缺少 reason）
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/OpsWriteValidationErrorResponse'
               examples:
                 reasonRequired:
                   $ref: '#/components/examples/ReasonRequiredError'
@@ -699,14 +636,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          description: 当前角色无创建投票周期权限
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                insufficientScope:
-                  $ref: '#/components/examples/InsufficientScopeError'
+          $ref: '#/components/responses/InsufficientScope'
         '409':
           description: 投票周期创建发生冲突
           content:
@@ -755,11 +685,11 @@ paths:
                 idempotentReplay:
                   $ref: '#/components/examples/ReviewApproveIdempotentReplay'
         '400':
-          description: 审核批准请求参数不合法
+          description: 审核批准请求参数不合法（参数校验错误或缺少 reason）
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/OpsWriteValidationErrorResponse'
               examples:
                 reasonRequired:
                   $ref: '#/components/examples/ReasonRequiredError'
@@ -800,8 +730,8 @@ components:
       type: openIdConnect
       openIdConnectUrl: https://auth.example.com/.well-known/openid-configuration
       description: >
-        Bearer Token 采用 OIDC Access Token 语义；各接口通过 security 显式声明
-        所需 scope，并通过 x-roles 标注允许角色集合。
+        认证方式为 OIDC 签发的 JWT Bearer Token，通过 Authorization: Bearer <token> 头发送。
+        各接口通过 security 显式声明所需 scope，并通过 x-roles 标注允许角色集合。
       x-scopes:
         votes:read: 查询当前投票周期与候选项
         votes:submit: 提交玩家投票
@@ -920,17 +850,21 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/ValidationErrorResponse'
           example:
             code: INVALID_ARGUMENT
             message: 请求参数不合法
             request_id: req_bad_request_001
+            details:
+              - location: body
+                field: field_name
+                issue: required
     Unauthorized:
       description: 未认证或 Token 无效
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/UnauthorizedErrorResponse'
           example:
             code: INVALID_TOKEN
             message: Token 格式或签名非法
@@ -945,12 +879,54 @@ components:
             code: INSUFFICIENT_SCOPE
             message: 当前角色无权限执行该操作
             request_id: req_forbidden_001
+    InsufficientScope:
+      description: 当前访问令牌缺少所需作用域
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ScopeErrorResponse'
+          examples:
+            insufficientScope:
+              $ref: '#/components/examples/InsufficientScopeError'
+    InvalidPagination:
+      description: 分页参数不合法
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorResponse'
+          examples:
+            invalidPagination:
+              $ref: '#/components/examples/InvalidPaginationError'
+    PathParameterInvalid:
+      description: 路径参数格式不合法
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PathParameterErrorResponse'
+          example:
+            code: INVALID_ARGUMENT
+            message: 路径参数格式不合法
+            request_id: req_path_param_400
+            details:
+              - location: path
+                field: resource_id
+                issue: pattern_mismatch
+                rejected_value: invalid-id
+    ReasonRequired:
+      description: 敏感操作缺少原因字段（所有运营写接口必填 reason）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReasonRequiredErrorResponse'
+          examples:
+            reasonRequired:
+              $ref: '#/components/examples/ReasonRequiredError'
     NotFound:
       description: 目标对象不存在
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/NotFoundErrorResponse'
           example:
             code: RESOURCE_NOT_FOUND
             message: 目标资源不存在
@@ -960,7 +936,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/ConflictErrorResponse'
           example:
             code: CONFLICT
             message: 当前状态与操作发生冲突
@@ -970,7 +946,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/ServiceUnavailableErrorResponse'
           example:
             code: SERVICE_UNAVAILABLE
             message: 服务暂不可用
@@ -980,7 +956,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/RateLimitedErrorResponse'
           example:
             code: RATE_LIMITED
             message: 请求过于频繁，请稍后再试
@@ -1772,10 +1748,27 @@ components:
       type: string
       pattern: '^[A-Z0-9_]+$'
       example: INVALID_VOTE_STATE
+    GenericErrorCode:
+      type: string
+      enum:
+        - INVALID_ARGUMENT
+        - INVALID_TOKEN
+        - INSUFFICIENT_SCOPE
+        - RESOURCE_NOT_FOUND
+        - CONFLICT
+        - RATE_LIMITED
+        - SERVICE_UNAVAILABLE
+      description: >
+        HTTP 语义层通用错误码，跨接口稳定，可被 SDK、Mock Server 和测试工具直接匹配。
+        领域专属错误码（如 VOTE_CYCLE_NOT_FOUND）仍使用 ErrorCode 的开放 pattern 校验。
     RequestId:
       type: string
       pattern: '^req_[A-Za-z0-9_]+$'
       example: req_vote_current_409
+    TraceId:
+      type: string
+      pattern: '^trace_[A-Za-z0-9_]+$'
+      example: trace_vote_submit_001
     ErrorMessage:
       type: string
       minLength: 1
@@ -1783,19 +1776,59 @@ components:
     ErrorDetailLocation:
       type: string
       enum: [query, path, header, body]
-    ErrorDetailIssue:
+    ValidationIssue:
       type: string
       enum:
         - required
         - pattern_mismatch
         - unsupported_enum
-        - missing_required_scope
         - must_be_between_1_and_100
         - min_items_2
+      description: 参数校验类错误的 issue 枚举，供 SDK 做表单级错误映射
+    AuthorizationIssue:
+      type: string
+      enum:
+        - missing_required_scope
+      description: 鉴权/授权类错误的 issue 枚举
+    ErrorDetailIssue:
+      type: string
+      oneOf:
+        - $ref: '#/components/schemas/ValidationIssue'
+        - $ref: '#/components/schemas/AuthorizationIssue'
+      description: 错误细节原因码，按类别分组成稳定枚举
     ErrorFieldPath:
       type: string
-      pattern: '^[A-Za-z0-9_.-]+$'
+      pattern: '^[A-Za-z][A-Za-z0-9_.-]*$'
       example: gray_scope.player_percent
+      description: 错误字段路径；不同 location 的 field 格式见各特化 detail 类型
+    PathFieldName:
+      type: string
+      pattern: '^[a-z][a-z0-9_]*$'
+      example: region_id
+      description: 路径参数字段名，snake_case 无嵌套
+    QueryFieldName:
+      type: string
+      pattern: '^[a-z][a-z0-9_]*$'
+      example: page_size
+      description: 查询参数字段名，snake_case 无嵌套
+    BodyFieldPath:
+      type: string
+      pattern: '^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$'
+      example: gray_scope.player_percent
+      description: 请求体字段路径，snake_case，支持点号表示嵌套对象（如 gray_scope.player_percent）
+    HeaderFieldName:
+      type: string
+      pattern: '^[A-Za-z][A-Za-z0-9-]*$'
+      example: Authorization
+      description: 请求头字段名，遵循 HTTP header 命名规范
+    RejectedValue:
+      description: 被服务端拒绝的实际入参值；支持任意 JSON 标量类型，方便 SDK 回显
+      oneOf:
+        - type: string
+        - type: integer
+        - type: number
+        - type: boolean
+        - type: 'null'
     ErrorResponseBase:
       type: object
       required: [code, message, request_id]
@@ -1806,6 +1839,56 @@ components:
           $ref: '#/components/schemas/ErrorMessage'
         request_id:
           $ref: '#/components/schemas/RequestId'
+    ErrorDetail:
+      type: object
+      required: [location, field, issue]
+      properties:
+        location:
+          $ref: '#/components/schemas/ErrorDetailLocation'
+        field:
+          $ref: '#/components/schemas/ErrorFieldPath'
+        issue:
+          $ref: '#/components/schemas/ErrorDetailIssue'
+        rejected_value:
+          $ref: '#/components/schemas/RejectedValue'
+    ValidationErrorDetail:
+      allOf:
+        - $ref: '#/components/schemas/ErrorDetail'
+        - type: object
+          properties:
+            issue:
+              $ref: '#/components/schemas/ValidationIssue'
+      description: 参数校验错误条目；issue 收窄为校验类枚举，Mock/SDK 可直接映射表单错误
+    PathParameterErrorDetail:
+      allOf:
+        - $ref: '#/components/schemas/ErrorDetail'
+        - type: object
+          required: [location]
+          properties:
+            location:
+              type: string
+              enum: [path]
+            field:
+              $ref: '#/components/schemas/PathFieldName'
+            issue:
+              type: string
+              enum: [pattern_mismatch]
+      description: 路径参数格式错误条目；location 固定为 path，field 为路径参数名（snake_case），issue 固定为 pattern_mismatch
+    ScopeErrorDetail:
+      allOf:
+        - $ref: '#/components/schemas/ErrorDetail'
+        - type: object
+          required: [location]
+          properties:
+            location:
+              type: string
+              enum: [header]
+            field:
+              type: string
+              enum: [Authorization]
+            issue:
+              $ref: '#/components/schemas/AuthorizationIssue'
+      description: Scope 不足错误条目；固定指向 Authorization 头，issue 固定为 missing_required_scope
     DetailedErrorResponseBase:
       allOf:
         - $ref: '#/components/schemas/ErrorResponseBase'
@@ -1818,26 +1901,152 @@ components:
                 $ref: '#/components/schemas/ErrorDetail'
     ErrorResponse:
       allOf:
+        - $ref: '#/components/schemas/DetailedErrorResponseBase'
+      description: 通用错误响应；所有接口错误响应均兼容此结构
+    ValidationErrorResponse:
+      allOf:
         - $ref: '#/components/schemas/ErrorResponseBase'
         - type: object
+          required: [code]
           properties:
+            code:
+              type: string
+              enum: [INVALID_ARGUMENT]
             details:
               type: array
               minItems: 1
               items:
-                $ref: '#/components/schemas/ErrorDetail'
-    ErrorDetail:
-      type: object
-      required: [location, field, issue]
-      properties:
-        location:
-          $ref: '#/components/schemas/ErrorDetailLocation'
-        field:
-          $ref: '#/components/schemas/ErrorFieldPath'
-        issue:
-          $ref: '#/components/schemas/ErrorDetailIssue'
-        rejected_value:
-          type: string
+                $ref: '#/components/schemas/ValidationErrorDetail'
+      description: 参数校验错误响应（400）；code 固定为 INVALID_ARGUMENT，details 为校验条目数组
+    PathParameterErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [INVALID_ARGUMENT]
+            details:
+              type: array
+              minItems: 1
+              maxItems: 1
+              items:
+                $ref: '#/components/schemas/PathParameterErrorDetail'
+      description: 路径参数错误响应（400）；details 只含一个 path 级 pattern_mismatch 条目
+    ScopeErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [INSUFFICIENT_SCOPE]
+            details:
+              type: array
+              minItems: 1
+              maxItems: 1
+              items:
+                $ref: '#/components/schemas/ScopeErrorDetail'
+      description: Scope 不足错误响应（403）；details 只含一个 Authorization 头 scope 缺失条目
+    UnauthorizedErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [INVALID_TOKEN]
+      description: 未认证错误响应（401）
+    NotFoundErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [RESOURCE_NOT_FOUND]
+      description: 资源不存在错误响应（404）
+    ConflictErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [CONFLICT]
+      description: 状态冲突错误响应（409）
+    RateLimitedErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [RATE_LIMITED]
+      description: 限流错误响应（429）
+    ServiceUnavailableErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [SERVICE_UNAVAILABLE]
+      description: 服务不可用错误响应（503）
+    ReasonRequiredErrorDetail:
+      allOf:
+        - $ref: '#/components/schemas/ErrorDetail'
+        - type: object
+          required: [location, field, issue]
+          properties:
+            location:
+              type: string
+              enum: [body]
+            field:
+              type: string
+              enum: [reason]
+            issue:
+              type: string
+              enum: [required]
+      description: 敏感操作缺少 reason 字段的错误条目；固定指向 body.reason，issue=required
+    ReasonRequiredErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [REASON_REQUIRED]
+            details:
+              type: array
+              minItems: 1
+              maxItems: 1
+              items:
+                $ref: '#/components/schemas/ReasonRequiredErrorDetail'
+      description: 敏感操作缺少原因字段错误响应（400）；所有运营写接口必填 reason，固定返回此结构
+    OpsWriteValidationErrorResponse:
+      oneOf:
+        - $ref: '#/components/schemas/ValidationErrorResponse'
+        - $ref: '#/components/schemas/ReasonRequiredErrorResponse'
+      description: 运营写接口 400 响应的联合类型：参数校验错误或 reason 字段缺失
+    DomainServiceUnavailableErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              pattern: '^[A-Z0-9_]+_UNAVAILABLE$'
+      description: 领域级 503 错误响应（如 CONTENT_UPDATES_UNAVAILABLE、QUEST_LIST_UNAVAILABLE）；code 以 _UNAVAILABLE 结尾，标识特定下游或域暂不可用
     VoteCycle:
       type: object
       required: [vote_cycle_id, chapter_id, status, starts_at, ends_at]
@@ -2069,13 +2278,13 @@ components:
       required: [request_id]
       properties:
         request_id:
-          type: string
+          $ref: '#/components/schemas/RequestId'
     TraceableResponse:
       type: object
       required: [trace_id]
       properties:
         trace_id:
-          type: string
+          $ref: '#/components/schemas/TraceId'
     ListResponseBase:
       allOf:
         - $ref: '#/components/schemas/RequestScopedResponse'

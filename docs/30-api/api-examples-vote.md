@@ -30,7 +30,7 @@
 ## 通用约定
 
 - 协议：`HTTPS + JSON`
-- 认证：`Bearer Token`
+- 认证：OIDC 签发的 JWT Bearer Token（`Authorization: Bearer <token>`）
 - 时间格式：ISO 8601
 - 所有成功响应统一带 `request_id`
 - 写接口成功响应统一补 `trace_id`

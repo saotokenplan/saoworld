@@ -29,16 +29,17 @@
   - `docs/30-api/api-error-codes.md`
   - `docs/30-api/api-examples-vote.md`
 - 当前已经完成的草案收敛包括：
-  - 第一批投票链路接口的 `paths` 与 schema 草案
-  - 第二批内容查询与发布回滚链路的 `paths` 与 schema 草案
-  - 第三批世界、任务与审核运营接口的 `paths` 与 schema 草案
-  - 单文件草案中的首轮复用层补齐，包括 `Idempotency-Key`、`X-Trace-Id`、历史查询过滤参数和通用错误响应示例
-  - 单文件草案中的首轮请求响应示例补齐，已覆盖投票主链路以及内容、世界、任务、运营写接口的典型成功样例
-- 当前仍缺少的关键内容包括：
-  - 更完整的通用 schema 复用层与成功响应包装复用
-  - 更细的排序、审计字段和安全定义细化
-  - 按服务拆分后的 path 与 tag 进一步展开
-  - 针对第二批和第三批接口的错误样例、边界条件样例与字段收敛
+  - 第一批（投票链路）、第二批（内容查询与发布回滚）、第三批（世界/任务/运营）共 **12 个接口**的 `paths` 与 schema 草案全部完成
+  - 错误层已原子化并特化：原子字段（`GenericErrorCode`、`TraceId`、`RequestId`、`ValidationIssue`、`AuthorizationIssue`、`RejectedValue`、`PathFieldName`/`QueryFieldName`/`BodyFieldPath`/`HeaderFieldName`），特化错误响应（`ValidationErrorResponse`、`NotFoundErrorResponse`、`ScopeErrorResponse`、`PathParameterErrorResponse`、`ReasonRequiredErrorResponse`、`DomainServiceUnavailableErrorResponse`、`OpsWriteValidationErrorResponse`、`RateLimitedErrorResponse`、`UnauthorizedErrorResponse`），复用参数（分页、ID 参数）、复用请求头（`Idempotency-Key`、`X-Trace-Id`、`X-Request-Id`）
+  - `components/responses` 已升级为特化类型：`BadRequest`→`ValidationErrorResponse`、`Unauthorized`→`UnauthorizedErrorResponse`、`NotFound`→`NotFoundErrorResponse`、`Forbidden`→`ScopeErrorResponse`、`TooManyRequests`→`RateLimitedErrorResponse`，新增 `InvalidPagination`、`InsufficientScope`、`PathParameterInvalid`、`ReasonRequired` 高频复用响应
+  - 成功响应 envelope 已抽象：`RequestScopedResponse`（含 `request_id`）、`TraceableResponse`（含 `trace_id`）、`ListResponseBase`（列表+分页 meta）、`DetailResponseBase`（单对象+meta）、`OperationResponseBase`（写操作+trace）
+  - 安全方案已定义：OIDC JWT Bearer Token + 细粒度 scope（10 个 scope），每个接口均声明 `x-roles` 角色集合和所需 scope
+  - 请求响应样例已覆盖投票主链路、内容、世界、任务、运营写接口的典型成功样例和主要错误样例
+  - 路径端点响应已升级：ops 写接口 400→`OpsWriteValidationErrorResponse`（oneOf: 参数校验+reason缺失），503→`DomainServiceUnavailableErrorResponse`；所有跨端点高频错误均已使用特化 schema
+- 当前仍缺少或待细化的内容（按优先级）：
+  1. 部分端点边界条件的字段级错误 details 样例（如 `POST /ops/content-packages/{id}/rollback` 的 400 `ROLLBACK_TARGET_INVALID` 是领域语义错误，无 details；其余端点的参数校验样例已覆盖）
+  2. 预留错误码落地（如 `INTERNAL_ERROR`、`TOKEN_EXPIRED`），应在服务端实现阶段按需添加
+  3. 按服务拆分子草案的评估（当前单文件 2600+ 行、12 个端点，规模尚可控；建议端点超过 25-30 个时再拆分）
 
 ## 草案收敛原则
 
@@ -82,9 +83,9 @@
   - `Idempotency-Key`
   - `X-Request-Id`
 
-## 当前建议优先补齐的接口组
+## 首批建议实现的接口组
 
-### 第一批
+首批建议从投票链路开始实现（MVP 核心闭环）：
 
 - `GET /api/v1/votes/current`
 - `POST /api/v1/votes/submit`
@@ -92,13 +93,13 @@
 
 原因：
 
-- 已有较完整样例文档。
+- 已有较完整样例文档，OpenAPI 定义最成熟。
 - 属于首个最小落地目标中最容易收敛的一条主线能力。
-- 涉及角色、错误码、幂等和审计要求，适合作为 OpenAPI 草案模板。
+- 涉及角色、scope、错误码、幂等和审计要求，可作为服务端实现模板。
 
-## 第一批草案正文
+## 草案正文
 
-以下内容是从首版单文件草案中拆解出来的阅读片段，方便按接口组查看；权威的单文件整合结果见 `docs/30-api/openapi-v1-draft.yaml`。
+> **注意**：以下分批次的 YAML 片段是草案收敛过程中按批次形成的历史快照，便于按接口组阅读结构。**权威的完整定义以 `docs/30-api/openapi-v1-draft.yaml` 单文件为准**，其中包含最新的错误 Schema 特化、scope 声明、`x-roles` 角色标注和完整 examples。片段中的错误码建议列表已同步为 YAML 中实际使用的 code，但片段中的 Schema 省略了部分特化类型引用（如 `ValidationErrorResponse` 等），以保持片段简洁可读。
 
 ### 顶层片段
 
@@ -187,9 +188,9 @@ components:
         type: string
   securitySchemes:
     bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+      type: openIdConnect
+      openIdConnectUrl: https://auth.example.com/.well-known/openid-configuration
+      description: OIDC 签发的 JWT Bearer Token
 ```
 
 ### 复用数据结构
@@ -210,6 +211,20 @@ components:
         request_id:
           type: string
           example: req_vote_current_409
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              location:
+                type: string
+                enum: [body, query, path, header]
+              field:
+                type: string
+              issue:
+                type: string
+              rejected_value: {}
+            required: [location, field, issue]
 
     VoteCycle:
       type: object
@@ -668,7 +683,7 @@ paths:
 
 - `VOTE_CYCLE_NOT_FOUND`
 - `INVALID_VOTE_STATE`
-- `UNAUTHORIZED`
+- `INVALID_TOKEN`
 
 ### `POST /api/v1/votes/submit`
 
@@ -758,7 +773,7 @@ paths:
 对应错误码建议：
 
 - `INVALID_ARGUMENT`
-- `UNAUTHORIZED`
+- `INVALID_TOKEN`
 
 ### 第一批实现备注
 
@@ -805,7 +820,7 @@ paths:
 
 对应错误码建议：
 
-- `UNAUTHORIZED`
+- `INVALID_TOKEN`
 - `CONTENT_UPDATES_UNAVAILABLE`
 
 ### `GET /api/v1/content/packages/{content_package_id}`
@@ -839,7 +854,7 @@ paths:
 
 对应错误码建议：
 
-- `UNAUTHORIZED`
+- `INVALID_TOKEN`
 - `CONTENT_PACKAGE_NOT_VISIBLE`
 - `CONTENT_PACKAGE_NOT_FOUND`
 
@@ -982,7 +997,7 @@ paths:
 
 对应错误码建议：
 
-- `UNAUTHORIZED`
+- `INVALID_TOKEN`
 
 ### `GET /api/v1/world/regions/{region_id}`
 
@@ -1015,7 +1030,7 @@ paths:
 
 对应错误码建议：
 
-- `UNAUTHORIZED`
+- `INVALID_TOKEN`
 - `REGION_NOT_VISIBLE`
 - `REGION_NOT_FOUND`
 
@@ -1046,7 +1061,7 @@ paths:
 
 对应错误码建议：
 
-- `UNAUTHORIZED`
+- `INVALID_TOKEN`
 - `QUEST_LIST_UNAVAILABLE`
 
 ### `POST /api/v1/ops/vote-cycles`
@@ -1087,7 +1102,7 @@ paths:
 对应错误码建议：
 
 - `REASON_REQUIRED`
-- `FORBIDDEN`
+- `INSUFFICIENT_SCOPE`
 - `VOTE_CYCLE_CONFLICT`
 
 ### `POST /api/v1/ops/review/{object_id}/approve`
@@ -1162,10 +1177,11 @@ paths:
 
 ## 后续补齐顺序
 
-1. 继续补齐第二批和第三批接口的错误样例、边界条件样例与更细字段约束。
-2. 继续收敛排序、审计字段、安全作用域和成功响应包装等通用复用层。
-3. 继续把 `docs/30-api/openapi-v1-draft.yaml` 从文档级草案细化为更接近可导入工具链的完整定义。
-4. 最后决定是在保留单文件草案的同时，再按服务拆分子草案。
+1. ~~抽象成功响应包装复用层~~（已完成：`RequestScopedResponse`、`TraceableResponse`、`ListResponseBase`、`DetailResponseBase`、`OperationResponseBase`）
+2. ~~错误层原子化与特化~~（已完成：所有跨端点高频错误响应已有特化 schema）
+3. 补齐少数端点边界条件的字段级错误 details 样例（如 `ROLLBACK_TARGET_INVALID` 等领域语义错误的 details 补充说明）
+4. 服务端实现阶段，将预留错误码（如 `INTERNAL_ERROR`、`TOKEN_EXPIRED`）按需落地到 OpenAPI
+5. 端点数量超过 25-30 个时，评估按服务拆分为多文件草案
 
 ## 与其他文档的关系
 

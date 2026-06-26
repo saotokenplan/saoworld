@@ -172,24 +172,50 @@
 - `result`
 - `occurred_at`
 
+## 接口 Scope 矩阵
+
+OpenAPI 草案中已为各接口定义细粒度 scope，对应 JWT Token 中的 scope claim。下表为接口与 scope 的映射：
+
+| 方法 | 路径 | 所需 Scope |
+|---|---|---|
+| `GET` | `/api/v1/world/regions` | `world:read` |
+| `GET` | `/api/v1/world/regions/{region_id}` | `world:read` |
+| `GET` | `/api/v1/quests` | `quests:read` |
+| `GET` | `/api/v1/votes/current` | `votes:read` |
+| `POST` | `/api/v1/votes/submit` | `votes:submit` |
+| `GET` | `/api/v1/votes/history` | `votes:history:read` |
+| `GET` | `/api/v1/content/updates` | `content:read` |
+| `GET` | `/api/v1/content/packages/{content_package_id}` | `content:read` |
+| `POST` | `/api/v1/ops/vote-cycles` | `ops:vote-cycles:write` |
+| `POST` | `/api/v1/ops/review/{object_id}/approve` | `review:approve` |
+| `POST` | `/api/v1/ops/content-packages/{id}/release` | `content:release` |
+| `POST` | `/api/v1/ops/content-packages/{id}/rollback` | `content:rollback` |
+
 ## 待补充项
 
-- 更细的接口级权限码定义
 - 后台管理系统菜单与接口的映射关系
 - 审批链或二次确认规则
 - `system` 角色的服务账号模型
-- Token 中的角色声明与过期策略
+- Token 中的角色声明、scope 映射与 Refresh Token 策略
+
+## 当前状态
+
+- 角色矩阵已下沉到 OpenAPI 草案（通过 `x-roles` 和 `security` scope 声明）。
+- 运营和审核接口的请求头、审计字段（`X-Trace-Id`、`Idempotency-Key`、`reason`）已在 OpenAPI 中定义。
+- 错误码索引见 `docs/30-api/api-error-codes.md`。
 
 ## 建议下一步
 
-1. 把本文件中的角色矩阵下沉到 OpenAPI 安全定义。
-2. 为运营和审核接口补请求头、审计字段和错误码要求。
-3. 再补一份 `docs/30-api/api-error-codes.md`，完善接口实施所需的异常约束。
+1. 服务端实现时，根据本矩阵建立角色-scope 映射表和中间件鉴权逻辑。
+2. 为运营写接口补审批链和二次确认规则说明。
+3. Token 签发服务落地时，明确角色到 scope 的映射关系。
 
 ## 与其他文档的关系
 
 - `docs/20-specs/backend-data-spec.md`
   - 定义权限层级、安全要求和服务边界，是本文件的上游执行规范。
+- `docs/30-api/openapi-v1-draft.yaml`
+  - 接口角色（x-roles）、scope 声明和安全方案的正式定义。
 - `docs/30-api/api-overview.md`
   - 作为接口总入口，说明本文件中的权限矩阵适用于哪些接口。
 - `docs/30-api/api-error-codes.md`
