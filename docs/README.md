@@ -17,6 +17,7 @@
 ## 当前定位
 
 - 本文档是 `docs/` 目录的总导航，不替代 `00-governance/` 中的治理规则。
+- 本文档负责提供“全量目录导航”和“按层阅读索引”，不单独承担最小行动路径说明。
 - 后续拆任务、建仓库、写代码和接入 CI 时，执行仍以 `20-specs/` 为准。
 - 当目录规则、变更流程、状态规则存在细节问题时，应分别以下游治理文档为准。
 
@@ -42,6 +43,8 @@
   - 适合做引擎、后端和基础设施决策参考
 
 ## 建议阅读顺序
+
+以下顺序用于浏览完整文档体系；如果你只需要最小阅读路径和开工顺序，优先查看 `00-governance/quick-start.md`。
 
 1. `00-governance/document-directory-spec.md`
 2. `00-governance/document-change-process.md`
@@ -87,6 +90,8 @@
   - 定义新增、修订、迁移和删除时应遵循的流程。
 - `00-governance/document-map.md`
   - 定义文档体系的权威关系、保留策略与整理判断。
+- `00-governance/quick-start.md`
+  - 提供从阅读走向实施的最小路径，不重复承担完整目录导航。
 - `00-governance/document-template-alignment-checklist.md`
   - 记录当前模板对齐结果和后续复查状态。
 - `00-governance/document-template-maintenance.md`
