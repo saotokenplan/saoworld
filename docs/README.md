@@ -43,33 +43,19 @@
 
 ## 建议阅读顺序
 
-以下顺序用于浏览完整文档体系；如果你只需要最小阅读路径和最小实施顺序，优先查看 `00-governance/quick-start.md`。
+以下顺序用于按层浏览完整文档体系；如果你只需要最小阅读路径和最小实施顺序，优先查看 `00-governance/quick-start.md`。
 
 1. `00-governance/document-directory-spec.md`
 2. `00-governance/document-change-process.md`
 3. `00-governance/document-lifecycle.md`
-4. `00-governance/document-template-spec.md`
-5. `00-governance/document-template-alignment-checklist.md`
-6. `00-governance/document-template-maintenance.md`
-7. `00-governance/document-ownership.md`
-8. `00-governance/document-review-checklist.md`
-9. `00-governance/document-map.md`
-10. `00-governance/project-status.md`
-11. `00-governance/quick-start.md`
-12. `30-api/api-overview.md`
-13. `30-api/api-permissions.md`
-14. `30-api/api-error-codes.md`
-15. `30-api/api-examples-vote.md`
-16. `00-governance/spec-skill-mapping.md`
-17. `10-requirements/open-world-ai-game-prd.md`
-18. `10-requirements/需求概述.md`
-19. `10-requirements/功能设计.md`
-20. `10-requirements/技术方案.md`
-21. `40-dev-loop/ai-coding-game-dev-loop-plan.md`
-22. `40-dev-loop/loop-engineering-plan.md`
-23. `50-research/stack-research-ai-game-dev.md`
-24. `50-research/service-stack-comparison.md`
-25. `20-specs/README.md`
+4. `00-governance/document-map.md`
+5. `00-governance/project-status.md`
+6. `00-governance/quick-start.md`
+7. `20-specs/README.md`
+8. `30-api/api-overview.md`
+9. `10-requirements/需求概述.md`
+10. `40-dev-loop/loop-engineering-plan.md`
+11. `50-research/stack-research-ai-game-dev.md`
 
 ## 使用原则
 

@@ -27,13 +27,7 @@
 - 当前仓库里还没有 `game/`、`services/`、`workers/` 等目标态工程目录。
 - 当前最适合做的事情是阅读、收敛规范、确定首个最小落地目标，而不是直接执行启动命令。
 
-如果你想先判断项目目前做到哪一步，建议先看以下入口：
-
-1. `docs/00-governance/document-map.md`
-2. `docs/00-governance/project-status.md`
-3. `docs/00-governance/document-lifecycle.md`
-4. `docs/00-governance/document-template-alignment-checklist.md`
-5. `docs/20-specs/README.md`
+如果你想先判断项目目前做到哪一步，优先看 `document-map.md`、`project-status.md` 和 `docs/20-specs/README.md`。
 
 ## 5 分钟上手
 
@@ -45,21 +39,13 @@
    - 理解文档分层、权威关系和维护原则
 2. `docs/00-governance/project-status.md`
    - 判断项目当前阶段、已确定事项和未落地资产
-3. `docs/00-governance/document-lifecycle.md`
-   - 理解哪些文档是草稿、当前生效、待废弃或已归档
-4. `docs/00-governance/document-template-spec.md`
-   - 理解后续新增治理文档、规范文档和 API 文档时应采用的标准章节结构
-5. `docs/00-governance/document-template-alignment-checklist.md`
-   - 确认当前文档体系已经完成模板对齐，以及后续复查应从哪里开始
-6. `docs/00-governance/document-template-maintenance.md`
-   - 理解模板全量对齐完成后，后续新增和改写时应如何持续保持
-7. `docs/20-specs/README.md`
+3. `docs/20-specs/README.md`
    - 进入执行规范目录入口
-8. `docs/20-specs/product-spec.md`
+4. `docs/20-specs/product-spec.md`
    - 理解产品边界、MVP 和验收口径
-9. `docs/20-specs/backend-data-spec.md`
+5. `docs/20-specs/backend-data-spec.md`
    - 理解后端服务、数据模型和接口方向
-10. `docs/00-governance/spec-skill-mapping.md`
+6. `docs/00-governance/spec-skill-mapping.md`
    - 理解 `20-specs/` 和 `.trae/skills/` 的关系
 
 ### 如果你准备开始实施
@@ -81,7 +67,7 @@
    - 多仓
    - 文档仓 + 工程仓分离
 
-## 当前推荐阅读顺序
+## 按主题继续阅读
 
 ### 业务与产品
 

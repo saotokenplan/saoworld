@@ -32,17 +32,11 @@
 ## 建议阅读顺序
 
 1. `docs/README.md`
-2. `docs/00-governance/document-directory-spec.md`
-3. `docs/00-governance/document-change-process.md`
-4. `docs/00-governance/document-lifecycle.md`
-5. `docs/00-governance/document-template-spec.md`
-6. `docs/00-governance/document-template-alignment-checklist.md`
-7. `docs/00-governance/document-template-maintenance.md`
-8. `docs/00-governance/document-map.md`
-9. `docs/00-governance/project-status.md`
-10. `docs/00-governance/quick-start.md`
-11. `docs/20-specs/README.md`
-12. `docs/30-api/api-overview.md`
+2. `docs/00-governance/document-map.md`
+3. `docs/00-governance/project-status.md`
+4. `docs/00-governance/quick-start.md`
+5. `docs/20-specs/README.md`
+6. `docs/30-api/api-overview.md`
 
 ## 与其他文档的关系
 
@@ -51,7 +45,7 @@
 - `docs/00-governance/project-status.md`
   - 说明当前仓库阶段、已具备资产和未落地部分。
 - `docs/20-specs/README.md`
-  - 作为执行规范入口，承接后续实施所需的核心约束。
+  - 执行规范目录入口。
 - `docs/00-governance/document-map.md`
   - 说明整套文档体系的分层、权威关系和保留策略。
 - `docs/00-governance/document-template-alignment-checklist.md`
