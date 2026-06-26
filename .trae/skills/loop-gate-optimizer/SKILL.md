@@ -22,7 +22,7 @@
 - 说明：
   - Agent 角色、门禁目标、Issue 反馈和闭环要求以 `agent-loop-spec.md` 为准
   - 工程协作和门禁落地方式参考 `engineering-conventions.md`
-  - 现有 gate 清单参考 `gate_registry.yaml`
+  - 现有 gate 清单参考 `docs/40-dev-loop/gate_registry.yaml`
   - 日志输入结构参考 `log-schemas-loop-engineering.md`
 
 ## 输入

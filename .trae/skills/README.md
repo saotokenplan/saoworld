@@ -36,3 +36,4 @@
 - 每个 skill 都尽量只承担一个明确职责，避免单个 skill 同时做规划、编码、审核和发布。
 - 每个 `SKILL.md` 应显式标注“规范来源”，并与 `docs/00-governance/spec-skill-mapping.md` 保持一致。
 - 如 Skill 与 `docs/20-specs/` 冲突，以 `docs/20-specs/` 为准。
+- 若 Skill 涉及接口契约、请求响应样例或客户端消费结构，应同时检查 `docs/30-api/openapi-draft.md` 是否需要同步更新。
