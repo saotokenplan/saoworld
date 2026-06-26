@@ -93,3 +93,40 @@
 
 - 不在一个服务里承载所有领域逻辑
 - 不把灰度发布和回滚做成手工不可复现的操作
+
+## 提交规范
+
+所有代码和文档提交必须遵守 `docs/20-specs/engineering-conventions.md#git-提交规范` 和 `docs/20-specs/agent-loop-spec.md#ai-提交前自检清单强制执行`。
+
+### 提交格式
+
+`<type>(<scope>): <summary>`
+
+- type: docs / feat / fix / refactor / test / chore
+- summary: 使用祈使句（新增/补充/调整/修复/重构），具体描述改动，不超过100字符，不以句号结尾
+
+### 提交前必须
+
+1. 执行 `python tools/validate-commit-msg.py --message "type(scope): 摘要"` 预验证提交信息格式
+2. 确认一次提交只包含一个主题，多个改动拆分多次提交
+3. 确认无调试残留（pdb/breakpoint/debug print）、无冲突标记、无无关文件
+4. 提交后立即 `git push`（远程不可用时明确记录阻塞原因）
+
+### 禁止的提交信息
+
+- "update"、"fix bug"、"wip"、"一些修改"、"临时提交" 等模糊表述
+- 照抄整段会话总结而非描述实际改动
+- 一个提交混入多个不相关主题
+
+### 推荐 scope
+
+- gateway
+- player
+- world
+- vote
+- generation
+- review
+- content
+- ops
+- infra
+- api

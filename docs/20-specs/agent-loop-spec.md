@@ -102,7 +102,26 @@
 4. 运行门禁
 5. 失败则生成修复计划
 6. 重复直到全绿
-7. 生成人类验收摘要
+7. **提交前自检**（见下方清单）
+8. git commit 并 push（通过 commit-msg hook 校验）
+9. 生成人类验收摘要
+
+### AI 提交前自检清单（强制执行）
+
+在执行 `git commit` 之前，Agent 必须逐项确认以下内容：
+
+1. **主题单一性**：本次提交是否只包含一个清晰主题？若有多个独立改动，必须拆分多次提交。
+2. **提交信息格式**：
+   - 是否符合 `&lt;type&gt;(&lt;scope&gt;): &lt;summary&gt;` 格式？
+   - type 是否为 `docs/feat/fix/refactor/test/chore` 之一？
+   - scope 是否与改动模块一致（如 `vote`、`specs`、`api`、`game`）？
+   - summary 是否使用祈使句（新增/补充/调整/修复/重构）、是否具体、是否在 100 字符以内？
+   - summary 是否避免了模糊词汇（"update"、"fix stuff"、"一些修改"、"临时提交"）？
+3. **内容完整性**：相关文档、配置、测试是否已同步更新？有无遗漏的引用更新？
+4. **工作区清洁度**：是否混入了无关文件、调试代码、`pdb.set_trace()`、`print(debug)` 或 `&lt;&lt;&lt;&lt;&lt;&lt;&lt;` 冲突标记？
+5. **自检验证**：可用 `python tools/validate-commit-msg.py --message "feat(vote): 你的摘要"` 预先验证。
+
+提交后必须立即 push（除非远程不可用并明确说明阻塞原因）。
 
 ### 产物要求
 
@@ -122,6 +141,8 @@
 - `unit`
 - `integration`
 - `e2e`
+- `commit-msg`（提交信息格式校验，必须在 commit 阶段通过，CI 二次校验）
+- `pre-commit`（调试残留、冲突标记、大文件检查）
 
 ### 内容门禁
 

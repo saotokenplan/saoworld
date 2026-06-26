@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+"""
+Git pre-commit hook: runs basic checks before allowing commit.
+- Checks for large files
+- Checks for merge conflict markers
+- Checks for debug print/pdb breakpoints
+"""
+
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+MAX_FILE_SIZE_KB = 500
+
+DEBUG_PATTERNS = [
+    (re.compile(r"^\s*pdb\.set_trace\(\)"), "pdb.set_trace() breakpoint found"),
+    (re.compile(r"^\s*breakpoint\(\)"), "breakpoint() found"),
+    (re.compile(r"^\s*print\s*\(.*\)\s*#?\s*debug", re.IGNORECASE), "debug print found"),
+]
+
+CONFLICT_PATTERN = re.compile(r"^<<<<<<< |^=======$|^>>>>>>> ")
+
+
+def run_git(args):
+    result = subprocess.run(
+        ["git"] + args,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout
+
+
+def get_staged_files():
+    output = run_git(["diff", "--cached", "--name-only", "--diff-filter=ACM"])
+    return [Path(f) for f in output.splitlines() if f.strip()]
+
+
+def check_file_size(path):
+    try:
+        size_kb = path.stat().st_size / 1024
+        if size_kb > MAX_FILE_SIZE_KB:
+            return "File too large ({:.0f}KB > {}KB): {}".format(size_kb, MAX_FILE_SIZE_KB, path)
+    except OSError:
+        pass
+    return None
+
+
+def check_file_content(path):
+    issues = []
+    if not path.is_file():
+        return issues
+    if path.suffix in {".py", ".gd", ".js", ".ts", ".tsx"}:
+        try:
+            lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+            for i, line in enumerate(lines, 1):
+                if CONFLICT_PATTERN.match(line):
+                    issues.append("Merge conflict marker in {}:{}".format(path, i))
+                for pattern, msg in DEBUG_PATTERNS:
+                    if pattern.search(line):
+                        issues.append("{} in {}:{}".format(msg, path, i))
+        except Exception:
+            pass
+    return issues
+
+
+def main():
+    errors = []
+    staged = get_staged_files()
+
+    for f in staged:
+        size_err = check_file_size(f)
+        if size_err:
+            errors.append(size_err)
+        errors.extend(check_file_content(f))
+
+    if errors:
+        print("=" * 60, file=sys.stderr)
+        print("Pre-commit checks failed:", file=sys.stderr)
+        print("=" * 60, file=sys.stderr)
+        for err in errors:
+            print("  - {}".format(err), file=sys.stderr)
+        print(file=sys.stderr)
+        print("Fix these issues before committing, or bypass with:", file=sys.stderr)
+        print("  git commit --no-verify", file=sys.stderr)
+        return 1
+
+    print("Pre-commit checks passed")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
