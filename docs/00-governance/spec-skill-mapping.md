@@ -48,11 +48,11 @@
 | 上游规范 | 主要作用 | 关联 Skill | 映射关系 | 维护建议 |
 |---|---|---|---|---|
 | `docs/20-specs/product-spec.md` | 定义产品边界、玩法闭环、投票治理、MVP、验收口径 | `requirement-package-builder` `godot-gameplay-implementer` `world-content-generator` | 提供产品目标、非目标、玩法和世界变化边界 | 产品规则有变更时，优先检查需求包生成和客户端实现 Skill |
-| `docs/20-specs/content-generation-spec.md` | 定义 AI 内容生成对象、输入输出结构、审核规则和生命周期 | `world-content-generator` `content-review-gate` `release-package-operator` | 提供生成对象 schema、生命周期状态和审核前提 | 任何生成字段、模板或生命周期调整，都要同步更新这 3 个 Skill |
-| `docs/20-specs/backend-data-spec.md` | 定义服务边界、数据模型、API、事件流、异步任务 | `backend-service-builder` `godot-gameplay-implementer` `release-package-operator` | 提供接口契约、数据模型、内容包、回滚与事件基础 | 接口、表结构、状态流调整时，优先检查后端和发布相关 Skill |
-| `docs/20-specs/agent-loop-spec.md` | 定义 Agent 角色、需求包、门禁、日志、Issue、回滚流程 | `requirement-package-builder` `loop-gate-optimizer` `release-package-operator` | 提供需求包格式、门禁输入、日志分析和治理闭环 | Agent 流程和门禁机制变化时，重点更新需求包和闭环优化 Skill |
-| `docs/20-specs/engineering-conventions.md` | 定义仓库结构、命名、配置、测试、发布协作规范 | `backend-service-builder` `godot-gameplay-implementer` `release-package-operator` | 提供工程目录、命名和测试底线 | 工程规范更新后，检查实现类 Skill 的输出格式和目录约定 |
-| `docs/30-api/openapi-draft.md` | 统一沉淀接口草案入口、样例收敛顺序和 OpenAPI 组织方式 | `requirement-package-builder` `backend-service-builder` `godot-gameplay-implementer` `content-review-gate` `release-package-operator` | 提供接口样例、审批/发布接口收敛和 OpenAPI 同步要求 | 接口路径、请求响应字段、权限或样例更新时，联动检查这些接口相关 Skill |
+| `docs/20-specs/content-generation-spec.md` | 定义 AI 内容生成对象、输入输出结构、审核规则和生命周期 | `world-content-generator` `content-review-gate` `qa-acceptance-runner` `release-package-operator` | 提供生成对象 schema、生命周期状态和审核前提 | 任何生成字段、模板或生命周期调整，都要同步更新内容生成、审核、QA 与发布相关 Skill |
+| `docs/20-specs/backend-data-spec.md` | 定义服务边界、数据模型、API、事件流、异步任务 | `backend-service-builder` `godot-gameplay-implementer` `qa-acceptance-runner` `release-package-operator` | 提供接口契约、数据模型、内容包、回滚与事件基础 | 接口、表结构、状态流调整时，优先检查后端、QA 和发布相关 Skill |
+| `docs/20-specs/agent-loop-spec.md` | 定义 Agent 角色、需求包、门禁、日志、Issue、回滚流程 | `requirement-package-builder` `qa-acceptance-runner` `loop-gate-optimizer` `release-package-operator` | 提供需求包格式、门禁输入、日志分析和治理闭环 | Agent 流程和门禁机制变化时，重点更新需求包、QA 与闭环优化 Skill |
+| `docs/20-specs/engineering-conventions.md` | 定义仓库结构、命名、配置、测试、发布协作规范 | `backend-service-builder` `godot-gameplay-implementer` `qa-acceptance-runner` `release-package-operator` | 提供工程目录、命名和测试底线 | 工程规范更新后，检查实现类与 QA 类 Skill 的输出格式和目录约定 |
+| `docs/30-api/openapi-draft.md` | 统一沉淀接口草案入口、样例收敛顺序和 OpenAPI 组织方式 | `requirement-package-builder` `backend-service-builder` `godot-gameplay-implementer` `content-review-gate` `qa-acceptance-runner` `release-package-operator` | 提供接口样例、审批/发布接口收敛和 OpenAPI 同步要求 | 接口路径、请求响应字段、权限或样例更新时，联动检查这些接口相关 Skill |
 
 ## Skill 逐项映射
 
@@ -159,6 +159,28 @@
   - 风险等级定义变化
   - 内容状态流变化
   - 审批接口或返回字段变化
+
+### `qa-acceptance-runner`
+
+- 主要上游：
+  - `docs/20-specs/agent-loop-spec.md`
+  - `docs/20-specs/engineering-conventions.md`
+- 次要上游：
+  - `docs/20-specs/backend-data-spec.md`
+  - `docs/20-specs/content-generation-spec.md`
+  - `docs/30-api/openapi-draft.md`
+- 作用：
+  - 围绕需求包和改动范围执行验收检查、回归脚本和门禁汇总，输出可交付证据与失败摘要
+- 依赖原因：
+  - `agent-loop-spec.md` 提供验收、门禁、修复计划和失败反馈闭环
+  - `engineering-conventions.md` 约束测试组织、协作方式和交付底线
+  - `backend-data-spec.md` 提供接口、任务链路和性能基线相关检查背景
+  - `content-generation-spec.md` 提供内容检查、生命周期和发布前置条件
+  - `openapi-draft.md` 提供接口契约样例和 OpenAPI 同步检查入口
+- 更新触发：
+  - 验收格式或门禁流程变化
+  - 测试组织和交付要求变化
+  - 接口样例、内容检查或回归基线变化
 
 ### `loop-gate-optimizer`
 
