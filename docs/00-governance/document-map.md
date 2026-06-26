@@ -90,9 +90,11 @@
 - `docs/00-governance/document-review-checklist.md`
   - 定义新增文档、重要修订和结构性变更的统一评审检查项
 - `docs/00-governance/document-template-alignment-checklist.md`
-  - 记录当前文档与模板规范的对齐进度和后续补齐顺序
+  - 记录当前文档与模板规范的对齐结果和后续增量复查状态
 - `docs/00-governance/document-template-spec.md`
   - 定义治理文档、规范文档和 API 文档的标准章节模板
+- `docs/00-governance/document-template-maintenance.md`
+  - 定义模板全量对齐完成后，后续新增和改写时的持续维护规则
 - `docs/00-governance/spec-skill-mapping.md`
   - 统一维护 `20-specs/` 与 `.trae/skills/` 的上游下游关系
 - `docs/00-governance/project-status.md`
@@ -108,9 +110,9 @@
 
 ## 后续动作建议
 
-1. 在 `README.md` 和 `docs/README.md` 中加入本文档入口。
-2. 在 `10-requirements/` 各文档顶部增加说明：如与 `20-specs/` 冲突，以 `20-specs/` 为准。
-3. 优先补接口样例、OpenAPI 草案和工程初始化说明，为工程实施做准备。
+1. 继续把模板对齐结果作为增量复查基线，避免后续新增文档重新出现结构缺口。
+2. 优先补接口样例、OpenAPI 草案和工程初始化说明，为工程实施做准备。
+3. 在后续新增、迁移或大幅改写时，同步执行模板维护检查和入口更新。
 
 ## 与其他文档的关系
 

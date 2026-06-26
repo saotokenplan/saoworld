@@ -23,7 +23,7 @@
 ## 目录结构
 
 - `00-governance/`
-  - 文档治理、项目状态、快速开始、目录规范、变更流程、生命周期、归属责任、评审清单、模板规范、模板对齐复查和 spec/skill 映射
+  - 文档治理、项目状态、快速开始、目录规范、变更流程、生命周期、归属责任、评审清单、模板规范、模板对齐复查、模板维护规则和 spec/skill 映射
   - 适合先看这组，理解文档体系本身怎么组织
 - `10-requirements/`
   - 需求背景、产品讨论、方案草案和立项上下文
@@ -48,25 +48,26 @@
 3. `00-governance/document-lifecycle.md`
 4. `00-governance/document-template-spec.md`
 5. `00-governance/document-template-alignment-checklist.md`
-6. `00-governance/document-ownership.md`
-7. `00-governance/document-review-checklist.md`
-8. `00-governance/document-map.md`
-9. `00-governance/project-status.md`
-10. `00-governance/quick-start.md`
-11. `30-api/api-overview.md`
-12. `30-api/api-permissions.md`
-13. `30-api/api-error-codes.md`
-14. `30-api/api-examples-vote.md`
-15. `00-governance/spec-skill-mapping.md`
-16. `10-requirements/open-world-ai-game-prd.md`
-17. `10-requirements/需求概述.md`
-18. `10-requirements/功能设计.md`
-19. `10-requirements/技术方案.md`
-20. `40-dev-loop/ai-coding-game-dev-loop-plan.md`
-21. `40-dev-loop/loop-engineering-plan.md`
-22. `50-research/stack-research-ai-game-dev.md`
-23. `50-research/service-stack-comparison.md`
-24. `20-specs/README.md`
+6. `00-governance/document-template-maintenance.md`
+7. `00-governance/document-ownership.md`
+8. `00-governance/document-review-checklist.md`
+9. `00-governance/document-map.md`
+10. `00-governance/project-status.md`
+11. `00-governance/quick-start.md`
+12. `30-api/api-overview.md`
+13. `30-api/api-permissions.md`
+14. `30-api/api-error-codes.md`
+15. `30-api/api-examples-vote.md`
+16. `00-governance/spec-skill-mapping.md`
+17. `10-requirements/open-world-ai-game-prd.md`
+18. `10-requirements/需求概述.md`
+19. `10-requirements/功能设计.md`
+20. `10-requirements/技术方案.md`
+21. `40-dev-loop/ai-coding-game-dev-loop-plan.md`
+22. `40-dev-loop/loop-engineering-plan.md`
+23. `50-research/stack-research-ai-game-dev.md`
+24. `50-research/service-stack-comparison.md`
+25. `20-specs/README.md`
 
 ## 使用原则
 
@@ -87,4 +88,6 @@
 - `00-governance/document-map.md`
   - 定义文档体系的权威关系、保留策略与整理判断。
 - `00-governance/document-template-alignment-checklist.md`
-  - 记录当前哪些文档已按模板对齐，哪些仍需补齐结构字段。
+  - 记录当前模板对齐结果和后续复查状态。
+- `00-governance/document-template-maintenance.md`
+  - 定义模板全量对齐完成后，后续新增和改写应如何持续保持结构一致。
