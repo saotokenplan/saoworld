@@ -179,17 +179,17 @@ AI 生成前必须载入世界骨架快照，至少包含：
 
 ## 质量评分规范
 
-每个生成对象在进入审核前都要先得到质量分。建议维度如下：
+每个生成对象在进入审核前都要先得到质量分。质量分采用 `0.0-1.0` 浮点比例（存储于 `generated_objects.quality_score REAL CHECK (quality_score >= 0 AND quality_score <= 1)`），下文同时给出百分制参考值便于阅读。
 
-| 维度 | 说明 | 分值范围 |
+| 维度 | 说明 | 分值范围（百分制参考） |
 |------|------|----------|
-| 结构完整度 | 必填字段是否齐全 | 0-100 |
-| 世界一致性 | 是否与阵营、区域、章节冲突 | 0-100 |
-| 数值合理性 | 强度、奖励、资源是否在边界内 | 0-100 |
-| 文本质量 | 是否通顺、是否过度重复 | 0-100 |
-| 差异性 | 与历史内容重复度是否过高 | 0-100 |
+| 结构完整度 | 必填字段是否齐全 | 0.0-1.0（0-100） |
+| 世界一致性 | 是否与阵营、区域、章节冲突 | 0.0-1.0（0-100） |
+| 数值合理性 | 强度、奖励、资源是否在边界内 | 0.0-1.0（0-100） |
+| 文本质量 | 是否通顺、是否过度重复 | 0.0-1.0（0-100） |
+| 差异性 | 与历史内容重复度是否过高 | 0.0-1.0（0-100） |
 
-总分低于 `75` 的内容不得进入投放打包。
+总分低于 `0.75`（百分制 75 分）的内容不得进入投放打包。
 
 ## 审核规则规范
 
@@ -221,19 +221,35 @@ AI 生成前必须载入世界骨架快照，至少包含：
 
 ## 内容生命周期
 
-每个内容对象都要遵循以下状态：
+每个内容对象从生成到上线要经历跨两张表的状态迁移。概念流程如下：
 
-`draft -> validated -> reviewed -> packaged -> gray -> live -> archived`
+```
+（generated_objects 表）              （content_packages 表）
+draft → validated → reviewed → packaged → gray → live → archived
+                                       ↓
+                                    rolled_back
+```
 
-### 状态说明
+### 状态与数据库映射
 
-- `draft`：模型刚生成
-- `validated`：通过结构化校验
-- `reviewed`：通过自动审核和人工复核
-- `packaged`：已打入内容包
-- `gray`：灰度上线
-- `live`：正式生效
-- `archived`：下线归档
+| 概念状态 | 数据库表 | 字段值 | 说明 |
+|---|---|---|---|
+| `draft` | `generated_objects` | `pending_review` | 模型刚生成，待结构化校验 |
+| `validated` | `generated_objects` | `pending_review` | 通过结构化校验，待自动/人工审核（逻辑状态，DB 中与 draft 同值，可通过 `quality_score` 区分） |
+| `reviewed` | `generated_objects` | `approved` | 通过自动审核和人工复核 |
+| `rejected` | `generated_objects` | `rejected` | 审核不通过，终止流程 |
+| `needs_revision` | `generated_objects` | `needs_revision` | 需要修改后重新提交 |
+| `packaged` | `content_packages` | `packaged` | 已打入内容包，待发布 |
+| `gray` | `content_packages` | `gray` | 灰度上线 |
+| `live` | `content_packages` | `live` | 正式生效 |
+| `archived` | `content_packages` | `archived` | 下线归档 |
+| `rolled_back` | `content_packages` | `rolled_back` | 已回滚（终态，不可再迁移） |
+
+### 状态迁移约束
+
+- `generated_objects` 从 `pending_review` 只能迁移到 `approved`、`rejected` 或 `needs_revision`
+- `content_packages` 状态机详见 `docs/20-specs/backend-data-spec.md` 中的状态机约束章节
+- 从 `reviewed`（approved）到 `packaged` 的转换由打包流程触发，不是审核流程直接修改
 
 ## 回滚规范
 
@@ -246,7 +262,7 @@ AI 生成前必须载入世界骨架快照，至少包含：
 
 以下情况必须触发人工复核：
 
-- 质量总分处于 `75-85`
+- 质量总分处于 `0.75-0.85`（百分制 75-85 分）的临界区间
 - 命中高风险主题词
 - 新模板首次上线
 - 奖励或剧情影响接近边界阈值
