@@ -1,5 +1,9 @@
 # Loop Engineering Issue 模板
 
+> 文档状态：active
+> 适用阶段：当前
+> 维护要求：持续维护
+
 这份文件提供两类 Issue 模板：
 
 1. `Gate Improvement Issue`：二层 Loop 的输出（提升门禁质量）

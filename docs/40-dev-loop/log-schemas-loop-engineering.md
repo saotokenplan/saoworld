@@ -1,5 +1,9 @@
 # Loop Engineering 日志采集 Schema（JSONL）
 
+> 文档状态：active
+> 适用阶段：当前
+> 维护要求：持续维护
+
 目标：把“AI 执行过程”压缩成可被二层/三层 Loop 自动消费的结构化信号。建议所有日志都采用 **JSON Lines**（一行一个 JSON）。
 
 ---
