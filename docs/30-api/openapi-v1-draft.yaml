@@ -30,6 +30,9 @@ paths:
       tags: [votes]
       summary: 获取当前投票周期和候选项
       operationId: getCurrentVoteCycle
+      security:
+        - bearerAuth: [votes:read]
+      x-roles: [player, system]
       responses:
         '200':
           description: 返回当前投票周期、候选项和玩家上下文
@@ -68,6 +71,9 @@ paths:
       tags: [votes]
       summary: 提交玩家投票
       operationId: submitVote
+      security:
+        - bearerAuth: [votes:submit]
+      x-roles: [player]
       parameters:
         - $ref: '#/components/parameters/IdempotencyKeyHeader'
         - $ref: '#/components/parameters/TraceIdHeader'
@@ -112,6 +118,9 @@ paths:
       tags: [votes]
       summary: 获取历史投票结果与落地情况
       operationId: getVoteHistory
+      security:
+        - bearerAuth: [votes:history:read]
+      x-roles: [player, ops]
       parameters:
         - $ref: '#/components/parameters/ChapterId'
         - $ref: '#/components/parameters/RegionIdFilter'
@@ -141,8 +150,11 @@ paths:
       summary: 获取当前玩家可见的新内容包
       operationId: getContentUpdates
       security:
-        - bearerAuth: []
-      x-required-scopes: [content:read]
+        - bearerAuth: [content:read]
+      x-roles: [player, system]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
       responses:
         '200':
           description: 返回当前玩家可见的内容更新列表
@@ -158,8 +170,28 @@ paths:
                   $ref: '#/components/examples/ContentUpdatesSuccess'
                 empty:
                   $ref: '#/components/examples/ContentUpdatesEmptySuccess'
+                pageBoundary:
+                  $ref: '#/components/examples/ContentUpdatesPageBoundarySuccess'
+        '400':
+          description: 分页参数不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidPagination:
+                  $ref: '#/components/examples/InvalidPaginationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 当前访问令牌缺少内容查询作用域
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                insufficientScope:
+                  $ref: '#/components/examples/InsufficientScopeError'
         '503':
           description: 内容更新服务暂不可用
           content:
@@ -175,8 +207,8 @@ paths:
       summary: 获取内容包摘要
       operationId: getContentPackage
       security:
-        - bearerAuth: []
-      x-required-scopes: [content:read]
+        - bearerAuth: [content:read]
+      x-roles: [player, ops]
       parameters:
         - $ref: '#/components/parameters/ContentPackageId'
       responses:
@@ -192,6 +224,15 @@ paths:
               examples:
                 success:
                   $ref: '#/components/examples/ContentPackageSuccess'
+        '400':
+          description: 内容包 ID 格式不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidContentPackageId:
+                  $ref: '#/components/examples/InvalidContentPackageIdError'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -218,10 +259,11 @@ paths:
       summary: 发布内容包
       operationId: releaseContentPackage
       security:
-        - bearerAuth: []
-      x-required-scopes: [content:release]
+        - bearerAuth: [content:release]
+      x-roles: [ops]
       parameters:
         - $ref: '#/components/parameters/OpsContentPackageId'
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
         - $ref: '#/components/parameters/TraceIdHeader'
       requestBody:
         required: true
@@ -247,6 +289,8 @@ paths:
               examples:
                 grayAccepted:
                   $ref: '#/components/examples/ReleaseContentPackageResponseGray'
+                idempotentReplay:
+                  $ref: '#/components/examples/ReleaseContentPackageResponseIdempotentReplay'
         '400':
           description: 发布请求参数不合法
           content:
@@ -256,6 +300,8 @@ paths:
               examples:
                 reasonRequired:
                   $ref: '#/components/examples/ReasonRequiredError'
+                invalidGrayScope:
+                  $ref: '#/components/examples/InvalidGrayScopeError'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -268,7 +314,14 @@ paths:
                 releaseForbidden:
                   $ref: '#/components/examples/ContentReleaseForbiddenError'
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: 内容包不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                packageNotFound:
+                  $ref: '#/components/examples/ContentPackageNotFoundError'
         '409':
           description: 内容包状态与发布操作冲突
           content:
@@ -288,10 +341,11 @@ paths:
       summary: 回滚内容包
       operationId: rollbackContentPackage
       security:
-        - bearerAuth: []
-      x-required-scopes: [content:rollback]
+        - bearerAuth: [content:rollback]
+      x-roles: [ops]
       parameters:
         - $ref: '#/components/parameters/OpsContentPackageId'
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
         - $ref: '#/components/parameters/TraceIdHeader'
       requestBody:
         required: true
@@ -317,6 +371,8 @@ paths:
               examples:
                 queued:
                   $ref: '#/components/examples/RollbackContentPackageResponse'
+                idempotentReplay:
+                  $ref: '#/components/examples/RollbackContentPackageResponseIdempotentReplay'
         '400':
           description: 回滚请求参数不合法
           content:
@@ -340,7 +396,14 @@ paths:
                 rollbackForbidden:
                   $ref: '#/components/examples/ContentRollbackForbiddenError'
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: 内容包不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                packageNotFound:
+                  $ref: '#/components/examples/ContentPackageNotFoundError'
         '409':
           description: 内容包状态与回滚操作冲突
           content:
@@ -358,8 +421,11 @@ paths:
       summary: 获取当前可见区域列表
       operationId: getVisibleRegions
       security:
-        - bearerAuth: []
-      x-required-scopes: [world:read]
+        - bearerAuth: [world:read]
+      x-roles: [player, system]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
       responses:
         '200':
           description: 返回当前玩家可见区域列表
@@ -375,16 +441,36 @@ paths:
                   $ref: '#/components/examples/RegionListSuccess'
                 empty:
                   $ref: '#/components/examples/RegionListEmptySuccess'
+                pageBoundary:
+                  $ref: '#/components/examples/RegionListPageBoundarySuccess'
+        '400':
+          description: 分页参数不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidPagination:
+                  $ref: '#/components/examples/InvalidPaginationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 当前访问令牌缺少世界查询作用域
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                insufficientScope:
+                  $ref: '#/components/examples/InsufficientScopeError'
   /api/v1/world/regions/{region_id}:
     get:
       tags: [world]
       summary: 获取区域详情和状态
       operationId: getRegionDetail
       security:
-        - bearerAuth: []
-      x-required-scopes: [world:read]
+        - bearerAuth: [world:read]
+      x-roles: [player, system]
       parameters:
         - $ref: '#/components/parameters/RegionId'
       responses:
@@ -400,6 +486,15 @@ paths:
               examples:
                 success:
                   $ref: '#/components/examples/RegionDetailSuccess'
+        '400':
+          description: 区域 ID 格式不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidRegionId:
+                  $ref: '#/components/examples/InvalidRegionIdError'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -426,8 +521,11 @@ paths:
       summary: 获取玩家任务列表
       operationId: getQuestList
       security:
-        - bearerAuth: []
-      x-required-scopes: [quests:read]
+        - bearerAuth: [quests:read]
+      x-roles: [player, system]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
       responses:
         '200':
           description: 返回玩家任务列表
@@ -443,8 +541,28 @@ paths:
                   $ref: '#/components/examples/QuestListSuccess'
                 empty:
                   $ref: '#/components/examples/QuestListEmptySuccess'
+                pageBoundary:
+                  $ref: '#/components/examples/QuestListPageBoundarySuccess'
+        '400':
+          description: 分页参数不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidPagination:
+                  $ref: '#/components/examples/InvalidPaginationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 当前访问令牌缺少任务查询作用域
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                insufficientScope:
+                  $ref: '#/components/examples/InsufficientScopeError'
         '503':
           description: 任务列表服务暂不可用
           content:
@@ -460,9 +578,10 @@ paths:
       summary: 创建投票周期
       operationId: createVoteCycle
       security:
-        - bearerAuth: []
-      x-required-scopes: [ops:vote-cycles:write]
+        - bearerAuth: [ops:vote-cycles:write]
+      x-roles: [ops]
       parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
         - $ref: '#/components/parameters/TraceIdHeader'
       requestBody:
         required: true
@@ -488,6 +607,8 @@ paths:
               examples:
                 success:
                   $ref: '#/components/examples/CreateVoteCycleResponse'
+                idempotentReplay:
+                  $ref: '#/components/examples/CreateVoteCycleIdempotentReplay'
         '400':
           description: 创建投票周期请求参数不合法
           content:
@@ -497,10 +618,19 @@ paths:
               examples:
                 reasonRequired:
                   $ref: '#/components/examples/ReasonRequiredError'
+                invalidRequest:
+                  $ref: '#/components/examples/CreateVoteCycleInvalidArgumentError'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          description: 当前角色无创建投票周期权限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                insufficientScope:
+                  $ref: '#/components/examples/InsufficientScopeError'
         '409':
           description: 投票周期创建发生冲突
           content:
@@ -516,10 +646,11 @@ paths:
       summary: 批准内容对象
       operationId: approveReviewObject
       security:
-        - bearerAuth: []
-      x-required-scopes: [review:approve]
+        - bearerAuth: [review:approve]
+      x-roles: [reviewer, ops]
       parameters:
         - $ref: '#/components/parameters/ReviewObjectId'
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
         - $ref: '#/components/parameters/TraceIdHeader'
       requestBody:
         required: true
@@ -545,6 +676,8 @@ paths:
               examples:
                 success:
                   $ref: '#/components/examples/ReviewApproveResponse'
+                idempotentReplay:
+                  $ref: '#/components/examples/ReviewApproveIdempotentReplay'
         '400':
           description: 审核批准请求参数不合法
           content:
@@ -554,6 +687,8 @@ paths:
               examples:
                 reasonRequired:
                   $ref: '#/components/examples/ReasonRequiredError'
+                invalidRequest:
+                  $ref: '#/components/examples/ReviewApproveInvalidArgumentError'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -586,12 +721,22 @@ paths:
 components:
   securitySchemes:
     bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+      type: openIdConnect
+      openIdConnectUrl: https://auth.example.com/.well-known/openid-configuration
       description: >
-        Bearer Token 中应包含角色与作用域声明；具体接口所需作用域通过
-        x-required-scopes 标注。
+        Bearer Token 采用 OIDC Access Token 语义；各接口通过 security 显式声明
+        所需 scope，并通过 x-roles 标注允许角色集合。
+      x-scopes:
+        votes:read: 查询当前投票周期与候选项
+        votes:submit: 提交玩家投票
+        votes:history:read: 查询历史投票结果
+        content:read: 查询内容更新与内容包摘要
+        content:release: 发布内容包
+        content:rollback: 回滚内容包
+        world:read: 查询世界区域
+        quests:read: 查询玩家任务列表
+        ops:vote-cycles:write: 创建投票周期
+        review:approve: 批准审核对象
   headers:
     X-Request-Id:
       description: 服务端生成的请求追踪 ID
@@ -619,6 +764,7 @@ components:
       required: true
       schema:
         type: string
+        pattern: '^pkg_[A-Za-z0-9_]+$'
       description: 内容包 ID
     RegionId:
       name: region_id
@@ -626,6 +772,7 @@ components:
       required: true
       schema:
         type: string
+        pattern: '^region_[A-Za-z0-9_]+$'
       description: 区域 ID
     ReviewObjectId:
       name: object_id
@@ -633,6 +780,7 @@ components:
       required: true
       schema:
         type: string
+        pattern: '^object_[A-Za-z0-9_]+$'
       description: 审核对象 ID
     IdempotencyKeyHeader:
       name: Idempotency-Key
@@ -640,6 +788,7 @@ components:
       required: true
       schema:
         type: string
+        minLength: 8
       description: 幂等键，同一业务请求重试时必须保持一致
     TraceIdHeader:
       name: X-Trace-Id
@@ -654,6 +803,7 @@ components:
       required: true
       schema:
         type: string
+        pattern: '^pkg_[A-Za-z0-9_]+$'
       description: 运营接口中的内容包 ID
     RegionIdFilter:
       name: region_id
@@ -677,6 +827,7 @@ components:
         type: integer
         minimum: 1
         default: 1
+      description: 页码，从 1 开始
     PageSize:
       name: page_size
       in: query
@@ -686,6 +837,7 @@ components:
         minimum: 1
         maximum: 100
         default: 20
+      description: 分页大小，取值范围 1-100
   responses:
     BadRequest:
       description: 请求参数或请求体不合法
@@ -860,8 +1012,16 @@ components:
             published_at: '2026-06-29T10:00:00Z'
             affected_regions: [region_ruins_02]
             gray_visible: true
+            created_at: '2026-06-28T18:00:00Z'
+            updated_at: '2026-06-29T10:00:00Z'
+            created_by: system_content_pipeline
+            updated_by: ops_001
         meta:
+          resource_type: content_package
+          page: 1
+          page_size: 20
           total: 1
+          returned: 1
           has_more: false
     ContentUpdatesEmptySuccess:
       summary: 内容更新列表为空
@@ -869,7 +1029,23 @@ components:
         request_id: req_content_updates_002
         data: []
         meta:
+          resource_type: content_package
+          page: 1
+          page_size: 20
           total: 0
+          returned: 0
+          has_more: false
+    ContentUpdatesPageBoundarySuccess:
+      summary: 分页越界时返回空列表
+      value:
+        request_id: req_content_updates_003
+        data: []
+        meta:
+          resource_type: content_package
+          page: 3
+          page_size: 20
+          total: 1
+          returned: 0
           has_more: false
     ContentUpdatesUnavailableError:
       summary: 内容更新列表暂不可用
@@ -877,6 +1053,28 @@ components:
         code: CONTENT_UPDATES_UNAVAILABLE
         message: 内容更新列表暂不可用
         request_id: req_content_updates_503
+    InvalidPaginationError:
+      summary: 分页参数超出边界
+      value:
+        code: INVALID_ARGUMENT
+        message: 分页参数不合法
+        request_id: req_pagination_400
+        details:
+          - location: query
+            field: page_size
+            issue: must_be_between_1_and_100
+            rejected_value: '0'
+    InsufficientScopeError:
+      summary: 当前访问令牌缺少所需作用域
+      value:
+        code: INSUFFICIENT_SCOPE
+        message: 当前访问令牌缺少所需作用域
+        request_id: req_scope_403
+        details:
+          - location: header
+            field: Authorization
+            issue: missing_required_scope
+            rejected_value: <required-scope>
     ContentPackageSuccess:
       summary: 内容包摘要查询成功
       value:
@@ -891,12 +1089,29 @@ components:
           gray_scope:
             region_ids: [region_ruins_02]
             player_percent: 10
+          created_at: '2026-06-28T18:00:00Z'
+          updated_at: '2026-06-29T10:00:00Z'
+          created_by: system_content_pipeline
+          updated_by: ops_001
+        meta:
+          resource_type: content_package
     ContentPackageNotFoundError:
       summary: 内容包不存在
       value:
         code: CONTENT_PACKAGE_NOT_FOUND
         message: 内容包不存在
         request_id: req_content_package_404
+    InvalidContentPackageIdError:
+      summary: 内容包 ID 格式非法
+      value:
+        code: INVALID_ARGUMENT
+        message: 内容包 ID 格式不合法
+        request_id: req_content_package_id_400
+        details:
+          - location: path
+            field: content_package_id
+            issue: pattern_mismatch
+            rejected_value: package-001
     ContentPackageNotVisibleError:
       summary: 内容包不可见
       value:
@@ -920,6 +1135,36 @@ components:
           status: gray
           release_mode: gray
           released_at: '2026-06-29T10:05:00Z'
+        meta:
+          resource_type: content_package_release
+          idempotent_replay: false
+          accepted_at: '2026-06-29T10:05:00Z'
+          audit_record_id: audit_release_001
+        audit:
+          audit_record_id: audit_release_001
+          operator_id: ops_001
+          operator_role: ops
+          action: content_package.release
+          target_id: pkg_chapter_02_ruins_20260629_01
+          reason: 首轮灰度发布
+          result: accepted
+          occurred_at: '2026-06-29T10:05:00Z'
+          trace_id: trace_release_001
+    ReleaseContentPackageResponseIdempotentReplay:
+      summary: 重复提交相同发布请求时命中幂等重放
+      value:
+        request_id: req_release_002
+        trace_id: trace_release_001
+        data:
+          content_package_id: pkg_chapter_02_ruins_20260629_01
+          status: gray
+          release_mode: gray
+          released_at: '2026-06-29T10:05:00Z'
+        meta:
+          resource_type: content_package_release
+          idempotent_replay: true
+          accepted_at: '2026-06-29T10:05:00Z'
+          audit_record_id: audit_release_001
         audit:
           audit_record_id: audit_release_001
           operator_id: ops_001
@@ -936,6 +1181,21 @@ components:
         code: REASON_REQUIRED
         message: 敏感操作缺少原因字段
         request_id: req_reason_required_400
+        details:
+          - location: body
+            field: reason
+            issue: required
+    InvalidGrayScopeError:
+      summary: 灰度范围参数非法
+      value:
+        code: INVALID_ARGUMENT
+        message: 灰度范围参数不合法
+        request_id: req_release_gray_scope_400
+        details:
+          - location: body
+            field: gray_scope.player_percent
+            issue: must_be_between_1_and_100
+            rejected_value: '0'
     ContentReleaseForbiddenError:
       summary: 无内容发布权限
       value:
@@ -982,6 +1242,37 @@ components:
           target_version: v2026.06.28
           status: queued
           rolled_back_at: '2026-06-29T11:30:00Z'
+        meta:
+          resource_type: content_package_rollback
+          idempotent_replay: false
+          accepted_at: '2026-06-29T11:30:00Z'
+          audit_record_id: audit_rollback_001
+        audit:
+          audit_record_id: audit_rollback_001
+          operator_id: ops_001
+          operator_role: ops
+          action: content_package.rollback
+          target_id: pkg_chapter_02_ruins_20260629_01
+          reason: 灰度后出现区域任务异常，回滚到上一个稳定版本
+          result: queued
+          occurred_at: '2026-06-29T11:30:00Z'
+          trace_id: trace_rollback_001
+    RollbackContentPackageResponseIdempotentReplay:
+      summary: 重复提交相同回滚请求时命中幂等重放
+      value:
+        request_id: req_rollback_002
+        trace_id: trace_rollback_001
+        data:
+          rollback_id: rollback_001
+          content_package_id: pkg_chapter_02_ruins_20260629_01
+          target_version: v2026.06.28
+          status: queued
+          rolled_back_at: '2026-06-29T11:30:00Z'
+        meta:
+          resource_type: content_package_rollback
+          idempotent_replay: true
+          accepted_at: '2026-06-29T11:30:00Z'
+          audit_record_id: audit_rollback_001
         audit:
           audit_record_id: audit_rollback_001
           operator_id: ops_001
@@ -1015,14 +1306,26 @@ components:
             summary: 玩家已解锁的荒原外围区域。
             status: active
             visible: true
+            created_at: '2026-06-20T08:00:00Z'
+            updated_at: '2026-06-26T08:00:00Z'
+            created_by: system_world_seed
+            updated_by: system_world_projection
           - region_id: region_ruins_02
             chapter_id: chapter_02
             title: 遗迹深处
             summary: 当前章节主线推进后的新探索区域。
             status: unstable
             visible: true
+            created_at: '2026-06-21T08:00:00Z'
+            updated_at: '2026-06-29T09:00:00Z'
+            created_by: system_world_seed
+            updated_by: ops_001
         meta:
+          resource_type: region
+          page: 1
+          page_size: 20
           total: 2
+          returned: 2
           has_more: false
     RegionListEmptySuccess:
       summary: 当前无可见区域
@@ -1030,7 +1333,23 @@ components:
         request_id: req_region_list_002
         data: []
         meta:
+          resource_type: region
+          page: 1
+          page_size: 20
           total: 0
+          returned: 0
+          has_more: false
+    RegionListPageBoundarySuccess:
+      summary: 请求超出最后一页时返回空列表
+      value:
+        request_id: req_region_list_003
+        data: []
+        meta:
+          resource_type: region
+          page: 4
+          page_size: 20
+          total: 2
+          returned: 0
           has_more: false
     RegionDetailSuccess:
       summary: 区域详情查询成功
@@ -1043,12 +1362,29 @@ components:
           summary: 遗迹能量波动导致区域状态不稳定。
           status: unstable
           visible: true
+          created_at: '2026-06-21T08:00:00Z'
+          updated_at: '2026-06-29T09:00:00Z'
+          created_by: system_world_seed
+          updated_by: ops_001
+        meta:
+          resource_type: region
     RegionNotFoundError:
       summary: 区域不存在
       value:
         code: REGION_NOT_FOUND
         message: 区域不存在
         request_id: req_region_404
+    InvalidRegionIdError:
+      summary: 区域 ID 格式非法
+      value:
+        code: INVALID_ARGUMENT
+        message: 区域 ID 格式不合法
+        request_id: req_region_id_400
+        details:
+          - location: path
+            field: region_id
+            issue: pattern_mismatch
+            rejected_value: ruins-02
     RegionNotVisibleError:
       summary: 区域当前不可见
       value:
@@ -1066,8 +1402,16 @@ components:
             title: 调查遗迹异变
             summary: 进入遗迹深处并完成三处异常点扫描。
             status: active
+            created_at: '2026-06-29T09:05:00Z'
+            updated_at: '2026-06-29T10:00:00Z'
+            created_by: system_quest_projection
+            updated_by: system_quest_projection
         meta:
+          resource_type: quest
+          page: 1
+          page_size: 20
           total: 1
+          returned: 1
           has_more: false
     QuestListEmptySuccess:
       summary: 当前无可见任务
@@ -1075,7 +1419,23 @@ components:
         request_id: req_quest_list_002
         data: []
         meta:
+          resource_type: quest
+          page: 1
+          page_size: 20
           total: 0
+          returned: 0
+          has_more: false
+    QuestListPageBoundarySuccess:
+      summary: 请求超出最后一页时返回空列表
+      value:
+        request_id: req_quest_list_003
+        data: []
+        meta:
+          resource_type: quest
+          page: 2
+          page_size: 20
+          total: 1
+          returned: 0
           has_more: false
     QuestListUnavailableError:
       summary: 任务列表暂不可用
@@ -1099,6 +1459,11 @@ components:
         data:
           vote_cycle_id: cycle_202607
           status: scheduled
+        meta:
+          resource_type: vote_cycle
+          idempotent_replay: false
+          accepted_at: '2026-06-30T08:00:00Z'
+          audit_record_id: audit_vote_cycle_001
         audit:
           audit_record_id: audit_vote_cycle_001
           operator_id: ops_001
@@ -1109,6 +1474,40 @@ components:
           result: created
           occurred_at: '2026-06-30T08:00:00Z'
           trace_id: trace_vote_cycle_001
+    CreateVoteCycleIdempotentReplay:
+      summary: 重复提交相同创建请求时命中幂等重放
+      value:
+        request_id: req_ops_vote_cycle_002
+        trace_id: trace_vote_cycle_001
+        data:
+          vote_cycle_id: cycle_202607
+          status: scheduled
+        meta:
+          resource_type: vote_cycle
+          idempotent_replay: true
+          accepted_at: '2026-06-30T08:00:00Z'
+          audit_record_id: audit_vote_cycle_001
+        audit:
+          audit_record_id: audit_vote_cycle_001
+          operator_id: ops_001
+          operator_role: ops
+          action: vote_cycle.create
+          target_id: cycle_202607
+          reason: 第三章主线剧情投票创建
+          result: created
+          occurred_at: '2026-06-30T08:00:00Z'
+          trace_id: trace_vote_cycle_001
+    CreateVoteCycleInvalidArgumentError:
+      summary: 投票周期请求体非法
+      value:
+        code: INVALID_ARGUMENT
+        message: 投票周期请求体不合法
+        request_id: req_vote_cycle_400
+        details:
+          - location: body
+            field: candidate_ids
+            issue: min_items_2
+            rejected_value: '[candidate_101]'
     VoteCycleConflictError:
       summary: 投票周期创建冲突
       value:
@@ -1130,6 +1529,11 @@ components:
           object_id: object_story_001
           review_result: approved
           reviewed_at: '2026-06-29T09:30:00Z'
+        meta:
+          resource_type: review
+          idempotent_replay: false
+          accepted_at: '2026-06-29T09:30:00Z'
+          audit_record_id: audit_review_001
         audit:
           audit_record_id: audit_review_001
           operator_id: reviewer_001
@@ -1140,6 +1544,42 @@ components:
           result: approved
           occurred_at: '2026-06-29T09:30:00Z'
           trace_id: trace_review_001
+    ReviewApproveIdempotentReplay:
+      summary: 重复提交相同审核批准请求时命中幂等重放
+      value:
+        request_id: req_review_approve_002
+        trace_id: trace_review_001
+        data:
+          review_id: review_001
+          object_id: object_story_001
+          review_result: approved
+          reviewed_at: '2026-06-29T09:30:00Z'
+        meta:
+          resource_type: review
+          idempotent_replay: true
+          accepted_at: '2026-06-29T09:30:00Z'
+          audit_record_id: audit_review_001
+        audit:
+          audit_record_id: audit_review_001
+          operator_id: reviewer_001
+          operator_role: reviewer
+          action: review.approve
+          target_id: object_story_001
+          reason: 结构化审核通过，允许进入打包阶段
+          result: approved
+          occurred_at: '2026-06-29T09:30:00Z'
+          trace_id: trace_review_001
+    ReviewApproveInvalidArgumentError:
+      summary: 审核批准请求体非法
+      value:
+        code: INVALID_ARGUMENT
+        message: 审核批准请求体不合法
+        request_id: req_review_approve_400
+        details:
+          - location: body
+            field: review_result
+            issue: unsupported_enum
+            rejected_value: approved_now
     ReviewObjectNotFoundError:
       summary: 审核对象不存在
       value:
@@ -1172,6 +1612,23 @@ components:
         request_id:
           type: string
           example: req_vote_current_409
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorDetail'
+    ErrorDetail:
+      type: object
+      required: [location, field, issue]
+      properties:
+        location:
+          type: string
+          enum: [query, path, header, body]
+        field:
+          type: string
+        issue:
+          type: string
+        rejected_value:
+          type: string
     VoteCycle:
       type: object
       required: [vote_cycle_id, chapter_id, status, starts_at, ends_at]
@@ -1333,24 +1790,26 @@ components:
           items:
             $ref: '#/components/schemas/VoteHistoryItem'
     ContentUpdateItem:
-      type: object
-      required: [content_package_id, published_at, affected_regions, gray_visible]
-      properties:
-        content_package_id:
-          type: string
-        title:
-          type: string
-        summary:
-          type: string
-        published_at:
-          type: string
-          format: date-time
-        affected_regions:
-          type: array
-          items:
-            type: string
-        gray_visible:
-          type: boolean
+      allOf:
+        - $ref: '#/components/schemas/ResourceAuditFields'
+        - type: object
+          required: [content_package_id, published_at, affected_regions, gray_visible]
+          properties:
+            content_package_id:
+              type: string
+            title:
+              type: string
+            summary:
+              type: string
+            published_at:
+              type: string
+              format: date-time
+            affected_regions:
+              type: array
+              items:
+                type: string
+            gray_visible:
+              type: boolean
     ContentUpdatesResponse:
       type: object
       required: [request_id, data, meta]
@@ -1364,44 +1823,92 @@ components:
         meta:
           $ref: '#/components/schemas/ListMeta'
     ContentPackageSummary:
-      type: object
-      required: [content_package_id, status, published_at, affected_regions]
-      properties:
-        content_package_id:
-          type: string
-        title:
-          type: string
-        summary:
-          type: string
-        status:
-          type: string
-          enum: [packaged, gray, live, archived, rolled_back]
-        published_at:
-          type: string
-          format: date-time
-        affected_regions:
-          type: array
-          items:
-            type: string
-        gray_scope:
-          $ref: '#/components/schemas/GrayScope'
+      allOf:
+        - $ref: '#/components/schemas/ResourceAuditFields'
+        - type: object
+          required: [content_package_id, status, published_at, affected_regions]
+          properties:
+            content_package_id:
+              type: string
+            title:
+              type: string
+            summary:
+              type: string
+            status:
+              type: string
+              enum: [packaged, gray, live, archived, rolled_back]
+            published_at:
+              type: string
+              format: date-time
+            affected_regions:
+              type: array
+              items:
+                type: string
+            gray_scope:
+              $ref: '#/components/schemas/GrayScope'
     ContentPackageResponse:
       type: object
-      required: [request_id, data]
+      required: [request_id, data, meta]
       properties:
         request_id:
           type: string
         data:
           $ref: '#/components/schemas/ContentPackageSummary'
+        meta:
+          $ref: '#/components/schemas/DetailMeta'
     ListMeta:
       type: object
-      required: [total, has_more]
+      required: [resource_type, page, page_size, total, returned, has_more]
       properties:
+        resource_type:
+          type: string
         total:
+          type: integer
+          minimum: 0
+        page:
+          type: integer
+          minimum: 1
+        page_size:
+          type: integer
+          minimum: 1
+        returned:
           type: integer
           minimum: 0
         has_more:
           type: boolean
+    DetailMeta:
+      type: object
+      required: [resource_type]
+      properties:
+        resource_type:
+          type: string
+    ResourceAuditFields:
+      type: object
+      required: [created_at, updated_at, created_by, updated_by]
+      properties:
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+        updated_by:
+          type: string
+    OperationMeta:
+      type: object
+      required: [resource_type, idempotent_replay, accepted_at]
+      properties:
+        resource_type:
+          type: string
+        idempotent_replay:
+          type: boolean
+        accepted_at:
+          type: string
+          format: date-time
+        audit_record_id:
+          type: string
     AuditInfo:
       type: object
       required:
@@ -1432,11 +1939,12 @@ components:
       properties:
         region_ids:
           type: array
+          minItems: 1
           items:
             type: string
         player_percent:
           type: integer
-          minimum: 0
+          minimum: 1
           maximum: 100
     ReleaseContentPackageRequest:
       type: object
@@ -1464,7 +1972,7 @@ components:
           format: date-time
     ReleaseContentPackageResponse:
       type: object
-      required: [request_id, trace_id, data, audit]
+      required: [request_id, trace_id, data, meta, audit]
       properties:
         request_id:
           type: string
@@ -1472,6 +1980,8 @@ components:
           type: string
         data:
           $ref: '#/components/schemas/ReleaseContentPackageResult'
+        meta:
+          $ref: '#/components/schemas/OperationMeta'
         audit:
           $ref: '#/components/schemas/AuditInfo'
     RollbackContentPackageRequest:
@@ -1501,7 +2011,7 @@ components:
           format: date-time
     RollbackContentPackageResponse:
       type: object
-      required: [request_id, trace_id, data, audit]
+      required: [request_id, trace_id, data, meta, audit]
       properties:
         request_id:
           type: string
@@ -1509,25 +2019,29 @@ components:
           type: string
         data:
           $ref: '#/components/schemas/RollbackContentPackageResult'
+        meta:
+          $ref: '#/components/schemas/OperationMeta'
         audit:
           $ref: '#/components/schemas/AuditInfo'
     RegionSummary:
-      type: object
-      required: [region_id, chapter_id, title, status, visible]
-      properties:
-        region_id:
-          type: string
-        chapter_id:
-          type: string
-        title:
-          type: string
-        summary:
-          type: string
-        status:
-          type: string
-          enum: [locked, active, unstable, archived]
-        visible:
-          type: boolean
+      allOf:
+        - $ref: '#/components/schemas/ResourceAuditFields'
+        - type: object
+          required: [region_id, chapter_id, title, status, visible]
+          properties:
+            region_id:
+              type: string
+            chapter_id:
+              type: string
+            title:
+              type: string
+            summary:
+              type: string
+            status:
+              type: string
+              enum: [locked, active, unstable, archived]
+            visible:
+              type: boolean
     RegionListResponse:
       type: object
       required: [request_id, data, meta]
@@ -1542,29 +2056,33 @@ components:
           $ref: '#/components/schemas/ListMeta'
     RegionDetailResponse:
       type: object
-      required: [request_id, data]
+      required: [request_id, data, meta]
       properties:
         request_id:
           type: string
         data:
           $ref: '#/components/schemas/RegionSummary'
+        meta:
+          $ref: '#/components/schemas/DetailMeta'
     QuestItem:
-      type: object
-      required: [quest_id, chapter_id, active_region_id, title, status]
-      properties:
-        quest_id:
-          type: string
-        chapter_id:
-          type: string
-        active_region_id:
-          type: string
-        title:
-          type: string
-        summary:
-          type: string
-        status:
-          type: string
-          enum: [available, active, completed, failed]
+      allOf:
+        - $ref: '#/components/schemas/ResourceAuditFields'
+        - type: object
+          required: [quest_id, chapter_id, active_region_id, title, status]
+          properties:
+            quest_id:
+              type: string
+            chapter_id:
+              type: string
+            active_region_id:
+              type: string
+            title:
+              type: string
+            summary:
+              type: string
+            status:
+              type: string
+              enum: [available, active, completed, failed]
     QuestListResponse:
       type: object
       required: [request_id, data, meta]
@@ -1591,7 +2109,7 @@ components:
           format: date-time
         candidate_ids:
           type: array
-          minItems: 1
+          minItems: 2
           items:
             type: string
         reason:
@@ -1608,7 +2126,7 @@ components:
           enum: [draft, scheduled, open]
     CreateVoteCycleResponse:
       type: object
-      required: [request_id, trace_id, data, audit]
+      required: [request_id, trace_id, data, meta, audit]
       properties:
         request_id:
           type: string
@@ -1616,6 +2134,8 @@ components:
           type: string
         data:
           $ref: '#/components/schemas/CreateVoteCycleResult'
+        meta:
+          $ref: '#/components/schemas/OperationMeta'
         audit:
           $ref: '#/components/schemas/AuditInfo'
     ReviewApproveRequest:
@@ -1643,7 +2163,7 @@ components:
           format: date-time
     ReviewApproveResponse:
       type: object
-      required: [request_id, trace_id, data, audit]
+      required: [request_id, trace_id, data, meta, audit]
       properties:
         request_id:
           type: string
@@ -1651,5 +2171,7 @@ components:
           type: string
         data:
           $ref: '#/components/schemas/ReviewApproveResult'
+        meta:
+          $ref: '#/components/schemas/OperationMeta'
         audit:
           $ref: '#/components/schemas/AuditInfo'
