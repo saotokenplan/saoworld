@@ -1155,6 +1155,8 @@ paths:
   - 错误响应与 HTTP 状态码输入
 - `docs/30-api/api-examples-vote.md`
   - 第一批接口的请求响应样例输入
+- `docs/30-api/api-examples-content.md`
+  - 第二批接口的请求响应样例输入
 
 ## 后续补齐顺序
 
@@ -1173,6 +1175,8 @@ paths:
   - 提供错误响应和状态码输入。
 - `docs/30-api/api-examples-vote.md`
   - 提供第一批接口样例输入。
+- `docs/30-api/api-examples-content.md`
+  - 提供第二批接口样例输入。
 - `docs/30-api/openapi-v1-draft.yaml`
   - 当前单文件 OpenAPI 草案输出。
 - `docs/20-specs/backend-data-spec.md`
