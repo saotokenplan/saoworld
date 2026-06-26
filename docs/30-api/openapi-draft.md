@@ -763,8 +763,8 @@ paths:
 ### 第一批实现备注
 
 - 第一批统一使用 `votes` tag，建议归属 `vote-service`
-- 第一批成功响应都带 `request_id`，并通过 `X-Request-Id` 响应头暴露链路追踪字段
-- 第一批先不展开 `oneOf`、多语言错误文案和完整安全作用域，只保留足够支撑实现与评审的最小结构
+- 第一批现已与后续批次对齐：详情接口使用 `request_id + data + meta`，列表接口使用 `request_id + data + meta`，写接口使用 `request_id + trace_id + data + meta`
+- 第一批已补齐接口级 `security` 作用域声明；当前仍先不展开 `oneOf` 与多语言错误文案
 - 第二批接口补齐时，优先复用本节的 `ErrorResponse`、分页参数、请求头和响应包装方式
 
 ### 第二批

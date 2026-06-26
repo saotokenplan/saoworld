@@ -32,7 +32,11 @@
 - 协议：`HTTPS + JSON`
 - 认证：`Bearer Token`
 - 时间格式：ISO 8601
-- 所有响应都建议带 `request_id`
+- 所有成功响应统一带 `request_id`
+- 写接口成功响应统一补 `trace_id`
+- 列表接口统一使用 `data + meta`
+- 详情接口统一使用 `data + meta`
+- 写接口统一使用 `data + meta`，其中 `meta.idempotent_replay` 表示是否命中幂等重放
 
 ## `GET /api/v1/votes/current`
 
@@ -56,43 +60,48 @@ Accept: application/json
 ```json
 {
   "request_id": "req_vote_current_001",
-  "vote_cycle": {
-    "vote_cycle_id": "cycle_202606",
-    "chapter_id": "chapter_02",
-    "status": "open",
-    "starts_at": "2026-06-26T08:00:00Z",
-    "ends_at": "2026-06-28T08:00:00Z"
-  },
-  "player_context": {
-    "player_id": "player_001",
-    "eligible": true,
-    "reason": null,
-    "has_voted": false,
-    "vote_weight": 1.05
-  },
-  "candidates": [
-    {
-      "candidate_id": "candidate_01",
-      "title": "荒原废墟扩张",
-      "summary": "机械教团开始向废墟腹地推进。",
-      "region_scope": ["region_wasteland_01"],
-      "risk_tags": ["高冲突", "资源紧张"]
+  "data": {
+    "vote_cycle": {
+      "vote_cycle_id": "cycle_202606",
+      "chapter_id": "chapter_02",
+      "status": "open",
+      "starts_at": "2026-06-26T08:00:00Z",
+      "ends_at": "2026-06-28T08:00:00Z"
     },
-    {
-      "candidate_id": "candidate_02",
-      "title": "流亡者据点重建",
-      "summary": "流亡者试图重建旧聚落并争夺补给线。",
-      "region_scope": ["region_wasteland_01"],
-      "risk_tags": ["阵营对抗", "局部事件增加"]
+    "player_context": {
+      "player_id": "player_001",
+      "eligible": true,
+      "reason": null,
+      "has_voted": false,
+      "vote_weight": 1.05
     },
-    {
-      "candidate_id": "candidate_03",
-      "title": "遗迹异变调查",
-      "summary": "遗迹深处出现异常能量波动，引发新的探索任务。",
-      "region_scope": ["region_ruins_02"],
-      "risk_tags": ["高危险", "限时事件"]
-    }
-  ]
+    "candidates": [
+      {
+        "candidate_id": "candidate_01",
+        "title": "荒原废墟扩张",
+        "summary": "机械教团开始向废墟腹地推进。",
+        "region_scope": ["region_wasteland_01"],
+        "risk_tags": ["高冲突", "资源紧张"]
+      },
+      {
+        "candidate_id": "candidate_02",
+        "title": "流亡者据点重建",
+        "summary": "流亡者试图重建旧聚落并争夺补给线。",
+        "region_scope": ["region_wasteland_01"],
+        "risk_tags": ["阵营对抗", "局部事件增加"]
+      },
+      {
+        "candidate_id": "candidate_03",
+        "title": "遗迹异变调查",
+        "summary": "遗迹深处出现异常能量波动，引发新的探索任务。",
+        "region_scope": ["region_ruins_02"],
+        "risk_tags": ["高危险", "限时事件"]
+      }
+    ]
+  },
+  "meta": {
+    "resource_type": "vote_cycle"
+  }
 }
 ```
 
@@ -143,12 +152,20 @@ Idempotency-Key: 8dbdfe06-6c75-49f2-a177-bf6d3d7a85d1
 ```json
 {
   "request_id": "req_vote_submit_001",
-  "vote_id": "vote_001",
-  "vote_cycle_id": "cycle_202606",
-  "candidate_id": "candidate_03",
-  "accepted": true,
-  "weight": 1.05,
-  "submitted_at": "2026-06-26T09:12:33Z"
+  "trace_id": "trace_vote_submit_001",
+  "data": {
+    "vote_id": "vote_001",
+    "vote_cycle_id": "cycle_202606",
+    "candidate_id": "candidate_03",
+    "accepted": true,
+    "weight": 1.05,
+    "submitted_at": "2026-06-26T09:12:33Z"
+  },
+  "meta": {
+    "resource_type": "vote",
+    "idempotent_replay": false,
+    "accepted_at": "2026-06-26T09:12:33Z"
+  }
 }
 ```
 
@@ -157,16 +174,41 @@ Idempotency-Key: 8dbdfe06-6c75-49f2-a177-bf6d3d7a85d1
 ```json
 {
   "request_id": "req_vote_submit_002",
-  "vote_id": "vote_001",
-  "vote_cycle_id": "cycle_202606",
-  "candidate_id": "candidate_03",
-  "accepted": true,
-  "idempotent_replay": true,
-  "submitted_at": "2026-06-26T09:12:33Z"
+  "trace_id": "trace_vote_submit_001",
+  "data": {
+    "vote_id": "vote_001",
+    "vote_cycle_id": "cycle_202606",
+    "candidate_id": "candidate_03",
+    "accepted": true,
+    "weight": 1.05,
+    "submitted_at": "2026-06-26T09:12:33Z"
+  },
+  "meta": {
+    "resource_type": "vote",
+    "idempotent_replay": true,
+    "accepted_at": "2026-06-26T09:12:33Z"
+  }
 }
 ```
 
 ### 常见错误
+
+请求体缺少候选项：
+
+```json
+{
+  "code": "INVALID_ARGUMENT",
+  "message": "投票请求参数不合法",
+  "request_id": "req_vote_submit_400",
+  "details": [
+    {
+      "location": "body",
+      "field": "candidate_id",
+      "issue": "required"
+    }
+  ]
+}
+```
 
 玩家无资格：
 
@@ -198,6 +240,46 @@ Idempotency-Key: 8dbdfe06-6c75-49f2-a177-bf6d3d7a85d1
 }
 ```
 
+候选项不存在：
+
+```json
+{
+  "code": "CANDIDATE_NOT_FOUND",
+  "message": "候选项不存在",
+  "request_id": "req_vote_candidate_404"
+}
+```
+
+投票周期已关闭：
+
+```json
+{
+  "code": "VOTE_CYCLE_CLOSED",
+  "message": "当前投票周期已关闭",
+  "request_id": "req_vote_submit_closed_409"
+}
+```
+
+候选项超出当前投票周期范围：
+
+```json
+{
+  "code": "CANDIDATE_OUT_OF_SCOPE",
+  "message": "候选项不属于当前投票周期",
+  "request_id": "req_vote_submit_scope_409"
+}
+```
+
+请求频率超限：
+
+```json
+{
+  "code": "RATE_LIMITED",
+  "message": "请求过于频繁，请稍后再试",
+  "request_id": "req_vote_submit_429"
+}
+```
+
 ## `GET /api/v1/votes/history`
 
 ### 作用
@@ -219,10 +301,7 @@ Accept: application/json
 ```json
 {
   "request_id": "req_vote_history_001",
-  "page": 1,
-  "page_size": 20,
-  "total": 2,
-  "items": [
+  "data": [
     {
       "vote_cycle_id": "cycle_202606",
       "chapter_id": "chapter_02",
@@ -253,7 +332,49 @@ Accept: application/json
         "affected_regions": ["region_ruins_02"]
       }
     }
-  ]
+  ],
+  "meta": {
+    "resource_type": "vote_history",
+    "page": 1,
+    "page_size": 20,
+    "total": 1,
+    "returned": 1,
+    "has_more": false
+  }
+}
+```
+
+### 空结果示例
+
+```json
+{
+  "request_id": "req_vote_history_002",
+  "data": [],
+  "meta": {
+    "resource_type": "vote_history",
+    "page": 1,
+    "page_size": 20,
+    "total": 0,
+    "returned": 0,
+    "has_more": false
+  }
+}
+```
+
+### 分页越界示例
+
+```json
+{
+  "request_id": "req_vote_history_003",
+  "data": [],
+  "meta": {
+    "resource_type": "vote_history",
+    "page": 5,
+    "page_size": 20,
+    "total": 1,
+    "returned": 0,
+    "has_more": false
+  }
 }
 ```
 
@@ -263,7 +384,31 @@ Accept: application/json
 {
   "code": "INVALID_ARGUMENT",
   "message": "分页参数不合法",
-  "request_id": "req_vote_history_400"
+  "request_id": "req_vote_history_400",
+  "details": [
+    {
+      "location": "query",
+      "field": "page_size",
+      "issue": "must_be_between_1_and_100",
+      "rejected_value": "0"
+    }
+  ]
+}
+```
+
+```json
+{
+  "code": "INSUFFICIENT_SCOPE",
+  "message": "当前访问令牌缺少所需作用域",
+  "request_id": "req_scope_403",
+  "details": [
+    {
+      "location": "header",
+      "field": "Authorization",
+      "issue": "missing_required_scope",
+      "rejected_value": "<required-scope>"
+    }
+  ]
 }
 ```
 
@@ -273,6 +418,7 @@ Accept: application/json
 
 - 可做缓存
 - 响应中应明确玩家是否已投票
+- 响应包装应保持 `request_id + data + meta`
 - 若投票周期关闭，状态应与错误码语义一致
 
 ### `POST /api/v1/votes/submit`
@@ -280,11 +426,13 @@ Accept: application/json
 - 应支持 `Idempotency-Key`
 - 应保证 `vote_cycle_id + player_id` 唯一约束
 - 应在风控通过后再落库
+- 响应包装应保持 `request_id + trace_id + data + meta`
 
 ### `GET /api/v1/votes/history`
 
 - 应支持分页
 - 应支持按章节、区域或周期筛选
+- 列表响应应统一返回 `meta.page/page_size/total/returned/has_more`
 - 应返回“投票结果是否已落地”的最小状态信息
 
 ## 建议下一步
