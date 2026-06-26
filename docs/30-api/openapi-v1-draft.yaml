@@ -46,6 +46,15 @@ paths:
               examples:
                 success:
                   $ref: '#/components/examples/VoteCurrentSuccess'
+        '403':
+          description: 当前访问令牌缺少投票查询作用域
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                insufficientScope:
+                  $ref: '#/components/examples/InsufficientScopeError'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -103,16 +112,63 @@ paths:
                   $ref: '#/components/examples/VoteSubmitSuccess'
                 idempotentReplay:
                   $ref: '#/components/examples/VoteSubmitIdempotentReplay'
+        '400':
+          description: 投票请求参数不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidRequest:
+                  $ref: '#/components/examples/VoteSubmitInvalidArgumentError'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          description: 当前玩家不可执行投票
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                playerNotEligible:
+                  $ref: '#/components/examples/PlayerNotEligibleError'
+                voteRiskBlocked:
+                  $ref: '#/components/examples/VoteRiskBlockedError'
+                insufficientScope:
+                  $ref: '#/components/examples/InsufficientScopeError'
         '404':
-          $ref: '#/components/responses/NotFound'
+          description: 投票周期或候选项不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                voteCycleNotFound:
+                  $ref: '#/components/examples/VoteCycleNotFoundError'
+                candidateNotFound:
+                  $ref: '#/components/examples/CandidateNotFoundError'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: 投票状态与当前操作冲突
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                voteCycleClosed:
+                  $ref: '#/components/examples/VoteCycleClosedError'
+                candidateOutOfScope:
+                  $ref: '#/components/examples/CandidateOutOfScopeError'
+                duplicateVote:
+                  $ref: '#/components/examples/DuplicateVoteError'
         '429':
-          $ref: '#/components/responses/TooManyRequests'
+          description: 投票请求频率超限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                rateLimited:
+                  $ref: '#/components/examples/VoteRateLimitedError'
   /api/v1/votes/history:
     get:
       tags: [votes]
@@ -140,10 +196,30 @@ paths:
               examples:
                 success:
                   $ref: '#/components/examples/VoteHistorySuccess'
+                empty:
+                  $ref: '#/components/examples/VoteHistoryEmptySuccess'
+                pageBoundary:
+                  $ref: '#/components/examples/VoteHistoryPageBoundarySuccess'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: 查询参数不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidPagination:
+                  $ref: '#/components/examples/InvalidPaginationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 当前访问令牌缺少历史结果查询作用域
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                insufficientScope:
+                  $ref: '#/components/examples/InsufficientScopeError'
   /api/v1/content/updates:
     get:
       tags: [content]
@@ -914,29 +990,32 @@ components:
       summary: 当前投票周期查询成功
       value:
         request_id: req_vote_current_001
-        vote_cycle:
-          vote_cycle_id: cycle_202606
-          chapter_id: chapter_02
-          status: open
-          starts_at: '2026-06-26T08:00:00Z'
-          ends_at: '2026-06-28T08:00:00Z'
-        player_context:
-          player_id: player_001
-          eligible: true
-          reason: null
-          has_voted: false
-          vote_weight: 1.05
-        candidates:
-          - candidate_id: candidate_01
-            title: 荒原废墟扩张
-            summary: 机械教团开始向废墟腹地推进。
-            region_scope: [region_wasteland_01]
-            risk_tags: [高冲突, 资源紧张]
-          - candidate_id: candidate_03
-            title: 遗迹异变调查
-            summary: 遗迹深处出现异常能量波动，引发新的探索任务。
-            region_scope: [region_ruins_02]
-            risk_tags: [高危险, 限时事件]
+        data:
+          vote_cycle:
+            vote_cycle_id: cycle_202606
+            chapter_id: chapter_02
+            status: open
+            starts_at: '2026-06-26T08:00:00Z'
+            ends_at: '2026-06-28T08:00:00Z'
+          player_context:
+            player_id: player_001
+            eligible: true
+            reason: null
+            has_voted: false
+            vote_weight: 1.05
+          candidates:
+            - candidate_id: candidate_01
+              title: 荒原废墟扩张
+              summary: 机械教团开始向废墟腹地推进。
+              region_scope: [region_wasteland_01]
+              risk_tags: [高冲突, 资源紧张]
+            - candidate_id: candidate_03
+              title: 遗迹异变调查
+              summary: 遗迹深处出现异常能量波动，引发新的探索任务。
+              region_scope: [region_ruins_02]
+              risk_tags: [高危险, 限时事件]
+        meta:
+          resource_type: vote_cycle
     VoteCycleNotFoundError:
       summary: 当前无有效投票周期
       value:
@@ -958,32 +1037,91 @@ components:
       summary: 投票成功
       value:
         request_id: req_vote_submit_001
-        vote_id: vote_001
-        vote_cycle_id: cycle_202606
-        candidate_id: candidate_03
-        accepted: true
-        weight: 1.05
-        idempotent_replay: false
-        submitted_at: '2026-06-26T09:12:33Z'
+        trace_id: trace_vote_submit_001
+        data:
+          vote_id: vote_001
+          vote_cycle_id: cycle_202606
+          candidate_id: candidate_03
+          accepted: true
+          weight: 1.05
+          submitted_at: '2026-06-26T09:12:33Z'
+        meta:
+          resource_type: vote
+          idempotent_replay: false
+          accepted_at: '2026-06-26T09:12:33Z'
     VoteSubmitIdempotentReplay:
       summary: 命中幂等重放
       value:
         request_id: req_vote_submit_002
-        vote_id: vote_001
-        vote_cycle_id: cycle_202606
-        candidate_id: candidate_03
-        accepted: true
-        weight: 1.05
-        idempotent_replay: true
-        submitted_at: '2026-06-26T09:12:33Z'
+        trace_id: trace_vote_submit_001
+        data:
+          vote_id: vote_001
+          vote_cycle_id: cycle_202606
+          candidate_id: candidate_03
+          accepted: true
+          weight: 1.05
+          submitted_at: '2026-06-26T09:12:33Z'
+        meta:
+          resource_type: vote
+          idempotent_replay: true
+          accepted_at: '2026-06-26T09:12:33Z'
+    VoteSubmitInvalidArgumentError:
+      summary: 投票请求参数非法
+      value:
+        code: INVALID_ARGUMENT
+        message: 投票请求参数不合法
+        request_id: req_vote_submit_400
+        details:
+          - location: body
+            field: candidate_id
+            issue: required
+    PlayerNotEligibleError:
+      summary: 当前玩家不满足投票资格
+      value:
+        code: PLAYER_NOT_ELIGIBLE
+        message: 当前角色未满足投票资格
+        request_id: req_vote_submit_403
+    VoteRiskBlockedError:
+      summary: 当前请求命中投票风控规则
+      value:
+        code: VOTE_RISK_BLOCKED
+        message: 当前请求命中投票风控规则
+        request_id: req_vote_submit_risk
+    CandidateNotFoundError:
+      summary: 候选项不存在
+      value:
+        code: CANDIDATE_NOT_FOUND
+        message: 候选项不存在
+        request_id: req_vote_candidate_404
+    VoteCycleClosedError:
+      summary: 投票周期已关闭
+      value:
+        code: VOTE_CYCLE_CLOSED
+        message: 当前投票周期已关闭
+        request_id: req_vote_submit_closed_409
+    CandidateOutOfScopeError:
+      summary: 候选项不属于当前投票周期
+      value:
+        code: CANDIDATE_OUT_OF_SCOPE
+        message: 候选项不属于当前投票周期
+        request_id: req_vote_submit_scope_409
+    DuplicateVoteError:
+      summary: 同一玩家重复投票
+      value:
+        code: DUPLICATE_VOTE
+        message: 当前投票周期已提交过投票
+        request_id: req_vote_submit_duplicate_409
+    VoteRateLimitedError:
+      summary: 投票请求频率超限
+      value:
+        code: RATE_LIMITED
+        message: 请求过于频繁，请稍后再试
+        request_id: req_vote_submit_429
     VoteHistorySuccess:
       summary: 历史投票结果查询成功
       value:
         request_id: req_vote_history_001
-        page: 1
-        page_size: 20
-        total: 2
-        items:
+        data:
           - vote_cycle_id: cycle_202606
             chapter_id: chapter_02
             closed_at: '2026-06-28T08:00:00Z'
@@ -1001,6 +1139,37 @@ components:
               status: gray
               content_package_id: pkg_chapter_02_ruins_20260629_01
               affected_regions: [region_ruins_02]
+        meta:
+          resource_type: vote_history
+          page: 1
+          page_size: 20
+          total: 1
+          returned: 1
+          has_more: false
+    VoteHistoryEmptySuccess:
+      summary: 历史投票结果为空
+      value:
+        request_id: req_vote_history_002
+        data: []
+        meta:
+          resource_type: vote_history
+          page: 1
+          page_size: 20
+          total: 0
+          returned: 0
+          has_more: false
+    VoteHistoryPageBoundarySuccess:
+      summary: 分页越界时返回空列表
+      value:
+        request_id: req_vote_history_003
+        data: []
+        meta:
+          resource_type: vote_history
+          page: 5
+          page_size: 20
+          total: 1
+          returned: 0
+          has_more: false
     ContentUpdatesSuccess:
       summary: 内容更新查询成功
       value:
@@ -1680,12 +1849,10 @@ components:
           type: array
           items:
             type: string
-    VoteCurrentResponse:
+    VoteCurrentData:
       type: object
-      required: [request_id, vote_cycle, player_context, candidates]
+      required: [vote_cycle, player_context, candidates]
       properties:
-        request_id:
-          type: string
         vote_cycle:
           $ref: '#/components/schemas/VoteCycle'
         player_context:
@@ -1694,6 +1861,16 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/VoteCandidate'
+    VoteCurrentResponse:
+      type: object
+      required: [request_id, data, meta]
+      properties:
+        request_id:
+          type: string
+        data:
+          $ref: '#/components/schemas/VoteCurrentData'
+        meta:
+          $ref: '#/components/schemas/DetailMeta'
     VoteSubmitRequest:
       type: object
       required: [vote_cycle_id, candidate_id]
@@ -1702,12 +1879,10 @@ components:
           type: string
         candidate_id:
           type: string
-    VoteSubmitResponse:
+    VoteSubmitResult:
       type: object
-      required: [request_id, vote_id, vote_cycle_id, candidate_id, accepted, submitted_at]
+      required: [vote_id, vote_cycle_id, candidate_id, accepted, submitted_at]
       properties:
-        request_id:
-          type: string
         vote_id:
           type: string
         vote_cycle_id:
@@ -1719,12 +1894,21 @@ components:
         weight:
           type: number
           format: float
-        idempotent_replay:
-          type: boolean
-          default: false
         submitted_at:
           type: string
           format: date-time
+    VoteSubmitResponse:
+      type: object
+      required: [request_id, trace_id, data, meta]
+      properties:
+        request_id:
+          type: string
+        trace_id:
+          type: string
+        data:
+          $ref: '#/components/schemas/VoteSubmitResult'
+        meta:
+          $ref: '#/components/schemas/OperationMeta'
     VoteHistoryCandidate:
       type: object
       required: [candidate_id, title, vote_percent]
@@ -1775,20 +1959,16 @@ components:
           $ref: '#/components/schemas/VoteHistoryDelivery'
     VoteHistoryResponse:
       type: object
-      required: [request_id, page, page_size, total, items]
+      required: [request_id, data, meta]
       properties:
         request_id:
           type: string
-        page:
-          type: integer
-        page_size:
-          type: integer
-        total:
-          type: integer
-        items:
+        data:
           type: array
           items:
             $ref: '#/components/schemas/VoteHistoryItem'
+        meta:
+          $ref: '#/components/schemas/ListMeta'
     ContentUpdateItem:
       allOf:
         - $ref: '#/components/schemas/ResourceAuditFields'
