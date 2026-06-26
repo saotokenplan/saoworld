@@ -40,11 +40,11 @@
 - 复查范围：
   - `docs/` 下共 `31` 份 Markdown 文档，不含本清单
 - 已完整对齐：
-  - `15` 份
+  - `16` 份
 - 部分对齐：
   - `0` 份
 - 尚未按模板补齐：
-  - `16` 份
+  - `15` 份
 
 ## 一、已完整对齐
 
@@ -60,6 +60,7 @@
 - `docs/00-governance/document-ownership.md`
 - `docs/00-governance/document-lifecycle.md`
 - `docs/00-governance/document-template-spec.md`
+- `docs/00-governance/spec-skill-mapping.md`
 - `docs/20-specs/README.md`
 - `docs/30-api/api-overview.md`
 - `docs/30-api/api-permissions.md`
@@ -73,10 +74,6 @@
 ## 三、尚未按模板补齐
 
 以下文档目前未按标准章节形式补齐上述三类结构字段：
-
-### 治理与映射
-
-- `docs/00-governance/spec-skill-mapping.md`
 
 ### 需求文档
 
@@ -109,14 +106,12 @@
 
 建议按以下顺序推进，而不是全仓一次性机械补齐：
 
-1. `spec-skill-mapping.md`
-2. `20-specs/` 核心规范正文
-3. `10-requirements/` 背景文档
-4. `40-dev-loop/` 与 `50-research/` 中仍未补结构字段的文档
+1. `20-specs/` 核心规范正文
+2. `10-requirements/` 背景文档
+3. `40-dev-loop/` 与 `50-research/` 中仍未补结构字段的文档
 
 排序原因：
 
-- `spec-skill-mapping.md` 仍承担规范与 Skill 的上下游映射，补齐后能继续完善治理闭环。
 - `20-specs/` 是执行基线，应尽快与模板完全对齐。
 - `10-requirements/`、`40-dev-loop/`、`50-research/` 更适合在不打断当前使用的前提下渐进补齐。
 

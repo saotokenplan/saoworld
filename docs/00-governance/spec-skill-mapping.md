@@ -1,8 +1,24 @@
 # Spec 与 Skill 映射
 
+> 文档状态：active
+> 适用阶段：当前
+> 维护要求：持续维护
+
 ## 目的
 
 本文档用于明确 `docs/20-specs/` 与 `.trae/skills/` 的上下游关系，避免把 Skill 当成唯一规范，也避免规范更新后 Skill 漂移失效。
+
+## 适用范围
+
+- 适用于 `docs/20-specs/` 与 `.trae/skills/` 之间的规范来源映射和上下游关系说明。
+- 适用于判断某份执行 Skill 应依赖哪些上游规范，以及规范变更后需要同步检查哪些 Skill。
+- 不替代 `20-specs/` 的正式执行规范，也不替代各 `SKILL.md` 中的具体执行步骤。
+
+## 当前定位
+
+- 本文档是规范与 Skill 之间的治理映射文档，用于回答“哪个 Skill 依赖哪些上游规范、变更时应联动检查什么”。
+- 本文档聚焦映射关系、更新触发和维护顺序，不单独定义产品边界、数据边界或执行规则。
+- 当 `20-specs/` 或 `.trae/skills/` 发生结构性调整时，应优先回看本文档以确认同步范围。
 
 ## 基本原则
 
@@ -178,3 +194,16 @@
 - 后续可在每个 `SKILL.md` 顶部增加一节“规范来源”。
 - 后续可在 `docs/00-governance/document-map.md` 中加入本文档入口。
 - 若 `20-specs/` 有重大调整，先过一遍本文档，再决定需要更新哪些 Skill。
+
+## 与其他文档的关系
+
+- `docs/20-specs/README.md`
+  - 作为执行规范入口，帮助读者定位本文档所映射的上游规范集合。
+- `docs/00-governance/document-map.md`
+  - 说明文档体系的分层和权威关系，本文档补充其中“规范到 Skill”的下游映射。
+- `docs/00-governance/document-change-process.md`
+  - 规定当规范路径、目录或引用变化时，应同步检查和更新本文档。
+- `docs/00-governance/document-ownership.md`
+  - 定义规范责任人、Skill 维护责任人和映射更新时的协同边界。
+- `.trae/skills/*/SKILL.md`
+  - 作为本文档的下游执行载体，应根据这里的映射结果维护各自的规范来源说明。
