@@ -27,6 +27,7 @@ docs/
 ├── 00-governance/
 │   ├── document-directory-spec.md
 │   ├── document-change-process.md
+│   ├── document-lifecycle.md
 │   ├── document-ownership.md
 │   ├── document-review-checklist.md
 │   ├── document-map.md
@@ -48,6 +49,7 @@ docs/
 - 典型文档：
   - `document-directory-spec.md`
   - `document-change-process.md`
+  - `document-lifecycle.md`
   - `document-ownership.md`
   - `document-review-checklist.md`
   - `document-map.md`

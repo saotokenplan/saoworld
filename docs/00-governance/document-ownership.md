@@ -123,6 +123,7 @@
 ## 与其他文档的关系
 
 - 文档目录分层以 `docs/00-governance/document-directory-spec.md` 为准。
+- 文档状态定义以 `docs/00-governance/document-lifecycle.md` 为准。
 - 文档变更步骤以 `docs/00-governance/document-change-process.md` 为准。
 - 文档评审项目以 `docs/00-governance/document-review-checklist.md` 为准。
 - 文档权威关系以 `docs/00-governance/document-map.md` 为准。

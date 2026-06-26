@@ -67,6 +67,8 @@
   - 定义 `docs/` 的目录分层、命名方式和新增文档落位规则
 - `docs/00-governance/document-change-process.md`
   - 定义文档新增、修订、迁移、重命名、删除和引用同步流程
+- `docs/00-governance/document-lifecycle.md`
+  - 定义文档状态模型、状态切换条件和草稿到归档的统一口径
 - `docs/00-governance/document-ownership.md`
   - 定义各层文档由谁维护、谁裁定、哪些变更需要同步知会
 - `docs/00-governance/document-review-checklist.md`

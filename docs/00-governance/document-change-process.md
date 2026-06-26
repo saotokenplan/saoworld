@@ -58,6 +58,7 @@
    - 目的
    - 当前定位
    - 与其他规范的关系
+   - 必要时补充文档状态，状态定义以 `docs/00-governance/document-lifecycle.md` 为准
 5. 如该文档是入口型或参考型文档，更新：
    - `docs/README.md`
    - 必要时更新 `docs/00-governance/document-map.md`
@@ -139,6 +140,7 @@
 
 - 新增文档或重要修订完成后，建议按 `docs/00-governance/document-review-checklist.md` 做一次自检。
 - 涉及目录迁移、批量路径修改或多入口同步时，评审清单应作为强制检查项使用。
+- 若文档新增、替代、废弃或归档涉及状态变更，建议同步按 `docs/00-governance/document-lifecycle.md` 检查状态是否需要调整。
 
 ## 提交规范对接
 
@@ -170,6 +172,7 @@
 ## 与其他文档的关系
 
 - 目录分层与落位规则以 `docs/00-governance/document-directory-spec.md` 为准。
+- 文档状态定义以 `docs/00-governance/document-lifecycle.md` 为准。
 - 文档评审项目以 `docs/00-governance/document-review-checklist.md` 为准。
 - 文档全局分层与权威关系以 `docs/00-governance/document-map.md` 为准。
 - Git 提交规范以 `docs/20-specs/engineering-conventions.md` 为准。
