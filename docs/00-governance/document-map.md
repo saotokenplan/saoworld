@@ -119,10 +119,10 @@
 ## 与其他文档的关系
 
 - `docs/README.md`
-  - 提供 `docs/` 目录总导航和阅读顺序。
+  - `docs/` 总导航。
 - `docs/00-governance/document-directory-spec.md`
-  - 负责目录落位规则和结构约束。
+  - 目录落位规则。
 - `docs/00-governance/document-change-process.md`
-  - 负责新增、修订、迁移和删除时的执行流程。
+  - 文档变更流程。
 - `docs/00-governance/document-lifecycle.md`
-  - 负责文档状态定义和状态切换口径。
+  - 文档状态口径。

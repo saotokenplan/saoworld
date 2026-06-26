@@ -147,12 +147,8 @@
 ## 与其他文档的关系
 
 - `docs/00-governance/project-status.md`
-  - 说明当前阶段、已准备资产和未落地部分。
+  - 当前阶段与资产完备度。
 - `docs/00-governance/document-map.md`
-  - 说明整套文档体系的分层与权威关系。
-- `docs/00-governance/document-lifecycle.md`
-  - 说明当前哪些文档处于可执行、草稿或归档状态。
-- `docs/00-governance/document-template-maintenance.md`
-  - 说明模板全量对齐完成后，后续新增和改写时应如何持续保持结构一致。
+  - 文档分层与权威关系。
 - `docs/20-specs/README.md`
-  - 作为执行规范目录入口，承接阅读后进入实施的下一步。
+  - 执行规范目录入口。

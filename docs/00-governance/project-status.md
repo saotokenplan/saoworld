@@ -149,12 +149,10 @@
 ## 与其他文档的关系
 
 - `docs/00-governance/document-map.md`
-  - 说明整个文档体系的角色分层和权威关系。
+  - 文档角色分层与权威关系。
 - `docs/00-governance/quick-start.md`
-  - 说明当前仓库怎么使用，以及最小阅读路径与最小实施顺序。
-- `docs/00-governance/document-template-maintenance.md`
-  - 定义模板全量对齐完成后，后续新增与改写应如何持续保持结构一致。
+  - 当前仓库使用方式与实施顺序。
 - `docs/20-specs/README.md`
-  - 作为执行规范目录入口，承接后续实施所需的详细约束。
+  - 执行规范目录入口。
 - `docs/30-api/`
-  - 补充当前仍待完善的接口参考材料和样例。
+  - 接口参考与样例。

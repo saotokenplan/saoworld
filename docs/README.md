@@ -82,14 +82,12 @@
 ## 与其他文档的关系
 
 - `README.md`
-  - 作为仓库根入口，负责引导读者进入 `docs/` 总导航。
+  - 仓库根入口。
 - `00-governance/document-directory-spec.md`
-  - 定义目录分层与新增文档落位规则。
-- `00-governance/document-change-process.md`
-  - 定义新增、修订、迁移和删除时应遵循的流程。
+  - 目录分层与落位规则。
 - `00-governance/document-map.md`
-  - 定义文档体系的权威关系、保留策略与整理判断。
+  - 文档角色与权威关系。
 - `00-governance/quick-start.md`
-  - 提供最小阅读路径与最小实施顺序，不重复承担完整目录导航。
+  - 最小阅读路径与最小实施顺序。
 - `00-governance/document-template-maintenance.md`
-  - 定义模板全量对齐完成后，后续新增和改写应如何持续保持结构一致。
+  - 模板持续维护规则。
