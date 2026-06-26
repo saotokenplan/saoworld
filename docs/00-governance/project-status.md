@@ -96,6 +96,7 @@
   - `docs/00-governance/spec-skill-mapping.md`
 - 接口参考材料：
   - `docs/30-api/api-overview.md`
+  - `docs/30-api/openapi-draft.md`
   - `docs/30-api/api-permissions.md`
   - `docs/30-api/api-error-codes.md`
 
@@ -109,7 +110,7 @@
 
 ### 技术侧未定
 
-- OpenAPI 草案入口文档尚未建立，接口目前仍缺少主要链路的请求响应样例。
+- OpenAPI 草案入口文档已建立，但接口目前仍缺少主要链路的请求响应样例。
 - 数据库 ER 图、字段字典、枚举说明和迁移策略尚未补齐。
 - 任务队列、事件总线、中间件、部署方式等细节仍停留在方向层，未形成工程实施方案。
 

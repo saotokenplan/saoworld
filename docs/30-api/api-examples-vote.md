@@ -291,7 +291,7 @@ Accept: application/json
 
 1. 继续补内容生成链路的接口样例文档
 2. 再补运营发布链路的请求响应样例
-3. 最后汇总为 OpenAPI 草案
+3. 最后汇总到 `docs/30-api/openapi-draft.md`
 
 ## 与其他文档的关系
 
@@ -303,3 +303,5 @@ Accept: application/json
   - 定义本文件中成功与失败样例所对应的错误码语义。
 - `docs/20-specs/backend-data-spec.md`
   - 作为更高权威的执行规范，约束投票链路与数据模型的最终实现边界。
+- `docs/30-api/openapi-draft.md`
+  - 作为本文件后续下沉到 OpenAPI 草案的汇总入口。

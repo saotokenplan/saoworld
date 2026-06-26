@@ -32,7 +32,7 @@
   - 执行规范、实施约束、验收基线和工程协作标准
   - 适合作为拆任务、建仓库、写代码和接入 CI 的直接输入
 - `30-api/`
-  - 接口总览、权限矩阵、错误码、接口样例和后续 OpenAPI 入口
+  - 接口总览、OpenAPI 草案入口、权限矩阵、错误码和接口样例
   - 适合开始做服务实现前统一接口视图
 - `40-dev-loop/`
   - AI Coding、Loop Engineering、门禁和日志 schema
@@ -53,9 +53,10 @@
 6. `00-governance/quick-start.md`
 7. `20-specs/README.md`
 8. `30-api/api-overview.md`
-9. `10-requirements/需求概述.md`
-10. `40-dev-loop/loop-engineering-plan.md`
-11. `50-research/stack-research-ai-game-dev.md`
+9. `30-api/openapi-draft.md`
+10. `10-requirements/需求概述.md`
+11. `40-dev-loop/loop-engineering-plan.md`
+12. `50-research/stack-research-ai-game-dev.md`
 
 ## 使用原则
 

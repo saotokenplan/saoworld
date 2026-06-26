@@ -123,8 +123,8 @@
 
 - `docs/30-api/api-examples-vote.md`
   - 统一投票链路的请求响应样例和状态说明
-- OpenAPI 草案入口文档
-  - 作为后续集中整理接口定义的待补文档，建议统一放在 `docs/30-api/`
+- `docs/30-api/openapi-draft.md`
+  - 作为后续集中整理接口定义和样例收敛的入口文档
 - 首个需求包目录
   - 例如 `docs/packages/first-slice/`
 - 工程初始化说明
