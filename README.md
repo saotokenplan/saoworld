@@ -41,14 +41,10 @@
 ## 与其他文档的关系
 
 - `docs/README.md`
-  - 作为 `docs/` 目录的详细入口，提供更完整的目录说明和阅读顺序。
+  - `docs/` 总导航。
 - `docs/00-governance/project-status.md`
-  - 说明当前仓库阶段、已具备资产和未落地部分。
+  - 当前阶段与资产完备度。
 - `docs/20-specs/README.md`
   - 执行规范目录入口。
 - `docs/00-governance/document-map.md`
-  - 说明整套文档体系的分层、权威关系和保留策略。
-- `docs/00-governance/document-template-alignment-checklist.md`
-  - 记录当前模板对齐结果，作为后续增量复查基线。
-- `docs/00-governance/document-template-maintenance.md`
-  - 定义模板全量对齐完成后，新增、迁移和大幅改写时的持续维护规则。
+  - 文档分层与权威关系。
