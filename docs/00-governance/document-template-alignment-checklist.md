@@ -40,11 +40,11 @@
 - 复查范围：
   - `docs/` 下共 `31` 份 Markdown 文档，不含本清单
 - 已完整对齐：
-  - `21` 份
+  - `25` 份
 - 部分对齐：
   - `0` 份
 - 尚未按模板补齐：
-  - `10` 份
+  - `6` 份
 
 ## 一、已完整对齐
 
@@ -61,6 +61,10 @@
 - `docs/00-governance/document-lifecycle.md`
 - `docs/00-governance/document-template-spec.md`
 - `docs/00-governance/spec-skill-mapping.md`
+- `docs/10-requirements/open-world-ai-game-prd.md`
+- `docs/10-requirements/需求概述.md`
+- `docs/10-requirements/功能设计.md`
+- `docs/10-requirements/技术方案.md`
 - `docs/20-specs/README.md`
 - `docs/20-specs/product-spec.md`
 - `docs/20-specs/backend-data-spec.md`
@@ -80,13 +84,6 @@
 
 以下文档目前未按标准章节形式补齐上述三类结构字段：
 
-### 需求文档
-
-- `docs/10-requirements/open-world-ai-game-prd.md`
-- `docs/10-requirements/需求概述.md`
-- `docs/10-requirements/功能设计.md`
-- `docs/10-requirements/技术方案.md`
-
 ### 研发闭环文档
 
 - `docs/40-dev-loop/ai-coding-game-dev-loop-plan.md`
@@ -103,12 +100,11 @@
 
 建议按以下顺序推进，而不是全仓一次性机械补齐：
 
-1. `10-requirements/` 背景文档
-2. `40-dev-loop/` 与 `50-research/` 中仍未补结构字段的文档
+1. `40-dev-loop/` 与 `50-research/` 中仍未补结构字段的文档
 
 排序原因：
 
-- `10-requirements/`、`40-dev-loop/`、`50-research/` 更适合在不打断当前使用的前提下渐进补齐。
+- `40-dev-loop/` 与 `50-research/` 是当前剩余未对齐文档的全部范围，适合按主题做最后一轮渐进补齐。
 
 ## 五、执行建议
 
