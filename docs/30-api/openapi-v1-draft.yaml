@@ -47,14 +47,7 @@ paths:
                 success:
                   $ref: '#/components/examples/VoteCurrentSuccess'
         '403':
-          description: 当前访问令牌缺少投票查询作用域
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                insufficientScope:
-                  $ref: '#/components/examples/InsufficientScopeError'
+          $ref: '#/components/responses/InsufficientScope'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -117,7 +110,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ValidationErrorResponse'
               examples:
                 invalidRequest:
                   $ref: '#/components/examples/VoteSubmitInvalidArgumentError'
@@ -165,7 +158,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/RateLimitedErrorResponse'
               examples:
                 rateLimited:
                   $ref: '#/components/examples/VoteRateLimitedError'
@@ -201,25 +194,11 @@ paths:
                 pageBoundary:
                   $ref: '#/components/examples/VoteHistoryPageBoundarySuccess'
         '400':
-          description: 查询参数不合法
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                invalidPagination:
-                  $ref: '#/components/examples/InvalidPaginationError'
+          $ref: '#/components/responses/InvalidPagination'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          description: 当前访问令牌缺少历史结果查询作用域
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                insufficientScope:
-                  $ref: '#/components/examples/InsufficientScopeError'
+          $ref: '#/components/responses/InsufficientScope'
   /api/v1/content/updates:
     get:
       tags: [content]
@@ -249,25 +228,11 @@ paths:
                 pageBoundary:
                   $ref: '#/components/examples/ContentUpdatesPageBoundarySuccess'
         '400':
-          description: 分页参数不合法
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                invalidPagination:
-                  $ref: '#/components/examples/InvalidPaginationError'
+          $ref: '#/components/responses/InvalidPagination'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          description: 当前访问令牌缺少内容查询作用域
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                insufficientScope:
-                  $ref: '#/components/examples/InsufficientScopeError'
+          $ref: '#/components/responses/InsufficientScope'
         '503':
           description: 内容更新服务暂不可用
           content:
@@ -305,7 +270,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/PathParameterErrorResponse'
               examples:
                 invalidContentPackageId:
                   $ref: '#/components/examples/InvalidContentPackageIdError'
@@ -520,25 +485,11 @@ paths:
                 pageBoundary:
                   $ref: '#/components/examples/RegionListPageBoundarySuccess'
         '400':
-          description: 分页参数不合法
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                invalidPagination:
-                  $ref: '#/components/examples/InvalidPaginationError'
+          $ref: '#/components/responses/InvalidPagination'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          description: 当前访问令牌缺少世界查询作用域
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                insufficientScope:
-                  $ref: '#/components/examples/InsufficientScopeError'
+          $ref: '#/components/responses/InsufficientScope'
   /api/v1/world/regions/{region_id}:
     get:
       tags: [world]
@@ -567,7 +518,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/PathParameterErrorResponse'
               examples:
                 invalidRegionId:
                   $ref: '#/components/examples/InvalidRegionIdError'
@@ -620,25 +571,11 @@ paths:
                 pageBoundary:
                   $ref: '#/components/examples/QuestListPageBoundarySuccess'
         '400':
-          description: 分页参数不合法
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                invalidPagination:
-                  $ref: '#/components/examples/InvalidPaginationError'
+          $ref: '#/components/responses/InvalidPagination'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          description: 当前访问令牌缺少任务查询作用域
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                insufficientScope:
-                  $ref: '#/components/examples/InsufficientScopeError'
+          $ref: '#/components/responses/InsufficientScope'
         '503':
           description: 任务列表服务暂不可用
           content:
@@ -699,14 +636,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          description: 当前角色无创建投票周期权限
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                insufficientScope:
-                  $ref: '#/components/examples/InsufficientScopeError'
+          $ref: '#/components/responses/InsufficientScope'
         '409':
           description: 投票周期创建发生冲突
           content:
@@ -920,17 +850,21 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/ValidationErrorResponse'
           example:
             code: INVALID_ARGUMENT
             message: 请求参数不合法
             request_id: req_bad_request_001
+            details:
+              - location: body
+                field: field_name
+                issue: required
     Unauthorized:
       description: 未认证或 Token 无效
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/UnauthorizedErrorResponse'
           example:
             code: INVALID_TOKEN
             message: Token 格式或签名非法
@@ -945,12 +879,45 @@ components:
             code: INSUFFICIENT_SCOPE
             message: 当前角色无权限执行该操作
             request_id: req_forbidden_001
+    InsufficientScope:
+      description: 当前访问令牌缺少所需作用域
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ScopeErrorResponse'
+          examples:
+            insufficientScope:
+              $ref: '#/components/examples/InsufficientScopeError'
+    InvalidPagination:
+      description: 分页参数不合法
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrorResponse'
+          examples:
+            invalidPagination:
+              $ref: '#/components/examples/InvalidPaginationError'
+    PathParameterInvalid:
+      description: 路径参数格式不合法
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PathParameterErrorResponse'
+          example:
+            code: INVALID_ARGUMENT
+            message: 路径参数格式不合法
+            request_id: req_path_param_400
+            details:
+              - location: path
+                field: resource_id
+                issue: pattern_mismatch
+                rejected_value: invalid-id
     NotFound:
       description: 目标对象不存在
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/NotFoundErrorResponse'
           example:
             code: RESOURCE_NOT_FOUND
             message: 目标资源不存在
@@ -960,7 +927,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/ConflictErrorResponse'
           example:
             code: CONFLICT
             message: 当前状态与操作发生冲突
@@ -970,7 +937,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/ServiceUnavailableErrorResponse'
           example:
             code: SERVICE_UNAVAILABLE
             message: 服务暂不可用
@@ -980,7 +947,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: '#/components/schemas/RateLimitedErrorResponse'
           example:
             code: RATE_LIMITED
             message: 请求过于频繁，请稍后再试
