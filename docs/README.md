@@ -17,6 +17,9 @@
 - `api-overview.md`
   - 当前接口边界、接口清单、异步任务和事件索引
   - 适合开始细化 OpenAPI 前先统一接口视图
+- `api-permissions.md`
+  - 当前接口角色、访问范围、敏感操作约束和审计要求
+  - 适合开始细化鉴权、权限矩阵和后台角色前阅读
 - `requirements/`
   - 游戏需求与方案拆分文档
   - 适合先看这组，快速了解项目目标、功能和技术边界
@@ -36,16 +39,17 @@
 2. `project-status.md`
 3. `quick-start.md`
 4. `api-overview.md`
-5. `spec-skill-mapping.md`
-6. `requirements/open-world-ai-game-prd.md`
-7. `requirements/需求概述.md`
-8. `requirements/功能设计.md`
-9. `requirements/技术方案.md`
-10. `dev-loop/ai-coding-game-dev-loop-plan.md`
-11. `dev-loop/loop-engineering-plan.md`
-12. `research/stack-research-ai-game-dev.md`
-13. `research/service-stack-comparison.md`
-14. `specs/README.md`
+5. `api-permissions.md`
+6. `spec-skill-mapping.md`
+7. `requirements/open-world-ai-game-prd.md`
+8. `requirements/需求概述.md`
+9. `requirements/功能设计.md`
+10. `requirements/技术方案.md`
+11. `dev-loop/ai-coding-game-dev-loop-plan.md`
+12. `dev-loop/loop-engineering-plan.md`
+13. `research/stack-research-ai-game-dev.md`
+14. `research/service-stack-comparison.md`
+15. `specs/README.md`
 
 ## 使用原则
 
