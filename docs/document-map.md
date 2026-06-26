@@ -63,6 +63,8 @@
 
 ## 建议补充的文档
 
+- `docs/spec-skill-mapping.md`
+  - 统一维护 `specs/` 与 `.trae/skills/` 的上游下游关系
 - `docs/project-status.md`
   - 说明仓库当前处于文档规划阶段，列出已确定和未确定事项
 - `docs/quick-start.md`
