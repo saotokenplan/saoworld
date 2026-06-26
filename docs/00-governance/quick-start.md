@@ -18,8 +18,8 @@
 
 - 本文档是“怎么开始使用这套文档”的操作入口。
 - 本文档回答“先看什么、先做什么”，不替代 `20-specs/` 中的具体执行约束。
-- 本文档只保留最小阅读路径和最小实施顺序；完整目录导航与全量索引以 `docs/README.md` 为准。
-- 当需要判断项目成熟度或文档权威关系时，应分别查看状态说明和文档地图。
+- 本文档只保留最小阅读路径和最小实施顺序；完整目录导航看 `docs/README.md`。
+- 项目成熟度看 `project-status.md`，文档权威关系看 `document-map.md`。
 
 ## 先说明当前状态
 
@@ -27,15 +27,13 @@
 - 当前仓库里还没有 `game/`、`services/`、`workers/` 等目标态工程目录。
 - 当前最适合做的事情是阅读、收敛规范、确定首个最小落地目标，而不是直接执行启动命令。
 
-如果你想先判断项目目前做到哪一步，建议先看：
+如果你想先判断项目目前做到哪一步，建议先看以下入口：
 
 1. `docs/00-governance/document-map.md`
 2. `docs/00-governance/project-status.md`
 3. `docs/00-governance/document-lifecycle.md`
-4. `docs/00-governance/document-template-spec.md`
-5. `docs/00-governance/document-template-alignment-checklist.md`
-6. `docs/00-governance/document-template-maintenance.md`
-7. `docs/20-specs/README.md`
+4. `docs/00-governance/document-template-alignment-checklist.md`
+5. `docs/20-specs/README.md`
 
 ## 5 分钟上手
 
