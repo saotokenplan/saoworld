@@ -2,12 +2,14 @@
 
 ## 目的
 
-这一组 skills 基于当前项目的需求文档、技术方案、Loop Engineering 方案和详细规范提炼而来，目标是把“需求整理、Godot 客户端开发、内容生成、审核、后端实现、QA 验收回归、门禁优化、发布回滚”拆成可独立调用的技能。
+这一组 skills 基于当前项目的需求文档、技术方案、Loop Engineering 方案和详细规范提炼而来，目标是把“需求整理、系统设计、Godot 客户端开发、内容生成、审核、后端实现、QA 验收回归、门禁优化、发布回滚”拆成可独立调用的技能。
 
 ## 技能列表
 
 - `requirement-package-builder`
   - 把产品目标整理成 `spec.md`、`acceptance.md`、`risk.md`、`tasks.md`
+- `system-design-package-builder`
+  - 负责服务边界、数据契约、事件流和版本策略设计包
 - `godot-gameplay-implementer`
   - 负责 Godot 4 + typed GDScript 的玩法实现与客户端测试
 - `world-content-generator`
@@ -26,12 +28,13 @@
 ## 建议调用顺序
 
 1. `requirement-package-builder`
-2. `backend-service-builder` 与 `godot-gameplay-implementer`
-3. `world-content-generator`
-4. `content-review-gate`
-5. `qa-acceptance-runner`
-6. `release-package-operator`
-7. `loop-gate-optimizer`
+2. `system-design-package-builder`
+3. `backend-service-builder` 与 `godot-gameplay-implementer`
+4. `world-content-generator`
+5. `content-review-gate`
+6. `qa-acceptance-runner`
+7. `release-package-operator`
+8. `loop-gate-optimizer`
 
 ## 说明
 

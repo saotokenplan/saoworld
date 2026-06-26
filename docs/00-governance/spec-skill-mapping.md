@@ -47,12 +47,12 @@
 
 | 上游规范 | 主要作用 | 关联 Skill | 映射关系 | 维护建议 |
 |---|---|---|---|---|
-| `docs/20-specs/product-spec.md` | 定义产品边界、玩法闭环、投票治理、MVP、验收口径 | `requirement-package-builder` `godot-gameplay-implementer` `world-content-generator` | 提供产品目标、非目标、玩法和世界变化边界 | 产品规则有变更时，优先检查需求包生成和客户端实现 Skill |
-| `docs/20-specs/content-generation-spec.md` | 定义 AI 内容生成对象、输入输出结构、审核规则和生命周期 | `world-content-generator` `content-review-gate` `qa-acceptance-runner` `release-package-operator` | 提供生成对象 schema、生命周期状态和审核前提 | 任何生成字段、模板或生命周期调整，都要同步更新内容生成、审核、QA 与发布相关 Skill |
-| `docs/20-specs/backend-data-spec.md` | 定义服务边界、数据模型、API、事件流、异步任务 | `backend-service-builder` `godot-gameplay-implementer` `qa-acceptance-runner` `release-package-operator` | 提供接口契约、数据模型、内容包、回滚与事件基础 | 接口、表结构、状态流调整时，优先检查后端、QA 和发布相关 Skill |
-| `docs/20-specs/agent-loop-spec.md` | 定义 Agent 角色、需求包、门禁、日志、Issue、回滚流程 | `requirement-package-builder` `qa-acceptance-runner` `loop-gate-optimizer` `release-package-operator` | 提供需求包格式、门禁输入、日志分析和治理闭环 | Agent 流程和门禁机制变化时，重点更新需求包、QA 与闭环优化 Skill |
-| `docs/20-specs/engineering-conventions.md` | 定义仓库结构、命名、配置、测试、发布协作规范 | `backend-service-builder` `godot-gameplay-implementer` `qa-acceptance-runner` `release-package-operator` | 提供工程目录、命名和测试底线 | 工程规范更新后，检查实现类与 QA 类 Skill 的输出格式和目录约定 |
-| `docs/30-api/openapi-draft.md` | 统一沉淀接口草案入口、样例收敛顺序和 OpenAPI 组织方式 | `requirement-package-builder` `backend-service-builder` `godot-gameplay-implementer` `content-review-gate` `qa-acceptance-runner` `release-package-operator` | 提供接口样例、审批/发布接口收敛和 OpenAPI 同步要求 | 接口路径、请求响应字段、权限或样例更新时，联动检查这些接口相关 Skill |
+| `docs/20-specs/product-spec.md` | 定义产品边界、玩法闭环、投票治理、MVP、验收口径 | `requirement-package-builder` `system-design-package-builder` `godot-gameplay-implementer` `world-content-generator` | 提供产品目标、非目标、玩法和世界变化边界 | 产品规则有变更时，优先检查需求包、系统设计和客户端实现 Skill |
+| `docs/20-specs/content-generation-spec.md` | 定义 AI 内容生成对象、输入输出结构、审核规则和生命周期 | `system-design-package-builder` `world-content-generator` `content-review-gate` `qa-acceptance-runner` `release-package-operator` | 提供生成对象 schema、生命周期状态和审核前提 | 任何生成字段、模板或生命周期调整，都要同步更新系统设计、内容生成、审核、QA 与发布相关 Skill |
+| `docs/20-specs/backend-data-spec.md` | 定义服务边界、数据模型、API、事件流、异步任务 | `system-design-package-builder` `backend-service-builder` `godot-gameplay-implementer` `qa-acceptance-runner` `release-package-operator` | 提供接口契约、数据模型、内容包、回滚与事件基础 | 接口、表结构、状态流调整时，优先检查系统设计、后端、QA 和发布相关 Skill |
+| `docs/20-specs/agent-loop-spec.md` | 定义 Agent 角色、需求包、门禁、日志、Issue、回滚流程 | `requirement-package-builder` `system-design-package-builder` `qa-acceptance-runner` `loop-gate-optimizer` `release-package-operator` | 提供需求包格式、门禁输入、日志分析和治理闭环 | Agent 流程和门禁机制变化时，重点更新需求包、系统设计、QA 与闭环优化 Skill |
+| `docs/20-specs/engineering-conventions.md` | 定义仓库结构、命名、配置、测试、发布协作规范 | `system-design-package-builder` `backend-service-builder` `godot-gameplay-implementer` `qa-acceptance-runner` `release-package-operator` | 提供工程目录、命名和测试底线 | 工程规范更新后，检查设计类、实现类与 QA 类 Skill 的输出格式和目录约定 |
+| `docs/30-api/openapi-draft.md` | 统一沉淀接口草案入口、样例收敛顺序和 OpenAPI 组织方式 | `requirement-package-builder` `system-design-package-builder` `backend-service-builder` `godot-gameplay-implementer` `content-review-gate` `qa-acceptance-runner` `release-package-operator` | 提供接口样例、审批/发布接口收敛和 OpenAPI 同步要求 | 接口路径、请求响应字段、权限或样例更新时，联动检查这些接口相关 Skill |
 
 ## Skill 逐项映射
 
@@ -97,6 +97,30 @@
   - 表结构或事件流变化
   - 发布与回滚流程变化
   - 请求响应 schema 或 OpenAPI 草案结构变化
+
+### `system-design-package-builder`
+
+- 主要上游：
+  - `docs/20-specs/backend-data-spec.md`
+  - `docs/20-specs/product-spec.md`
+- 次要上游：
+  - `docs/20-specs/content-generation-spec.md`
+  - `docs/20-specs/engineering-conventions.md`
+  - `docs/20-specs/agent-loop-spec.md`
+  - `docs/30-api/openapi-draft.md`
+- 作用：
+  - 把产品目标与系统约束收敛成服务边界、模块接口、数据契约、事件流和版本策略设计包
+- 依赖原因：
+  - `backend-data-spec.md` 提供服务边界、核心实体、接口契约和事件流基础
+  - `product-spec.md` 提供设计边界、产品闭环和非目标约束
+  - `content-generation-spec.md` 提供模板、生命周期和规则版本背景
+  - `engineering-conventions.md` 约束工程落位、命名和协作底线
+  - `agent-loop-spec.md` 提供需求包承接、回滚影响和闭环交付要求
+  - `openapi-draft.md` 提供对外接口样例和 OpenAPI 同步入口
+- 更新触发：
+  - 服务拆分或模块边界变化
+  - 数据契约、事件流或版本策略变化
+  - 接口样例或设计交付格式变化
 
 ### `godot-gameplay-implementer`
 
