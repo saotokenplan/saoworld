@@ -32,7 +32,9 @@
 2. `docs/00-governance/project-status.md`
 3. `docs/00-governance/document-lifecycle.md`
 4. `docs/00-governance/document-template-spec.md`
-5. `docs/20-specs/README.md`
+5. `docs/00-governance/document-template-alignment-checklist.md`
+6. `docs/00-governance/document-template-maintenance.md`
+7. `docs/20-specs/README.md`
 
 ## 5 分钟上手
 
@@ -48,13 +50,17 @@
    - 理解哪些文档是草稿、当前生效、待废弃或已归档
 4. `docs/00-governance/document-template-spec.md`
    - 理解后续新增治理文档、规范文档和 API 文档时应采用的标准章节结构
-5. `docs/20-specs/README.md`
+5. `docs/00-governance/document-template-alignment-checklist.md`
+   - 确认当前文档体系已经完成模板对齐，以及后续复查应从哪里开始
+6. `docs/00-governance/document-template-maintenance.md`
+   - 理解模板全量对齐完成后，后续新增和改写时应如何持续保持
+7. `docs/20-specs/README.md`
    - 进入执行规范入口
-6. `docs/20-specs/product-spec.md`
+8. `docs/20-specs/product-spec.md`
    - 理解产品边界、MVP 和验收口径
-7. `docs/20-specs/backend-data-spec.md`
+9. `docs/20-specs/backend-data-spec.md`
    - 理解后端服务、数据模型和接口方向
-8. `docs/00-governance/spec-skill-mapping.md`
+10. `docs/00-governance/spec-skill-mapping.md`
    - 理解 `20-specs/` 和 `.trae/skills/` 的关系
 
 ### 如果你准备开始实施
@@ -147,5 +153,7 @@
   - 说明整套文档体系的分层与权威关系。
 - `docs/00-governance/document-lifecycle.md`
   - 说明当前哪些文档处于可执行、草稿或归档状态。
+- `docs/00-governance/document-template-maintenance.md`
+  - 说明模板全量对齐完成后，后续新增和改写时应如何持续保持结构一致。
 - `docs/20-specs/README.md`
   - 作为执行规范入口，承接阅读后进入实施的下一步。

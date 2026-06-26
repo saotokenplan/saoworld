@@ -87,6 +87,7 @@
   - `docs/00-governance/document-ownership.md`
   - `docs/00-governance/document-review-checklist.md`
   - `docs/00-governance/document-template-alignment-checklist.md`
+  - `docs/00-governance/document-template-maintenance.md`
   - `docs/00-governance/document-template-spec.md`
   - `docs/00-governance/document-map.md`
   - `docs/00-governance/quick-start.md`

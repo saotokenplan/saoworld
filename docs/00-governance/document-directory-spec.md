@@ -41,6 +41,7 @@ docs/
 │   ├── document-ownership.md
 │   ├── document-review-checklist.md
 │   ├── document-template-alignment-checklist.md
+│   ├── document-template-maintenance.md
 │   ├── document-template-spec.md
 │   ├── document-map.md
 │   ├── project-status.md
@@ -65,6 +66,7 @@ docs/
   - `document-ownership.md`
   - `document-review-checklist.md`
   - `document-template-alignment-checklist.md`
+  - `document-template-maintenance.md`
   - `document-template-spec.md`
   - `document-map.md`
   - `project-status.md`

@@ -17,7 +17,7 @@
 ## 目录结构
 
 - `docs/00-governance/`
-  - 文档治理、项目状态、快速开始、目录规范、变更流程、生命周期、归属责任、评审清单、模板规范和 spec/skill 映射
+  - 文档治理、项目状态、快速开始、目录规范、变更流程、生命周期、归属责任、评审清单、模板规范、模板对齐复查、模板维护规则和 spec/skill 映射
 - `docs/10-requirements/`
   - 需求背景、产品讨论、方案草案和立项上下文
 - `docs/20-specs/`
@@ -36,11 +36,13 @@
 3. `docs/00-governance/document-change-process.md`
 4. `docs/00-governance/document-lifecycle.md`
 5. `docs/00-governance/document-template-spec.md`
-6. `docs/00-governance/document-map.md`
-7. `docs/00-governance/project-status.md`
-8. `docs/00-governance/quick-start.md`
-9. `docs/20-specs/README.md`
-10. `docs/30-api/api-overview.md`
+6. `docs/00-governance/document-template-alignment-checklist.md`
+7. `docs/00-governance/document-template-maintenance.md`
+8. `docs/00-governance/document-map.md`
+9. `docs/00-governance/project-status.md`
+10. `docs/00-governance/quick-start.md`
+11. `docs/20-specs/README.md`
+12. `docs/30-api/api-overview.md`
 
 ## 与其他文档的关系
 
@@ -52,3 +54,7 @@
   - 作为执行规范入口，承接后续实施所需的核心约束。
 - `docs/00-governance/document-map.md`
   - 说明整套文档体系的分层、权威关系和保留策略。
+- `docs/00-governance/document-template-alignment-checklist.md`
+  - 记录当前模板对齐结果，作为后续增量复查基线。
+- `docs/00-governance/document-template-maintenance.md`
+  - 定义模板全量对齐完成后，新增、迁移和大幅改写时的持续维护规则。
