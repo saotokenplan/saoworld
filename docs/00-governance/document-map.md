@@ -65,6 +65,8 @@
 
 - `docs/00-governance/document-directory-spec.md`
   - 定义 `docs/` 的目录分层、命名方式和新增文档落位规则
+- `docs/00-governance/document-change-process.md`
+  - 定义文档新增、修订、迁移、重命名、删除和引用同步流程
 - `docs/00-governance/spec-skill-mapping.md`
   - 统一维护 `20-specs/` 与 `.trae/skills/` 的上游下游关系
 - `docs/00-governance/project-status.md`

@@ -26,6 +26,7 @@ docs/
 ├── README.md
 ├── 00-governance/
 │   ├── document-directory-spec.md
+│   ├── document-change-process.md
 │   ├── document-map.md
 │   ├── project-status.md
 │   ├── quick-start.md
@@ -44,6 +45,7 @@ docs/
 - 放置文档治理、项目状态、使用入口、映射关系等“帮助理解文档体系本身”的文档。
 - 典型文档：
   - `document-directory-spec.md`
+  - `document-change-process.md`
   - `document-map.md`
   - `project-status.md`
   - `quick-start.md`
