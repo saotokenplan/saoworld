@@ -1768,34 +1768,74 @@ components:
         message: 当前对象不处于可批准状态
         request_id: req_review_409
   schemas:
-    ErrorResponse:
+    ErrorCode:
+      type: string
+      pattern: '^[A-Z0-9_]+$'
+      example: INVALID_VOTE_STATE
+    RequestId:
+      type: string
+      pattern: '^req_[A-Za-z0-9_]+$'
+      example: req_vote_current_409
+    ErrorMessage:
+      type: string
+      minLength: 1
+      example: 当前投票周期不可投票
+    ErrorDetailLocation:
+      type: string
+      enum: [query, path, header, body]
+    ErrorDetailIssue:
+      type: string
+      enum:
+        - required
+        - pattern_mismatch
+        - unsupported_enum
+        - missing_required_scope
+        - must_be_between_1_and_100
+        - min_items_2
+    ErrorFieldPath:
+      type: string
+      pattern: '^[A-Za-z0-9_.-]+$'
+      example: gray_scope.player_percent
+    ErrorResponseBase:
       type: object
       required: [code, message, request_id]
       properties:
         code:
-          type: string
-          example: INVALID_VOTE_STATE
+          $ref: '#/components/schemas/ErrorCode'
         message:
-          type: string
-          example: 当前投票周期不可投票
+          $ref: '#/components/schemas/ErrorMessage'
         request_id:
-          type: string
-          example: req_vote_current_409
-        details:
-          type: array
-          items:
-            $ref: '#/components/schemas/ErrorDetail'
+          $ref: '#/components/schemas/RequestId'
+    DetailedErrorResponseBase:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          properties:
+            details:
+              type: array
+              minItems: 1
+              items:
+                $ref: '#/components/schemas/ErrorDetail'
+    ErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          properties:
+            details:
+              type: array
+              minItems: 1
+              items:
+                $ref: '#/components/schemas/ErrorDetail'
     ErrorDetail:
       type: object
       required: [location, field, issue]
       properties:
         location:
-          type: string
-          enum: [query, path, header, body]
+          $ref: '#/components/schemas/ErrorDetailLocation'
         field:
-          type: string
+          $ref: '#/components/schemas/ErrorFieldPath'
         issue:
-          type: string
+          $ref: '#/components/schemas/ErrorDetailIssue'
         rejected_value:
           type: string
     VoteCycle:
