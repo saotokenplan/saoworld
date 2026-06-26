@@ -13,10 +13,10 @@
 ## 规范来源
 
 - 主要来源：
-  - `docs/specs/product-spec.md`
-  - `docs/specs/agent-loop-spec.md`
+  - `docs/20-specs/product-spec.md`
+  - `docs/20-specs/agent-loop-spec.md`
 - 次要来源：
-  - `docs/specs/engineering-conventions.md`
+  - `docs/20-specs/engineering-conventions.md`
 - 说明：
   - 产品目标、范围、非目标和验收口径以 `product-spec.md` 为准
   - 需求包结构、门禁闭环和回滚约束以 `agent-loop-spec.md` 为准

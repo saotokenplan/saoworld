@@ -13,8 +13,8 @@
 ## 当前结论
 
 - 该仓库当前不是已落地的业务工程仓库，而是面向后续实施的文档与规范仓库。
-- 后续进入拆任务、建仓库、写代码和接入 CI 时，统一以 `docs/specs/` 为执行基线。
-- `.trae/skills/` 已经建立了与 `specs/` 的映射关系，但 Skill 属于执行层，不替代规范层。
+- 后续进入拆任务、建仓库、写代码和接入 CI 时，统一以 `docs/20-specs/` 为执行基线。
+- `.trae/skills/` 已经建立了与 `20-specs/` 的映射关系，但 Skill 属于执行层，不替代规范层。
 
 ## 已确定事项
 
@@ -27,10 +27,12 @@
 
 ### 规范分层
 
-- `requirements/` 定位为需求背景、方案讨论和立项上下文。
-- `specs/` 定位为执行规范和最终基线。
-- `dev-loop/` 定位为研发治理、门禁和 AI Coding 闭环设计。
-- `research/` 定位为技术选型和历史决策依据。
+- `00-governance/` 定位为文档治理、项目状态和使用入口。
+- `10-requirements/` 定位为需求背景、方案讨论和立项上下文。
+- `20-specs/` 定位为执行规范和最终基线。
+- `30-api/` 定位为接口参考、权限矩阵和错误码索引。
+- `40-dev-loop/` 定位为研发治理、门禁和 AI Coding 闭环设计。
+- `50-research/` 定位为技术选型和历史决策依据。
 
 ### 技术方向
 
@@ -41,26 +43,34 @@
 
 ### 文档治理
 
-- 已明确 `specs/` 优先于 `requirements/`。
-- 已完成 `specs/` 与 `.trae/skills/` 的映射文档。
-- 已在 `requirements/` 文档顶部补充“如与 `specs/` 冲突，以 `specs/` 为准”的声明。
+- 已明确 `20-specs/` 优先于 `10-requirements/`。
+- 已完成 `20-specs/` 与 `.trae/skills/` 的映射文档。
+- 已在 `10-requirements/` 文档顶部补充“如与 `20-specs/` 冲突，以 `20-specs/` 为准”的声明。
 - 已在各 `SKILL.md` 中补充“规范来源”。
+- 已建立文档目录规范，并完成 `docs/` 目录按层重组。
+- 已补齐 API 总览、权限矩阵和错误码三类接口参考文档。
 
 ## 已准备好的资产
 
 - 产品规范：
-  - `docs/specs/product-spec.md`
+  - `docs/20-specs/product-spec.md`
 - 内容生成规范：
-  - `docs/specs/content-generation-spec.md`
+  - `docs/20-specs/content-generation-spec.md`
 - 后端与数据规范：
-  - `docs/specs/backend-data-spec.md`
+  - `docs/20-specs/backend-data-spec.md`
 - Agent 与闭环规范：
-  - `docs/specs/agent-loop-spec.md`
+  - `docs/20-specs/agent-loop-spec.md`
 - 工程协作规范：
-  - `docs/specs/engineering-conventions.md`
+  - `docs/20-specs/engineering-conventions.md`
 - 文档治理辅助材料：
-  - `docs/document-map.md`
-  - `docs/spec-skill-mapping.md`
+  - `docs/00-governance/document-directory-spec.md`
+  - `docs/00-governance/document-map.md`
+  - `docs/00-governance/quick-start.md`
+  - `docs/00-governance/spec-skill-mapping.md`
+- 接口参考材料：
+  - `docs/30-api/api-overview.md`
+  - `docs/30-api/api-permissions.md`
+  - `docs/30-api/api-error-codes.md`
 
 ## 未确定事项
 
@@ -88,26 +98,25 @@
 - `services/` 后端服务目录尚不存在。
 - `workers/`、`infra/`、`tools/`、`telemetry/` 等目标态目录尚不存在。
 - 可运行代码、测试套件、部署脚本和真实 CI 配置尚不存在。
-- 可直接执行的 `Quick Start`、环境依赖和本地运行说明尚不存在。
+- 可直接执行的工程启动说明、环境依赖和本地运行命令尚不存在。
 
 ## 当前主要风险
 
 - 文档与未来工程结构存在落差，如果不先补状态说明，容易让人误判项目已进入开发阶段。
-- `requirements/` 与 `specs/` 仍有一定内容重叠，后续若继续双向修改，容易再次漂移。
-- `dev-loop/` 中部分设计偏目标态，若不裁剪就直接照搬，实施成本会偏高。
+- `10-requirements/` 与 `20-specs/` 仍有一定内容重叠，后续若继续双向修改，容易再次漂移。
+- `40-dev-loop/` 中部分设计偏目标态，若不裁剪就直接照搬，实施成本会偏高。
 - `engineering-conventions.md` 描述的是目标态仓库结构，与当前仓库现状尚未完全对齐。
 
 ## 下一阶段建议
 
 1. 先确认仓库策略：当前仓库是继续演进为主仓库，还是仅作为上游文档仓库。
-2. 补 `docs/quick-start.md`，为工程初始化预留入口。
-3. 补 `docs/api-overview.md`，统一接口清单、错误码和服务边界索引。
-4. 选定首个最小落地目标，例如先做投票链路、内容生成链路或最小客户端演示。
-5. 基于最小目标生成第一版需求包，再进入代码仓初始化。
+2. 补 `docs/30-api/` 下的请求响应样例或 OpenAPI 草案。
+3. 选定首个最小落地目标，例如先做投票链路、内容生成链路或最小客户端演示。
+4. 基于最小目标生成第一版需求包，再进入代码仓初始化。
 
 ## 进入实施前的建议门槛
 
 - 产品边界和 MVP 范围不再频繁变更。
 - 首个落地目标明确到单条主线能力。
-- 至少补齐 `quick-start.md`、`api-overview.md` 和最小任务拆分。
+- 至少补齐接口样例、最小任务拆分和工程初始化说明。
 - 确认是沿当前仓库继续扩展，还是拆出独立工程仓库。

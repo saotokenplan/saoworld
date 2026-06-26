@@ -7,8 +7,8 @@
 ## 当前定位
 
 - 本文档是权限索引，不替代详细规范。
-- 权限层级和安全要求以 `docs/specs/backend-data-spec.md` 为准。
-- 如果本文件与 `docs/specs/backend-data-spec.md` 冲突，以后者为准。
+- 权限层级和安全要求以 `docs/20-specs/backend-data-spec.md` 为准。
+- 如果本文件与 `docs/20-specs/backend-data-spec.md` 冲突，以后者为准。
 
 ## 权限角色
 
@@ -174,4 +174,4 @@
 
 1. 把本文件中的角色矩阵下沉到 OpenAPI 安全定义。
 2. 为运营和审核接口补请求头、审计字段和错误码要求。
-3. 再补一份 `docs/api-error-codes.md`，完善接口实施所需的异常约束。
+3. 再补一份 `docs/30-api/api-error-codes.md`，完善接口实施所需的异常约束。

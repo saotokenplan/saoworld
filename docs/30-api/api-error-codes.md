@@ -7,8 +7,8 @@
 ## 当前定位
 
 - 本文档是错误码索引，不替代详细接口规范。
-- 通用错误返回结构以 `docs/specs/backend-data-spec.md` 为准。
-- 如果本文件与 `docs/specs/backend-data-spec.md` 冲突，以后者为准。
+- 通用错误返回结构以 `docs/20-specs/backend-data-spec.md` 为准。
+- 如果本文件与 `docs/20-specs/backend-data-spec.md` 冲突，以后者为准。
 
 ## 通用错误返回结构
 

@@ -2,13 +2,13 @@
 
 ## 目的
 
-本文档用于把 `docs/specs/backend-data-spec.md` 中分散的接口方向整理成一份实施索引，方便后续补 OpenAPI、请求响应样例、错误码表和服务拆分文档。
+本文档用于把 `docs/20-specs/backend-data-spec.md` 中分散的接口方向整理成一份实施索引，方便后续补 OpenAPI、请求响应样例、错误码表和服务拆分文档。
 
 ## 当前定位
 
 - 本文档是接口总览，不替代详细规范。
-- 服务边界、数据模型、异步任务、事件流和安全要求以 `docs/specs/backend-data-spec.md` 为准。
-- 如果本文件与 `docs/specs/backend-data-spec.md` 冲突，以后者为准。
+- 服务边界、数据模型、异步任务、事件流和安全要求以 `docs/20-specs/backend-data-spec.md` 为准。
+- 如果本文件与 `docs/20-specs/backend-data-spec.md` 冲突，以后者为准。
 
 ## 通用约定
 
@@ -161,7 +161,7 @@
 
 ### 生命周期对齐
 
-- 内容对象状态参考 `docs/specs/content-generation-spec.md`：
+- 内容对象状态参考 `docs/20-specs/content-generation-spec.md`：
   - `draft -> validated -> reviewed -> packaged -> gray -> live -> archived`
 - 发布接口只能操作已满足发布前置条件的对象或内容包。
 

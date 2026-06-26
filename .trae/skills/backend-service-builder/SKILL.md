@@ -13,10 +13,10 @@
 ## 规范来源
 
 - 主要来源：
-  - `docs/specs/backend-data-spec.md`
-  - `docs/specs/engineering-conventions.md`
+  - `docs/20-specs/backend-data-spec.md`
+  - `docs/20-specs/engineering-conventions.md`
 - 次要来源：
-  - `docs/specs/product-spec.md`
+  - `docs/20-specs/product-spec.md`
 - 说明：
   - 服务边界、数据模型、接口、事件流和任务约束以 `backend-data-spec.md` 为准
   - 工程目录、命名、配置和测试约束参考 `engineering-conventions.md`

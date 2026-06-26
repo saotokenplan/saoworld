@@ -13,10 +13,10 @@
 ## 规范来源
 
 - 主要来源：
-  - `docs/specs/content-generation-spec.md`
-  - `docs/specs/product-spec.md`
+  - `docs/20-specs/content-generation-spec.md`
+  - `docs/20-specs/product-spec.md`
 - 次要来源：
-  - `docs/specs/backend-data-spec.md`
+  - `docs/20-specs/backend-data-spec.md`
 - 说明：
   - 生成对象字段、模板机制和生命周期以 `content-generation-spec.md` 为准
   - 世界骨架、可变范围和不可突破边界以 `product-spec.md` 为准

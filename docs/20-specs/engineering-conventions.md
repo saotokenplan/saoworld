@@ -11,10 +11,12 @@
 ```text
 game-project/
 ├── docs/
-│   ├── requirements/
-│   ├── dev-loop/
-│   ├── research/
-│   └── specs/
+│   ├── 00-governance/
+│   ├── 10-requirements/
+│   ├── 20-specs/
+│   ├── 30-api/
+│   ├── 40-dev-loop/
+│   └── 50-research/
 ├── game/
 │   ├── project.godot
 │   ├── scenes/

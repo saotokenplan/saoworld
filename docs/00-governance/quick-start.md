@@ -12,9 +12,9 @@
 
 如果你想先判断项目目前做到哪一步，建议先看：
 
-1. `docs/document-map.md`
-2. `docs/project-status.md`
-3. `docs/specs/README.md`
+1. `docs/00-governance/document-map.md`
+2. `docs/00-governance/project-status.md`
+3. `docs/20-specs/README.md`
 
 ## 5 分钟上手
 
@@ -22,18 +22,18 @@
 
 按下面顺序阅读：
 
-1. `docs/document-map.md`
+1. `docs/00-governance/document-map.md`
    - 理解文档分层、权威关系和维护原则
-2. `docs/project-status.md`
+2. `docs/00-governance/project-status.md`
    - 判断项目当前阶段、已确定事项和未落地资产
-3. `docs/specs/README.md`
+3. `docs/20-specs/README.md`
    - 进入执行规范入口
-4. `docs/specs/product-spec.md`
+4. `docs/20-specs/product-spec.md`
    - 理解产品边界、MVP 和验收口径
-5. `docs/specs/backend-data-spec.md`
+5. `docs/20-specs/backend-data-spec.md`
    - 理解后端服务、数据模型和接口方向
-6. `docs/spec-skill-mapping.md`
-   - 理解 `specs/` 和 `.trae/skills/` 的关系
+6. `docs/00-governance/spec-skill-mapping.md`
+   - 理解 `20-specs/` 和 `.trae/skills/` 的关系
 
 ### 如果你准备开始实施
 
@@ -46,9 +46,9 @@
    - 最小投票链路
    - 最小内容生成链路
    - 最小客户端演示链路
-3. 以 `docs/specs/` 为基线整理需求包
-   - 背景和讨论看 `requirements/`
-   - 执行边界和验收以 `specs/` 为准
+3. 以 `docs/20-specs/` 为基线整理需求包
+   - 背景和讨论看 `10-requirements/`
+   - 执行边界和验收以 `20-specs/` 为准
 4. 再决定工程初始化方式
    - 单仓
    - 多仓
@@ -58,28 +58,28 @@
 
 ### 业务与产品
 
-- `docs/requirements/open-world-ai-game-prd.md`
-- `docs/requirements/需求概述.md`
-- `docs/specs/product-spec.md`
+- `docs/10-requirements/open-world-ai-game-prd.md`
+- `docs/10-requirements/需求概述.md`
+- `docs/20-specs/product-spec.md`
 
 ### 技术与实施
 
-- `docs/requirements/技术方案.md`
-- `docs/specs/backend-data-spec.md`
-- `docs/specs/engineering-conventions.md`
+- `docs/10-requirements/技术方案.md`
+- `docs/20-specs/backend-data-spec.md`
+- `docs/20-specs/engineering-conventions.md`
 
 ### 治理与执行
 
-- `docs/spec-skill-mapping.md`
-- `docs/specs/agent-loop-spec.md`
-- `docs/dev-loop/loop-engineering-plan.md`
+- `docs/00-governance/spec-skill-mapping.md`
+- `docs/20-specs/agent-loop-spec.md`
+- `docs/40-dev-loop/loop-engineering-plan.md`
 
 ## 当前能做的事
 
 - 梳理和统一需求边界
-- 基于 `specs/` 拆分首个最小落地目标
+- 基于 `20-specs/` 拆分首个最小落地目标
 - 明确未来仓库结构与实施策略
-- 维护 `.trae/skills/` 使其和 `specs/` 保持一致
+- 维护 `.trae/skills/` 使其和 `20-specs/` 保持一致
 - 补充接口总览、启动说明和任务拆分文档
 
 ## 当前不能直接做的事
@@ -92,7 +92,7 @@
 ## 从文档到实施的最小路径
 
 1. 确认首个落地目标
-2. 从 `docs/specs/` 中抽出与该目标直接相关的规范
+2. 从 `docs/20-specs/` 中抽出与该目标直接相关的规范
 3. 生成第一版需求包
 4. 确认仓库组织方式
 5. 初始化最小工程骨架
@@ -101,15 +101,17 @@
 ## 开工前检查清单
 
 - 是否已经明确首个最小落地目标
-- 是否已经确认以 `docs/specs/` 为执行基线
+- 是否已经确认以 `docs/20-specs/` 为执行基线
 - 是否已经确认当前仓库角色
 - 是否已经确认工程是单仓还是多仓
 - 是否已经补充接口总览或最小任务拆分
 
 ## 后续建议补充
 
-- `docs/api-overview.md`
-  - 统一接口清单、错误码和服务边界索引
+- `docs/30-api/api-examples-vote.md`
+  - 统一投票链路的请求响应样例和状态说明
+- `docs/30-api/openapi-draft.md`
+  - 作为后续 OpenAPI 文档的集中草案入口
 - 首个需求包目录
   - 例如 `docs/packages/first-slice/`
 - 工程初始化说明

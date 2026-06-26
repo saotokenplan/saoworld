@@ -13,10 +13,10 @@
 ## 规范来源
 
 - 主要来源：
-  - `docs/specs/product-spec.md`
-  - `docs/specs/engineering-conventions.md`
+  - `docs/20-specs/product-spec.md`
+  - `docs/20-specs/engineering-conventions.md`
 - 次要来源：
-  - `docs/specs/backend-data-spec.md`
+  - `docs/20-specs/backend-data-spec.md`
 - 说明：
   - 玩法闭环、投票入口、世界更新反馈和产品边界以 `product-spec.md` 为准
   - 客户端工程组织、命名和测试约束参考 `engineering-conventions.md`

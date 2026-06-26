@@ -2,47 +2,47 @@
 
 ## 目的
 
-本文档用于明确 `docs/specs/` 与 `.trae/skills/` 的上下游关系，避免把 Skill 当成唯一规范，也避免规范更新后 Skill 漂移失效。
+本文档用于明确 `docs/20-specs/` 与 `.trae/skills/` 的上下游关系，避免把 Skill 当成唯一规范，也避免规范更新后 Skill 漂移失效。
 
 ## 基本原则
 
-- `specs/` 是规范上游，负责定义边界、约束、验收和协作方式。
+- `20-specs/` 是规范上游，负责定义边界、约束、验收和协作方式。
 - `.trae/skills/` 是执行下游，负责把规范转成 Agent 可复用的工作套路。
 - Skill 不单独定义产品边界、数据边界和上线规则。
-- 当 `specs/` 更新时，必须检查受影响的 Skill 是否需要同步更新。
+- 当 `20-specs/` 更新时，必须检查受影响的 Skill 是否需要同步更新。
 
 ## 关系判断
 
-- `requirements/`
+- `10-requirements/`
   - 回答“为什么做”和“希望做成什么”
-- `specs/`
+- `20-specs/`
   - 回答“按什么约束落地”和“什么算完成”
 - `.trae/skills/`
   - 回答“Agent 应该按什么流程执行”
 
 换句话说，推荐链路是：
 
-`requirements -> specs -> skills -> execution`
+`10-requirements -> 20-specs -> skills -> execution`
 
 ## 总体映射表
 
 | 上游规范 | 主要作用 | 关联 Skill | 映射关系 | 维护建议 |
 |---|---|---|---|---|
-| `docs/specs/product-spec.md` | 定义产品边界、玩法闭环、投票治理、MVP、验收口径 | `requirement-package-builder` `godot-gameplay-implementer` `world-content-generator` | 提供产品目标、非目标、玩法和世界变化边界 | 产品规则有变更时，优先检查需求包生成和客户端实现 Skill |
-| `docs/specs/content-generation-spec.md` | 定义 AI 内容生成对象、输入输出结构、审核规则和生命周期 | `world-content-generator` `content-review-gate` `release-package-operator` | 提供生成对象 schema、生命周期状态和审核前提 | 任何生成字段、模板或生命周期调整，都要同步更新这 3 个 Skill |
-| `docs/specs/backend-data-spec.md` | 定义服务边界、数据模型、API、事件流、异步任务 | `backend-service-builder` `godot-gameplay-implementer` `release-package-operator` | 提供接口契约、数据模型、内容包、回滚与事件基础 | 接口、表结构、状态流调整时，优先检查后端和发布相关 Skill |
-| `docs/specs/agent-loop-spec.md` | 定义 Agent 角色、需求包、门禁、日志、Issue、回滚流程 | `requirement-package-builder` `loop-gate-optimizer` `release-package-operator` | 提供需求包格式、门禁输入、日志分析和治理闭环 | Agent 流程和门禁机制变化时，重点更新需求包和闭环优化 Skill |
-| `docs/specs/engineering-conventions.md` | 定义仓库结构、命名、配置、测试、发布协作规范 | `backend-service-builder` `godot-gameplay-implementer` `release-package-operator` | 提供工程目录、命名和测试底线 | 工程规范更新后，检查实现类 Skill 的输出格式和目录约定 |
+| `docs/20-specs/product-spec.md` | 定义产品边界、玩法闭环、投票治理、MVP、验收口径 | `requirement-package-builder` `godot-gameplay-implementer` `world-content-generator` | 提供产品目标、非目标、玩法和世界变化边界 | 产品规则有变更时，优先检查需求包生成和客户端实现 Skill |
+| `docs/20-specs/content-generation-spec.md` | 定义 AI 内容生成对象、输入输出结构、审核规则和生命周期 | `world-content-generator` `content-review-gate` `release-package-operator` | 提供生成对象 schema、生命周期状态和审核前提 | 任何生成字段、模板或生命周期调整，都要同步更新这 3 个 Skill |
+| `docs/20-specs/backend-data-spec.md` | 定义服务边界、数据模型、API、事件流、异步任务 | `backend-service-builder` `godot-gameplay-implementer` `release-package-operator` | 提供接口契约、数据模型、内容包、回滚与事件基础 | 接口、表结构、状态流调整时，优先检查后端和发布相关 Skill |
+| `docs/20-specs/agent-loop-spec.md` | 定义 Agent 角色、需求包、门禁、日志、Issue、回滚流程 | `requirement-package-builder` `loop-gate-optimizer` `release-package-operator` | 提供需求包格式、门禁输入、日志分析和治理闭环 | Agent 流程和门禁机制变化时，重点更新需求包和闭环优化 Skill |
+| `docs/20-specs/engineering-conventions.md` | 定义仓库结构、命名、配置、测试、发布协作规范 | `backend-service-builder` `godot-gameplay-implementer` `release-package-operator` | 提供工程目录、命名和测试底线 | 工程规范更新后，检查实现类 Skill 的输出格式和目录约定 |
 
 ## Skill 逐项映射
 
 ### `requirement-package-builder`
 
 - 主要上游：
-  - `docs/specs/product-spec.md`
-  - `docs/specs/agent-loop-spec.md`
+  - `docs/20-specs/product-spec.md`
+  - `docs/20-specs/agent-loop-spec.md`
 - 次要上游：
-  - `docs/specs/engineering-conventions.md`
+  - `docs/20-specs/engineering-conventions.md`
 - 作用：
   - 把产品目标和边界整理成后续 Agent 可直接执行的需求包
 - 依赖原因：
@@ -57,10 +57,10 @@
 ### `backend-service-builder`
 
 - 主要上游：
-  - `docs/specs/backend-data-spec.md`
-  - `docs/specs/engineering-conventions.md`
+  - `docs/20-specs/backend-data-spec.md`
+  - `docs/20-specs/engineering-conventions.md`
 - 次要上游：
-  - `docs/specs/product-spec.md`
+  - `docs/20-specs/product-spec.md`
 - 作用：
   - 生成或扩展后端服务、接口、模型、任务和测试
 - 依赖原因：
@@ -75,10 +75,10 @@
 ### `godot-gameplay-implementer`
 
 - 主要上游：
-  - `docs/specs/product-spec.md`
-  - `docs/specs/engineering-conventions.md`
+  - `docs/20-specs/product-spec.md`
+  - `docs/20-specs/engineering-conventions.md`
 - 次要上游：
-  - `docs/specs/backend-data-spec.md`
+  - `docs/20-specs/backend-data-spec.md`
 - 作用：
   - 落实客户端玩法逻辑、场景结构、UI 与最小验证路径
 - 依赖原因：
@@ -93,10 +93,10 @@
 ### `world-content-generator`
 
 - 主要上游：
-  - `docs/specs/content-generation-spec.md`
-  - `docs/specs/product-spec.md`
+  - `docs/20-specs/content-generation-spec.md`
+  - `docs/20-specs/product-spec.md`
 - 次要上游：
-  - `docs/specs/backend-data-spec.md`
+  - `docs/20-specs/backend-data-spec.md`
 - 作用：
   - 生成结构化 NPC、任务、聚落和事件草案
 - 依赖原因：
@@ -111,11 +111,11 @@
 ### `content-review-gate`
 
 - 主要上游：
-  - `docs/specs/content-generation-spec.md`
-  - `docs/specs/product-spec.md`
+  - `docs/20-specs/content-generation-spec.md`
+  - `docs/20-specs/product-spec.md`
 - 次要上游：
-  - `docs/specs/agent-loop-spec.md`
-  - `docs/specs/backend-data-spec.md`
+  - `docs/20-specs/agent-loop-spec.md`
+  - `docs/20-specs/backend-data-spec.md`
 - 作用：
   - 对生成结果做结构化审核，输出通过、驳回或人工复核结论
 - 依赖原因：
@@ -131,11 +131,11 @@
 ### `loop-gate-optimizer`
 
 - 主要上游：
-  - `docs/specs/agent-loop-spec.md`
+  - `docs/20-specs/agent-loop-spec.md`
 - 次要上游：
-  - `docs/specs/engineering-conventions.md`
-  - `docs/dev-loop/gate_registry.yaml`
-  - `docs/dev-loop/log-schemas-loop-engineering.md`
+  - `docs/20-specs/engineering-conventions.md`
+  - `docs/40-dev-loop/gate_registry.yaml`
+  - `docs/40-dev-loop/log-schemas-loop-engineering.md`
 - 作用：
   - 从会话日志、CI 失败和事故中提炼门禁改进建议
 - 依赖原因：
@@ -150,11 +150,11 @@
 ### `release-package-operator`
 
 - 主要上游：
-  - `docs/specs/backend-data-spec.md`
-  - `docs/specs/agent-loop-spec.md`
+  - `docs/20-specs/backend-data-spec.md`
+  - `docs/20-specs/agent-loop-spec.md`
 - 次要上游：
-  - `docs/specs/content-generation-spec.md`
-  - `docs/specs/engineering-conventions.md`
+  - `docs/20-specs/content-generation-spec.md`
+  - `docs/20-specs/engineering-conventions.md`
 - 作用：
   - 组织内容包打包、灰度、正式发布、回滚和发布记录
 - 依赖原因：
@@ -168,13 +168,13 @@
 
 ## 维护规则
 
-1. `specs/` 先改，`skills/` 后改，不反过来。
+1. `20-specs/` 先改，`skills/` 后改，不反过来。
 2. 一个 Skill 至少要标清自己的主要上游规范。
 3. 一个 spec 如果影响多个 Skill，优先维护映射表，再逐个更新 Skill。
-4. Skill 中如果出现新的业务边界定义，应回收到 `specs/`，不要只留在 Skill 里。
+4. Skill 中如果出现新的业务边界定义，应回收到 `20-specs/`，不要只留在 Skill 里。
 
 ## 建议操作
 
 - 后续可在每个 `SKILL.md` 顶部增加一节“规范来源”。
-- 后续可在 `docs/document-map.md` 中加入本文档入口。
-- 若 `specs/` 有重大调整，先过一遍本文档，再决定需要更新哪些 Skill。
+- 后续可在 `docs/00-governance/document-map.md` 中加入本文档入口。
+- 若 `20-specs/` 有重大调整，先过一遍本文档，再决定需要更新哪些 Skill。

@@ -14,11 +14,11 @@
 ## 规范来源
 
 - 主要来源：
-  - `docs/specs/agent-loop-spec.md`
+  - `docs/20-specs/agent-loop-spec.md`
 - 次要来源：
-  - `docs/specs/engineering-conventions.md`
-  - `docs/dev-loop/gate_registry.yaml`
-  - `docs/dev-loop/log-schemas-loop-engineering.md`
+  - `docs/20-specs/engineering-conventions.md`
+  - `docs/40-dev-loop/gate_registry.yaml`
+  - `docs/40-dev-loop/log-schemas-loop-engineering.md`
 - 说明：
   - Agent 角色、门禁目标、Issue 反馈和闭环要求以 `agent-loop-spec.md` 为准
   - 工程协作和门禁落地方式参考 `engineering-conventions.md`

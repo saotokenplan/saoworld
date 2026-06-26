@@ -115,10 +115,12 @@ AI 执行一个步骤之后，不能靠“看起来差不多”来判断是否�
 ```text
 game-project/
 ├── docs/
-│   ├── vision/
-│   ├── requirements/
-│   ├── system-design/
-│   └── release-notes/
+│   ├── 00-governance/
+│   ├── 10-requirements/
+│   ├── 20-specs/
+│   ├── 30-api/
+│   ├── 40-dev-loop/
+│   └── 50-research/
 ├── game/
 │   ├── scenes/
 │   ├── scripts/

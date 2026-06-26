@@ -14,11 +14,11 @@
 ## 规范来源
 
 - 主要来源：
-  - `docs/specs/backend-data-spec.md`
-  - `docs/specs/agent-loop-spec.md`
+  - `docs/20-specs/backend-data-spec.md`
+  - `docs/20-specs/agent-loop-spec.md`
 - 次要来源：
-  - `docs/specs/content-generation-spec.md`
-  - `docs/specs/engineering-conventions.md`
+  - `docs/20-specs/content-generation-spec.md`
+  - `docs/20-specs/engineering-conventions.md`
 - 说明：
   - 内容包、发布状态、灰度和回滚约束以 `backend-data-spec.md` 为准
   - 发布治理、审计链和回滚闭环要求以 `agent-loop-spec.md` 为准
