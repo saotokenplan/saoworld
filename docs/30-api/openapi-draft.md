@@ -28,11 +28,15 @@
   - `docs/30-api/api-permissions.md`
   - `docs/30-api/api-error-codes.md`
   - `docs/30-api/api-examples-vote.md`
+- 当前已经完成的草案收敛包括：
+  - 第一批投票链路接口的 `paths` 与 schema 草案
+  - 第二批内容查询与发布回滚链路的 `paths` 与 schema 草案
+  - 第三批世界、任务与审核运营接口的 `paths` 与 schema 草案
 - 当前仍缺少的关键内容包括：
-  - 第二批和第三批接口组的请求响应草案
   - 更完整的通用 schema 复用层
   - 过滤、排序、审计字段和安全定义细化
   - 按服务拆分后的 path 与 tag 进一步展开
+  - 更接近可导入工具链的单文件 OpenAPI 组织形态
 
 ## 草案收敛原则
 
@@ -131,6 +135,20 @@ components:
       schema:
         type: string
       description: 内容包 ID
+    RegionId:
+      name: region_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 区域 ID
+    ReviewObjectId:
+      name: object_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 审核对象 ID
     OpsContentPackageId:
       name: id
       in: path
@@ -489,6 +507,131 @@ components:
         rolled_back_at:
           type: string
           format: date-time
+
+    RegionSummary:
+      type: object
+      required: [region_id, chapter_id, title, status, visible]
+      properties:
+        region_id:
+          type: string
+        chapter_id:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        status:
+          type: string
+          enum: [locked, active, unstable, archived]
+        visible:
+          type: boolean
+
+    RegionListResponse:
+      type: object
+      required: [request_id, items]
+      properties:
+        request_id:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegionSummary'
+
+    RegionDetailResponse:
+      type: object
+      required: [request_id, region]
+      properties:
+        request_id:
+          type: string
+        region:
+          $ref: '#/components/schemas/RegionSummary'
+
+    QuestItem:
+      type: object
+      required: [quest_id, chapter_id, active_region_id, title, status]
+      properties:
+        quest_id:
+          type: string
+        chapter_id:
+          type: string
+        active_region_id:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        status:
+          type: string
+          enum: [available, active, completed, failed]
+
+    QuestListResponse:
+      type: object
+      required: [request_id, items]
+      properties:
+        request_id:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestItem'
+
+    CreateVoteCycleRequest:
+      type: object
+      required: [chapter_id, starts_at, ends_at, candidate_ids, reason]
+      properties:
+        chapter_id:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        candidate_ids:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        reason:
+          type: string
+
+    CreateVoteCycleResponse:
+      type: object
+      required: [request_id, vote_cycle_id, status]
+      properties:
+        request_id:
+          type: string
+        vote_cycle_id:
+          type: string
+        status:
+          type: string
+          enum: [draft, scheduled, open]
+
+    ReviewApproveRequest:
+      type: object
+      required: [review_result, reason]
+      properties:
+        review_result:
+          type: string
+          enum: [approved, manual_review]
+        reason:
+          type: string
+
+    ReviewApproveResponse:
+      type: object
+      required: [request_id, review_id, object_id, review_result, reviewed_at]
+      properties:
+        request_id:
+          type: string
+        review_id:
+          type: string
+        object_id:
+          type: string
+        review_result:
+          type: string
+        reviewed_at:
+          type: string
+          format: date-time
 ```
 
 ### `GET /api/v1/votes/current`
@@ -807,6 +950,196 @@ paths:
 - `POST /api/v1/ops/vote-cycles`
 - `POST /api/v1/ops/review/{object_id}/approve`
 
+## 第三批草案正文
+
+第三批覆盖世界查询、任务查询以及两类运营写接口。由于当前没有独立的世界/任务/审核样例文档，本节继续保持“最小可评审字段”策略，只补足能支撑服务边界、权限和状态约束讨论的核心结构。
+
+### `GET /api/v1/world/regions`
+
+```yaml
+paths:
+  /api/v1/world/regions:
+    get:
+      tags: [world]
+      summary: 获取当前可见区域列表
+      operationId: getVisibleRegions
+      responses:
+        '200':
+          description: 返回当前玩家可见区域列表
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegionListResponse'
+        '401':
+          description: 未认证或 Token 无效
+```
+
+对应错误码建议：
+
+- `UNAUTHORIZED`
+
+### `GET /api/v1/world/regions/{region_id}`
+
+```yaml
+paths:
+  /api/v1/world/regions/{region_id}:
+    get:
+      tags: [world]
+      summary: 获取区域详情和状态
+      operationId: getRegionDetail
+      parameters:
+        - $ref: '#/components/parameters/RegionId'
+      responses:
+        '200':
+          description: 返回区域详情和当前状态
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegionDetailResponse'
+        '401':
+          description: 未认证或 Token 无效
+        '403':
+          description: 区域当前对玩家不可见
+        '404':
+          description: 区域不存在
+```
+
+对应错误码建议：
+
+- `UNAUTHORIZED`
+- `REGION_NOT_VISIBLE`
+- `REGION_NOT_FOUND`
+
+### `GET /api/v1/quests`
+
+```yaml
+paths:
+  /api/v1/quests:
+    get:
+      tags: [quests]
+      summary: 获取玩家任务列表
+      operationId: getQuestList
+      responses:
+        '200':
+          description: 返回玩家任务列表
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestListResponse'
+        '401':
+          description: 未认证或 Token 无效
+        '503':
+          description: 任务列表暂不可用
+```
+
+对应错误码建议：
+
+- `UNAUTHORIZED`
+- `QUEST_LIST_UNAVAILABLE`
+
+### `POST /api/v1/ops/vote-cycles`
+
+```yaml
+paths:
+  /api/v1/ops/vote-cycles:
+    post:
+      tags: [ops, votes]
+      summary: 创建投票周期
+      operationId: createVoteCycle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVoteCycleRequest'
+      responses:
+        '200':
+          description: 投票周期创建成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateVoteCycleResponse'
+        '400':
+          description: 缺少原因或请求体非法
+        '401':
+          description: 未认证或 Token 无效
+        '403':
+          description: 无运营权限
+        '409':
+          description: 当前投票周期创建冲突
+```
+
+对应错误码建议：
+
+- `REASON_REQUIRED`
+- `FORBIDDEN`
+- `VOTE_CYCLE_CONFLICT`
+
+### `POST /api/v1/ops/review/{object_id}/approve`
+
+```yaml
+paths:
+  /api/v1/ops/review/{object_id}/approve:
+    post:
+      tags: [review, ops]
+      summary: 批准内容对象
+      operationId: approveReviewObject
+      parameters:
+        - $ref: '#/components/parameters/ReviewObjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewApproveRequest'
+      responses:
+        '200':
+          description: 审核批准请求受理成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewApproveResponse'
+        '400':
+          description: 缺少原因或审核结果非法
+        '401':
+          description: 未认证或 Token 无效
+        '403':
+          description: 无审核批准权限
+        '404':
+          description: 审核对象不存在
+        '409':
+          description: 当前对象不处于可批准状态
+```
+
+对应错误码建议：
+
+- `REASON_REQUIRED`
+- `REVIEW_APPROVAL_FORBIDDEN`
+- `REVIEW_OBJECT_NOT_FOUND`
+- `INVALID_REVIEW_STATE`
+
+### 第三批实现备注
+
+- 第三批查询接口分别使用 `world` 和 `quests` tag，对应 `world-service` 与 `player-service/world-service`
+- 第三批写接口沿用双 tag 风格，把 `ops` 与业务域上下文同时暴露出来
+- `POST /api/v1/ops/vote-cycles` 与 `POST /api/v1/ops/review/{object_id}/approve` 都属于敏感操作，必须进入审计链
+- 当前 `CreateVoteCycleRequest` 和 `ReviewApproveRequest` 只保留最小字段；后续若补了独立样例文档，再继续扩展操作人上下文、二次确认和附加审核维度
+
 ## 来源文档映射
 
 - `docs/20-specs/backend-data-spec.md`
@@ -822,10 +1155,10 @@ paths:
 
 ## 后续补齐顺序
 
-1. 先补投票链路以外的内容链路和运营链路样例。
-2. 再收敛分页、过滤、审计字段、幂等和通用 schema。
-3. 然后把 `docs/30-api/` 下现有专题文档进一步下沉为可复制的 OpenAPI 结构。
-4. 最后再决定是否输出单文件 OpenAPI 或按服务拆分草案。
+1. 继续收敛分页、过滤、审计字段、幂等和安全作用域等通用复用层。
+2. 为第二批和第三批接口补独立请求响应样例文档，减少目前“最小字段”带来的抽象度。
+3. 把当前文档中的三批 `paths` 与 `components` 合并为更接近单文件 OpenAPI 的连续结构。
+4. 最后决定输出单文件 OpenAPI 还是按服务拆分草案。
 
 ## 与其他文档的关系
 
