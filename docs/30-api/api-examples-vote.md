@@ -289,7 +289,7 @@ Accept: application/json
 
 ## 建议下一步
 
-1. 继续补 `docs/30-api/api-examples-content.md`
+1. 继续补内容生成链路的接口样例文档
 2. 再补运营发布链路的请求响应样例
 3. 最后汇总为 OpenAPI 草案
 

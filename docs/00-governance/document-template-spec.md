@@ -180,7 +180,7 @@
 - `docs/30-api/api-permissions.md`
 - `docs/30-api/api-error-codes.md`
 - `docs/30-api/api-examples-vote.md`
-- 后续 `openapi-draft.md`
+- 后续 OpenAPI 草案类文档
 
 推荐章节：
 
