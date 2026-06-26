@@ -11,6 +11,9 @@
 - `project-status.md`
   - 当前项目阶段、已确定事项、未确定事项与待落地资产
   - 适合开始实施前快速判断项目成熟度
+- `quick-start.md`
+  - 当前仓库的使用方式与从文档走向实施的最小路径
+  - 适合第一次接手仓库或准备启动工程前阅读
 - `requirements/`
   - 游戏需求与方案拆分文档
   - 适合先看这组，快速了解项目目标、功能和技术边界
@@ -28,16 +31,17 @@
 
 1. `document-map.md`
 2. `project-status.md`
-3. `spec-skill-mapping.md`
-4. `requirements/open-world-ai-game-prd.md`
-5. `requirements/需求概述.md`
-6. `requirements/功能设计.md`
-7. `requirements/技术方案.md`
-8. `dev-loop/ai-coding-game-dev-loop-plan.md`
-9. `dev-loop/loop-engineering-plan.md`
-10. `research/stack-research-ai-game-dev.md`
-11. `research/service-stack-comparison.md`
-12. `specs/README.md`
+3. `quick-start.md`
+4. `spec-skill-mapping.md`
+5. `requirements/open-world-ai-game-prd.md`
+6. `requirements/需求概述.md`
+7. `requirements/功能设计.md`
+8. `requirements/技术方案.md`
+9. `dev-loop/ai-coding-game-dev-loop-plan.md`
+10. `dev-loop/loop-engineering-plan.md`
+11. `research/stack-research-ai-game-dev.md`
+12. `research/service-stack-comparison.md`
+13. `specs/README.md`
 
 ## 使用原则
 
