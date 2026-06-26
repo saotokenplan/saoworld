@@ -30,14 +30,16 @@
   - `docs/30-api/api-examples-vote.md`
 - 当前已经完成的草案收敛包括：
   - 第一批（投票链路）、第二批（内容查询与发布回滚）、第三批（世界/任务/运营）共 **12 个接口**的 `paths` 与 schema 草案全部完成
-  - 通用复用层已补齐：原子化错误 Schema（`GenericErrorCode`、`TraceId`、`ValidationErrorDetail`、`ScopeErrorDetail` 等）、特化错误响应（`ValidationErrorResponse`、`NotFoundErrorResponse`、`ScopeErrorResponse` 等）、复用参数（分页、ID 参数）、复用请求头（`Idempotency-Key`、`X-Trace-Id`）
-  - components/responses 已升级为特化类型（BadRequest → ValidationErrorResponse、Unauthorized → UnauthorizedErrorResponse 等），新增 `InvalidPagination`、`InsufficientScope`、`PathParameterInvalid` 高频复用响应
+  - 错误层已原子化并特化：原子字段（`GenericErrorCode`、`TraceId`、`RequestId`、`ValidationIssue`、`AuthorizationIssue`、`RejectedValue`、`PathFieldName`/`QueryFieldName`/`BodyFieldPath`/`HeaderFieldName`），特化错误响应（`ValidationErrorResponse`、`NotFoundErrorResponse`、`ScopeErrorResponse`、`PathParameterErrorResponse`、`ReasonRequiredErrorResponse`、`DomainServiceUnavailableErrorResponse`、`OpsWriteValidationErrorResponse`、`RateLimitedErrorResponse`、`UnauthorizedErrorResponse`），复用参数（分页、ID 参数）、复用请求头（`Idempotency-Key`、`X-Trace-Id`、`X-Request-Id`）
+  - `components/responses` 已升级为特化类型：`BadRequest`→`ValidationErrorResponse`、`Unauthorized`→`UnauthorizedErrorResponse`、`NotFound`→`NotFoundErrorResponse`、`Forbidden`→`ScopeErrorResponse`、`TooManyRequests`→`RateLimitedErrorResponse`，新增 `InvalidPagination`、`InsufficientScope`、`PathParameterInvalid`、`ReasonRequired` 高频复用响应
+  - 成功响应 envelope 已抽象：`RequestScopedResponse`（含 `request_id`）、`TraceableResponse`（含 `trace_id`）、`ListResponseBase`（列表+分页 meta）、`DetailResponseBase`（单对象+meta）、`OperationResponseBase`（写操作+trace）
   - 安全方案已定义：OIDC JWT Bearer Token + 细粒度 scope（10 个 scope），每个接口均声明 `x-roles` 角色集合和所需 scope
   - 请求响应样例已覆盖投票主链路、内容、世界、任务、运营写接口的典型成功样例和主要错误样例
-- 当前仍缺少或待细化的内容：
-  - 部分第二批/第三批接口的边界条件错误样例（如字段级校验 details）
-  - 成功响应包装的复用层抽象（目前成功响应各自定义 schema）
-  - 按服务拆分子草案的评估（当前单文件 2500+ 行，规模尚可控）
+  - 路径端点响应已升级：ops 写接口 400→`OpsWriteValidationErrorResponse`（oneOf: 参数校验+reason缺失），503→`DomainServiceUnavailableErrorResponse`；所有跨端点高频错误均已使用特化 schema
+- 当前仍缺少或待细化的内容（按优先级）：
+  1. 部分端点边界条件的字段级错误 details 样例（如 `POST /ops/content-packages/{id}/rollback` 的 400 `ROLLBACK_TARGET_INVALID` 是领域语义错误，无 details；其余端点的参数校验样例已覆盖）
+  2. 预留错误码落地（如 `INTERNAL_ERROR`、`TOKEN_EXPIRED`），应在服务端实现阶段按需添加
+  3. 按服务拆分子草案的评估（当前单文件 2600+ 行、12 个端点，规模尚可控；建议端点超过 25-30 个时再拆分）
 
 ## 草案收敛原则
 
@@ -1175,10 +1177,11 @@ paths:
 
 ## 后续补齐顺序
 
-1. 补齐第二批/第三批接口的字段级校验错误样例（details 数组），目前这些接口的 400 错误主要通过 `components/responses/BadRequest` 引用，缺少接口特定字段的 details 示例。
-2. 抽象成功响应包装复用层（如分页响应、单对象响应的通用 envelope），减少成功响应 schema 的重复定义。
-3. 确认仓库策略后，决定是保持单文件草案（当前 2530 行，规模可控）还是按服务拆分为多文件。
-4. 服务端实现阶段，将预留错误码（如 `INTERNAL_ERROR`、`TOKEN_EXPIRED`）落地到 OpenAPI。
+1. ~~抽象成功响应包装复用层~~（已完成：`RequestScopedResponse`、`TraceableResponse`、`ListResponseBase`、`DetailResponseBase`、`OperationResponseBase`）
+2. ~~错误层原子化与特化~~（已完成：所有跨端点高频错误响应已有特化 schema）
+3. 补齐少数端点边界条件的字段级错误 details 样例（如 `ROLLBACK_TARGET_INVALID` 等领域语义错误的 details 补充说明）
+4. 服务端实现阶段，将预留错误码（如 `INTERNAL_ERROR`、`TOKEN_EXPIRED`）按需落地到 OpenAPI
+5. 端点数量超过 25-30 个时，评估按服务拆分为多文件草案
 
 ## 与其他文档的关系
 
