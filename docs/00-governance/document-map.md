@@ -22,9 +22,9 @@
 
 ## 当前判断
 
-- 当前仓库属于“文档规划阶段”。
+- 当前仓库属于“实施准备阶段”。
 - 当前资产以需求、规范、研发闭环和技术调研为主。
-- 后续如果进入工程实施，`20-specs/` 应作为主要执行输入。
+- 后续进入工程实施时，`20-specs/` 应作为主要执行输入。
 
 ## 文档权威关系
 
@@ -49,7 +49,7 @@
 
 | 文件 | 作用 | 当前状态 | 是否保留 | 整理建议 |
 |---|---|---|---|---|
-| `README.md` | 仓库总入口，说明文档目录与阅读顺序 | 可用，但更像目录说明，缺项目现状与启动指引 | 保留 | 补充仓库定位、当前阶段、下一步行动、如何开始 |
+| `README.md` | 仓库总入口，说明文档目录与阅读顺序 | 已具备仓库定位、阶段说明和阅读顺序，是当前有效入口 | 保留 | 持续与 `docs/README.md`、治理入口和阅读顺序保持同步 |
 | `docs/README.md` | `docs` 总导航，说明新目录规范与阅读顺序 | 结构清晰，是当前较好的文档入口 | 保留 | 明确执行以 `20-specs/` 为准，其他为背景、调研、治理参考 |
 | `docs/10-requirements/open-world-ai-game-prd.md` | 完整 PRD，覆盖目标、玩法、MVP、验收 | 内容最完整，但与需求摘要和执行规范重叠明显 | 有条件保留 | 保留为立项 PRD，删除与 `20-specs/` 重复的执行细节，并标注非权威 |
 | `docs/10-requirements/需求概述.md` | 高层摘要，便于快速理解项目 | 简洁清楚，但信息密度有限 | 保留 | 定位为一页式摘要，避免继续堆叠细节 |
@@ -65,7 +65,6 @@
 | `docs/40-dev-loop/loop-engineering-plan.md` | Loop Engineering 总方案、门禁、指标体系 | 治理设计较完整，但偏抽象 | 保留 | 与 `agent-loop-spec.md` 切分职责，避免双份描述同一流程 |
 | `docs/40-dev-loop/issue-templates-loop-engineering.md` | Gate 和 Rule 改进的 Issue 模板 | 实用性强，可直接复用 | 保留 | 后续迁移到真实工程仓库的 Issue Template 目录 |
 | `docs/40-dev-loop/log-schemas-loop-engineering.md` | 定义 session、CI、事故日志 schema | 结构清晰，适合作为观测标准 | 保留 | 补字段示例和日志采集入口，避免只停留在格式定义 |
-| `docs/40-dev-loop/gate_registry.yaml` | 门禁注册表，记录成本、风险和生命周期 | 实用，但引用了当前仓库不存在的脚本和路径 | 保留 | 标注为目标态注册表，并补当前可用 gate 列表 |
 | `docs/50-research/stack-research-ai-game-dev.md` | 引擎与整体技术栈选型论证 | 决策依据充分，但不适合做开发入口 | 保留 | 保留为调研归档，不再承载规范性内容 |
 | `docs/50-research/service-stack-comparison.md` | 比较 Python、TypeScript、Rust 的服务端职责 | 结论明确，适合辅助技术决策 | 保留 | 保留为历史决策依据，并补最终结论摘要 |
 

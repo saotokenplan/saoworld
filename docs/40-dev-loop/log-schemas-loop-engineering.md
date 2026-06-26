@@ -60,7 +60,7 @@
 | `branch` | string | 否 | 分支名 |
 | `pr_id` | string | 否 | PR id |
 | `commit` | string | 否 | commit sha |
-| `gate_id` | string | 是 | 与 `gate_registry.yaml` 对齐 |
+| `gate_id` | string | 是 | 与当前 gate 清单或 registry 约定对齐 |
 | `gate_name` | string | 是 | 可读名称 |
 | `status` | string | 是 | `failed` / `flaky` / `timeout` |
 | `duration_s` | number | 是 | 执行耗时 |

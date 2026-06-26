@@ -150,13 +150,12 @@
   - `docs/20-specs/agent-loop-spec.md`
 - 次要上游：
   - `docs/20-specs/engineering-conventions.md`
-  - `docs/40-dev-loop/gate_registry.yaml`
   - `docs/40-dev-loop/log-schemas-loop-engineering.md`
 - 作用：
   - 从会话日志、CI 失败和事故中提炼门禁改进建议
 - 依赖原因：
   - `agent-loop-spec.md` 提供 Agent 角色、门禁和闭环目标
-  - `gate_registry.yaml` 提供现有 gate 清单
+  - 门禁清单与分类约定提供现有 gate 范围
   - `log-schemas-loop-engineering.md` 提供日志输入结构
 - 更新触发：
   - 门禁分类变化
@@ -191,8 +190,8 @@
 
 ## 建议操作
 
-- 后续可在每个 `SKILL.md` 顶部增加一节“规范来源”。
-- 后续可在 `docs/00-governance/document-map.md` 中加入本文档入口。
+- 继续在新增或调整的 `SKILL.md` 中维护“规范来源”，避免映射关系回退到隐式状态。
+- 后续若映射范围变化，应同步更新 `docs/00-governance/document-map.md`、`docs/README.md` 和相关入口文档。
 - 若 `20-specs/` 有重大调整，先过一遍本文档，再决定需要更新哪些 Skill。
 
 ## 与其他文档的关系
