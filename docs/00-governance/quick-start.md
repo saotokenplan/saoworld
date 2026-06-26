@@ -19,7 +19,7 @@
 - 本文档是“怎么开始使用这套文档”的操作入口。
 - 本文档回答“先看什么、先做什么”，不替代 `20-specs/` 中的具体执行约束。
 - 本文档只保留最小阅读路径和最小实施顺序；完整目录导航看 `docs/README.md`。
-- 项目成熟度看 `project-status.md`，文档权威关系看 `document-map.md`。
+- 项目成熟度看 `docs/00-governance/project-status.md`，文档权威关系看 `docs/00-governance/document-map.md`。
 
 ## 先说明当前状态
 
@@ -27,7 +27,7 @@
 - 当前仓库里还没有 `game/`、`services/`、`workers/` 等目标态工程目录。
 - 当前最适合做的事情是阅读、收敛规范、确定首个最小落地目标，而不是直接执行启动命令。
 
-如果你想先判断项目目前做到哪一步，优先看 `document-map.md`、`project-status.md` 和 `docs/20-specs/README.md`。
+如果你想先判断项目目前做到哪一步，优先看 `docs/00-governance/document-map.md`、`docs/00-governance/project-status.md` 和 `docs/20-specs/README.md`。
 
 ## 5 分钟上手
 

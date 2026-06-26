@@ -18,7 +18,7 @@
 
 - 本文档是项目阶段与资产完备度的状态说明，不直接承担执行规范角色。
 - 本文档回答“现在做到哪一步”，不负责目录导航、权威关系或实施顺序说明。
-- 目录导航看 `docs/README.md`，权威关系看 `document-map.md`，实现细节转向 `20-specs/`、`30-api/` 和 `40-dev-loop/`。
+- 目录导航看 `docs/README.md`，权威关系看 `docs/00-governance/document-map.md`，实现细节转向 `20-specs/`、`30-api/` 和 `40-dev-loop/`。
 
 ## 当前阶段
 
