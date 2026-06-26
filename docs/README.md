@@ -44,7 +44,7 @@
 
 ## 建议阅读顺序
 
-以下顺序用于浏览完整文档体系；如果你只需要最小阅读路径和开工顺序，优先查看 `00-governance/quick-start.md`。
+以下顺序用于浏览完整文档体系；如果你只需要最小阅读路径和最小实施顺序，优先查看 `00-governance/quick-start.md`。
 
 1. `00-governance/document-directory-spec.md`
 2. `00-governance/document-change-process.md`
@@ -91,7 +91,7 @@
 - `00-governance/document-map.md`
   - 定义文档体系的权威关系、保留策略与整理判断。
 - `00-governance/quick-start.md`
-  - 提供从阅读走向实施的最小路径，不重复承担完整目录导航。
+  - 提供最小阅读路径与最小实施顺序，不重复承担完整目录导航。
 - `00-governance/document-template-alignment-checklist.md`
   - 记录当前模板对齐结果和后续复查状态。
 - `00-governance/document-template-maintenance.md`

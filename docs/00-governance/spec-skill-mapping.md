@@ -197,7 +197,7 @@
 ## 与其他文档的关系
 
 - `docs/20-specs/README.md`
-  - 作为执行规范入口，帮助读者定位本文档所映射的上游规范集合。
+  - 作为执行规范目录入口，帮助读者定位本文档所映射的上游规范集合。
 - `docs/00-governance/document-map.md`
   - 说明文档体系的分层和权威关系，本文档补充其中“规范到 Skill”的下游映射。
 - `docs/00-governance/document-change-process.md`
