@@ -1,5 +1,21 @@
 # 服务端技术栈比较：Python、TypeScript、Rust
 
+> 文档状态：archived
+> 适用阶段：历史决策
+> 维护要求：按需维护
+
+## 适用范围
+
+- 适用于回顾服务端主栈在 `Python`、`TypeScript`、`Rust` 之间的历史比较与取舍背景。
+- 适用于理解为什么历史上建议以 `Python` 为主服务端、`TypeScript` 为后台补充、`Rust` 为性能热点补充。
+- 不替代当前正式执行规范，也不直接作为新项目实施时的唯一选型依据。
+
+## 当前定位
+
+- 本文档是历史调研归档文档，用于回答“当初为什么这样选择服务端语言组合，以及比较标准是什么”。
+- 本文档聚焦历史比较、引用依据和阶段性建议，主要用于追溯决策来源，而不是直接约束当前实现。
+- 若本文档与现行规范冲突，应以 `docs/20-specs/` 和当前治理文档为准。
+
 ## 结论
 
 如果目标是给你的 **AI-first、Loop Engineering 驱动的游戏研发闭环** 选服务端主栈，我的建议是：
@@ -227,3 +243,16 @@ Rust 更适合这些模块：
 3. [TypeScript Handbook: The Basics](https://www.typescriptlang.org/docs/handbook/2/basic-types.html)
 4. [About Node.js](https://nodejs.org/en/about)
 5. [The Rust Programming Language: Fearless Concurrency](https://doc.rust-lang.org/book/ch16-00-concurrency.html)
+
+## 与其他文档的关系
+
+- `docs/50-research/stack-research-ai-game-dev.md`
+  - 与本文档共同构成历史选型材料，前者覆盖更完整技术栈，本文档聚焦服务端语言比较。
+- `docs/20-specs/backend-data-spec.md`
+  - 将本文档中服务端、异步任务和数据层的历史判断下沉为当前正式执行规范。
+- `docs/20-specs/engineering-conventions.md`
+  - 约束当前仓库和服务实现的工程协作底线，与本文档的历史选型建议形成“背景 vs 当前规范”的关系。
+- `docs/40-dev-loop/loop-engineering-plan.md`
+  - 说明为何服务端主栈选择需要兼顾 AI 编码友好度、自动化门禁和持续迭代成本。
+- `docs/00-governance/document-lifecycle.md`
+  - 说明本文档作为历史决策记录处于 `archived` 状态，不直接承担当前执行权威。

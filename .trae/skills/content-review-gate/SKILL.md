@@ -10,6 +10,22 @@
 - 新模板首次启用
 - 关键阵营、关键角色、高风险事件相关内容需要复核
 
+## 规范来源
+
+- 主要来源：
+  - `docs/20-specs/content-generation-spec.md`
+  - `docs/20-specs/product-spec.md`
+- 次要来源：
+  - `docs/20-specs/agent-loop-spec.md`
+  - `docs/20-specs/backend-data-spec.md`
+  - `docs/30-api/openapi-draft.md`
+- 说明：
+  - 审核对象结构、模板边界和生命周期以 `content-generation-spec.md` 为准
+  - 世界一致性、主线骨架和内容边界以 `product-spec.md` 为准
+  - 门禁闭环和审核治理流程参考 `agent-loop-spec.md`
+  - 审核记录字段和状态迁移参考 `backend-data-spec.md`
+  - 审核结果对外暴露的审批接口和状态收敛参考 `openapi-draft.md`
+
 ## 输入
 
 - 生成对象集合
@@ -24,6 +40,7 @@
 - `approved.json`
 - `rejected.json`
 - `manual-review.json`
+- 涉及审核审批接口调整时同步更新 `docs/30-api/openapi-draft.md`
 
 ## 审核维度
 
@@ -82,6 +99,7 @@
 - 不直接修改原始生成对象
 - 不绕过审核直接改变对象状态为可发布
 - 不使用“整体感觉可以”这类主观判断代替结构化结论
+- 若审核审批接口、状态枚举或返回字段变化，必须同步更新 OpenAPI 草案入口
 
 ## 不该做的事
 

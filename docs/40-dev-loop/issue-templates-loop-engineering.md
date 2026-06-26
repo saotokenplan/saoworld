@@ -1,5 +1,21 @@
 # Loop Engineering Issue 模板
 
+> 文档状态：active
+> 适用阶段：当前
+> 维护要求：持续维护
+
+## 适用范围
+
+- 适用于 Loop Engineering 中 `Gate Improvement Issue` 与 `Rule Improvement Issue` 的模板化创建和治理。
+- 适用于人工或 Agent 在二层、三层 Loop 中提交标准化改进 issue。
+- 不替代 Loop 方案本身、日志 schema 或正式执行规范，而是作为问题输入载体。
+
+## 当前定位
+
+- 本文档是研发闭环层的 issue 模板文档，用于回答“门禁改进和规则改进 issue 应该如何标准化表达”。
+- 本文档聚焦字段结构、模板内容和验收信息组织，不单独定义哪些 gate 必须存在或哪些规则应如何实现。
+- 当 issue 模板与正式 loop 规则冲突时，应优先以 `docs/20-specs/agent-loop-spec.md` 和 `loop-engineering-plan.md` 为准。
+
 这份文件提供两类 Issue 模板：
 
 1. `Gate Improvement Issue`：二层 Loop 的输出（提升门禁质量）
@@ -115,3 +131,16 @@
 {"case":"positive","...":"..."}
 {"case":"negative","...":"..."}
 ```
+
+## 与其他文档的关系
+
+- `docs/40-dev-loop/loop-engineering-plan.md`
+  - 定义二层、三层 Loop 的整体机制，本文档为其输出提供标准 issue 模板。
+- `docs/40-dev-loop/log-schemas-loop-engineering.md`
+  - 提供 issue 中 `evidence`、`failure_signature` 和验证数据所依赖的日志结构来源。
+- `docs/20-specs/agent-loop-spec.md`
+  - 定义 Gate Improvement Issue 与 Rule Improvement Issue 在正式闭环中的位置和用途。
+- `docs/20-specs/engineering-conventions.md`
+  - 提供 issue 驱动改动进入提交、测试和发布流程时需要遵循的工程约束。
+- `docs/00-governance/document-change-process.md`
+  - 约束后续如果模板字段或路径变化时，应如何同步更新本文档和相关引用。

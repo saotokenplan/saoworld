@@ -2,12 +2,14 @@
 
 ## 目的
 
-这一组 skills 基于当前项目的需求文档、技术方案、Loop Engineering 方案和详细规范提炼而来，目标是把“需求整理、Godot 客户端开发、内容生成、审核、后端实现、门禁优化、发布回滚”拆成可独立调用的技能。
+这一组 skills 基于当前项目的需求文档、技术方案、Loop Engineering 方案和详细规范提炼而来，目标是把“需求整理、系统设计、Godot 客户端开发、内容生成、审核、后端实现、QA 验收回归、门禁优化、发布回滚”拆成可独立调用的技能。
 
 ## 技能列表
 
 - `requirement-package-builder`
   - 把产品目标整理成 `spec.md`、`acceptance.md`、`risk.md`、`tasks.md`
+- `system-design-package-builder`
+  - 负责服务边界、数据契约、事件流和版本策略设计包
 - `godot-gameplay-implementer`
   - 负责 Godot 4 + typed GDScript 的玩法实现与客户端测试
 - `world-content-generator`
@@ -16,6 +18,8 @@
   - 负责一致性、数值、安全和重复度审核
 - `backend-service-builder`
   - 负责 FastAPI、PostgreSQL、Celery 相关服务实现
+- `qa-acceptance-runner`
+  - 负责验收检查、回归执行、门禁结果汇总与失败摘要
 - `loop-gate-optimizer`
   - 负责从日志、CI 与事故中提炼 Gate Improvement / Rule Improvement
 - `release-package-operator`
@@ -24,13 +28,18 @@
 ## 建议调用顺序
 
 1. `requirement-package-builder`
-2. `backend-service-builder` 与 `godot-gameplay-implementer`
-3. `world-content-generator`
-4. `content-review-gate`
-5. `release-package-operator`
-6. `loop-gate-optimizer`
+2. `system-design-package-builder`
+3. `backend-service-builder` 与 `godot-gameplay-implementer`
+4. `world-content-generator`
+5. `content-review-gate`
+6. `qa-acceptance-runner`
+7. `release-package-operator`
+8. `loop-gate-optimizer`
 
 ## 说明
 
 - 这些文件是面向当前项目的技能草案，不是通用平台内置技能。
 - 每个 skill 都尽量只承担一个明确职责，避免单个 skill 同时做规划、编码、审核和发布。
+- 每个 `SKILL.md` 应显式标注“规范来源”，并与 `docs/00-governance/spec-skill-mapping.md` 保持一致。
+- 如 Skill 与 `docs/20-specs/` 冲突，以 `docs/20-specs/` 为准。
+- 若 Skill 涉及接口契约、请求响应样例或客户端消费结构，应同时检查 `docs/30-api/openapi-draft.md` 是否需要同步更新。

@@ -10,6 +10,20 @@
 - 需求已经讨论过，但还没有形成机器可执行的验收输入
 - 现有方案需要拆成更细的任务包
 
+## 规范来源
+
+- 主要来源：
+  - `docs/20-specs/product-spec.md`
+  - `docs/20-specs/agent-loop-spec.md`
+- 次要来源：
+  - `docs/20-specs/engineering-conventions.md`
+  - `docs/30-api/openapi-draft.md`
+- 说明：
+  - 产品目标、范围、非目标和验收口径以 `product-spec.md` 为准
+  - 需求包结构、门禁闭环和回滚约束以 `agent-loop-spec.md` 为准
+  - 工程拆分边界和协作约束参考 `engineering-conventions.md`
+  - 涉及接口边界或请求响应约束时，后续 OpenAPI 草案收敛参考 `openapi-draft.md`
+
 ## 输入
 
 - 产品目标
@@ -40,6 +54,7 @@
 3. 把验收语句写成可映射到测试和门禁的表达
 4. 识别风险与边界
 5. 将任务拆成可以在单轮循环内完成的原子任务
+6. 若需求包含接口新增或契约调整，明确哪些内容需要同步沉淀到 `docs/30-api/openapi-draft.md`
 
 ## 硬约束
 
@@ -48,6 +63,7 @@
 - `acceptance.md` 里不能只有模糊描述，必须有可判断的结果
 - `risk.md` 必须覆盖功能、内容、发布和回滚风险
 - 不写“顺手优化”“顺手重构”这类隐性扩 scope 内容
+- 涉及接口约束的需求包，必须明确 API 变更点和 OpenAPI 草案同步要求
 
 ## 输出格式要求
 
@@ -91,6 +107,15 @@
 - 输出
 - 依赖
 - 验收信号
+
+### `api-notes.md`
+
+至少包含：
+
+- 受影响接口或新增接口
+- 请求响应关键字段
+- 权限、错误码或幂等要求
+- 是否需要同步更新 `docs/30-api/openapi-draft.md`
 
 ## 不该做的事
 

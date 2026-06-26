@@ -1,24 +1,50 @@
-# 文档目录说明
+# 仓库入口说明
+
+> 文档状态：active
+> 适用阶段：当前
+> 维护要求：持续维护
+
+## 目的
+
+本文档作为仓库根入口，帮助读者快速理解当前仓库的定位、`docs/` 目录分层以及建议阅读路径，避免初次进入仓库时不知道应该从哪一层文档开始。
+
+## 当前定位
+
+- 当前仓库是文档与规范仓库，不是可直接运行的业务工程仓库。
+- 根 `README.md` 负责提供最外层导航；详细阅读顺序以 `docs/README.md` 为准，治理规则以 `docs/00-governance/` 下的文档为准。
+- 后续进入拆任务、建仓库、写代码和接入 CI 时，执行基线以 `docs/20-specs/` 为准。
 
 ## 目录结构
 
-- `requirements/`
-  - 游戏需求与方案拆分文档
-  - 适合先看这组，快速了解项目目标、功能和技术边界
-- `dev-loop/`
-  - AI Coding 研发闭环、Loop Engineering 与门禁配套文件
-  - 适合做工程落地和仓库初始化时使用
-- `research/`
-  - 技术选型与服务端技术栈调研
-  - 适合做引擎、后端和基础设施决策时参考
+- `docs/00-governance/`
+  - 文档治理、项目状态、快速开始、目录规范、变更流程、生命周期、归属责任、评审清单、模板规范、模板对齐复查、模板维护规则和 spec/skill 映射
+- `docs/10-requirements/`
+  - 需求背景、产品讨论、方案草案和立项上下文
+- `docs/20-specs/`
+  - 执行规范、实施约束、验收基线和工程协作标准
+- `docs/30-api/`
+  - 接口总览、权限矩阵、错误码、接口样例和后续 OpenAPI 入口
+- `docs/40-dev-loop/`
+  - AI Coding、Loop Engineering、门禁和日志 schema
+- `docs/50-research/`
+  - 技术选型、方案比较和历史决策依据
 
 ## 建议阅读顺序
 
-1. `requirements/open-world-ai-game-prd.md`
-2. `requirements/需求概述.md`
-3. `requirements/功能设计.md`
-4. `requirements/技术方案.md`
-5. `dev-loop/ai-coding-game-dev-loop-plan.md`
-6. `dev-loop/loop-engineering-plan.md`
-7. `research/stack-research-ai-game-dev.md`
-8. `research/service-stack-comparison.md`
+1. `docs/README.md`
+2. `docs/00-governance/document-map.md`
+3. `docs/00-governance/project-status.md`
+4. `docs/00-governance/quick-start.md`
+5. `docs/20-specs/README.md`
+6. `docs/30-api/api-overview.md`
+
+## 与其他文档的关系
+
+- `docs/README.md`
+  - `docs/` 总导航。
+- `docs/00-governance/project-status.md`
+  - 当前阶段与资产完备度。
+- `docs/20-specs/README.md`
+  - 执行规范目录入口。
+- `docs/00-governance/document-map.md`
+  - 文档分层与权威关系。

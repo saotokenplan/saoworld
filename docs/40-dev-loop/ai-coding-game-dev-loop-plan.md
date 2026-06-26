@@ -1,5 +1,21 @@
 # AI Coding 驱动大型开放式游戏开发闭环实现方案
 
+> 文档状态：active
+> 适用阶段：当前
+> 维护要求：持续维护
+
+## 适用范围
+
+- 适用于以 AI Coding 为主执行方式的游戏研发闭环设计、阶段拆分和落地路线说明。
+- 适用于规划 AI-first 研发体系中的角色编排、仓库结构、流水线设计和分期实施。
+- 不替代 `docs/20-specs/` 中的正式执行规范，也不直接替代具体 gate、日志 schema 和 issue 模板。
+
+## 当前定位
+
+- 本文档是研发闭环层的总体实现方案文档，用于回答“如何把 AI 驱动研发闭环真正落成一条可运行生产线”。
+- 本文档聚焦全局方案、阶段编排和落地路线，不单独定义正式需求包格式、门禁 registry 或日志字段细节。
+- 当总体方案与更细粒度执行规范冲突时，应优先以 `docs/20-specs/` 和本目录下的专项文档为准。
+
 ## 目标定义
 
 你要的不是“让 AI 辅助写一些代码”，而是让 AI 成为整个游戏研发流水线的主执行者。也就是说，从需求拆解、方案设计、代码实现、资源生成、测试验证、构建发布，到上线后根据数据继续迭代，尽可能都由 AI 自动完成，形成一个能持续运行的研发闭环。
@@ -115,10 +131,12 @@ AI 执行一个步骤之后，不能靠“看起来差不多”来判断是否�
 ```text
 game-project/
 ├── docs/
-│   ├── vision/
-│   ├── requirements/
-│   ├── system-design/
-│   └── release-notes/
+│   ├── 00-governance/
+│   ├── 10-requirements/
+│   ├── 20-specs/
+│   ├── 30-api/
+│   ├── 40-dev-loop/
+│   └── 50-research/
 ├── game/
 │   ├── scenes/
 │   ├── scripts/
@@ -382,3 +400,16 @@ AI 不允许“顺手改点别的”。每次改动都必须关联任务编号�
 先让 AI 稳定完成一个小型开放区域的完整闭环，再逐步扩大到多区域、多任务链、多代理协同和线上运营回流。
 
 一句话概括这套方案：**先建设 AI 可执行的工厂，再让 AI 去生产游戏。**
+
+## 与其他文档的关系
+
+- `docs/20-specs/agent-loop-spec.md`
+  - 定义正式的 Agent 角色、需求包、门禁与闭环规范，本文档提供其总体落地方案背景。
+- `docs/20-specs/engineering-conventions.md`
+  - 定义仓库结构、提交、测试和发布等工程协作底线，支撑本文档中的流水线落地。
+- `docs/40-dev-loop/loop-engineering-plan.md`
+  - 细化 Loop Engineering 的三层 Loop、门禁进化和规则改进机制。
+- `docs/40-dev-loop/issue-templates-loop-engineering.md`
+  - 提供二层与三层 Loop 需要使用的标准 issue 模板。
+- `docs/40-dev-loop/log-schemas-loop-engineering.md`
+  - 提供本文档中日志采集、问题归因和改进闭环所依赖的结构化 schema。

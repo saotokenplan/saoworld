@@ -1,5 +1,21 @@
 # Loop Engineering 方案（面向 AI 全自动研发闭环）
 
+> 文档状态：active
+> 适用阶段：当前
+> 维护要求：持续维护
+
+## 适用范围
+
+- 适用于 Loop Engineering 体系下的一层、二层、三层 Loop 设计，以及门禁、规则和改进机制规划。
+- 适用于把 AI 自动研发闭环中的交付质量、门禁质量和规则质量做持续进化治理。
+- 不替代正式的需求包、日志 schema 和 issue 模板文档，而是提供这些机制的总体方法论与结构设计。
+
+## 当前定位
+
+- 本文档是研发闭环层的 Loop Engineering 方案文档，用于回答“如何让门禁与规则本身进入持续进化循环”。
+- 本文档聚焦三层 Loop 架构、指标和最小落地路径，不单独定义某条 gate 的具体实现或日志字段明细。
+- 当方法论描述与正式执行规范冲突时，应优先以 `docs/20-specs/agent-loop-spec.md` 和本目录下专项文档为准。
+
 ## 目标与边界
 
 **目标**：让“编码工作完全由 Agent 执行，人只做验收”成为可长期运行的工程系统。系统的核心不是让 Agent 变强，而是让**验收门禁（gates）**足够完善、持续进化、且进化过程本身也可被验证与改进。
@@ -143,7 +159,7 @@ Issue 模板建议固定字段，方便三层 Loop 学习：
 
 门禁不应该永久保留。建议建立：
 
-1. `gate_registry.yaml`：记录每个 gate 的 owner、成本、覆盖风险、最近命中、误报率
+1. gate registry 文档或配置资产：记录每个 gate 的 owner、成本、覆盖风险、最近命中、误报率
 2. **退役规则**：N 周无命中且成本高、或长期误报 → 自动提退役 issue
 3. **门禁预算**：每条流水线允许的总耗时预算（例如 PR < 15 分钟）
 
@@ -252,3 +268,16 @@ Issue 模板建议固定字段，方便三层 Loop 学习：
 
 Loop Engineering 的本质是把“复杂系统的质量判断”变成“少量可自动验证信号的设计与进化”。  
 一层 Loop 让 AI 能交付；二层 Loop 让门禁能跟上；三层 Loop 让改进规则自己变好。随着层数增加，人需要关注的信息会持续减少，但系统的可控性反而变强。
+
+## 与其他文档的关系
+
+- `docs/20-specs/agent-loop-spec.md`
+  - 定义正式的 Agent、需求包、门禁和反馈闭环规范，本文档对其做 Loop Engineering 视角的扩展说明。
+- `docs/40-dev-loop/issue-templates-loop-engineering.md`
+  - 提供本文档二层、三层 Loop 输出所依赖的标准 issue 模板。
+- `docs/40-dev-loop/log-schemas-loop-engineering.md`
+  - 提供本文档中 session log、CI failures 和 incidents 等数据输入的结构化 schema。
+- `docs/40-dev-loop/ai-coding-game-dev-loop-plan.md`
+  - 提供更宏观的 AI Coding 研发闭环落地路线，本文档聚焦其中的门禁与规则进化部分。
+- `docs/20-specs/engineering-conventions.md`
+  - 提供提交、测试、发布和审计等工程底线，使本文档中的 loop 能在工程上可执行。

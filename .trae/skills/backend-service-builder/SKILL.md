@@ -10,6 +10,20 @@
 - 新 API、数据模型、任务队列能力开发
 - 既有服务的增量扩展
 
+## 规范来源
+
+- 主要来源：
+  - `docs/20-specs/backend-data-spec.md`
+  - `docs/20-specs/engineering-conventions.md`
+- 次要来源：
+  - `docs/20-specs/product-spec.md`
+  - `docs/30-api/openapi-draft.md`
+- 说明：
+  - 服务边界、数据模型、接口、事件流和任务约束以 `backend-data-spec.md` 为准
+  - 工程目录、命名、配置和测试约束参考 `engineering-conventions.md`
+  - 产品能力范围和非目标边界参考 `product-spec.md`
+  - 接口契约收敛和 OpenAPI 草案落位参考 `openapi-draft.md`
+
 ## 输入
 
 - 需求包
@@ -25,6 +39,7 @@
 - 数据迁移
 - API 测试
 - 任务定义
+- 必要时更新 `docs/30-api/openapi-draft.md`
 - 变更摘要
 
 ## 实现原则
@@ -42,6 +57,7 @@
 - 所有接口带 `/api/v1`
 - 错误响应结构统一
 - 鉴权和权限检查前置
+- 若接口边界或 schema 发生变化，应同步更新 OpenAPI 草案入口
 
 ### 数据
 

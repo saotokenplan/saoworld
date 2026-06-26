@@ -1,0 +1,1212 @@
+openapi: 3.1.0
+info:
+  title: AI Game MVP API Draft
+  version: 0.1.0-draft
+  description: >
+    首版单文件 OpenAPI 草案，覆盖投票、内容更新、发布回滚、世界查询、
+    任务查询和部分运营审核接口。当前仍为文档级草案收敛结果，接口边界、
+    服务职责和数据约束仍以上游规范为准。
+servers:
+  - url: https://api.example.com
+    description: production placeholder
+security:
+  - bearerAuth: []
+tags:
+  - name: votes
+    description: 玩家投票周期、投票提交、历史结果与运营投票周期管理
+  - name: content
+    description: 内容更新、内容包查询、发布与回滚
+  - name: world
+    description: 世界区域查询
+  - name: quests
+    description: 玩家任务查询
+  - name: ops
+    description: 运营侧写接口
+  - name: review
+    description: 内容审核批准接口
+paths:
+  /api/v1/votes/current:
+    get:
+      tags: [votes]
+      summary: 获取当前投票周期和候选项
+      operationId: getCurrentVoteCycle
+      responses:
+        '200':
+          description: 返回当前投票周期、候选项和玩家上下文
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoteCurrentResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/VoteCurrentSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 当前不存在有效投票周期
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                voteCycleNotFound:
+                  $ref: '#/components/examples/VoteCycleNotFoundError'
+        '409':
+          description: 当前投票周期状态不可投票
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidVoteState:
+                  $ref: '#/components/examples/InvalidVoteStateError'
+  /api/v1/votes/submit:
+    post:
+      tags: [votes]
+      summary: 提交玩家投票
+      operationId: submitVote
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+        - $ref: '#/components/parameters/TraceIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoteSubmitRequest'
+            examples:
+              submitVote:
+                $ref: '#/components/examples/VoteSubmitRequest'
+      responses:
+        '200':
+          description: 投票受理成功或命中幂等重放
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            X-Trace-Id:
+              $ref: '#/components/headers/X-Trace-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoteSubmitResponse'
+              examples:
+                accepted:
+                  $ref: '#/components/examples/VoteSubmitSuccess'
+                idempotentReplay:
+                  $ref: '#/components/examples/VoteSubmitIdempotentReplay'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /api/v1/votes/history:
+    get:
+      tags: [votes]
+      summary: 获取历史投票结果与落地情况
+      operationId: getVoteHistory
+      parameters:
+        - $ref: '#/components/parameters/ChapterId'
+        - $ref: '#/components/parameters/RegionIdFilter'
+        - $ref: '#/components/parameters/VoteCycleIdFilter'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: 返回分页历史投票结果
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoteHistoryResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/VoteHistorySuccess'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/content/updates:
+    get:
+      tags: [content]
+      summary: 获取当前玩家可见的新内容包
+      operationId: getContentUpdates
+      responses:
+        '200':
+          description: 返回当前玩家可见的内容更新列表
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentUpdatesResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/ContentUpdatesSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/v1/content/packages/{content_package_id}:
+    get:
+      tags: [content]
+      summary: 获取内容包摘要
+      operationId: getContentPackage
+      parameters:
+        - $ref: '#/components/parameters/ContentPackageId'
+      responses:
+        '200':
+          description: 返回内容包摘要和当前可见状态
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentPackageResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/ContentPackageSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/ops/content-packages/{id}/release:
+    post:
+      tags: [ops, content]
+      summary: 发布内容包
+      operationId: releaseContentPackage
+      parameters:
+        - $ref: '#/components/parameters/OpsContentPackageId'
+        - $ref: '#/components/parameters/TraceIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReleaseContentPackageRequest'
+            examples:
+              grayRelease:
+                $ref: '#/components/examples/ReleaseContentPackageRequestGray'
+      responses:
+        '200':
+          description: 内容包发布请求受理成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            X-Trace-Id:
+              $ref: '#/components/headers/X-Trace-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReleaseContentPackageResponse'
+              examples:
+                grayAccepted:
+                  $ref: '#/components/examples/ReleaseContentPackageResponseGray'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/ops/content-packages/{id}/rollback:
+    post:
+      tags: [ops, content]
+      summary: 回滚内容包
+      operationId: rollbackContentPackage
+      parameters:
+        - $ref: '#/components/parameters/OpsContentPackageId'
+        - $ref: '#/components/parameters/TraceIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RollbackContentPackageRequest'
+            examples:
+              rollback:
+                $ref: '#/components/examples/RollbackContentPackageRequest'
+      responses:
+        '200':
+          description: 内容包回滚请求受理成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            X-Trace-Id:
+              $ref: '#/components/headers/X-Trace-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RollbackContentPackageResponse'
+              examples:
+                queued:
+                  $ref: '#/components/examples/RollbackContentPackageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/world/regions:
+    get:
+      tags: [world]
+      summary: 获取当前可见区域列表
+      operationId: getVisibleRegions
+      responses:
+        '200':
+          description: 返回当前玩家可见区域列表
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegionListResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/RegionListSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/world/regions/{region_id}:
+    get:
+      tags: [world]
+      summary: 获取区域详情和状态
+      operationId: getRegionDetail
+      parameters:
+        - $ref: '#/components/parameters/RegionId'
+      responses:
+        '200':
+          description: 返回区域详情和当前状态
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegionDetailResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/RegionDetailSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/quests:
+    get:
+      tags: [quests]
+      summary: 获取玩家任务列表
+      operationId: getQuestList
+      responses:
+        '200':
+          description: 返回玩家任务列表
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestListResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/QuestListSuccess'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/v1/ops/vote-cycles:
+    post:
+      tags: [ops, votes]
+      summary: 创建投票周期
+      operationId: createVoteCycle
+      parameters:
+        - $ref: '#/components/parameters/TraceIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVoteCycleRequest'
+            examples:
+              createVoteCycle:
+                $ref: '#/components/examples/CreateVoteCycleRequest'
+      responses:
+        '200':
+          description: 投票周期创建成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            X-Trace-Id:
+              $ref: '#/components/headers/X-Trace-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateVoteCycleResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/CreateVoteCycleResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/ops/review/{object_id}/approve:
+    post:
+      tags: [review, ops]
+      summary: 批准内容对象
+      operationId: approveReviewObject
+      parameters:
+        - $ref: '#/components/parameters/ReviewObjectId'
+        - $ref: '#/components/parameters/TraceIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewApproveRequest'
+            examples:
+              approve:
+                $ref: '#/components/examples/ReviewApproveRequest'
+      responses:
+        '200':
+          description: 审核批准请求受理成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+            X-Trace-Id:
+              $ref: '#/components/headers/X-Trace-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewApproveResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/ReviewApproveResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  headers:
+    X-Request-Id:
+      description: 服务端生成的请求追踪 ID
+      schema:
+        type: string
+    X-Trace-Id:
+      description: 链路追踪 ID；由调用方透传或由网关生成
+      schema:
+        type: string
+    Idempotency-Key:
+      description: 提交投票时的幂等键
+      schema:
+        type: string
+  parameters:
+    ChapterId:
+      name: chapter_id
+      in: query
+      required: false
+      schema:
+        type: string
+      description: 按章节过滤历史投票结果
+    ContentPackageId:
+      name: content_package_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 内容包 ID
+    RegionId:
+      name: region_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 区域 ID
+    ReviewObjectId:
+      name: object_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 审核对象 ID
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+      description: 幂等键，同一业务请求重试时必须保持一致
+    TraceIdHeader:
+      name: X-Trace-Id
+      in: header
+      required: false
+      schema:
+        type: string
+      description: 可选链路追踪 ID；若未传入由网关生成并透传
+    OpsContentPackageId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 运营接口中的内容包 ID
+    RegionIdFilter:
+      name: region_id
+      in: query
+      required: false
+      schema:
+        type: string
+      description: 按区域过滤列表结果
+    VoteCycleIdFilter:
+      name: vote_cycle_id
+      in: query
+      required: false
+      schema:
+        type: string
+      description: 按投票周期过滤历史结果
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: page_size
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+  responses:
+    BadRequest:
+      description: 请求参数或请求体不合法
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: INVALID_ARGUMENT
+            message: 请求参数不合法
+            request_id: req_bad_request_001
+    Unauthorized:
+      description: 未认证或 Token 无效
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: INVALID_TOKEN
+            message: Token 格式或签名非法
+            request_id: req_unauthorized_001
+    Forbidden:
+      description: 当前角色无权限执行该操作
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: INSUFFICIENT_SCOPE
+            message: 当前角色无权限执行该操作
+            request_id: req_forbidden_001
+    NotFound:
+      description: 目标对象不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: RESOURCE_NOT_FOUND
+            message: 目标资源不存在
+            request_id: req_not_found_001
+    Conflict:
+      description: 当前状态与操作发生冲突
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: CONFLICT
+            message: 当前状态与操作发生冲突
+            request_id: req_conflict_001
+    ServiceUnavailable:
+      description: 服务暂不可用
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: SERVICE_UNAVAILABLE
+            message: 服务暂不可用
+            request_id: req_service_unavailable_001
+    TooManyRequests:
+      description: 请求频率超限
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: RATE_LIMITED
+            message: 请求过于频繁，请稍后再试
+            request_id: req_rate_limited_001
+  examples:
+    VoteCurrentSuccess:
+      summary: 当前投票周期查询成功
+      value:
+        request_id: req_vote_current_001
+        vote_cycle:
+          vote_cycle_id: cycle_202606
+          chapter_id: chapter_02
+          status: open
+          starts_at: '2026-06-26T08:00:00Z'
+          ends_at: '2026-06-28T08:00:00Z'
+        player_context:
+          player_id: player_001
+          eligible: true
+          reason: null
+          has_voted: false
+          vote_weight: 1.05
+        candidates:
+          - candidate_id: candidate_01
+            title: 荒原废墟扩张
+            summary: 机械教团开始向废墟腹地推进。
+            region_scope: [region_wasteland_01]
+            risk_tags: [高冲突, 资源紧张]
+          - candidate_id: candidate_03
+            title: 遗迹异变调查
+            summary: 遗迹深处出现异常能量波动，引发新的探索任务。
+            region_scope: [region_ruins_02]
+            risk_tags: [高危险, 限时事件]
+    VoteCycleNotFoundError:
+      summary: 当前无有效投票周期
+      value:
+        code: VOTE_CYCLE_NOT_FOUND
+        message: 当前不存在有效投票周期
+        request_id: req_vote_current_404
+    InvalidVoteStateError:
+      summary: 当前投票周期不可投票
+      value:
+        code: INVALID_VOTE_STATE
+        message: 当前投票周期不可投票
+        request_id: req_vote_current_409
+    VoteSubmitRequest:
+      summary: 提交玩家投票
+      value:
+        vote_cycle_id: cycle_202606
+        candidate_id: candidate_03
+    VoteSubmitSuccess:
+      summary: 投票成功
+      value:
+        request_id: req_vote_submit_001
+        vote_id: vote_001
+        vote_cycle_id: cycle_202606
+        candidate_id: candidate_03
+        accepted: true
+        weight: 1.05
+        idempotent_replay: false
+        submitted_at: '2026-06-26T09:12:33Z'
+    VoteSubmitIdempotentReplay:
+      summary: 命中幂等重放
+      value:
+        request_id: req_vote_submit_002
+        vote_id: vote_001
+        vote_cycle_id: cycle_202606
+        candidate_id: candidate_03
+        accepted: true
+        weight: 1.05
+        idempotent_replay: true
+        submitted_at: '2026-06-26T09:12:33Z'
+    VoteHistorySuccess:
+      summary: 历史投票结果查询成功
+      value:
+        request_id: req_vote_history_001
+        page: 1
+        page_size: 20
+        total: 2
+        items:
+          - vote_cycle_id: cycle_202606
+            chapter_id: chapter_02
+            closed_at: '2026-06-28T08:00:00Z'
+            winner_candidate_id: candidate_03
+            winner_title: 遗迹异变调查
+            total_votes: 128430
+            candidates:
+              - candidate_id: candidate_01
+                title: 荒原废墟扩张
+                vote_percent: 29.4
+              - candidate_id: candidate_03
+                title: 遗迹异变调查
+                vote_percent: 39.5
+            delivery:
+              status: gray
+              content_package_id: pkg_chapter_02_ruins_20260629_01
+              affected_regions: [region_ruins_02]
+    ContentUpdatesSuccess:
+      summary: 内容更新查询成功
+      value:
+        request_id: req_content_updates_001
+        items:
+          - content_package_id: pkg_chapter_02_ruins_20260629_01
+            title: 遗迹异变调查
+            summary: 遗迹区域追加限时探索任务与阵营事件。
+            published_at: '2026-06-29T10:00:00Z'
+            affected_regions: [region_ruins_02]
+            gray_visible: true
+    ContentPackageSuccess:
+      summary: 内容包摘要查询成功
+      value:
+        request_id: req_content_package_001
+        content_package:
+          content_package_id: pkg_chapter_02_ruins_20260629_01
+          title: 遗迹异变调查
+          summary: 遗迹区域探索线扩展包。
+          status: gray
+          published_at: '2026-06-29T10:00:00Z'
+          affected_regions: [region_ruins_02]
+          gray_scope:
+            region_ids: [region_ruins_02]
+            player_percent: 10
+    ReleaseContentPackageRequestGray:
+      summary: 发起灰度发布
+      value:
+        gray_scope:
+          region_ids: [region_ruins_02]
+          player_percent: 10
+        reason: 首轮灰度发布
+    ReleaseContentPackageResponseGray:
+      summary: 灰度发布受理成功
+      value:
+        request_id: req_release_001
+        content_package_id: pkg_chapter_02_ruins_20260629_01
+        status: gray
+        release_mode: gray
+        released_at: '2026-06-29T10:05:00Z'
+    RollbackContentPackageRequest:
+      summary: 发起回滚
+      value:
+        target_version: v2026.06.28
+        reason: 灰度后出现区域任务异常，回滚到上一个稳定版本
+    RollbackContentPackageResponse:
+      summary: 回滚任务已入队
+      value:
+        request_id: req_rollback_001
+        rollback_id: rollback_001
+        content_package_id: pkg_chapter_02_ruins_20260629_01
+        target_version: v2026.06.28
+        status: queued
+        rolled_back_at: '2026-06-29T11:30:00Z'
+    RegionListSuccess:
+      summary: 区域列表查询成功
+      value:
+        request_id: req_region_list_001
+        items:
+          - region_id: region_wasteland_01
+            chapter_id: chapter_02
+            title: 荒原边境
+            summary: 玩家已解锁的荒原外围区域。
+            status: active
+            visible: true
+          - region_id: region_ruins_02
+            chapter_id: chapter_02
+            title: 遗迹深处
+            summary: 当前章节主线推进后的新探索区域。
+            status: unstable
+            visible: true
+    RegionDetailSuccess:
+      summary: 区域详情查询成功
+      value:
+        request_id: req_region_detail_001
+        region:
+          region_id: region_ruins_02
+          chapter_id: chapter_02
+          title: 遗迹深处
+          summary: 遗迹能量波动导致区域状态不稳定。
+          status: unstable
+          visible: true
+    QuestListSuccess:
+      summary: 玩家任务查询成功
+      value:
+        request_id: req_quest_list_001
+        items:
+          - quest_id: quest_ruins_scan_01
+            chapter_id: chapter_02
+            active_region_id: region_ruins_02
+            title: 调查遗迹异变
+            summary: 进入遗迹深处并完成三处异常点扫描。
+            status: active
+    CreateVoteCycleRequest:
+      summary: 创建投票周期
+      value:
+        chapter_id: chapter_03
+        starts_at: '2026-07-01T08:00:00Z'
+        ends_at: '2026-07-03T08:00:00Z'
+        candidate_ids: [candidate_101, candidate_102, candidate_103]
+        reason: 第三章主线剧情投票创建
+    CreateVoteCycleResponse:
+      summary: 投票周期创建成功
+      value:
+        request_id: req_ops_vote_cycle_001
+        vote_cycle_id: cycle_202607
+        status: scheduled
+    ReviewApproveRequest:
+      summary: 审核批准请求
+      value:
+        review_result: approved
+        reason: 结构化审核通过，允许进入打包阶段
+    ReviewApproveResponse:
+      summary: 审核批准成功
+      value:
+        request_id: req_review_approve_001
+        review_id: review_001
+        object_id: object_story_001
+        review_result: approved
+        reviewed_at: '2026-06-29T09:30:00Z'
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [code, message, request_id]
+      properties:
+        code:
+          type: string
+          example: INVALID_VOTE_STATE
+        message:
+          type: string
+          example: 当前投票周期不可投票
+        request_id:
+          type: string
+          example: req_vote_current_409
+    VoteCycle:
+      type: object
+      required: [vote_cycle_id, chapter_id, status, starts_at, ends_at]
+      properties:
+        vote_cycle_id:
+          type: string
+        chapter_id:
+          type: string
+        status:
+          type: string
+          enum: [open, closed, finalized]
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+    VotePlayerContext:
+      type: object
+      required: [player_id, eligible, has_voted, vote_weight]
+      properties:
+        player_id:
+          type: string
+        eligible:
+          type: boolean
+        reason:
+          type: string
+          nullable: true
+        has_voted:
+          type: boolean
+        vote_weight:
+          type: number
+          format: float
+    VoteCandidate:
+      type: object
+      required: [candidate_id, title, summary, region_scope, risk_tags]
+      properties:
+        candidate_id:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        region_scope:
+          type: array
+          items:
+            type: string
+        risk_tags:
+          type: array
+          items:
+            type: string
+    VoteCurrentResponse:
+      type: object
+      required: [request_id, vote_cycle, player_context, candidates]
+      properties:
+        request_id:
+          type: string
+        vote_cycle:
+          $ref: '#/components/schemas/VoteCycle'
+        player_context:
+          $ref: '#/components/schemas/VotePlayerContext'
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoteCandidate'
+    VoteSubmitRequest:
+      type: object
+      required: [vote_cycle_id, candidate_id]
+      properties:
+        vote_cycle_id:
+          type: string
+        candidate_id:
+          type: string
+    VoteSubmitResponse:
+      type: object
+      required: [request_id, vote_id, vote_cycle_id, candidate_id, accepted, submitted_at]
+      properties:
+        request_id:
+          type: string
+        vote_id:
+          type: string
+        vote_cycle_id:
+          type: string
+        candidate_id:
+          type: string
+        accepted:
+          type: boolean
+        weight:
+          type: number
+          format: float
+        idempotent_replay:
+          type: boolean
+          default: false
+        submitted_at:
+          type: string
+          format: date-time
+    VoteHistoryCandidate:
+      type: object
+      required: [candidate_id, title, vote_percent]
+      properties:
+        candidate_id:
+          type: string
+        title:
+          type: string
+        vote_percent:
+          type: number
+          format: float
+    VoteHistoryDelivery:
+      type: object
+      required: [status, content_package_id, affected_regions]
+      properties:
+        status:
+          type: string
+          enum: [pending, gray, live, rolled_back]
+        content_package_id:
+          type: string
+        affected_regions:
+          type: array
+          items:
+            type: string
+    VoteHistoryItem:
+      type: object
+      required:
+        [vote_cycle_id, chapter_id, closed_at, winner_candidate_id, winner_title, total_votes, candidates, delivery]
+      properties:
+        vote_cycle_id:
+          type: string
+        chapter_id:
+          type: string
+        closed_at:
+          type: string
+          format: date-time
+        winner_candidate_id:
+          type: string
+        winner_title:
+          type: string
+        total_votes:
+          type: integer
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoteHistoryCandidate'
+        delivery:
+          $ref: '#/components/schemas/VoteHistoryDelivery'
+    VoteHistoryResponse:
+      type: object
+      required: [request_id, page, page_size, total, items]
+      properties:
+        request_id:
+          type: string
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoteHistoryItem'
+    ContentUpdateItem:
+      type: object
+      required: [content_package_id, published_at, affected_regions, gray_visible]
+      properties:
+        content_package_id:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        published_at:
+          type: string
+          format: date-time
+        affected_regions:
+          type: array
+          items:
+            type: string
+        gray_visible:
+          type: boolean
+    ContentUpdatesResponse:
+      type: object
+      required: [request_id, items]
+      properties:
+        request_id:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentUpdateItem'
+    ContentPackageSummary:
+      type: object
+      required: [content_package_id, status, published_at, affected_regions]
+      properties:
+        content_package_id:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        status:
+          type: string
+          enum: [packaged, gray, live, archived, rolled_back]
+        published_at:
+          type: string
+          format: date-time
+        affected_regions:
+          type: array
+          items:
+            type: string
+        gray_scope:
+          $ref: '#/components/schemas/GrayScope'
+    ContentPackageResponse:
+      type: object
+      required: [request_id, content_package]
+      properties:
+        request_id:
+          type: string
+        content_package:
+          $ref: '#/components/schemas/ContentPackageSummary'
+    GrayScope:
+      type: object
+      properties:
+        region_ids:
+          type: array
+          items:
+            type: string
+        player_percent:
+          type: integer
+          minimum: 0
+          maximum: 100
+    ReleaseContentPackageRequest:
+      type: object
+      required: [gray_scope, reason]
+      properties:
+        gray_scope:
+          $ref: '#/components/schemas/GrayScope'
+        reason:
+          type: string
+    ReleaseContentPackageResponse:
+      type: object
+      required: [request_id, content_package_id, status, release_mode]
+      properties:
+        request_id:
+          type: string
+        content_package_id:
+          type: string
+        status:
+          type: string
+          enum: [gray, live]
+        release_mode:
+          type: string
+          enum: [gray, full]
+        released_at:
+          type: string
+          format: date-time
+    RollbackContentPackageRequest:
+      type: object
+      required: [target_version, reason]
+      properties:
+        target_version:
+          type: string
+        reason:
+          type: string
+    RollbackContentPackageResponse:
+      type: object
+      required: [request_id, rollback_id, content_package_id, target_version, status]
+      properties:
+        request_id:
+          type: string
+        rollback_id:
+          type: string
+        content_package_id:
+          type: string
+        target_version:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, completed]
+        rolled_back_at:
+          type: string
+          format: date-time
+    RegionSummary:
+      type: object
+      required: [region_id, chapter_id, title, status, visible]
+      properties:
+        region_id:
+          type: string
+        chapter_id:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        status:
+          type: string
+          enum: [locked, active, unstable, archived]
+        visible:
+          type: boolean
+    RegionListResponse:
+      type: object
+      required: [request_id, items]
+      properties:
+        request_id:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegionSummary'
+    RegionDetailResponse:
+      type: object
+      required: [request_id, region]
+      properties:
+        request_id:
+          type: string
+        region:
+          $ref: '#/components/schemas/RegionSummary'
+    QuestItem:
+      type: object
+      required: [quest_id, chapter_id, active_region_id, title, status]
+      properties:
+        quest_id:
+          type: string
+        chapter_id:
+          type: string
+        active_region_id:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        status:
+          type: string
+          enum: [available, active, completed, failed]
+    QuestListResponse:
+      type: object
+      required: [request_id, items]
+      properties:
+        request_id:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestItem'
+    CreateVoteCycleRequest:
+      type: object
+      required: [chapter_id, starts_at, ends_at, candidate_ids, reason]
+      properties:
+        chapter_id:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        candidate_ids:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        reason:
+          type: string
+    CreateVoteCycleResponse:
+      type: object
+      required: [request_id, vote_cycle_id, status]
+      properties:
+        request_id:
+          type: string
+        vote_cycle_id:
+          type: string
+        status:
+          type: string
+          enum: [draft, scheduled, open]
+    ReviewApproveRequest:
+      type: object
+      required: [review_result, reason]
+      properties:
+        review_result:
+          type: string
+          enum: [approved, manual_review]
+        reason:
+          type: string
+    ReviewApproveResponse:
+      type: object
+      required: [request_id, review_id, object_id, review_result, reviewed_at]
+      properties:
+        request_id:
+          type: string
+        review_id:
+          type: string
+        object_id:
+          type: string
+        review_result:
+          type: string
+        reviewed_at:
+          type: string
+          format: date-time

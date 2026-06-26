@@ -11,6 +11,22 @@
 - 上线异常触发快速回滚
 - 生成发布记录与复盘摘要
 
+## 规范来源
+
+- 主要来源：
+  - `docs/20-specs/backend-data-spec.md`
+  - `docs/20-specs/agent-loop-spec.md`
+- 次要来源：
+  - `docs/20-specs/content-generation-spec.md`
+  - `docs/20-specs/engineering-conventions.md`
+  - `docs/30-api/openapi-draft.md`
+- 说明：
+  - 内容包、发布状态、灰度和回滚约束以 `backend-data-spec.md` 为准
+  - 发布治理、审计链和回滚闭环要求以 `agent-loop-spec.md` 为准
+  - 进入发布链路的对象生命周期参考 `content-generation-spec.md`
+  - 工程发布协作与产物约束参考 `engineering-conventions.md`
+  - 发布、回滚和内容包查询相关接口收敛参考 `openapi-draft.md`
+
 ## 输入
 
 - 已审核通过的内容对象
@@ -26,6 +42,7 @@
 - 正式上线记录
 - 回滚记录
 - `release-notes.md`
+- 涉及接口契约调整时同步更新 `docs/30-api/openapi-draft.md`
 
 ## 工作流程
 
@@ -49,6 +66,7 @@
 - 没有审核通过记录不得发布
 - 灰度未完成前不得直接全量上线
 - 发布与回滚都必须写操作摘要和关联原因
+- 若发布、回滚或内容包查询接口发生变化，必须同步更新 OpenAPI 草案入口
 
 ## 发布摘要要求
 
