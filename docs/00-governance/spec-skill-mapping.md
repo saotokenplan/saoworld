@@ -23,9 +23,10 @@
 ## 基本原则
 
 - `20-specs/` 是规范上游，负责定义边界、约束、验收和协作方式。
+- `30-api/` 是接口收敛补充层，用于沉淀接口总览、样例、权限和 OpenAPI 草案，不高于 `20-specs/`。
 - `.trae/skills/` 是执行下游，负责把规范转成 Agent 可复用的工作套路。
 - Skill 不单独定义产品边界、数据边界和上线规则。
-- 当 `20-specs/` 更新时，必须检查受影响的 Skill 是否需要同步更新。
+- 当 `20-specs/` 或相关 `30-api/` 文档更新时，必须检查受影响的 Skill 是否需要同步更新。
 
 ## 关系判断
 
@@ -33,12 +34,14 @@
   - 回答“为什么做”和“希望做成什么”
 - `20-specs/`
   - 回答“按什么约束落地”和“什么算完成”
+- `30-api/`
+  - 回答“接口信息如何收敛、样例放在哪里，以及 OpenAPI 草案如何组织”
 - `.trae/skills/`
   - 回答“Agent 应该按什么流程执行”
 
 换句话说，推荐链路是：
 
-`10-requirements -> 20-specs -> skills -> execution`
+`10-requirements -> 20-specs -> 30-api -> skills -> execution`
 
 ## 总体映射表
 
@@ -49,6 +52,7 @@
 | `docs/20-specs/backend-data-spec.md` | 定义服务边界、数据模型、API、事件流、异步任务 | `backend-service-builder` `godot-gameplay-implementer` `release-package-operator` | 提供接口契约、数据模型、内容包、回滚与事件基础 | 接口、表结构、状态流调整时，优先检查后端和发布相关 Skill |
 | `docs/20-specs/agent-loop-spec.md` | 定义 Agent 角色、需求包、门禁、日志、Issue、回滚流程 | `requirement-package-builder` `loop-gate-optimizer` `release-package-operator` | 提供需求包格式、门禁输入、日志分析和治理闭环 | Agent 流程和门禁机制变化时，重点更新需求包和闭环优化 Skill |
 | `docs/20-specs/engineering-conventions.md` | 定义仓库结构、命名、配置、测试、发布协作规范 | `backend-service-builder` `godot-gameplay-implementer` `release-package-operator` | 提供工程目录、命名和测试底线 | 工程规范更新后，检查实现类 Skill 的输出格式和目录约定 |
+| `docs/30-api/openapi-draft.md` | 统一沉淀接口草案入口、样例收敛顺序和 OpenAPI 组织方式 | `requirement-package-builder` `backend-service-builder` `godot-gameplay-implementer` `content-review-gate` `release-package-operator` | 提供接口样例、审批/发布接口收敛和 OpenAPI 同步要求 | 接口路径、请求响应字段、权限或样例更新时，联动检查这些接口相关 Skill |
 
 ## Skill 逐项映射
 
@@ -59,16 +63,19 @@
   - `docs/20-specs/agent-loop-spec.md`
 - 次要上游：
   - `docs/20-specs/engineering-conventions.md`
+  - `docs/30-api/openapi-draft.md`
 - 作用：
   - 把产品目标和边界整理成后续 Agent 可直接执行的需求包
 - 依赖原因：
   - `product-spec.md` 提供目标、范围、非目标和验收口径
   - `agent-loop-spec.md` 提供需求包与门禁的闭环要求
   - `engineering-conventions.md` 影响任务拆分时的工程边界
+  - `openapi-draft.md` 约束接口相关需求包后续如何沉淀到 OpenAPI 草案
 - 更新触发：
   - MVP 范围调整
   - 验收口径变化
   - 需求包格式变化
+  - 接口约束或样例收敛方式变化
 
 ### `backend-service-builder`
 
@@ -77,16 +84,19 @@
   - `docs/20-specs/engineering-conventions.md`
 - 次要上游：
   - `docs/20-specs/product-spec.md`
+  - `docs/30-api/openapi-draft.md`
 - 作用：
   - 生成或扩展后端服务、接口、模型、任务和测试
 - 依赖原因：
   - `backend-data-spec.md` 是服务边界和数据契约的直接来源
   - `engineering-conventions.md` 约束目录、命名、配置和测试组织
   - `product-spec.md` 决定哪些能力属于产品边界内
+  - `openapi-draft.md` 约束接口草案、请求响应样例和后续 OpenAPI 收敛入口
 - 更新触发：
   - API 路由变化
   - 表结构或事件流变化
   - 发布与回滚流程变化
+  - 请求响应 schema 或 OpenAPI 草案结构变化
 
 ### `godot-gameplay-implementer`
 
@@ -95,16 +105,19 @@
   - `docs/20-specs/engineering-conventions.md`
 - 次要上游：
   - `docs/20-specs/backend-data-spec.md`
+  - `docs/30-api/openapi-draft.md`
 - 作用：
   - 落实客户端玩法逻辑、场景结构、UI 与最小验证路径
 - 依赖原因：
   - `product-spec.md` 提供玩法边界、投票入口、世界更新反馈等产品约束
   - `engineering-conventions.md` 提供工程组织和命名方式
   - `backend-data-spec.md` 提供接口契约和数据结构来源
+  - `openapi-draft.md` 提供客户端接入所依赖的接口草案和样例收敛入口
 - 更新触发：
   - 玩法闭环调整
   - 客户端与服务端契约变化
   - 工程目录和命名规范变化
+  - OpenAPI 草案中的客户端相关接口变化
 
 ### `world-content-generator`
 
@@ -132,6 +145,7 @@
 - 次要上游：
   - `docs/20-specs/agent-loop-spec.md`
   - `docs/20-specs/backend-data-spec.md`
+  - `docs/30-api/openapi-draft.md`
 - 作用：
   - 对生成结果做结构化审核，输出通过、驳回或人工复核结论
 - 依赖原因：
@@ -139,10 +153,12 @@
   - `product-spec.md` 提供世界一致性和主线骨架不可突破的约束
   - `agent-loop-spec.md` 提供门禁与治理流程上下文
   - `backend-data-spec.md` 提供审核记录字段与状态迁移背景
+  - `openapi-draft.md` 提供审核审批接口和返回结构的收敛入口
 - 更新触发：
   - 审核维度变化
   - 风险等级定义变化
   - 内容状态流变化
+  - 审批接口或返回字段变化
 
 ### `loop-gate-optimizer`
 
@@ -170,20 +186,23 @@
 - 次要上游：
   - `docs/20-specs/content-generation-spec.md`
   - `docs/20-specs/engineering-conventions.md`
+  - `docs/30-api/openapi-draft.md`
 - 作用：
   - 组织内容包打包、灰度、正式发布、回滚和发布记录
 - 依赖原因：
   - `backend-data-spec.md` 提供内容包、上线状态和回滚记录的核心约束
   - `agent-loop-spec.md` 提供发布治理和回滚闭环要求
   - `content-generation-spec.md` 决定只有符合生命周期约束的对象才能进入发布链路
+  - `openapi-draft.md` 提供发布、回滚和内容包查询接口的收敛入口
 - 更新触发：
   - 内容包状态变化
   - 灰度与回滚规则变化
   - 发布摘要要求变化
+  - 发布或回滚接口变化
 
 ## 维护规则
 
-1. `20-specs/` 先改，`skills/` 后改，不反过来。
+1. `20-specs/` 先改，涉及接口文档时再更新 `30-api/`，最后同步 `skills/`，不反过来。
 2. 一个 Skill 至少要标清自己的主要上游规范。
 3. 一个 spec 如果影响多个 Skill，优先维护映射表，再逐个更新 Skill。
 4. Skill 中如果出现新的业务边界定义，应回收到 `20-specs/`，不要只留在 Skill 里。
