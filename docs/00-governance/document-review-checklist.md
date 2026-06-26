@@ -76,7 +76,7 @@
 
 以下项目仅在迁移、重命名、目录重组时强制检查：
 
-- 是否先更新了 `document-directory-spec.md`
+- 是否先更新了 `docs/00-governance/document-directory-spec.md`
 - 是否已有明确迁移目标，而不是临时挪动文件
 - 是否把迁移和引用修复放在同一主题内完成
 - 是否避免留下“旧路径已失效但入口没改”的中间状态

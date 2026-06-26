@@ -45,7 +45,7 @@
 
 - 单份新增或单份大改时，优先做单文档复查，不必每次重扫全仓。
 - 同一轮改动涉及多个目录时，应至少覆盖本轮受影响的全部文档，而不是只检查主文件。
-- 若模板规范本身发生变化，应重新使用 `document-template-alignment-checklist.md` 的口径做一次全量复查。
+- 若模板规范本身发生变化，应重新使用 `docs/00-governance/document-template-alignment-checklist.md` 的口径做一次全量复查。
 - 若只是修正文案、路径或少量字段，不改变章节结构时，可不额外触发模板专项复查。
 
 ## 收口要求
@@ -54,8 +54,8 @@
 
 - 文档自身结构已补齐或明确说明为何不适用。
 - 相关入口、映射或状态说明已同步。
-- 如本轮出现新的结构缺口，应更新 `document-template-alignment-checklist.md`。
-- 如本轮已消除缺口，也应更新 `document-template-alignment-checklist.md`，避免清单过期。
+- 如本轮出现新的结构缺口，应更新 `docs/00-governance/document-template-alignment-checklist.md`。
+- 如本轮已消除缺口，也应更新 `docs/00-governance/document-template-alignment-checklist.md`，避免清单过期。
 
 ## 不应做的事
 
@@ -68,7 +68,7 @@
 
 - 新增正式文档时，把模板检查作为创建动作的一部分，而不是事后补救。
 - 每次目录迁移或大批量改写后，优先做一次本主题内的增量复查。
-- 若治理入口文档发生变化，优先同步 `docs/README.md`、`document-map.md` 和 `project-status.md`。
+- 若治理入口文档发生变化，优先同步 `docs/README.md`、`docs/00-governance/document-map.md` 和 `docs/00-governance/project-status.md`。
 - 若清单长期保持全量对齐，可继续把它作为“巡检基线”，而不是重新退回临时排查工具。
 
 ## 与其他文档的关系
