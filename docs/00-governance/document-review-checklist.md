@@ -23,6 +23,7 @@
 - 文档目的是否写清，读者能快速理解这份文档是干什么的
 - 文档当前定位是否明确，是否说明与其他规范的关系
 - 文档状态是否清晰，必要时是否标注为 `draft`、`active`、`deprecated` 或 `archived`
+- 若属于治理文档、规范文档或 API 文档，是否参考统一模板组织结构
 - 文档是否放在正确目录，没有落到错误层级
 - 文件名是否稳定、可复用、符合当前目录命名风格
 
@@ -102,5 +103,6 @@
 
 - 目录分层规则以 `docs/00-governance/document-directory-spec.md` 为准
 - 文档状态规范以 `docs/00-governance/document-lifecycle.md` 为准
+- 模板结构建议以 `docs/00-governance/document-template-spec.md` 为准
 - 变更执行步骤以 `docs/00-governance/document-change-process.md` 为准
 - 全局文档角色与权威关系以 `docs/00-governance/document-map.md` 为准

@@ -15,7 +15,8 @@
 1. `docs/00-governance/document-map.md`
 2. `docs/00-governance/project-status.md`
 3. `docs/00-governance/document-lifecycle.md`
-4. `docs/20-specs/README.md`
+4. `docs/00-governance/document-template-spec.md`
+5. `docs/20-specs/README.md`
 
 ## 5 分钟上手
 
@@ -29,13 +30,15 @@
    - 判断项目当前阶段、已确定事项和未落地资产
 3. `docs/00-governance/document-lifecycle.md`
    - 理解哪些文档是草稿、当前生效、待废弃或已归档
-4. `docs/20-specs/README.md`
+4. `docs/00-governance/document-template-spec.md`
+   - 理解后续新增治理文档、规范文档和 API 文档时应采用的标准章节结构
+5. `docs/20-specs/README.md`
    - 进入执行规范入口
-5. `docs/20-specs/product-spec.md`
+6. `docs/20-specs/product-spec.md`
    - 理解产品边界、MVP 和验收口径
-6. `docs/20-specs/backend-data-spec.md`
+7. `docs/20-specs/backend-data-spec.md`
    - 理解后端服务、数据模型和接口方向
-7. `docs/00-governance/spec-skill-mapping.md`
+8. `docs/00-governance/spec-skill-mapping.md`
    - 理解 `20-specs/` 和 `.trae/skills/` 的关系
 
 ### 如果你准备开始实施

@@ -3,7 +3,7 @@
 ## 目录结构
 
 - `00-governance/`
-  - 文档治理、项目状态、快速开始、目录规范、变更流程、生命周期、归属责任、评审清单和 spec/skill 映射
+  - 文档治理、项目状态、快速开始、目录规范、变更流程、生命周期、归属责任、评审清单、模板规范和 spec/skill 映射
   - 适合先看这组，理解文档体系本身怎么组织
 - `10-requirements/`
   - 需求背景、产品讨论、方案草案和立项上下文
@@ -26,25 +26,26 @@
 1. `00-governance/document-directory-spec.md`
 2. `00-governance/document-change-process.md`
 3. `00-governance/document-lifecycle.md`
-4. `00-governance/document-ownership.md`
-5. `00-governance/document-review-checklist.md`
-6. `00-governance/document-map.md`
-7. `00-governance/project-status.md`
-8. `00-governance/quick-start.md`
-9. `30-api/api-overview.md`
-10. `30-api/api-permissions.md`
-11. `30-api/api-error-codes.md`
-12. `30-api/api-examples-vote.md`
-13. `00-governance/spec-skill-mapping.md`
-14. `10-requirements/open-world-ai-game-prd.md`
-15. `10-requirements/需求概述.md`
-16. `10-requirements/功能设计.md`
-17. `10-requirements/技术方案.md`
-18. `40-dev-loop/ai-coding-game-dev-loop-plan.md`
-19. `40-dev-loop/loop-engineering-plan.md`
-20. `50-research/stack-research-ai-game-dev.md`
-21. `50-research/service-stack-comparison.md`
-22. `20-specs/README.md`
+4. `00-governance/document-template-spec.md`
+5. `00-governance/document-ownership.md`
+6. `00-governance/document-review-checklist.md`
+7. `00-governance/document-map.md`
+8. `00-governance/project-status.md`
+9. `00-governance/quick-start.md`
+10. `30-api/api-overview.md`
+11. `30-api/api-permissions.md`
+12. `30-api/api-error-codes.md`
+13. `30-api/api-examples-vote.md`
+14. `00-governance/spec-skill-mapping.md`
+15. `10-requirements/open-world-ai-game-prd.md`
+16. `10-requirements/需求概述.md`
+17. `10-requirements/功能设计.md`
+18. `10-requirements/技术方案.md`
+19. `40-dev-loop/ai-coding-game-dev-loop-plan.md`
+20. `40-dev-loop/loop-engineering-plan.md`
+21. `50-research/stack-research-ai-game-dev.md`
+22. `50-research/service-stack-comparison.md`
+23. `20-specs/README.md`
 
 ## 使用原则
 

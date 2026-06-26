@@ -73,6 +73,8 @@
   - 定义各层文档由谁维护、谁裁定、哪些变更需要同步知会
 - `docs/00-governance/document-review-checklist.md`
   - 定义新增文档、重要修订和结构性变更的统一评审检查项
+- `docs/00-governance/document-template-spec.md`
+  - 定义治理文档、规范文档和 API 文档的标准章节模板
 - `docs/00-governance/spec-skill-mapping.md`
   - 统一维护 `20-specs/` 与 `.trae/skills/` 的上游下游关系
 - `docs/00-governance/project-status.md`
