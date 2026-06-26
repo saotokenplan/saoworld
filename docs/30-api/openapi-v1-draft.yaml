@@ -730,8 +730,8 @@ components:
       type: openIdConnect
       openIdConnectUrl: https://auth.example.com/.well-known/openid-configuration
       description: >
-        Bearer Token 采用 OIDC Access Token 语义；各接口通过 security 显式声明
-        所需 scope，并通过 x-roles 标注允许角色集合。
+        认证方式为 OIDC 签发的 JWT Bearer Token，通过 Authorization: Bearer <token> 头发送。
+        各接口通过 security 显式声明所需 scope，并通过 x-roles 标注允许角色集合。
       x-scopes:
         votes:read: 查询当前投票周期与候选项
         votes:submit: 提交玩家投票

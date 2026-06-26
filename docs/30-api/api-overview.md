@@ -6,7 +6,7 @@
 
 ## 目的
 
-本文档用于把 `docs/20-specs/backend-data-spec.md` 中分散的接口方向整理成一份实施索引，方便后续补 OpenAPI 草案、请求响应样例、错误码表和服务拆分文档。
+本文档用于把 `docs/20-specs/backend-data-spec.md` 中分散的接口方向整理成一份实施索引，作为 `docs/30-api/` 目录的导航入口。
 
 ## 适用范围
 
@@ -23,16 +23,23 @@
 ## 通用约定
 
 - 协议：`HTTPS + JSON`
-- 认证：`Bearer Token`
+- 认证：OIDC 签发的 JWT Bearer Token（`Authorization: Bearer <token>`）
 - 版本前缀：`/api/v1`
 - 时间格式：ISO 8601
-- 错误返回统一使用：
+- 错误返回统一结构（详见 [api-error-codes.md](file:///workspace/docs/30-api/api-error-codes.md) 和 OpenAPI Schema）：
 
 ```json
 {
   "code": "INVALID_VOTE_STATE",
   "message": "当前投票周期不可投票",
-  "request_id": "req_001"
+  "request_id": "req_vote_current_409",
+  "details": [
+    {
+      "location": "body",
+      "field": "candidate_id",
+      "issue": "required"
+    }
+  ]
 }
 ```
 
@@ -105,59 +112,13 @@
 | `POST` | `/api/v1/ops/content-packages/{id}/release` | `ops` | 发布内容包 | `content-service` |
 | `POST` | `/api/v1/ops/content-packages/{id}/rollback` | `ops` | 回滚内容包 | `content-service` |
 
-## 推荐补齐的请求与响应样例
+## 请求与响应样例
 
-### `GET /api/v1/votes/current`
+详细的请求响应样例已在以下文档中定义，并已同步到 OpenAPI 草案的 `components/examples`：
 
-- 建议补齐：
-  - 当前投票周期元信息
-  - 候选项数组
-  - 玩家是否有资格投票
-  - 投票截止时间
-
-### `POST /api/v1/votes/submit`
-
-- 建议请求体至少包含：
-
-```json
-{
-  "vote_cycle_id": "cycle_202606",
-  "candidate_id": "candidate_03"
-}
-```
-
-- 建议响应体至少包含：
-
-```json
-{
-  "vote_id": "vote_001",
-  "vote_cycle_id": "cycle_202606",
-  "accepted": true,
-  "request_id": "req_vote_001"
-}
-```
-
-### `GET /api/v1/content/updates`
-
-- 建议补齐：
-  - 玩家当前可见内容包列表
-  - 每个内容包的区域范围
-  - 发布时间
-  - 是否灰度可见
-
-### `POST /api/v1/ops/content-packages/{id}/release`
-
-- 建议请求体至少包含：
-
-```json
-{
-  "gray_scope": {
-    "region_ids": ["region_wasteland_01"],
-    "player_percent": 10
-  },
-  "reason": "首轮灰度发布"
-}
-```
+- 投票链路：`docs/30-api/api-examples-vote.md`
+- 内容查询/发布/回滚：`docs/30-api/api-examples-content.md`
+- 世界/任务/运营审核：`docs/30-api/api-examples-world-ops.md`
 
 ## 关键状态关系
 
@@ -214,21 +175,34 @@
 - `producer`
 - `payload`
 
+## 文档资产清单
+
+`docs/30-api/` 目录当前包含以下接口参考文档：
+
+| 文档 | 说明 |
+|---|---|
+| `api-overview.md`（本文档） | 接口总览、服务边界、接口清单 |
+| `api-permissions.md` | 角色矩阵、scope 映射、审计要求 |
+| `api-error-codes.md` | 错误码索引（已落地 vs 预留）、错误结构说明 |
+| `api-examples-vote.md` | 投票链路请求响应样例 |
+| `api-examples-content.md` | 内容查询、发布与回滚链路样例 |
+| `api-examples-world-ops.md` | 世界、任务查询及运营写接口样例 |
+| `openapi-draft.md` | OpenAPI 草案入口、分批次阅读片段 |
+| `openapi-v1-draft.yaml` | **权威**单文件 OpenAPI 3.1 草案（12 个接口） |
+
 ## 需要后续补齐的内容
 
-- 单文件 OpenAPI 草案的通用复用层进一步细化
-- 错误码总表
-- 权限矩阵
-- 更完整的幂等策略说明
-- 更完整的分页、排序和过滤约定
-- 更完整的审计字段约定
-- Webhook 或内部事件消费者清单
+- 第二批/第三批接口的字段级校验错误 details 样例
+- 成功响应包装的复用层抽象
+- 更完整的幂等策略说明（当前 `Idempotency-Key` 头已定义，但冲突响应行为待细化）
+- 服务端实现阶段：将预留错误码（如 `INTERNAL_ERROR`、`TOKEN_EXPIRED`）落地
+- 仓库策略确认后，决定是否按服务拆分子草案
 
 ## 建议下一步
 
-1. 继续把排序、审计字段和安全作用域收敛到 `docs/30-api/openapi-v1-draft.yaml` 的更细复用层。
-2. 再评估是否按服务拆分更细的接口文档。
-3. 最后补齐更完整的排序、过滤和 SDK 友好性说明。
+1. 选定首个最小落地目标（建议投票链路），进入服务端工程初始化。
+2. 实现过程中根据代码实际约束迭代 OpenAPI 草案。
+3. 仓库策略明确后，决定单文件拆分方案。
 
 ## 与其他文档的关系
 
