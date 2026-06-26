@@ -135,6 +135,11 @@
 - 提交信息准确概括“这一次改了什么”
 - 提交未混入无关主题
 
+## 评审建议
+
+- 新增文档或重要修订完成后，建议按 `docs/00-governance/document-review-checklist.md` 做一次自检。
+- 涉及目录迁移、批量路径修改或多入口同步时，评审清单应作为强制检查项使用。
+
 ## 提交规范对接
 
 - 提交格式使用：
@@ -165,5 +170,6 @@
 ## 与其他文档的关系
 
 - 目录分层与落位规则以 `docs/00-governance/document-directory-spec.md` 为准。
+- 文档评审项目以 `docs/00-governance/document-review-checklist.md` 为准。
 - 文档全局分层与权威关系以 `docs/00-governance/document-map.md` 为准。
 - Git 提交规范以 `docs/20-specs/engineering-conventions.md` 为准。
