@@ -10,6 +10,18 @@
 - 需求已经讨论过，但还没有形成机器可执行的验收输入
 - 现有方案需要拆成更细的任务包
 
+## 规范来源
+
+- 主要来源：
+  - `docs/specs/product-spec.md`
+  - `docs/specs/agent-loop-spec.md`
+- 次要来源：
+  - `docs/specs/engineering-conventions.md`
+- 说明：
+  - 产品目标、范围、非目标和验收口径以 `product-spec.md` 为准
+  - 需求包结构、门禁闭环和回滚约束以 `agent-loop-spec.md` 为准
+  - 工程拆分边界和协作约束参考 `engineering-conventions.md`
+
 ## 输入
 
 - 产品目标

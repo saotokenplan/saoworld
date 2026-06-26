@@ -11,6 +11,20 @@
 - 上线异常触发快速回滚
 - 生成发布记录与复盘摘要
 
+## 规范来源
+
+- 主要来源：
+  - `docs/specs/backend-data-spec.md`
+  - `docs/specs/agent-loop-spec.md`
+- 次要来源：
+  - `docs/specs/content-generation-spec.md`
+  - `docs/specs/engineering-conventions.md`
+- 说明：
+  - 内容包、发布状态、灰度和回滚约束以 `backend-data-spec.md` 为准
+  - 发布治理、审计链和回滚闭环要求以 `agent-loop-spec.md` 为准
+  - 进入发布链路的对象生命周期参考 `content-generation-spec.md`
+  - 工程发布协作与产物约束参考 `engineering-conventions.md`
+
 ## 输入
 
 - 已审核通过的内容对象

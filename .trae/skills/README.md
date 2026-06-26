@@ -34,3 +34,5 @@
 
 - 这些文件是面向当前项目的技能草案，不是通用平台内置技能。
 - 每个 skill 都尽量只承担一个明确职责，避免单个 skill 同时做规划、编码、审核和发布。
+- 每个 `SKILL.md` 应显式标注“规范来源”，并与 `docs/spec-skill-mapping.md` 保持一致。
+- 如 Skill 与 `docs/specs/` 冲突，以 `docs/specs/` 为准。

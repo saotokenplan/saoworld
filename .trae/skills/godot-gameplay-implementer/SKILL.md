@@ -10,6 +10,18 @@
 - 新区域、新 NPC 触发逻辑和世界状态表现
 - Godot 场景与脚本结构整理
 
+## 规范来源
+
+- 主要来源：
+  - `docs/specs/product-spec.md`
+  - `docs/specs/engineering-conventions.md`
+- 次要来源：
+  - `docs/specs/backend-data-spec.md`
+- 说明：
+  - 玩法闭环、投票入口、世界更新反馈和产品边界以 `product-spec.md` 为准
+  - 客户端工程组织、命名和测试约束参考 `engineering-conventions.md`
+  - 客户端消费的数据结构和接口契约参考 `backend-data-spec.md`
+
 ## 输入
 
 - `spec.md`

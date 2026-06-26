@@ -10,6 +10,18 @@
 - 新 API、数据模型、任务队列能力开发
 - 既有服务的增量扩展
 
+## 规范来源
+
+- 主要来源：
+  - `docs/specs/backend-data-spec.md`
+  - `docs/specs/engineering-conventions.md`
+- 次要来源：
+  - `docs/specs/product-spec.md`
+- 说明：
+  - 服务边界、数据模型、接口、事件流和任务约束以 `backend-data-spec.md` 为准
+  - 工程目录、命名、配置和测试约束参考 `engineering-conventions.md`
+  - 产品能力范围和非目标边界参考 `product-spec.md`
+
 ## 输入
 
 - 需求包

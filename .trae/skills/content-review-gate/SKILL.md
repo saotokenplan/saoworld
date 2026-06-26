@@ -10,6 +10,20 @@
 - 新模板首次启用
 - 关键阵营、关键角色、高风险事件相关内容需要复核
 
+## 规范来源
+
+- 主要来源：
+  - `docs/specs/content-generation-spec.md`
+  - `docs/specs/product-spec.md`
+- 次要来源：
+  - `docs/specs/agent-loop-spec.md`
+  - `docs/specs/backend-data-spec.md`
+- 说明：
+  - 审核对象结构、模板边界和生命周期以 `content-generation-spec.md` 为准
+  - 世界一致性、主线骨架和内容边界以 `product-spec.md` 为准
+  - 门禁闭环和审核治理流程参考 `agent-loop-spec.md`
+  - 审核记录字段和状态迁移参考 `backend-data-spec.md`
+
 ## 输入
 
 - 生成对象集合

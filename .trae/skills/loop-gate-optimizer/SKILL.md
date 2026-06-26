@@ -11,6 +11,20 @@
 - 线上事故发生但现有 gate 没挡住
 - 误报过高导致研发效率明显下降
 
+## 规范来源
+
+- 主要来源：
+  - `docs/specs/agent-loop-spec.md`
+- 次要来源：
+  - `docs/specs/engineering-conventions.md`
+  - `docs/dev-loop/gate_registry.yaml`
+  - `docs/dev-loop/log-schemas-loop-engineering.md`
+- 说明：
+  - Agent 角色、门禁目标、Issue 反馈和闭环要求以 `agent-loop-spec.md` 为准
+  - 工程协作和门禁落地方式参考 `engineering-conventions.md`
+  - 现有 gate 清单参考 `gate_registry.yaml`
+  - 日志输入结构参考 `log-schemas-loop-engineering.md`
+
 ## 输入
 
 - `agent_session_log.jsonl`
