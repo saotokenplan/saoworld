@@ -1,0 +1,76 @@
+import uuid
+from datetime import datetime
+from enum import Enum
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class VoteCycleStatus(str, Enum):
+    DRAFT = "draft"
+    SCHEDULED = "scheduled"
+    OPEN = "open"
+    CLOSED = "closed"
+    FINALIZED = "finalized"
+
+
+class VoteCandidateStatus(str, Enum):
+    ACTIVE = "active"
+    WITHDRAWN = "withdrawn"
+    SELECTED = "selected"
+
+
+class ErrorDetail(BaseModel):
+    location: str
+    field: str
+    issue: str
+    rejected_value: object | None = None
+
+
+class ErrorResponse(BaseModel):
+    code: str
+    message: str
+    request_id: str
+    details: list[ErrorDetail] | None = None
+
+
+class CandidateResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    candidate_id: uuid.UUID
+    title: str
+    summary: str
+    description: str | None = None
+    vote_count: int = 0
+    status: VoteCandidateStatus
+
+
+class CurrentVoteResponse(BaseModel):
+    vote_cycle_id: uuid.UUID
+    chapter_id: str
+    status: VoteCycleStatus
+    starts_at: datetime
+    ends_at: datetime
+    candidates: list[CandidateResponse]
+    has_voted: bool = False
+    my_vote_candidate_id: uuid.UUID | None = None
+
+
+class VoteSubmitRequest(BaseModel):
+    candidate_id: uuid.UUID
+    device_fingerprint_hash: str = Field(min_length=1, max_length=128)
+    weight: float = Field(default=1.0, ge=0.0, le=10.0)
+
+
+class VoteSubmitResponse(BaseModel):
+    vote_id: uuid.UUID
+    vote_cycle_id: uuid.UUID
+    candidate_id: uuid.UUID
+    submitted_at: datetime
+    request_id: str
+    trace_id: str | None = None
+
+
+class HealthResponse(BaseModel):
+    service: str
+    version: str
+    status: str = "ok"

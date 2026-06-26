@@ -1,0 +1,90 @@
+from contextlib import asynccontextmanager
+
+import structlog
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from app.api.routes import router as vote_router
+from app.core.config import settings
+
+structlog.configure(
+    processors=[
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.add_log_level,
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.processors.JSONRenderer(),
+    ],
+    wrapper_class=structlog.BoundLogger,
+    context_class=dict,
+    logger_factory=structlog.PrintLoggerFactory(),
+)
+
+logger = structlog.get_logger()
+
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    logger.info("service_starting", service=settings.app_name, version=settings.app_version)
+    yield
+    logger.info("service_stopping", service=settings.app_name)
+
+
+app = FastAPI(
+    title=settings.app_name,
+    version=settings.app_version,
+    docs_url="/docs" if settings.debug else None,
+    redoc_url="/redoc" if settings.debug else None,
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=[settings.request_id_header, settings.trace_id_header],
+)
+
+
+@app.middleware("http")
+async def add_request_id_and_logging(request: Request, call_next):
+    import uuid
+
+    request_id = request.headers.get(settings.request_id_header, f"req_{uuid.uuid4().hex[:12]}")
+    trace_id = request.headers.get(settings.trace_id_header)
+
+    structlog.contextvars.clear_contextvars()
+    structlog.contextvars.bind_contextvars(
+        request_id=request_id,
+        trace_id=trace_id,
+        method=request.method,
+        path=request.url.path,
+    )
+
+    logger.info("request_started")
+
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        logger.exception("request_failed", error=str(exc))
+        return JSONResponse(
+            status_code=500,
+            content={
+                "code": "INTERNAL_ERROR",
+                "message": "服务器内部错误",
+                "request_id": request_id,
+            },
+        )
+
+    response.headers[settings.request_id_header] = request_id
+    if trace_id:
+        response.headers[settings.trace_id_header] = trace_id
+
+    logger.info("request_completed", status_code=response.status_code)
+    return response
+
+
+app.include_router(vote_router, prefix=settings.api_v1_prefix)

@@ -117,39 +117,57 @@
 
 ### 工程侧未定
 
-- 当前仓库是否继续作为未来主仓库，还是仅保留为上游文档仓库，尚未明确。
-- 单仓、多仓或混合仓的实际实施路径尚未最终确认。
 - CI 规则、测试入口、发布流水线和环境配置文件尚未建立。
+- 异步任务和事件的具体工程实现细节仍需在实施中细化。
+
+### 工程侧已确定
+
+- **仓库策略已确定为单仓模式**：当前仓库继续演进为主仓库，保留 `docs/` 并新增 `game/`、`services/`、`workers/`、`tools/`、`infra/`、`telemetry/` 等工程目录。
+- **首个最小落地目标已确定**：最小投票链路（`GET /api/v1/votes/current` + `POST /api/v1/votes/submit` + vote-service 骨架）。
 
 ## 尚未落地的工程资产
 
-- `game/` 客户端工程目录尚不存在。
-- `services/` 后端服务目录尚不存在。
-- `workers/`、`infra/`、`tools/`、`telemetry/` 等目标态目录尚不存在。
-- 可运行代码、测试套件、部署脚本和真实 CI 配置尚不存在。
-- 可直接执行的工程启动说明、环境依赖和本地运行命令尚不存在。
+- `game/` Godot 客户端工程尚未初始化（目录已创建，占位 README 就位）。
+- `workers/` Celery 异步任务 Worker 尚未实现（目录已创建）。
+- 除 `vote-service` 外的其他后端服务（gateway/player/world/generation/review/content/ops）尚未初始化。
+- Alembic 数据库迁移脚本尚未生成，需要连接数据库后初始化。
+- 真实 CI 配置、部署脚本和生产环境配置尚未建立。
+- JWT 鉴权中间件、运营写接口、投票结算 Worker 尚未实现。
+
+## 已初步落地的工程资产
+
+- 单仓模式目标目录结构已创建：`game/`、`services/`、`workers/`、`tools/`、`infra/`、`telemetry/`。
+- `vote-service` 已完成骨架初始化（FastAPI + SQLAlchemy + Pydantic + pytest），见 `services/vote/`。
+  - 数据模型：`VoteCycle`、`VoteCandidate`、`Vote`（对应 `backend-data-spec.md`）
+  - API 路由：`GET /api/v1/health`、`GET /api/v1/votes/current`、`POST /api/v1/votes/submit`
+  - 错误响应 envelope、幂等键处理、结构化日志、request_id/trace_id 中间件
+  - 基础单元测试已通过（2/2）
+- 本地开发基础设施：`infra/docker-compose.dev.yml`（PostgreSQL 16 + Redis 7）。
+- `.gitignore`、各目录 README 占位、`.env.example` 已配置。
 
 ## 当前主要风险
 
-- 文档与未来工程结构存在落差，如果不先补状态说明，容易让人误判项目已进入开发阶段。
+- `vote-service` 当前在没有数据库连接时所有 DB 相关接口会返回 500，需要尽快接入 PostgreSQL 并完成迁移脚本初始化。
 - `10-requirements/` 与 `20-specs/` 仍有一定内容重叠，后续若继续双向修改，容易再次漂移。
 - `40-dev-loop/` 中部分设计偏目标态，若不裁剪就直接照搬，实施成本会偏高。
-- `engineering-conventions.md` 描述的是目标态仓库结构，与当前仓库现状尚未完全对齐。
 
 ## 下一阶段建议
 
-1. 确认仓库策略：当前仓库是继续演进为主仓库，还是仅作为上游文档仓库。
-2. 选定首个最小落地目标（推荐最小投票链路：`GET /votes/current` + `POST /votes/submit` + vote-service 骨架）。
-3. 基于该目标生成第一版需求包（可放在 `docs/packages/first-slice/`），包括从 `20-specs/` 抽出的相关规范子集。
-4. 补异步任务和事件的 payload schema（不阻塞投票 MVP，但内容链路需要）。
-5. 初始化工程骨架（FastAPI 项目结构、SQLAlchemy/Alembic 模型、测试框架），开始实现。
+1. ~~确认仓库策略：~~ 已确定为单仓模式，当前仓库继续演进为主仓库。
+2. ~~选定首个最小落地目标：~~ 已确定为最小投票链路（vote-service 骨架已初始化）。
+3. 启动本地 PostgreSQL（`docker compose -f infra/docker-compose.dev.yml up -d`）。
+4. 初始化 Alembic 并生成首次迁移脚本，创建投票相关表。
+5. 为 vote-service 添加数据库集成测试，补全投票历史接口（`GET /api/v1/votes/history`）。
+6. 基于该目标生成第一版需求包（可放在 `docs/packages/first-slice/`），包括从 `20-specs/` 抽出的相关规范子集。
+7. 补异步任务和事件的 payload schema（不阻塞投票 MVP，但内容链路需要）。
 
 ## 进入实施前的建议门槛
 
-- 产品边界和 MVP 范围不再频繁变更。
-- 首个最小落地目标明确到单条主线能力。
-- 至少补齐接口样例、最小任务拆分和工程初始化说明。
-- 确认是沿当前仓库继续扩展，还是拆出独立工程仓库。
+- ~~产品边界和 MVP 范围不再频繁变更。~~ 已明确
+- ~~首个最小落地目标明确到单条主线能力。~~ 已确定为最小投票链路
+- ~~确认是沿当前仓库继续扩展，还是拆出独立工程仓库。~~ 已确定为单仓模式
+- 启动数据库并初始化 Alembic 迁移脚本，完成 vote-service 端到端可运行验证。
+- 补充接口样例和集成测试，确保投票链路可通过自动化测试验证。
 
 ## 与其他文档的关系
 
