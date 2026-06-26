@@ -64,6 +64,9 @@
   - `docs/20-specs/engineering-conventions.md`
 - 文档治理辅助材料：
   - `docs/00-governance/document-directory-spec.md`
+  - `docs/00-governance/document-change-process.md`
+  - `docs/00-governance/document-ownership.md`
+  - `docs/00-governance/document-review-checklist.md`
   - `docs/00-governance/document-map.md`
   - `docs/00-governance/quick-start.md`
   - `docs/00-governance/spec-skill-mapping.md`
