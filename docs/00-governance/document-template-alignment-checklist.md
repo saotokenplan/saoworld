@@ -40,9 +40,9 @@
 - 复查范围：
   - `docs/` 下共 `31` 份 Markdown 文档，不含本清单
 - 已完整对齐：
-  - `6` 份
+  - `11` 份
 - 部分对齐：
-  - `9` 份
+  - `4` 份
 - 尚未按模板补齐：
   - `16` 份
 
@@ -54,28 +54,15 @@
 - `docs/00-governance/document-map.md`
 - `docs/00-governance/project-status.md`
 - `docs/00-governance/quick-start.md`
+- `docs/00-governance/document-directory-spec.md`
+- `docs/00-governance/document-change-process.md`
+- `docs/00-governance/document-review-checklist.md`
+- `docs/00-governance/document-ownership.md`
+- `docs/00-governance/document-lifecycle.md`
 - `docs/00-governance/document-template-spec.md`
 - `docs/20-specs/README.md`
 
 ## 二、部分对齐
-
-### 治理文档
-
-- `docs/00-governance/document-directory-spec.md`
-  - 已有：`适用范围`
-  - 缺少：`当前定位`、`与其他文档的关系`
-- `docs/00-governance/document-change-process.md`
-  - 已有：`适用范围`、`与其他文档的关系`
-  - 缺少：`当前定位`
-- `docs/00-governance/document-review-checklist.md`
-  - 已有：`适用范围`、`与其他文档的关系`
-  - 缺少：`当前定位`
-- `docs/00-governance/document-ownership.md`
-  - 已有：`适用范围`、`与其他文档的关系`
-  - 缺少：`当前定位`
-- `docs/00-governance/document-lifecycle.md`
-  - 已有：`适用范围`、`与其他文档的关系`
-  - 缺少：`当前定位`
 
 ### API 文档
 
@@ -131,16 +118,15 @@
 
 建议按以下顺序推进，而不是全仓一次性机械补齐：
 
-1. 治理文档的“部分对齐”项
-2. API 文档的“部分对齐”项
-3. `spec-skill-mapping.md`
-4. `20-specs/` 核心规范正文
-5. `10-requirements/` 背景文档
-6. `40-dev-loop/` 与 `50-research/` 中仍未补结构字段的文档
+1. API 文档的“部分对齐”项
+2. `spec-skill-mapping.md`
+3. `20-specs/` 核心规范正文
+4. `10-requirements/` 背景文档
+5. `40-dev-loop/` 与 `50-research/` 中仍未补结构字段的文档
 
 排序原因：
 
-- 治理文档和 API 文档是高频入口，补齐后收益最高。
+- API 文档是当前剩余“部分对齐”项中最直接的高频参考入口，补齐后收益最高。
 - `20-specs/` 是执行基线，应尽快与模板完全对齐。
 - `10-requirements/`、`40-dev-loop/`、`50-research/` 更适合在不打断当前使用的前提下渐进补齐。
 

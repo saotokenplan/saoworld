@@ -13,6 +13,12 @@
 - 本规范适用于当前仓库下的全部 `docs/` 文档。
 - `.trae/skills/` 中如引用 `docs/` 路径，也应遵循本规范中的目录结构。
 
+## 当前定位
+
+- 本文档是 `docs/` 目录分层与落位规则的正式约束规范，用于回答“文档应放在哪里”。
+- 本文档优先约束目录结构、命名和落位，不替代具体文档的内容规范、评审流程或生命周期定义。
+- 发生目录调整、迁移或新增分类前，应先以本文档为基线确认目标结构。
+
 ## 目录设计原则
 
 - `docs/` 根目录只保留总入口文件 `README.md`。
@@ -150,3 +156,16 @@ docs/
 5. 接口参考统一进入 `docs/30-api/`
 6. 研发闭环统一进入 `docs/40-dev-loop/`
 7. 调研资料统一进入 `docs/50-research/`
+
+## 与其他文档的关系
+
+- `docs/README.md`
+  - 作为 `docs/` 总入口，按本文档定义的目录结构组织导航。
+- `docs/00-governance/document-change-process.md`
+  - 定义目录调整、新增、迁移和删除时应遵循的执行步骤。
+- `docs/00-governance/document-template-spec.md`
+  - 定义目录内各类文档应如何组织标准章节结构。
+- `docs/00-governance/document-map.md`
+  - 说明各目录层级的权威关系、保留策略和阅读关系。
+- `docs/00-governance/document-ownership.md`
+  - 定义目录规则和结构调整由哪些角色负责维护、裁定和协同。
