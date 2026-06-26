@@ -101,6 +101,8 @@
   - 统一维护 `20-specs/` 与 `.trae/skills/` 的上游下游关系
 - `docs/00-governance/project-status.md`
   - 说明仓库当前处于什么阶段，以及哪些资产已经具备
+- `docs/00-governance/governance-phase-summary.md`
+  - 总结治理阶段已经形成的规则基线、入口收口结果和后续移交重点
 - `docs/00-governance/quick-start.md`
   - 说明当前仓库怎么使用，以及最小阅读路径与最小实施顺序
 - `docs/30-api/api-overview.md`
