@@ -40,11 +40,11 @@
 - 复查范围：
   - `docs/` 下共 `31` 份 Markdown 文档，不含本清单
 - 已完整对齐：
-  - `25` 份
+  - `31` 份
 - 部分对齐：
   - `0` 份
 - 尚未按模板补齐：
-  - `6` 份
+  - `0` 份
 
 ## 一、已完整对齐
 
@@ -75,6 +75,12 @@
 - `docs/30-api/api-permissions.md`
 - `docs/30-api/api-error-codes.md`
 - `docs/30-api/api-examples-vote.md`
+- `docs/40-dev-loop/ai-coding-game-dev-loop-plan.md`
+- `docs/40-dev-loop/loop-engineering-plan.md`
+- `docs/40-dev-loop/issue-templates-loop-engineering.md`
+- `docs/40-dev-loop/log-schemas-loop-engineering.md`
+- `docs/50-research/stack-research-ai-game-dev.md`
+- `docs/50-research/service-stack-comparison.md`
 
 ## 二、部分对齐
 
@@ -82,29 +88,11 @@
 
 ## 三、尚未按模板补齐
 
-以下文档目前未按标准章节形式补齐上述三类结构字段：
-
-### 研发闭环文档
-
-- `docs/40-dev-loop/ai-coding-game-dev-loop-plan.md`
-- `docs/40-dev-loop/loop-engineering-plan.md`
-- `docs/40-dev-loop/issue-templates-loop-engineering.md`
-- `docs/40-dev-loop/log-schemas-loop-engineering.md`
-
-### 调研文档
-
-- `docs/50-research/stack-research-ai-game-dev.md`
-- `docs/50-research/service-stack-comparison.md`
+当前没有“尚未按模板补齐”项。
 
 ## 四、建议修整顺序
 
-建议按以下顺序推进，而不是全仓一次性机械补齐：
-
-1. `40-dev-loop/` 与 `50-research/` 中仍未补结构字段的文档
-
-排序原因：
-
-- `40-dev-loop/` 与 `50-research/` 是当前剩余未对齐文档的全部范围，适合按主题做最后一轮渐进补齐。
+当前 `docs/` 范围内文档已全部完成模板字段对齐。
 
 ## 五、执行建议
 
@@ -113,7 +101,8 @@
   - 一次只补 API 文档
   - 一次只补 `20-specs/` 正文
 - 每轮补齐后，更新本清单中的状态，避免重复排查。
-- 若某文档语义上已经具备类似内容，可优先最小化整理为标准章节，而不是大幅重写正文。
+- 若后续新增文档语义上已经具备类似内容，可优先最小化整理为标准章节，而不是大幅重写正文。
+- 后续若有新增、迁移或大幅改写，应重新使用本清单口径进行一次增量复查，避免重新产生结构缺口。
 
 ## 与其他文档的关系
 

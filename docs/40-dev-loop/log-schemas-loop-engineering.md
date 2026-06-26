@@ -4,6 +4,18 @@
 > 适用阶段：当前
 > 维护要求：持续维护
 
+## 适用范围
+
+- 适用于 Loop Engineering 中 `agent_session_log.jsonl`、`ci_failures.jsonl`、`prod_incidents.jsonl` 等结构化日志采集。
+- 适用于二层、三层 Loop 的偏差发现、聚类归因和 issue 自动生成输入。
+- 不替代 Loop 方案本身和 issue 模板，而是提供底层结构化数据口径。
+
+## 当前定位
+
+- 本文档是研发闭环层的日志 schema 文档，用于回答“哪些日志需要采集、字段如何组织、如何支持自动消费”。
+- 本文档聚焦 JSONL 字段、示例和签名规则，不单独定义门禁策略或 issue 模板内容。
+- 当日志 schema 与正式 loop 规则冲突时，应优先以 `docs/20-specs/agent-loop-spec.md` 和 `loop-engineering-plan.md` 为准。
+
 目标：把“AI 执行过程”压缩成可被二层/三层 Loop 自动消费的结构化信号。建议所有日志都采用 **JSON Lines**（一行一个 JSON）。
 
 ---
@@ -116,3 +128,16 @@
 4. 内容审核：规则 id（如 `WORLD_RULE_017`、`REWARD_BUDGET_003`）
 
 这样可以快速聚类，且不容易被日志微小变化干扰。
+
+## 与其他文档的关系
+
+- `docs/40-dev-loop/loop-engineering-plan.md`
+  - 定义这些日志如何进入二层、三层 Loop 的归因和改进流程。
+- `docs/40-dev-loop/issue-templates-loop-engineering.md`
+  - 使用本文档中的日志字段和证据作为标准 issue 模板的输入。
+- `docs/20-specs/agent-loop-spec.md`
+  - 规定正式闭环中应采集哪些日志和如何把它们转成问题反馈与规则改进。
+- `docs/20-specs/engineering-conventions.md`
+  - 约束日志、审计和发布相关工程资产如何纳入仓库和交付流程。
+- `docs/00-governance/document-template-spec.md`
+  - 提供本文档当前补齐所遵循的标准章节结构模板。

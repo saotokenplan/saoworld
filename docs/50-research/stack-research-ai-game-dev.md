@@ -4,6 +4,18 @@
 > 适用阶段：历史决策
 > 维护要求：按需维护
 
+## 适用范围
+
+- 适用于回顾 AI-first 游戏研发闭环的技术栈选型背景，尤其是引擎、服务端、异步任务、CI 和观测体系的早期比较。
+- 适用于理解为何历史上优先推荐 `Godot 4 + Typed GDScript + Python/FastAPI + PostgreSQL + Celery + Docker + GitHub Actions + Prometheus + Sentry`。
+- 不替代当前正式执行规范，也不作为新项目实施时的唯一依据。
+
+## 当前定位
+
+- 本文档是历史调研归档文档，用于回答“当初为什么这样做技术选型、有哪些官方依据和比较逻辑”。
+- 本文档聚焦选型背景、资料引用和历史判断，主要用于追溯决策来源，而不是直接指导当前执行。
+- 若本文档与现行规范冲突，应以 `docs/20-specs/` 和当前治理文档为准。
+
 ## 结论
 
 如果目标是做一套 **AI-first、Loop Engineering 驱动、尽量减少人工介入** 的游戏研发闭环，那么把游戏引擎优先选为 **Godot 4** 是合理的。它不是因为“画面最强”或“生态最大”而胜出，而是因为它在这类研发范式下更符合四个关键标准：**文本化程度高、命令行友好、版本控制友好、引擎治理成本低**。Godot 官方 FAQ 明确说明其以 MIT 许可证发布，可商用、可修改、可分发；Godot 官方还推荐新项目使用 4.x，并将 GDScript 作为更适合 MVP 和快速开发的默认语言。<sup><a href="#cite-1">[1]</a></sup>
@@ -262,3 +274,16 @@ Sentry 官方把自己定义为 developer-first 的错误跟踪和性能监控�
     <a class="src-url" href="https://docs.sentry.io/product/sentry-basics/" target="_blank" rel="noopener">https://docs.sentry.io/product/sentry-basics/</a>
   </li>
 </ol>
+
+## 与其他文档的关系
+
+- `docs/50-research/service-stack-comparison.md`
+  - 与本文档共同构成历史技术选型材料，前者聚焦服务端语言，本文档覆盖更完整的技术栈组合。
+- `docs/20-specs/engineering-conventions.md`
+  - 将本文档中的部分技术栈与工程协作判断下沉为当前执行规范。
+- `docs/20-specs/backend-data-spec.md`
+  - 承接本文档中关于服务端、数据库、异步任务和观测链路的正式实现约束。
+- `docs/40-dev-loop/ai-coding-game-dev-loop-plan.md`
+  - 在本文档历史选型判断基础上，进一步描述 AI-first 研发闭环的落地方案。
+- `docs/00-governance/document-lifecycle.md`
+  - 说明本文档为何处于 `archived` 状态，以及如何与当前 `active` 规范配合使用。
