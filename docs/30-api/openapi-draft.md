@@ -1157,6 +1157,8 @@ paths:
   - 第一批接口的请求响应样例输入
 - `docs/30-api/api-examples-content.md`
   - 第二批接口的请求响应样例输入
+- `docs/30-api/api-examples-world-ops.md`
+  - 第三批接口的请求响应样例输入
 
 ## 后续补齐顺序
 
@@ -1177,6 +1179,8 @@ paths:
   - 提供第一批接口样例输入。
 - `docs/30-api/api-examples-content.md`
   - 提供第二批接口样例输入。
+- `docs/30-api/api-examples-world-ops.md`
+  - 提供第三批接口样例输入。
 - `docs/30-api/openapi-v1-draft.yaml`
   - 当前单文件 OpenAPI 草案输出。
 - `docs/20-specs/backend-data-spec.md`
