@@ -89,6 +89,8 @@
   - 定义各层文档由谁维护、谁裁定、哪些变更需要同步知会
 - `docs/00-governance/document-review-checklist.md`
   - 定义新增文档、重要修订和结构性变更的统一评审检查项
+- `docs/00-governance/document-template-alignment-checklist.md`
+  - 记录当前文档与模板规范的对齐进度和后续补齐顺序
 - `docs/00-governance/document-template-spec.md`
   - 定义治理文档、规范文档和 API 文档的标准章节模板
 - `docs/00-governance/spec-skill-mapping.md`

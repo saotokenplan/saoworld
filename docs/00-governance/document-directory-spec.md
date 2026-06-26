@@ -34,6 +34,7 @@ docs/
 │   ├── document-lifecycle.md
 │   ├── document-ownership.md
 │   ├── document-review-checklist.md
+│   ├── document-template-alignment-checklist.md
 │   ├── document-template-spec.md
 │   ├── document-map.md
 │   ├── project-status.md
@@ -57,6 +58,7 @@ docs/
   - `document-lifecycle.md`
   - `document-ownership.md`
   - `document-review-checklist.md`
+  - `document-template-alignment-checklist.md`
   - `document-template-spec.md`
   - `document-map.md`
   - `project-status.md`
