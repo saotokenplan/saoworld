@@ -1772,10 +1772,27 @@ components:
       type: string
       pattern: '^[A-Z0-9_]+$'
       example: INVALID_VOTE_STATE
+    GenericErrorCode:
+      type: string
+      enum:
+        - INVALID_ARGUMENT
+        - INVALID_TOKEN
+        - INSUFFICIENT_SCOPE
+        - RESOURCE_NOT_FOUND
+        - CONFLICT
+        - RATE_LIMITED
+        - SERVICE_UNAVAILABLE
+      description: >
+        HTTP 语义层通用错误码，跨接口稳定，可被 SDK、Mock Server 和测试工具直接匹配。
+        领域专属错误码（如 VOTE_CYCLE_NOT_FOUND）仍使用 ErrorCode 的开放 pattern 校验。
     RequestId:
       type: string
       pattern: '^req_[A-Za-z0-9_]+$'
       example: req_vote_current_409
+    TraceId:
+      type: string
+      pattern: '^trace_[A-Za-z0-9_]+$'
+      example: trace_vote_submit_001
     ErrorMessage:
       type: string
       minLength: 1
@@ -1783,19 +1800,38 @@ components:
     ErrorDetailLocation:
       type: string
       enum: [query, path, header, body]
-    ErrorDetailIssue:
+    ValidationIssue:
       type: string
       enum:
         - required
         - pattern_mismatch
         - unsupported_enum
-        - missing_required_scope
         - must_be_between_1_and_100
         - min_items_2
+      description: 参数校验类错误的 issue 枚举，供 SDK 做表单级错误映射
+    AuthorizationIssue:
+      type: string
+      enum:
+        - missing_required_scope
+      description: 鉴权/授权类错误的 issue 枚举
+    ErrorDetailIssue:
+      type: string
+      oneOf:
+        - $ref: '#/components/schemas/ValidationIssue'
+        - $ref: '#/components/schemas/AuthorizationIssue'
+      description: 错误细节原因码，按类别分组成稳定枚举
     ErrorFieldPath:
       type: string
       pattern: '^[A-Za-z0-9_.-]+$'
       example: gray_scope.player_percent
+    RejectedValue:
+      description: 被服务端拒绝的实际入参值；支持任意 JSON 标量类型，方便 SDK 回显
+      oneOf:
+        - type: string
+        - type: integer
+        - type: number
+        - type: boolean
+        - type: 'null'
     ErrorResponseBase:
       type: object
       required: [code, message, request_id]
@@ -1806,6 +1842,54 @@ components:
           $ref: '#/components/schemas/ErrorMessage'
         request_id:
           $ref: '#/components/schemas/RequestId'
+    ErrorDetail:
+      type: object
+      required: [location, field, issue]
+      properties:
+        location:
+          $ref: '#/components/schemas/ErrorDetailLocation'
+        field:
+          $ref: '#/components/schemas/ErrorFieldPath'
+        issue:
+          $ref: '#/components/schemas/ErrorDetailIssue'
+        rejected_value:
+          $ref: '#/components/schemas/RejectedValue'
+    ValidationErrorDetail:
+      allOf:
+        - $ref: '#/components/schemas/ErrorDetail'
+        - type: object
+          properties:
+            issue:
+              $ref: '#/components/schemas/ValidationIssue'
+      description: 参数校验错误条目；issue 收窄为校验类枚举，Mock/SDK 可直接映射表单错误
+    PathParameterErrorDetail:
+      allOf:
+        - $ref: '#/components/schemas/ErrorDetail'
+        - type: object
+          required: [location]
+          properties:
+            location:
+              type: string
+              enum: [path]
+            issue:
+              type: string
+              enum: [pattern_mismatch]
+      description: 路径参数格式错误条目；location 固定为 path，issue 固定为 pattern_mismatch
+    ScopeErrorDetail:
+      allOf:
+        - $ref: '#/components/schemas/ErrorDetail'
+        - type: object
+          required: [location]
+          properties:
+            location:
+              type: string
+              enum: [header]
+            field:
+              type: string
+              enum: [Authorization]
+            issue:
+              $ref: '#/components/schemas/AuthorizationIssue'
+      description: Scope 不足错误条目；固定指向 Authorization 头，issue 固定为 missing_required_scope
     DetailedErrorResponseBase:
       allOf:
         - $ref: '#/components/schemas/ErrorResponseBase'
@@ -1818,26 +1902,105 @@ components:
                 $ref: '#/components/schemas/ErrorDetail'
     ErrorResponse:
       allOf:
+        - $ref: '#/components/schemas/DetailedErrorResponseBase'
+      description: 通用错误响应；所有接口错误响应均兼容此结构
+    ValidationErrorResponse:
+      allOf:
         - $ref: '#/components/schemas/ErrorResponseBase'
         - type: object
+          required: [code]
           properties:
+            code:
+              type: string
+              enum: [INVALID_ARGUMENT]
             details:
               type: array
               minItems: 1
               items:
-                $ref: '#/components/schemas/ErrorDetail'
-    ErrorDetail:
-      type: object
-      required: [location, field, issue]
-      properties:
-        location:
-          $ref: '#/components/schemas/ErrorDetailLocation'
-        field:
-          $ref: '#/components/schemas/ErrorFieldPath'
-        issue:
-          $ref: '#/components/schemas/ErrorDetailIssue'
-        rejected_value:
-          type: string
+                $ref: '#/components/schemas/ValidationErrorDetail'
+      description: 参数校验错误响应（400）；code 固定为 INVALID_ARGUMENT，details 为校验条目数组
+    PathParameterErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [INVALID_ARGUMENT]
+            details:
+              type: array
+              minItems: 1
+              maxItems: 1
+              items:
+                $ref: '#/components/schemas/PathParameterErrorDetail'
+      description: 路径参数错误响应（400）；details 只含一个 path 级 pattern_mismatch 条目
+    ScopeErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [INSUFFICIENT_SCOPE]
+            details:
+              type: array
+              minItems: 1
+              maxItems: 1
+              items:
+                $ref: '#/components/schemas/ScopeErrorDetail'
+      description: Scope 不足错误响应（403）；details 只含一个 Authorization 头 scope 缺失条目
+    UnauthorizedErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [INVALID_TOKEN]
+      description: 未认证错误响应（401）
+    NotFoundErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [RESOURCE_NOT_FOUND]
+      description: 资源不存在错误响应（404）
+    ConflictErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [CONFLICT]
+      description: 状态冲突错误响应（409）
+    RateLimitedErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [RATE_LIMITED]
+      description: 限流错误响应（429）
+    ServiceUnavailableErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [SERVICE_UNAVAILABLE]
+      description: 服务不可用错误响应（503）
     VoteCycle:
       type: object
       required: [vote_cycle_id, chapter_id, status, starts_at, ends_at]
@@ -2069,13 +2232,13 @@ components:
       required: [request_id]
       properties:
         request_id:
-          type: string
+          $ref: '#/components/schemas/RequestId'
     TraceableResponse:
       type: object
       required: [trace_id]
       properties:
         trace_id:
-          type: string
+          $ref: '#/components/schemas/TraceId'
     ListResponseBase:
       allOf:
         - $ref: '#/components/schemas/RequestScopedResponse'
