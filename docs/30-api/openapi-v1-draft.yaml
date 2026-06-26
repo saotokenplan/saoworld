@@ -238,7 +238,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/DomainServiceUnavailableErrorResponse'
               examples:
                 updatesUnavailable:
                   $ref: '#/components/examples/ContentUpdatesUnavailableError'
@@ -333,11 +333,11 @@ paths:
                 idempotentReplay:
                   $ref: '#/components/examples/ReleaseContentPackageResponseIdempotentReplay'
         '400':
-          description: 发布请求参数不合法
+          description: 发布请求参数不合法（参数校验错误或缺少 reason）
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/OpsWriteValidationErrorResponse'
               examples:
                 reasonRequired:
                   $ref: '#/components/examples/ReasonRequiredError'
@@ -581,7 +581,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/DomainServiceUnavailableErrorResponse'
               examples:
                 questListUnavailable:
                   $ref: '#/components/examples/QuestListUnavailableError'
@@ -623,11 +623,11 @@ paths:
                 idempotentReplay:
                   $ref: '#/components/examples/CreateVoteCycleIdempotentReplay'
         '400':
-          description: 创建投票周期请求参数不合法
+          description: 创建投票周期请求参数不合法（参数校验错误或缺少 reason）
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/OpsWriteValidationErrorResponse'
               examples:
                 reasonRequired:
                   $ref: '#/components/examples/ReasonRequiredError'
@@ -685,11 +685,11 @@ paths:
                 idempotentReplay:
                   $ref: '#/components/examples/ReviewApproveIdempotentReplay'
         '400':
-          description: 审核批准请求参数不合法
+          description: 审核批准请求参数不合法（参数校验错误或缺少 reason）
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/OpsWriteValidationErrorResponse'
               examples:
                 reasonRequired:
                   $ref: '#/components/examples/ReasonRequiredError'
@@ -912,6 +912,15 @@ components:
                 field: resource_id
                 issue: pattern_mismatch
                 rejected_value: invalid-id
+    ReasonRequired:
+      description: 敏感操作缺少原因字段（所有运营写接口必填 reason）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReasonRequiredErrorResponse'
+          examples:
+            reasonRequired:
+              $ref: '#/components/examples/ReasonRequiredError'
     NotFound:
       description: 目标对象不存在
       content:
@@ -1789,8 +1798,29 @@ components:
       description: 错误细节原因码，按类别分组成稳定枚举
     ErrorFieldPath:
       type: string
-      pattern: '^[A-Za-z0-9_.-]+$'
+      pattern: '^[A-Za-z][A-Za-z0-9_.-]*$'
       example: gray_scope.player_percent
+      description: 错误字段路径；不同 location 的 field 格式见各特化 detail 类型
+    PathFieldName:
+      type: string
+      pattern: '^[a-z][a-z0-9_]*$'
+      example: region_id
+      description: 路径参数字段名，snake_case 无嵌套
+    QueryFieldName:
+      type: string
+      pattern: '^[a-z][a-z0-9_]*$'
+      example: page_size
+      description: 查询参数字段名，snake_case 无嵌套
+    BodyFieldPath:
+      type: string
+      pattern: '^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$'
+      example: gray_scope.player_percent
+      description: 请求体字段路径，snake_case，支持点号表示嵌套对象（如 gray_scope.player_percent）
+    HeaderFieldName:
+      type: string
+      pattern: '^[A-Za-z][A-Za-z0-9-]*$'
+      example: Authorization
+      description: 请求头字段名，遵循 HTTP header 命名规范
     RejectedValue:
       description: 被服务端拒绝的实际入参值；支持任意 JSON 标量类型，方便 SDK 回显
       oneOf:
@@ -1838,10 +1868,12 @@ components:
             location:
               type: string
               enum: [path]
+            field:
+              $ref: '#/components/schemas/PathFieldName'
             issue:
               type: string
               enum: [pattern_mismatch]
-      description: 路径参数格式错误条目；location 固定为 path，issue 固定为 pattern_mismatch
+      description: 路径参数格式错误条目；location 固定为 path，field 为路径参数名（snake_case），issue 固定为 pattern_mismatch
     ScopeErrorDetail:
       allOf:
         - $ref: '#/components/schemas/ErrorDetail'
@@ -1968,6 +2000,53 @@ components:
               type: string
               enum: [SERVICE_UNAVAILABLE]
       description: 服务不可用错误响应（503）
+    ReasonRequiredErrorDetail:
+      allOf:
+        - $ref: '#/components/schemas/ErrorDetail'
+        - type: object
+          required: [location, field, issue]
+          properties:
+            location:
+              type: string
+              enum: [body]
+            field:
+              type: string
+              enum: [reason]
+            issue:
+              type: string
+              enum: [required]
+      description: 敏感操作缺少 reason 字段的错误条目；固定指向 body.reason，issue=required
+    ReasonRequiredErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [REASON_REQUIRED]
+            details:
+              type: array
+              minItems: 1
+              maxItems: 1
+              items:
+                $ref: '#/components/schemas/ReasonRequiredErrorDetail'
+      description: 敏感操作缺少原因字段错误响应（400）；所有运营写接口必填 reason，固定返回此结构
+    OpsWriteValidationErrorResponse:
+      oneOf:
+        - $ref: '#/components/schemas/ValidationErrorResponse'
+        - $ref: '#/components/schemas/ReasonRequiredErrorResponse'
+      description: 运营写接口 400 响应的联合类型：参数校验错误或 reason 字段缺失
+    DomainServiceUnavailableErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              pattern: '^[A-Z0-9_]+_UNAVAILABLE$'
+      description: 领域级 503 错误响应（如 CONTENT_UPDATES_UNAVAILABLE、QUEST_LIST_UNAVAILABLE）；code 以 _UNAVAILABLE 结尾，标识特定下游或域暂不可用
     VoteCycle:
       type: object
       required: [vote_cycle_id, chapter_id, status, starts_at, ends_at]
