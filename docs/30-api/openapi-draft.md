@@ -124,6 +124,20 @@ components:
       schema:
         type: string
       description: 按章节过滤历史投票结果
+    ContentPackageId:
+      name: content_package_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 内容包 ID
+    OpsContentPackageId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 运营接口中的内容包 ID
     Page:
       name: page
       in: query
@@ -345,6 +359,136 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/VoteHistoryItem'
+
+    ContentUpdateItem:
+      type: object
+      required: [content_package_id, published_at, affected_regions, gray_visible]
+      properties:
+        content_package_id:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        published_at:
+          type: string
+          format: date-time
+        affected_regions:
+          type: array
+          items:
+            type: string
+        gray_visible:
+          type: boolean
+
+    ContentUpdatesResponse:
+      type: object
+      required: [request_id, items]
+      properties:
+        request_id:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContentUpdateItem'
+
+    ContentPackageSummary:
+      type: object
+      required: [content_package_id, status, published_at, affected_regions]
+      properties:
+        content_package_id:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        status:
+          type: string
+          enum: [packaged, gray, live, archived, rolled_back]
+        published_at:
+          type: string
+          format: date-time
+        affected_regions:
+          type: array
+          items:
+            type: string
+        gray_scope:
+          $ref: '#/components/schemas/GrayScope'
+
+    ContentPackageResponse:
+      type: object
+      required: [request_id, content_package]
+      properties:
+        request_id:
+          type: string
+        content_package:
+          $ref: '#/components/schemas/ContentPackageSummary'
+
+    GrayScope:
+      type: object
+      properties:
+        region_ids:
+          type: array
+          items:
+            type: string
+        player_percent:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    ReleaseContentPackageRequest:
+      type: object
+      required: [gray_scope, reason]
+      properties:
+        gray_scope:
+          $ref: '#/components/schemas/GrayScope'
+        reason:
+          type: string
+
+    ReleaseContentPackageResponse:
+      type: object
+      required: [request_id, content_package_id, status, release_mode]
+      properties:
+        request_id:
+          type: string
+        content_package_id:
+          type: string
+        status:
+          type: string
+          enum: [gray, live]
+        release_mode:
+          type: string
+          enum: [gray, full]
+        released_at:
+          type: string
+          format: date-time
+
+    RollbackContentPackageRequest:
+      type: object
+      required: [target_version, reason]
+      properties:
+        target_version:
+          type: string
+        reason:
+          type: string
+
+    RollbackContentPackageResponse:
+      type: object
+      required: [request_id, rollback_id, content_package_id, target_version, status]
+      properties:
+        request_id:
+          type: string
+        rollback_id:
+          type: string
+        content_package_id:
+          type: string
+        target_version:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, completed]
+        rolled_back_at:
+          type: string
+          format: date-time
 ```
 
 ### `GET /api/v1/votes/current`
@@ -483,6 +627,177 @@ paths:
 - `GET /api/v1/content/packages/{content_package_id}`
 - `POST /api/v1/ops/content-packages/{id}/release`
 - `POST /api/v1/ops/content-packages/{id}/rollback`
+
+## 第二批草案正文
+
+第二批先覆盖内容查询和运营发布回滚链路，目标是把 `content-service` 的对外读取能力和 `ops` 写接口收敛为下一层可实现的接口草案。由于当前还没有独立的内容包样例文档，本节只定义最小可评审字段，不提前虚构完整业务对象。
+
+### `GET /api/v1/content/updates`
+
+```yaml
+paths:
+  /api/v1/content/updates:
+    get:
+      tags: [content]
+      summary: 获取当前玩家可见的新内容包
+      operationId: getContentUpdates
+      responses:
+        '200':
+          description: 返回当前玩家可见的内容更新列表
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentUpdatesResponse'
+        '401':
+          description: 未认证或 Token 无效
+        '503':
+          description: 内容更新列表暂不可用
+```
+
+对应错误码建议：
+
+- `UNAUTHORIZED`
+- `CONTENT_UPDATES_UNAVAILABLE`
+
+### `GET /api/v1/content/packages/{content_package_id}`
+
+```yaml
+paths:
+  /api/v1/content/packages/{content_package_id}:
+    get:
+      tags: [content]
+      summary: 获取内容包摘要
+      operationId: getContentPackage
+      parameters:
+        - $ref: '#/components/parameters/ContentPackageId'
+      responses:
+        '200':
+          description: 返回内容包摘要和当前可见状态
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentPackageResponse'
+        '401':
+          description: 未认证或 Token 无效
+        '403':
+          description: 内容包对当前角色不可见
+        '404':
+          description: 内容包不存在
+```
+
+对应错误码建议：
+
+- `UNAUTHORIZED`
+- `CONTENT_PACKAGE_NOT_VISIBLE`
+- `CONTENT_PACKAGE_NOT_FOUND`
+
+### `POST /api/v1/ops/content-packages/{id}/release`
+
+```yaml
+paths:
+  /api/v1/ops/content-packages/{id}/release:
+    post:
+      tags: [ops, content]
+      summary: 发布内容包
+      operationId: releaseContentPackage
+      parameters:
+        - $ref: '#/components/parameters/OpsContentPackageId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReleaseContentPackageRequest'
+      responses:
+        '200':
+          description: 内容包发布请求受理成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReleaseContentPackageResponse'
+        '400':
+          description: 缺少原因或请求体非法
+        '401':
+          description: 未认证或 Token 无效
+        '403':
+          description: 无内容发布权限
+        '404':
+          description: 内容包不存在
+        '409':
+          description: 内容包不满足发布前置条件或已处于 live 状态
+```
+
+对应错误码建议：
+
+- `REASON_REQUIRED`
+- `CONTENT_RELEASE_FORBIDDEN`
+- `CONTENT_PACKAGE_NOT_FOUND`
+- `CONTENT_PACKAGE_NOT_RELEASABLE`
+- `CONTENT_PACKAGE_ALREADY_LIVE`
+
+### `POST /api/v1/ops/content-packages/{id}/rollback`
+
+```yaml
+paths:
+  /api/v1/ops/content-packages/{id}/rollback:
+    post:
+      tags: [ops, content]
+      summary: 回滚内容包
+      operationId: rollbackContentPackage
+      parameters:
+        - $ref: '#/components/parameters/OpsContentPackageId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RollbackContentPackageRequest'
+      responses:
+        '200':
+          description: 内容包回滚请求受理成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/X-Request-Id'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RollbackContentPackageResponse'
+        '400':
+          description: 回滚目标非法或缺少原因
+        '401':
+          description: 未认证或 Token 无效
+        '403':
+          description: 无内容回滚权限
+        '404':
+          description: 内容包不存在
+        '409':
+          description: 当前内容包不可回滚
+```
+
+对应错误码建议：
+
+- `REASON_REQUIRED`
+- `CONTENT_ROLLBACK_FORBIDDEN`
+- `CONTENT_PACKAGE_NOT_FOUND`
+- `CONTENT_PACKAGE_NOT_ROLLBACKABLE`
+- `ROLLBACK_TARGET_INVALID`
+
+### 第二批实现备注
+
+- 第二批查询接口统一使用 `content` tag，建议归属 `content-service`
+- 第二批写接口使用 `ops` 与 `content` 双 tag，体现运营权限和内容包生命周期都属于关键上下文
+- 发布与回滚必须串行执行，回滚最小单位为 `content_package_id`
+- `release` 与 `rollback` 都必须记录 `reason`，并进入审计链
+- 当前 `ContentPackageSummary` 只保留最小摘要字段；后续若补了内容包样例文档，再继续扩充版本、作者、审核记录和投放统计等字段
 
 ### 第三批
 
