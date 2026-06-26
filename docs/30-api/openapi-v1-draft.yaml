@@ -40,6 +40,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VoteCurrentResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/VoteCurrentSuccess'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -48,39 +51,52 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                voteCycleNotFound:
+                  $ref: '#/components/examples/VoteCycleNotFoundError'
         '409':
           description: 当前投票周期状态不可投票
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidVoteState:
+                  $ref: '#/components/examples/InvalidVoteStateError'
   /api/v1/votes/submit:
     post:
       tags: [votes]
       summary: 提交玩家投票
       operationId: submitVote
       parameters:
-        - name: Idempotency-Key
-          in: header
-          required: true
-          schema:
-            type: string
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+        - $ref: '#/components/parameters/TraceIdHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/VoteSubmitRequest'
+            examples:
+              submitVote:
+                $ref: '#/components/examples/VoteSubmitRequest'
       responses:
         '200':
           description: 投票受理成功或命中幂等重放
           headers:
             X-Request-Id:
               $ref: '#/components/headers/X-Request-Id'
+            X-Trace-Id:
+              $ref: '#/components/headers/X-Trace-Id'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/VoteSubmitResponse'
+              examples:
+                accepted:
+                  $ref: '#/components/examples/VoteSubmitSuccess'
+                idempotentReplay:
+                  $ref: '#/components/examples/VoteSubmitIdempotentReplay'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -89,6 +105,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /api/v1/votes/history:
     get:
       tags: [votes]
@@ -96,6 +114,8 @@ paths:
       operationId: getVoteHistory
       parameters:
         - $ref: '#/components/parameters/ChapterId'
+        - $ref: '#/components/parameters/RegionIdFilter'
+        - $ref: '#/components/parameters/VoteCycleIdFilter'
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
       responses:
@@ -108,6 +128,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VoteHistoryResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/VoteHistorySuccess'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -127,6 +150,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ContentUpdatesResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/ContentUpdatesSuccess'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '503':
@@ -148,6 +174,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ContentPackageResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/ContentPackageSuccess'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -161,22 +190,31 @@ paths:
       operationId: releaseContentPackage
       parameters:
         - $ref: '#/components/parameters/OpsContentPackageId'
+        - $ref: '#/components/parameters/TraceIdHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/ReleaseContentPackageRequest'
+            examples:
+              grayRelease:
+                $ref: '#/components/examples/ReleaseContentPackageRequestGray'
       responses:
         '200':
           description: 内容包发布请求受理成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/X-Request-Id'
+            X-Trace-Id:
+              $ref: '#/components/headers/X-Trace-Id'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReleaseContentPackageResponse'
+              examples:
+                grayAccepted:
+                  $ref: '#/components/examples/ReleaseContentPackageResponseGray'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -194,22 +232,31 @@ paths:
       operationId: rollbackContentPackage
       parameters:
         - $ref: '#/components/parameters/OpsContentPackageId'
+        - $ref: '#/components/parameters/TraceIdHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/RollbackContentPackageRequest'
+            examples:
+              rollback:
+                $ref: '#/components/examples/RollbackContentPackageRequest'
       responses:
         '200':
           description: 内容包回滚请求受理成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/X-Request-Id'
+            X-Trace-Id:
+              $ref: '#/components/headers/X-Trace-Id'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/RollbackContentPackageResponse'
+              examples:
+                queued:
+                  $ref: '#/components/examples/RollbackContentPackageResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -235,6 +282,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RegionListResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/RegionListSuccess'
         '401':
           $ref: '#/components/responses/Unauthorized'
   /api/v1/world/regions/{region_id}:
@@ -254,6 +304,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RegionDetailResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/RegionDetailSuccess'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -275,6 +328,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QuestListResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/QuestListSuccess'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '503':
@@ -284,22 +340,32 @@ paths:
       tags: [ops, votes]
       summary: 创建投票周期
       operationId: createVoteCycle
+      parameters:
+        - $ref: '#/components/parameters/TraceIdHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateVoteCycleRequest'
+            examples:
+              createVoteCycle:
+                $ref: '#/components/examples/CreateVoteCycleRequest'
       responses:
         '200':
           description: 投票周期创建成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/X-Request-Id'
+            X-Trace-Id:
+              $ref: '#/components/headers/X-Trace-Id'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateVoteCycleResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/CreateVoteCycleResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -315,22 +381,31 @@ paths:
       operationId: approveReviewObject
       parameters:
         - $ref: '#/components/parameters/ReviewObjectId'
+        - $ref: '#/components/parameters/TraceIdHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/ReviewApproveRequest'
+            examples:
+              approve:
+                $ref: '#/components/examples/ReviewApproveRequest'
       responses:
         '200':
           description: 审核批准请求受理成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/X-Request-Id'
+            X-Trace-Id:
+              $ref: '#/components/headers/X-Trace-Id'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReviewApproveResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/ReviewApproveResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -350,6 +425,10 @@ components:
   headers:
     X-Request-Id:
       description: 服务端生成的请求追踪 ID
+      schema:
+        type: string
+    X-Trace-Id:
+      description: 链路追踪 ID；由调用方透传或由网关生成
       schema:
         type: string
     Idempotency-Key:
@@ -385,6 +464,20 @@ components:
       schema:
         type: string
       description: 审核对象 ID
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+      description: 幂等键，同一业务请求重试时必须保持一致
+    TraceIdHeader:
+      name: X-Trace-Id
+      in: header
+      required: false
+      schema:
+        type: string
+      description: 可选链路追踪 ID；若未传入由网关生成并透传
     OpsContentPackageId:
       name: id
       in: path
@@ -392,6 +485,20 @@ components:
       schema:
         type: string
       description: 运营接口中的内容包 ID
+    RegionIdFilter:
+      name: region_id
+      in: query
+      required: false
+      schema:
+        type: string
+      description: 按区域过滤列表结果
+    VoteCycleIdFilter:
+      name: vote_cycle_id
+      in: query
+      required: false
+      schema:
+        type: string
+      description: 按投票周期过滤历史结果
     Page:
       name: page
       in: query
@@ -416,36 +523,282 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: INVALID_ARGUMENT
+            message: 请求参数不合法
+            request_id: req_bad_request_001
     Unauthorized:
       description: 未认证或 Token 无效
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: INVALID_TOKEN
+            message: Token 格式或签名非法
+            request_id: req_unauthorized_001
     Forbidden:
       description: 当前角色无权限执行该操作
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: INSUFFICIENT_SCOPE
+            message: 当前角色无权限执行该操作
+            request_id: req_forbidden_001
     NotFound:
       description: 目标对象不存在
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: RESOURCE_NOT_FOUND
+            message: 目标资源不存在
+            request_id: req_not_found_001
     Conflict:
       description: 当前状态与操作发生冲突
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: CONFLICT
+            message: 当前状态与操作发生冲突
+            request_id: req_conflict_001
     ServiceUnavailable:
       description: 服务暂不可用
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: SERVICE_UNAVAILABLE
+            message: 服务暂不可用
+            request_id: req_service_unavailable_001
+    TooManyRequests:
+      description: 请求频率超限
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: RATE_LIMITED
+            message: 请求过于频繁，请稍后再试
+            request_id: req_rate_limited_001
+  examples:
+    VoteCurrentSuccess:
+      summary: 当前投票周期查询成功
+      value:
+        request_id: req_vote_current_001
+        vote_cycle:
+          vote_cycle_id: cycle_202606
+          chapter_id: chapter_02
+          status: open
+          starts_at: '2026-06-26T08:00:00Z'
+          ends_at: '2026-06-28T08:00:00Z'
+        player_context:
+          player_id: player_001
+          eligible: true
+          reason: null
+          has_voted: false
+          vote_weight: 1.05
+        candidates:
+          - candidate_id: candidate_01
+            title: 荒原废墟扩张
+            summary: 机械教团开始向废墟腹地推进。
+            region_scope: [region_wasteland_01]
+            risk_tags: [高冲突, 资源紧张]
+          - candidate_id: candidate_03
+            title: 遗迹异变调查
+            summary: 遗迹深处出现异常能量波动，引发新的探索任务。
+            region_scope: [region_ruins_02]
+            risk_tags: [高危险, 限时事件]
+    VoteCycleNotFoundError:
+      summary: 当前无有效投票周期
+      value:
+        code: VOTE_CYCLE_NOT_FOUND
+        message: 当前不存在有效投票周期
+        request_id: req_vote_current_404
+    InvalidVoteStateError:
+      summary: 当前投票周期不可投票
+      value:
+        code: INVALID_VOTE_STATE
+        message: 当前投票周期不可投票
+        request_id: req_vote_current_409
+    VoteSubmitRequest:
+      summary: 提交玩家投票
+      value:
+        vote_cycle_id: cycle_202606
+        candidate_id: candidate_03
+    VoteSubmitSuccess:
+      summary: 投票成功
+      value:
+        request_id: req_vote_submit_001
+        vote_id: vote_001
+        vote_cycle_id: cycle_202606
+        candidate_id: candidate_03
+        accepted: true
+        weight: 1.05
+        idempotent_replay: false
+        submitted_at: '2026-06-26T09:12:33Z'
+    VoteSubmitIdempotentReplay:
+      summary: 命中幂等重放
+      value:
+        request_id: req_vote_submit_002
+        vote_id: vote_001
+        vote_cycle_id: cycle_202606
+        candidate_id: candidate_03
+        accepted: true
+        weight: 1.05
+        idempotent_replay: true
+        submitted_at: '2026-06-26T09:12:33Z'
+    VoteHistorySuccess:
+      summary: 历史投票结果查询成功
+      value:
+        request_id: req_vote_history_001
+        page: 1
+        page_size: 20
+        total: 2
+        items:
+          - vote_cycle_id: cycle_202606
+            chapter_id: chapter_02
+            closed_at: '2026-06-28T08:00:00Z'
+            winner_candidate_id: candidate_03
+            winner_title: 遗迹异变调查
+            total_votes: 128430
+            candidates:
+              - candidate_id: candidate_01
+                title: 荒原废墟扩张
+                vote_percent: 29.4
+              - candidate_id: candidate_03
+                title: 遗迹异变调查
+                vote_percent: 39.5
+            delivery:
+              status: gray
+              content_package_id: pkg_chapter_02_ruins_20260629_01
+              affected_regions: [region_ruins_02]
+    ContentUpdatesSuccess:
+      summary: 内容更新查询成功
+      value:
+        request_id: req_content_updates_001
+        items:
+          - content_package_id: pkg_chapter_02_ruins_20260629_01
+            title: 遗迹异变调查
+            summary: 遗迹区域追加限时探索任务与阵营事件。
+            published_at: '2026-06-29T10:00:00Z'
+            affected_regions: [region_ruins_02]
+            gray_visible: true
+    ContentPackageSuccess:
+      summary: 内容包摘要查询成功
+      value:
+        request_id: req_content_package_001
+        content_package:
+          content_package_id: pkg_chapter_02_ruins_20260629_01
+          title: 遗迹异变调查
+          summary: 遗迹区域探索线扩展包。
+          status: gray
+          published_at: '2026-06-29T10:00:00Z'
+          affected_regions: [region_ruins_02]
+          gray_scope:
+            region_ids: [region_ruins_02]
+            player_percent: 10
+    ReleaseContentPackageRequestGray:
+      summary: 发起灰度发布
+      value:
+        gray_scope:
+          region_ids: [region_ruins_02]
+          player_percent: 10
+        reason: 首轮灰度发布
+    ReleaseContentPackageResponseGray:
+      summary: 灰度发布受理成功
+      value:
+        request_id: req_release_001
+        content_package_id: pkg_chapter_02_ruins_20260629_01
+        status: gray
+        release_mode: gray
+        released_at: '2026-06-29T10:05:00Z'
+    RollbackContentPackageRequest:
+      summary: 发起回滚
+      value:
+        target_version: v2026.06.28
+        reason: 灰度后出现区域任务异常，回滚到上一个稳定版本
+    RollbackContentPackageResponse:
+      summary: 回滚任务已入队
+      value:
+        request_id: req_rollback_001
+        rollback_id: rollback_001
+        content_package_id: pkg_chapter_02_ruins_20260629_01
+        target_version: v2026.06.28
+        status: queued
+        rolled_back_at: '2026-06-29T11:30:00Z'
+    RegionListSuccess:
+      summary: 区域列表查询成功
+      value:
+        request_id: req_region_list_001
+        items:
+          - region_id: region_wasteland_01
+            chapter_id: chapter_02
+            title: 荒原边境
+            summary: 玩家已解锁的荒原外围区域。
+            status: active
+            visible: true
+          - region_id: region_ruins_02
+            chapter_id: chapter_02
+            title: 遗迹深处
+            summary: 当前章节主线推进后的新探索区域。
+            status: unstable
+            visible: true
+    RegionDetailSuccess:
+      summary: 区域详情查询成功
+      value:
+        request_id: req_region_detail_001
+        region:
+          region_id: region_ruins_02
+          chapter_id: chapter_02
+          title: 遗迹深处
+          summary: 遗迹能量波动导致区域状态不稳定。
+          status: unstable
+          visible: true
+    QuestListSuccess:
+      summary: 玩家任务查询成功
+      value:
+        request_id: req_quest_list_001
+        items:
+          - quest_id: quest_ruins_scan_01
+            chapter_id: chapter_02
+            active_region_id: region_ruins_02
+            title: 调查遗迹异变
+            summary: 进入遗迹深处并完成三处异常点扫描。
+            status: active
+    CreateVoteCycleRequest:
+      summary: 创建投票周期
+      value:
+        chapter_id: chapter_03
+        starts_at: '2026-07-01T08:00:00Z'
+        ends_at: '2026-07-03T08:00:00Z'
+        candidate_ids: [candidate_101, candidate_102, candidate_103]
+        reason: 第三章主线剧情投票创建
+    CreateVoteCycleResponse:
+      summary: 投票周期创建成功
+      value:
+        request_id: req_ops_vote_cycle_001
+        vote_cycle_id: cycle_202607
+        status: scheduled
+    ReviewApproveRequest:
+      summary: 审核批准请求
+      value:
+        review_result: approved
+        reason: 结构化审核通过，允许进入打包阶段
+    ReviewApproveResponse:
+      summary: 审核批准成功
+      value:
+        request_id: req_review_approve_001
+        review_id: review_001
+        object_id: object_story_001
+        review_result: approved
+        reviewed_at: '2026-06-29T09:30:00Z'
   schemas:
     ErrorResponse:
       type: object
