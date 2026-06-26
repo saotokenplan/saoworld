@@ -1,5 +1,9 @@
 # 服务端技术栈比较：Python、TypeScript、Rust
 
+> 文档状态：archived
+> 适用阶段：历史决策
+> 维护要求：按需维护
+
 ## 结论
 
 如果目标是给你的 **AI-first、Loop Engineering 驱动的游戏研发闭环** 选服务端主栈，我的建议是：
