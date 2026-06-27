@@ -70,6 +70,23 @@ class VoteSubmitResponse(BaseModel):
     trace_id: str | None = None
 
 
+class VoteHistoryItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    vote_id: uuid.UUID
+    vote_cycle_id: uuid.UUID
+    candidate_id: uuid.UUID
+    candidate_title: str
+    weight: float
+    created_at: datetime
+
+
+class VoteHistoryResponse(BaseModel):
+    player_id: uuid.UUID
+    votes: list[VoteHistoryItem]
+    total: int
+
+
 class HealthResponse(BaseModel):
     service: str
     version: str

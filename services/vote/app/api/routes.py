@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
@@ -12,6 +12,8 @@ from app.schemas.vote import (
     ErrorDetail,
     ErrorResponse,
     HealthResponse,
+    VoteHistoryItem,
+    VoteHistoryResponse,
     VoteSubmitRequest,
     VoteSubmitResponse,
 )
@@ -209,4 +211,61 @@ async def submit_vote(
         submitted_at=vote.created_at or datetime.now(timezone.utc),
         request_id=request_id,
         trace_id=x_trace_id,
+    )
+
+
+@router.get(
+    "/votes/history",
+    response_model=VoteHistoryResponse,
+    responses={
+        400: {"model": ErrorResponse, "description": "Invalid player ID"},
+    },
+    tags=["votes"],
+)
+async def get_vote_history(
+    request: Request,
+    x_player_id: str = Header(..., alias="X-Player-Id"),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+) -> VoteHistoryResponse:
+    try:
+        player_uuid = uuid.UUID(x_player_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ErrorResponse(
+                code="INVALID_PLAYER_ID",
+                message="无效的玩家ID格式",
+                request_id=_make_request_id("req_vote_history_400"),
+                details=[
+                    ErrorDetail(
+                        location="header",
+                        field="X-Player-Id",
+                        issue="invalid_uuid",
+                        rejected_value=x_player_id,
+                    )
+                ],
+            ).model_dump(),
+        )
+
+    repo = VoteRepository(db)
+    rows, total = await repo.get_vote_history(player_uuid, limit=limit, offset=offset)
+
+    vote_items = [
+        VoteHistoryItem(
+            vote_id=v.vote_id,
+            vote_cycle_id=v.vote_cycle_id,
+            candidate_id=v.candidate_id,
+            candidate_title=c.title,
+            weight=v.weight,
+            created_at=v.created_at,
+        )
+        for v, c in rows
+    ]
+
+    return VoteHistoryResponse(
+        player_id=player_uuid,
+        votes=vote_items,
+        total=total,
     )

@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 
 import structlog
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -47,6 +47,44 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=[settings.request_id_header, settings.trace_id_header],
 )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    import uuid
+
+    request_id = request.headers.get(
+        settings.request_id_header, f"req_{uuid.uuid4().hex[:12]}"
+    )
+    trace_id = request.headers.get(settings.trace_id_header)
+
+    detail = exc.detail
+    if isinstance(detail, dict) and "code" in detail:
+        content = detail
+        if "request_id" not in content:
+            content["request_id"] = request_id
+    else:
+        content = {
+            "code": f"HTTP_{exc.status_code}",
+            "message": str(detail) if detail else "请求失败",
+            "request_id": request_id,
+        }
+
+    if trace_id:
+        content["trace_id"] = trace_id
+
+    logger.warning(
+        "http_exception",
+        status_code=exc.status_code,
+        code=content.get("code"),
+        message=content.get("message"),
+    )
+
+    response = JSONResponse(status_code=exc.status_code, content=content)
+    response.headers[settings.request_id_header] = request_id
+    if trace_id:
+        response.headers[settings.trace_id_header] = trace_id
+    return response
 
 
 @app.middleware("http")

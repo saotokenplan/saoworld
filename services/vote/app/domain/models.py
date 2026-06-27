@@ -1,10 +1,10 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import (
+    JSON,
     UUID,
-    Boolean,
     CheckConstraint,
     DateTime,
     Float,
@@ -15,10 +15,13 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
+
+
+def _default_json_list():
+    return []
 
 
 class VoteCycle(Base):
@@ -34,9 +37,7 @@ class VoteCycle(Base):
     created_by: Mapped[str] = mapped_column(String(128), nullable=False)
     created_reason: Mapped[str] = mapped_column(Text, nullable=False)
     finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    winning_candidate_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("vote_candidates.candidate_id"), nullable=True
-    )
+    winning_candidate_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -44,10 +45,13 @@ class VoteCycle(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
 
-    candidates: Mapped[list["VoteCandidate"]] = relationship(back_populates="vote_cycle")
+    candidates: Mapped[list["VoteCandidate"]] = relationship(
+        back_populates="vote_cycle",
+        foreign_keys="VoteCandidate.vote_cycle_id",
+    )
 
     __table_args__ = (
-        CheckConstraint("ends_at &gt; starts_at", name="vote_cycles_ends_after_starts"),
+        CheckConstraint("ends_at > starts_at", name="vote_cycles_ends_after_starts"),
         CheckConstraint(
             "status IN ('draft', 'scheduled', 'open', 'closed', 'finalized')",
             name="vote_cycles_status_check",
@@ -68,9 +72,9 @@ class VoteCandidate(Base):
     title: Mapped[str] = mapped_column(String(512), nullable=False)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    region_scope: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default="'[]'::jsonb")
-    risk_tags: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, server_default="'[]'::jsonb")
-    generated_params: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    region_scope: Mapped[list] = mapped_column(JSON, nullable=False, default=_default_json_list)
+    risk_tags: Mapped[list] = mapped_column(JSON, nullable=False, default=_default_json_list)
+    generated_params: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     status: Mapped[str] = mapped_column(
         String(32), nullable=False, default="active", server_default="active"
     )
@@ -82,7 +86,10 @@ class VoteCandidate(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
 
-    vote_cycle: Mapped["VoteCycle"] = relationship(back_populates="candidates")
+    vote_cycle: Mapped["VoteCycle"] = relationship(
+        back_populates="candidates",
+        foreign_keys=[vote_cycle_id],
+    )
 
     __table_args__ = (
         CheckConstraint(
@@ -112,5 +119,5 @@ class Vote(Base):
 
     __table_args__ = (
         UniqueConstraint("vote_cycle_id", "player_id", name="votes_cycle_player_uniq"),
-        CheckConstraint("weight &gt; 0 AND weight &lt;= 10.0", name="votes_weight_range"),
+        CheckConstraint("weight > 0 AND weight <= 10.0", name="votes_weight_range"),
     )

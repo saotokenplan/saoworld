@@ -73,3 +73,24 @@ class VoteRepository:
         self.db.add(vote)
         await self.db.flush()
         return vote
+
+    async def get_vote_history(
+        self, player_id: uuid.UUID, limit: int = 20, offset: int = 0
+    ) -> tuple[Sequence[tuple[Vote, VoteCandidate]], int]:
+        from sqlalchemy import func as sa_func
+
+        count_stmt = select(sa_func.count(Vote.vote_id)).where(Vote.player_id == player_id)
+        count_result = await self.db.execute(count_stmt)
+        total = count_result.scalar_one()
+
+        stmt = (
+            select(Vote, VoteCandidate)
+            .join(VoteCandidate, Vote.candidate_id == VoteCandidate.candidate_id)
+            .where(Vote.player_id == player_id)
+            .order_by(Vote.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self.db.execute(stmt)
+        rows = result.all()
+        return rows, total
