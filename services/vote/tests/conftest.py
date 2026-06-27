@@ -1,4 +1,3 @@
-import asyncio
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import AsyncGenerator
@@ -7,9 +6,10 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import selectinload
 
 from app.core.db import Base, get_db
-from app.domain.models import VoteCandidate, VoteCycle
+from app.domain.models import Vote, VoteCandidate, VoteCycle
 from app.main import app
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///file:testdb?mode=memory&cache=shared&uri=true"
@@ -59,53 +59,62 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
 
 @pytest_asyncio.fixture
 async def open_vote_cycle() -> VoteCycle:
+    from sqlalchemy import select
+
     now = datetime.now(timezone.utc)
+    cycle_id = uuid.uuid4()
+    candidates = [
+        VoteCandidate(
+            candidate_id=uuid.uuid4(),
+            vote_cycle_id=cycle_id,
+            title="探索迷雾森林",
+            summary="玩家深入北部迷雾森林，揭开古老遗迹的秘密",
+            description="一条探索向的主线，新增森林区域和3个NPC",
+            region_scope=["forest_north"],
+            risk_tags=["content_risk"],
+            status="active",
+        ),
+        VoteCandidate(
+            candidate_id=uuid.uuid4(),
+            vote_cycle_id=cycle_id,
+            title="重建边境哨所",
+            summary="协助村民重建被摧毁的边境哨所，开启贸易路线",
+            description="一条建设向的主线，新增建造系统和商人NPC",
+            region_scope=["border_outpost"],
+            risk_tags=["economy_risk"],
+            status="active",
+        ),
+        VoteCandidate(
+            candidate_id=uuid.uuid4(),
+            vote_cycle_id=cycle_id,
+            title="追踪暗影盗贼",
+            summary="追查在城镇中行窃的神秘盗贼组织",
+            description=None,
+            region_scope=["town_square"],
+            risk_tags=[],
+            status="active",
+        ),
+    ]
     cycle = VoteCycle(
-        vote_cycle_id=uuid.uuid4(),
+        vote_cycle_id=cycle_id,
         chapter_id="ch_prologue_01",
         status="open",
         starts_at=now - timedelta(hours=1),
         ends_at=now + timedelta(hours=23),
         created_by="system",
         created_reason="MVP first vote cycle",
+        candidates=candidates,
     )
+
     async with TestSessionLocal() as session:
         session.add(cycle)
-        await session.flush()
-
-        candidates = [
-            VoteCandidate(
-                vote_cycle_id=cycle.vote_cycle_id,
-                title="探索迷雾森林",
-                summary="玩家深入北部迷雾森林，揭开古老遗迹的秘密",
-                description="一条探索向的主线，新增森林区域和3个NPC",
-                region_scope=["forest_north"],
-                risk_tags=["content_risk"],
-                status="active",
-            ),
-            VoteCandidate(
-                vote_cycle_id=cycle.vote_cycle_id,
-                title="重建边境哨所",
-                summary="协助村民重建被摧毁的边境哨所，开启贸易路线",
-                description="一条建设向的主线，新增建造系统和商人NPC",
-                region_scope=["border_outpost"],
-                risk_tags=["economy_risk"],
-                status="active",
-            ),
-            VoteCandidate(
-                vote_cycle_id=cycle.vote_cycle_id,
-                title="追踪暗影盗贼",
-                summary="追查在城镇中行窃的神秘盗贼组织",
-                description=None,
-                region_scope=["town_square"],
-                risk_tags=[],
-                status="active",
-            ),
-        ]
-        for c in candidates:
-            session.add(c)
         await session.commit()
 
-        await session.refresh(cycle)
-        cycle.candidates = list(candidates)
-        return cycle
+        stmt = (
+            select(VoteCycle)
+            .options(selectinload(VoteCycle.candidates))
+            .where(VoteCycle.vote_cycle_id == cycle_id)
+        )
+        result = await session.execute(stmt)
+        loaded_cycle = result.scalar_one()
+        return loaded_cycle
