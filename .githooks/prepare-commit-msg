@@ -1,0 +1,98 @@
+#!/usr/bin/env python3
+"""
+Git prepare-commit-msg hook: analyzes staged changes and injects
+a helpful comment block with change summary and suggested message.
+
+This helps ensure commit messages are based on actual changes rather
+than session summaries or vague descriptions.
+
+Commit message sources (per git docs):
+  - empty: user ran git commit without -m/-F
+  - message: user ran git commit -m "..."
+  - template: user used a template file
+  - merge: this is a merge commit
+  - squash: this is a squash commit
+  - commit: this is amending or cherry-picking
+"""
+
+import subprocess
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+GENERATOR = REPO_ROOT / "tools" / "generate-commit-msg.py"
+
+COMMIT_MSG_FILENAME = "COMMIT_EDITMSG"
+
+
+def run_generator(args):
+    result = subprocess.run(
+        [sys.executable, str(GENERATOR)] + args,
+        cwd=str(REPO_ROOT),
+        capture_output=True,
+        text=True,
+    )
+    return result
+
+
+def is_default_template(content):
+    lines = content.splitlines()
+    non_comment = [l for l in lines if l.strip() and not l.startswith("#")]
+    return len(non_comment) == 0
+
+
+def main():
+    if not GENERATOR.exists():
+        return 0
+
+    if len(sys.argv) < 2:
+        return 0
+
+    commit_msg_file = Path(sys.argv[1])
+    commit_source = sys.argv[2] if len(sys.argv) > 2 else ""
+
+    if commit_source in ("merge", "squash", "commit"):
+        return 0
+
+    if not commit_msg_file.exists():
+        return 0
+
+    try:
+        original_content = commit_msg_file.read_text(encoding="utf-8")
+    except Exception:
+        return 0
+
+    if not is_default_template(original_content):
+        return 0
+
+    result = run_generator([])
+    if result.returncode != 0:
+        hint = result.stderr if result.stderr else result.stdout
+    else:
+        hint = result.stdout
+
+    suggested_msg = ""
+    for line in hint.splitlines():
+        if line and not line.startswith("#") and not line.startswith("="):
+            suggested_msg = line.strip()
+            break
+
+    new_content = ""
+    if suggested_msg:
+        new_content += suggested_msg + "\n"
+    new_content += "\n"
+    new_content += hint
+
+    if not new_content.endswith("\n"):
+        new_content += "\n"
+
+    try:
+        commit_msg_file.write_text(new_content, encoding="utf-8")
+    except Exception:
+        pass
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

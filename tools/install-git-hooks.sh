@@ -16,7 +16,9 @@ cd "$REPO_ROOT"
 
 chmod +x "$REPO_ROOT/.githooks/commit-msg"
 chmod +x "$REPO_ROOT/.githooks/pre-commit"
+chmod +x "$REPO_ROOT/.githooks/prepare-commit-msg"
 chmod +x "$REPO_ROOT/tools/validate-commit-msg.py"
+chmod +x "$REPO_ROOT/tools/generate-commit-msg.py"
 
 git config core.hooksPath "$REPO_ROOT/.githooks"
 

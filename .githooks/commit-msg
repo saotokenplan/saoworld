@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-Git commit-msg hook: validates commit message format.
-Redirects to tools/validate-commit-msg.py for actual validation logic.
+Git commit-msg hook: validates commit message format and checks
+that the message reflects actual staged changes.
+
+Redirects to tools/validate-commit-msg.py for format validation
+and tools/generate-commit-msg.py for change-match checking.
 """
 
 import subprocess
@@ -10,19 +13,33 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 VALIDATOR = REPO_ROOT / "tools" / "validate-commit-msg.py"
-
-if not VALIDATOR.exists():
-    print("Warning: commit message validator not found at {}".format(VALIDATOR), file=sys.stderr)
-    print("Skipping validation (install tools/validate-commit-msg.py first)", file=sys.stderr)
-    sys.exit(0)
+CHECKER = REPO_ROOT / "tools" / "generate-commit-msg.py"
 
 commit_msg_file = sys.argv[1] if len(sys.argv) > 1 else None
 if not commit_msg_file:
     print("Error: no commit message file provided", file=sys.stderr)
     sys.exit(1)
 
-result = subprocess.run(
-    [sys.executable, str(VALIDATOR), commit_msg_file],
-    cwd=str(REPO_ROOT),
-)
-sys.exit(result.returncode)
+exit_code = 0
+
+if VALIDATOR.exists():
+    result = subprocess.run(
+        [sys.executable, str(VALIDATOR), commit_msg_file],
+        cwd=str(REPO_ROOT),
+    )
+    if result.returncode != 0:
+        exit_code = result.returncode
+else:
+    print("Warning: commit message validator not found at {}".format(VALIDATOR), file=sys.stderr)
+
+if exit_code == 0 and CHECKER.exists():
+    result = subprocess.run(
+        [sys.executable, str(CHECKER), "--check-msg", commit_msg_file],
+        cwd=str(REPO_ROOT),
+    )
+    if result.returncode != 0:
+        exit_code = result.returncode
+elif not CHECKER.exists():
+    print("Warning: commit message checker not found at {}".format(CHECKER), file=sys.stderr)
+
+sys.exit(exit_code)
