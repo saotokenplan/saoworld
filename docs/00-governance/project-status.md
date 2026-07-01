@@ -22,9 +22,9 @@
 
 ## 当前阶段
 
-- 当前阶段：工程初始化阶段
-- 当前形态：文档与规范基线已固化，vote-service 后端骨架与迁移脚本就绪
-- 当前目标：完成 vote-service 端到端可运行验证，推进首个最小落地目标进入集成阶段
+- 当前阶段：工程实施阶段
+- 当前形态：vote-service 端到端可运行，运营接口已落地，统一 envelope 响应格式已实现
+- 当前目标：推进 vote-service 投票结算逻辑，准备内容生成链路
 
 ## 当前结论
 
@@ -137,30 +137,33 @@
 ## 已初步落地的工程资产
 
 - 单仓模式目标目录结构已创建：`game/`、`services/`、`workers/`、`tools/`、`infra/`、`telemetry/`。
-- `vote-service` 已完成骨架初始化（FastAPI + SQLAlchemy + Pydantic + pytest），见 `services/vote/`。
+- `vote-service` 已完成骨架初始化与端到端可运行验证（FastAPI + SQLAlchemy + Pydantic + pytest），见 `services/vote/`。
   - 数据模型：`VoteCycle`、`VoteCandidate`、`Vote`（对应 `backend-data-spec.md`）
   - API 路由：`GET /api/v1/health`、`GET /api/v1/votes/current`、`POST /api/v1/votes/submit`、`GET /api/v1/votes/history`
-  - 错误响应 envelope、幂等键处理、结构化日志、request_id/trace_id 中间件
-  - 基础单元测试已通过（13/13）
+  - 运营接口：`POST /api/v1/ops/vote-cycles`（创建投票周期）
+  - 统一响应 envelope（request_id/data/meta/trace_id）、错误响应、幂等键处理、结构化日志、request_id/trace_id 中间件
+  - 集成测试 20/20 全部通过
 - **Alembic 迁移环境已初始化**，首次迁移脚本（vote 核心三表）已生成：`services/vote/alembic/versions/2026_07_01_1529_ba4a0034a620_init_vote_tables.py`
 - 本地开发基础设施：`infra/docker-compose.dev.yml`（PostgreSQL 16 + Redis 7）。
 - `.gitignore`、各目录 README 占位、`.env.example` 已配置。
 
 ## 当前主要风险
 
-- `vote-service` 端到端可运行验证尚未完成（迁移脚本已生成，但需真实数据库验证执行）。
+- 投票结算逻辑（周期从 closed → finalized、统计票数、确定胜出方向）尚未实现。
 - `10-requirements/` 与 `20-specs/` 仍有一定内容重叠，后续若继续双向修改，容易再次漂移。
 - `40-dev-loop/` 中部分设计偏目标态，若不裁剪就直接照搬，实施成本会偏高。
+- 异步任务和事件总线尚未落地，内容生成和审核链路依赖这些基础设施。
 
 ## 下一阶段建议
 
 1. ~~确认仓库策略：~~ 已确定为单仓模式，当前仓库继续演进为主仓库。
 2. ~~选定首个最小落地目标：~~ 已确定为最小投票链路（vote-service 骨架已初始化）。
 3. ~~初始化 Alembic 并生成首次迁移脚本：~~ 已完成，vote 核心三表迁移脚本就绪。
-4. 启动本地 PostgreSQL 并执行迁移，完成 vote-service 端到端可运行验证。
-5. 为 vote-service 补充投票结算逻辑与运营写接口（创建投票周期等）。
-6. 基于最小投票链路生成第一版需求包（可放在 `docs/packages/first-slice/`），包括从 `20-specs/` 抽出的相关规范子集。
-7. 补异步任务和事件的 payload schema（不阻塞投票 MVP，但内容链路需要）。
+4. ~~启动本地 PostgreSQL 并执行迁移，完成 vote-service 端到端可运行验证。~~ 已完成（统一 envelope 格式、运营接口、20/20 测试通过）。
+5. ~~为 vote-service 补充运营写接口（创建投票周期等）。~~ 已完成（POST /api/v1/ops/vote-cycles）。
+6. 为 vote-service 补充投票结算逻辑（周期关闭、票数统计、胜出方向确定、状态流转）。
+7. 基于最小投票链路生成第一版需求包（可放在 `docs/packages/first-slice/`），包括从 `20-specs/` 抽出的相关规范子集。
+8. 补异步任务和事件的 payload schema（不阻塞投票 MVP，但内容链路需要）。
 
 ## 进入实施前的建议门槛
 
@@ -168,8 +171,8 @@
 - ~~首个最小落地目标明确到单条主线能力。~~ 已确定为最小投票链路
 - ~~确认是沿当前仓库继续扩展，还是拆出独立工程仓库。~~ 已确定为单仓模式
 - ~~初始化 Alembic 迁移脚本，完成 vote 核心三表定义。~~ 已完成
-- 启动数据库并执行迁移，完成 vote-service 端到端可运行验证。
-- 补充接口样例和集成测试，确保投票链路可通过自动化测试验证。
+- ~~启动数据库并执行迁移，完成 vote-service 端到端可运行验证。~~ 已完成（20/20 测试通过）
+- ~~补充接口样例和集成测试，确保投票链路可通过自动化测试验证。~~ 已完成
 
 ## 与其他文档的关系
 

@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.routes import router as vote_router
+from app.api.routes import ops_router, router as vote_router
 from app.core.config import settings
 
 structlog.configure(
@@ -134,3 +134,4 @@ async def add_request_id_and_logging(request: Request, call_next):
 
 
 app.include_router(vote_router, prefix=settings.api_v1_prefix)
+app.include_router(ops_router, prefix=f"{settings.api_v1_prefix}/ops")

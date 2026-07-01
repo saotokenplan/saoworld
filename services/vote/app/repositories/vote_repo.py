@@ -4,6 +4,7 @@ from typing import Sequence
 
 from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.domain.models import Vote, VoteCandidate, VoteCycle
 
@@ -73,6 +74,58 @@ class VoteRepository:
         self.db.add(vote)
         await self.db.flush()
         return vote
+
+    async def create_vote_cycle(
+        self,
+        chapter_id: str,
+        starts_at: datetime,
+        ends_at: datetime,
+        created_by: str,
+        created_reason: str,
+        candidates_data: list[dict],
+    ) -> VoteCycle:
+        cycle_id = uuid.uuid4()
+        cycle = VoteCycle(
+            vote_cycle_id=cycle_id,
+            chapter_id=chapter_id,
+            status="draft",
+            starts_at=starts_at,
+            ends_at=ends_at,
+            created_by=created_by,
+            created_reason=created_reason,
+        )
+        for c_data in candidates_data:
+            candidate = VoteCandidate(
+                candidate_id=uuid.uuid4(),
+                vote_cycle_id=cycle_id,
+                title=c_data["title"],
+                summary=c_data["summary"],
+                description=c_data.get("description"),
+                region_scope=c_data.get("region_scope", []),
+                risk_tags=c_data.get("risk_tags", []),
+                status="active",
+            )
+            self.db.add(candidate)
+        self.db.add(cycle)
+        await self.db.flush()
+
+        stmt = (
+            select(VoteCycle)
+            .options(selectinload(VoteCycle.candidates))
+            .where(VoteCycle.vote_cycle_id == cycle_id)
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one()
+
+    async def open_vote_cycle(self, vote_cycle_id: uuid.UUID) -> VoteCycle | None:
+        stmt = select(VoteCycle).where(VoteCycle.vote_cycle_id == vote_cycle_id)
+        result = await self.db.execute(stmt)
+        cycle = result.scalar_one_or_none()
+        if cycle is None:
+            return None
+        cycle.status = "open"
+        await self.db.flush()
+        return cycle
 
     async def get_vote_history(
         self, player_id: uuid.UUID, limit: int = 20, offset: int = 0
