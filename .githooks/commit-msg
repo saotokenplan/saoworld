@@ -11,7 +11,20 @@ import subprocess
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+# Use git to resolve repo root (works in worktrees and main repo)
+def get_repo_root() -> Path:
+    result = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0 and result.stdout.strip():
+        return Path(result.stdout.strip())
+    # Fallback: relative path from hook location
+    return Path(__file__).resolve().parent.parent
+
+
+REPO_ROOT = get_repo_root()
 VALIDATOR = REPO_ROOT / "tools" / "validate-commit-msg.py"
 CHECKER = REPO_ROOT / "tools" / "generate-commit-msg.py"
 

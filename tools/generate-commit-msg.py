@@ -22,6 +22,7 @@ from typing import Optional
 
 
 SCOPE_PATH_MAPPING = {
+    # 文档相关 scope（与 .trae/rules/40-git-workflow.md 保持一致）
     "docs/00-governance": "docs",
     "docs/10-requirements": "requirements",
     "docs/20-specs": "specs",
@@ -29,6 +30,8 @@ SCOPE_PATH_MAPPING = {
     "docs/40-dev-loop": "dev-loop",
     "docs/50-research": "docs",
     ".trae/skills": "skills",
+    ".trae/rules": "rules",
+    # 工程相关 scope（按模块命名）
     "services/vote": "vote",
     "services/gateway": "gateway",
     "services/player": "player",

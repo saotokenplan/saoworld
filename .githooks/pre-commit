@@ -4,6 +4,7 @@ Git pre-commit hook: runs basic checks before allowing commit.
 - Checks for large files
 - Checks for merge conflict markers
 - Checks for debug print/pdb breakpoints
+- Checks for .env files and potential secrets
 """
 
 import re
@@ -20,6 +21,18 @@ DEBUG_PATTERNS = [
 ]
 
 CONFLICT_PATTERN = re.compile(r"^<<<<<<< |^=======$|^>>>>>>> ")
+
+# Files that should never be committed
+FORBIDDEN_PATTERNS = [
+    (re.compile(r"^\.env$"), ".env file detected (use .env.example instead)"),
+    (re.compile(r"^\.env\.local$"), ".env.local file detected"),
+    (re.compile(r"^\.env\.prod"), ".env.prod file detected"),
+]
+
+# Secret-like patterns in file content
+SECRET_PATTERNS = [
+    (re.compile(r"(?i)(password|passwd|secret|api_key|private_key)\s*[=:]\s*['\"]?[^\s'\"]{8,}"), "potential secret/hardcoded credential"),
+]
 
 
 def run_git(args):
@@ -46,18 +59,31 @@ def check_file_size(path):
     return None
 
 
+def check_forbidden_files(path):
+    issues = []
+    path_str = str(path)
+    for pattern, msg in FORBIDDEN_PATTERNS:
+        if pattern.search(path_str):
+            issues.append(msg)
+    return issues
+
+
 def check_file_content(path):
     issues = []
     if not path.is_file():
         return issues
     if path.suffix in {".py", ".gd", ".js", ".ts", ".tsx"}:
         try:
-            lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+            content = path.read_text(encoding="utf-8", errors="ignore")
+            lines = content.splitlines()
             for i, line in enumerate(lines, 1):
                 if CONFLICT_PATTERN.match(line):
                     issues.append("Merge conflict marker in {}:{}".format(path, i))
                 for pattern, msg in DEBUG_PATTERNS:
                     if pattern.search(line):
+                        issues.append("{} in {}:{}".format(msg, path, i))
+                for pattern, msg in SECRET_PATTERNS:
+                    if pattern.search(line) and not line.strip().startswith("#"):
                         issues.append("{} in {}:{}".format(msg, path, i))
         except Exception:
             pass
@@ -72,6 +98,7 @@ def main():
         size_err = check_file_size(f)
         if size_err:
             errors.append(size_err)
+        errors.extend(check_forbidden_files(f))
         errors.extend(check_file_content(f))
 
     if errors:

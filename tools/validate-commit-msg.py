@@ -21,12 +21,14 @@ from pathlib import Path
 VALID_TYPES = {"docs", "feat", "fix", "refactor", "test", "chore"}
 
 VALID_SCOPES = {
+    # 文档相关 scope（与 .trae/rules/40-git-workflow.md 保持一致）
     "docs",
     "specs",
     "requirements",
     "dev-loop",
     "skills",
     "api",
+    # 工程相关 scope（按模块命名）
     "gateway",
     "player",
     "world",
@@ -35,20 +37,13 @@ VALID_SCOPES = {
     "review",
     "content",
     "ops",
-    "game",
     "workers",
+    "game",
     "infra",
-    "tools",
     "telemetry",
-    "ui",
-    "npc",
-    "quest",
-    "region",
-    "event",
+    "tools",
+    # .trae/rules/ 规则文件变更
     "rules",
-    "gates",
-    "qa",
-    "release",
 }
 
 COMMIT_PATTERN = re.compile(

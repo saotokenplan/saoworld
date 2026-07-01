@@ -19,10 +19,20 @@ import subprocess
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-GENERATOR = REPO_ROOT / "tools" / "generate-commit-msg.py"
 
-COMMIT_MSG_FILENAME = "COMMIT_EDITMSG"
+def get_repo_root() -> Path:
+    result = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0 and result.stdout.strip():
+        return Path(result.stdout.strip())
+    return Path(__file__).resolve().parent.parent
+
+
+REPO_ROOT = get_repo_root()
+GENERATOR = REPO_ROOT / "tools" / "generate-commit-msg.py"
 
 
 def run_generator(args):

@@ -44,6 +44,7 @@
 | `dev-loop` | 40-dev-loop 研发闭环相关 |
 | `skills` | .trae/skills/ 技能文件变更 |
 | `api` | 30-api 接口文档变更 |
+| `rules` | .trae/rules/ 规则文件变更 |
 
 ### 工程相关 Scope（按模块命名）
 
@@ -62,6 +63,13 @@
 | `infra` | 基础设施、Docker、部署配置 |
 | `telemetry` | 遥测、监控、日志配置 |
 | `tools` | 工具脚本 |
+
+> **Scope 维护规则**：新增或删除 scope 时，必须同步更新以下三处：
+> 1. 本文件（`.trae/rules/40-git-workflow.md`）
+> 2. `tools/validate-commit-msg.py` 中的 `VALID_SCOPES`
+> 3. `tools/generate-commit-msg.py` 中的 `SCOPE_PATH_MAPPING`
+>
+> 以本文件为权威来源，工具脚本必须与之保持一致。
 
 ---
 
@@ -168,6 +176,47 @@ refactor(vote): 抽取投票Repository公共方法
 | 模板版本 | `tpl_<domain>_v<major>.<minor>` | `tpl_npc_v2.1` |
 
 客户端版本与内容版本必须可映射，确保客户端能正确识别和加载对应版本的内容包。
+
+---
+
+## Git Hooks
+
+项目使用 `.githooks/` 目录管理 Git hooks，通过 `core.hooksPath` 指定。
+
+### 安装
+
+```bash
+bash tools/install-git-hooks.sh
+```
+
+安装后每次提交会自动：
+- **pre-commit**：检查大文件、合并冲突标记、调试断点、.env 文件、潜在密钥泄露
+- **prepare-commit-msg**：分析暂存文件，注入建议提交信息（仅空消息时）
+- **commit-msg**：验证提交消息格式、检查 scope 是否合法、拦截模糊表述
+
+### Worktree 兼容
+
+hooks 使用 `git rev-parse --show-toplevel` 解析仓库根目录，兼容主仓库和 git worktree。
+`install-git-hooks.sh` 使用相对路径设置 `core.hooksPath`，worktree 内独立生效。
+
+### 紧急绕过
+
+```bash
+git commit --no-verify
+```
+
+仅在紧急情况下使用，并在后续补交合规的提交信息。
+
+---
+
+## Worktree 注意事项
+
+使用 `git worktree` 并行开发时，需注意：
+
+1. **Hooks 独立生效**：每个 worktree 需独立运行 `bash tools/install-git-hooks.sh`
+2. **分支隔离**：每个 worktree 检出不同分支，提交直接进入对应分支
+3. **Push 不冲突**：不同 worktree 的 push 不应互相阻塞，但需注意同一远程分支的 push 顺序
+4. **提交信息一致**：所有 worktree 的提交信息都遵循同一套规范
 
 ---
 

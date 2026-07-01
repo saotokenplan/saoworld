@@ -216,11 +216,17 @@ game-project/
   - `dev-loop`
   - `skills`
   - `api`
+  - `rules`
 - 工程相关提交按实际模块命名，例如：
   - `gateway`
   - `vote`
   - `content`
   - `game`
+
+> **Scope 维护规则**：新增或删除 scope 时，必须同步更新以下三处：
+> 1. `.trae/rules/40-git-workflow.md`（权威来源）
+> 2. `tools/validate-commit-msg.py` 中的 `VALID_SCOPES`
+> 3. `tools/generate-commit-msg.py` 中的 `SCOPE_PATH_MAPPING`
 
 ### 提交要求
 
