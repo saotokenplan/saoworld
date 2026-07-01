@@ -22,9 +22,9 @@
 
 ## 当前阶段
 
-- 当前阶段：实施准备阶段
-- 当前形态：以需求、规范、研发闭环和技术调研文档为主
-- 当前目标：基于已统一的执行规范进入工程初始化，并为首个最小落地目标做准备
+- 当前阶段：工程初始化阶段
+- 当前形态：文档与规范基线已固化，vote-service 后端骨架与迁移脚本就绪
+- 当前目标：完成 vote-service 端到端可运行验证，推进首个最小落地目标进入集成阶段
 
 ## 当前结论
 
@@ -139,15 +139,16 @@
 - 单仓模式目标目录结构已创建：`game/`、`services/`、`workers/`、`tools/`、`infra/`、`telemetry/`。
 - `vote-service` 已完成骨架初始化（FastAPI + SQLAlchemy + Pydantic + pytest），见 `services/vote/`。
   - 数据模型：`VoteCycle`、`VoteCandidate`、`Vote`（对应 `backend-data-spec.md`）
-  - API 路由：`GET /api/v1/health`、`GET /api/v1/votes/current`、`POST /api/v1/votes/submit`
+  - API 路由：`GET /api/v1/health`、`GET /api/v1/votes/current`、`POST /api/v1/votes/submit`、`GET /api/v1/votes/history`
   - 错误响应 envelope、幂等键处理、结构化日志、request_id/trace_id 中间件
-  - 基础单元测试已通过（2/2）
+  - 基础单元测试已通过（13/13）
+- **Alembic 迁移环境已初始化**，首次迁移脚本（vote 核心三表）已生成：`services/vote/alembic/versions/2026_07_01_1529_ba4a0034a620_init_vote_tables.py`
 - 本地开发基础设施：`infra/docker-compose.dev.yml`（PostgreSQL 16 + Redis 7）。
 - `.gitignore`、各目录 README 占位、`.env.example` 已配置。
 
 ## 当前主要风险
 
-- `vote-service` 当前在没有数据库连接时所有 DB 相关接口会返回 500，需要尽快接入 PostgreSQL 并完成迁移脚本初始化。
+- `vote-service` 端到端可运行验证尚未完成（迁移脚本已生成，但需真实数据库验证执行）。
 - `10-requirements/` 与 `20-specs/` 仍有一定内容重叠，后续若继续双向修改，容易再次漂移。
 - `40-dev-loop/` 中部分设计偏目标态，若不裁剪就直接照搬，实施成本会偏高。
 
@@ -155,10 +156,10 @@
 
 1. ~~确认仓库策略：~~ 已确定为单仓模式，当前仓库继续演进为主仓库。
 2. ~~选定首个最小落地目标：~~ 已确定为最小投票链路（vote-service 骨架已初始化）。
-3. 启动本地 PostgreSQL（`docker compose -f infra/docker-compose.dev.yml up -d`）。
-4. 初始化 Alembic 并生成首次迁移脚本，创建投票相关表。
-5. 为 vote-service 添加数据库集成测试，补全投票历史接口（`GET /api/v1/votes/history`）。
-6. 基于该目标生成第一版需求包（可放在 `docs/packages/first-slice/`），包括从 `20-specs/` 抽出的相关规范子集。
+3. ~~初始化 Alembic 并生成首次迁移脚本：~~ 已完成，vote 核心三表迁移脚本就绪。
+4. 启动本地 PostgreSQL 并执行迁移，完成 vote-service 端到端可运行验证。
+5. 为 vote-service 补充投票结算逻辑与运营写接口（创建投票周期等）。
+6. 基于最小投票链路生成第一版需求包（可放在 `docs/packages/first-slice/`），包括从 `20-specs/` 抽出的相关规范子集。
 7. 补异步任务和事件的 payload schema（不阻塞投票 MVP，但内容链路需要）。
 
 ## 进入实施前的建议门槛
@@ -166,7 +167,8 @@
 - ~~产品边界和 MVP 范围不再频繁变更。~~ 已明确
 - ~~首个最小落地目标明确到单条主线能力。~~ 已确定为最小投票链路
 - ~~确认是沿当前仓库继续扩展，还是拆出独立工程仓库。~~ 已确定为单仓模式
-- 启动数据库并初始化 Alembic 迁移脚本，完成 vote-service 端到端可运行验证。
+- ~~初始化 Alembic 迁移脚本，完成 vote 核心三表定义。~~ 已完成
+- 启动数据库并执行迁移，完成 vote-service 端到端可运行验证。
 - 补充接口样例和集成测试，确保投票链路可通过自动化测试验证。
 
 ## 与其他文档的关系
