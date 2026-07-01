@@ -69,10 +69,10 @@ docs/
 
 修改 `20-specs/` 或其他核心文档后，必须检查以下文件是否需要同步更新：
 
-- [ ] [docs/README.md](file:///Users/red/.trae-cn/worktrees/saoworld/analyze-current-project-gR8qGS/docs/README.md) - 目录导航是否需要更新
-- [ ] [docs/00-governance/document-map.md](file:///Users/red/.trae-cn/worktrees/saoworld/analyze-current-project-gR8qGS/docs/00-governance/document-map.md) - 文档映射关系是否需要更新
-- [ ] [docs/00-governance/project-status.md](file:///Users/red/.trae-cn/worktrees/saoworld/analyze-current-project-gR8qGS/docs/00-governance/project-status.md) - 项目状态是否需要更新
-- [ ] [docs/00-governance/spec-skill-mapping.md](file:///Users/red/.trae-cn/worktrees/saoworld/analyze-current-project-gR8qGS/docs/00-governance/spec-skill-mapping.md) - spec 与 skill 的映射是否需要更新
+- [ ] [docs/README.md](file:///docs/README.md) - 目录导航是否需要更新
+- [ ] [docs/00-governance/document-map.md](file:///docs/00-governance/document-map.md) - 文档映射关系是否需要更新
+- [ ] [docs/00-governance/project-status.md](file:///docs/00-governance/project-status.md) - 项目状态是否需要更新
+- [ ] [docs/00-governance/spec-skill-mapping.md](file:///docs/00-governance/spec-skill-mapping.md) - spec 与 skill 的映射是否需要更新
 - [ ] `.trae/rules/` 下的对应规则文件 - 如果规范变更涉及工程规则，必须同步更新规则
 - [ ] `.trae/skills/` 下的对应 SKILL.md - 如果规范变更涉及技能引用源，必须同步更新
 
