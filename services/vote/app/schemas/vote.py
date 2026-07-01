@@ -58,7 +58,7 @@ class CurrentVoteResponse(BaseModel):
 class VoteSubmitRequest(BaseModel):
     candidate_id: uuid.UUID
     device_fingerprint_hash: str = Field(min_length=1, max_length=128)
-    weight: float = Field(default=1.0, ge=0.0, le=10.0)
+    weight: float = Field(default=1.0, gt=0.0, le=10.0)
 
 
 class VoteSubmitResponse(BaseModel):
@@ -91,3 +91,75 @@ class HealthResponse(BaseModel):
     service: str
     version: str
     status: str = "ok"
+
+
+# --- 运营写接口 Schema ---
+
+
+class CandidateInput(BaseModel):
+    """创建投票周期时的候选项输入"""
+
+    title: str = Field(min_length=1, max_length=512)
+    summary: str = Field(min_length=1)
+    description: str | None = None
+    region_scope: list[str] = Field(default_factory=list)
+    risk_tags: list[str] = Field(default_factory=list)
+    generated_params: dict[str, object] | None = None
+
+
+class CreateVoteCycleRequest(BaseModel):
+    """创建投票周期请求体"""
+
+    chapter_id: str = Field(min_length=1, max_length=64)
+    starts_at: datetime
+    ends_at: datetime
+    candidates: list[CandidateInput] = Field(min_length=2)
+    reason: str = Field(min_length=1)
+
+
+class VoteCycleDetailResponse(BaseModel):
+    """投票周期详情响应"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    vote_cycle_id: uuid.UUID
+    chapter_id: str
+    status: VoteCycleStatus
+    starts_at: datetime
+    ends_at: datetime
+    created_by: str
+    created_reason: str
+    finalized_at: datetime | None = None
+    winning_candidate_id: uuid.UUID | None = None
+    candidates: list[CandidateResponse] = []
+    created_at: datetime
+    updated_at: datetime
+
+
+class CreateVoteCycleResponse(BaseModel):
+    """创建投票周期响应"""
+
+    vote_cycle_id: uuid.UUID
+    chapter_id: str
+    status: VoteCycleStatus
+    starts_at: datetime
+    ends_at: datetime
+    candidates: list[CandidateResponse]
+    request_id: str
+    trace_id: str | None = None
+
+
+class TransitionVoteCycleRequest(BaseModel):
+    """投票周期状态变更请求体"""
+
+    reason: str = Field(min_length=1)
+
+
+class TransitionVoteCycleResponse(BaseModel):
+    """投票周期状态变更响应"""
+
+    vote_cycle_id: uuid.UUID
+    status: VoteCycleStatus
+    winning_candidate_id: uuid.UUID | None = None
+    request_id: str
+    trace_id: str | None = None

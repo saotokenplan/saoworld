@@ -2,14 +2,13 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import AsyncGenerator
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import selectinload
 
 from app.core.db import Base, get_db
-from app.domain.models import Vote, VoteCandidate, VoteCycle
+from app.domain.models import VoteCandidate, VoteCycle
 from app.main import app
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///file:testdb?mode=memory&cache=shared&uri=true"
@@ -117,4 +116,6 @@ async def open_vote_cycle() -> VoteCycle:
         )
         result = await session.execute(stmt)
         loaded_cycle = result.scalar_one()
+        # 使候选列表可访问（脱离 session 后仍可用）
+        _ = [c.candidate_id for c in loaded_cycle.candidates]
         return loaded_cycle
