@@ -1,0 +1,7 @@
+{
+  "task_id": null,
+  "plan_file": null,
+  "summary_file": null,
+  "completed_at": null,
+  "note": "初始状态，首次运行，无活跃工作树，无需触发规划"
+}
