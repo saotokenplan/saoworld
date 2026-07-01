@@ -1,0 +1,46 @@
+{
+  "hooks": [
+    {
+      "event": "SessionStart",
+      "matchers": [
+        {
+          "type": "always"
+        }
+      ],
+      "command": "bash .trae/hooks/session-init.sh",
+      "timeout": 5000
+    },
+    {
+      "event": "PreToolUse",
+      "matchers": [
+        {
+          "type": "toolName",
+          "value": "Write|Edit|DeleteFile"
+        }
+      ],
+      "command": "bash .trae/hooks/pre-file-op.sh",
+      "timeout": 3000
+    },
+    {
+      "event": "PostToolUse",
+      "matchers": [
+        {
+          "type": "toolName",
+          "value": "Write|Edit"
+        }
+      ],
+      "command": "bash .trae/hooks/post-file-verify.sh",
+      "timeout": 5000
+    },
+    {
+      "event": "Stop",
+      "matchers": [
+        {
+          "type": "always"
+        }
+      ],
+      "command": "bash .trae/hooks/loop-final-check.sh",
+      "timeout": 10000
+    }
+  ]
+}
