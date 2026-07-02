@@ -146,8 +146,11 @@
   - 状态机校验：严格遵循 draft → scheduled → open → closed → finalized 路径
   - 同章节唯一开放周期校验
   - 错误响应 envelope、幂等键处理、结构化日志、request_id/trace_id 中间件
-  - 测试用例 26 个全部通过（含 13 个玩家接口 + 13 个运营接口）
-- **Alembic 迁移环境已初始化**，首次迁移脚本（vote 核心三表）已生成：`services/vote/alembic/versions/2026_07_01_1529_ba4a0034a620_init_vote_tables.py`
+  - 审计日志持久化（`audit_logs` 表写入，覆盖投票提交、周期创建和状态迁移）
+  - 测试用例 49 个全部通过（含 13 个玩家接口 + 13 个运营接口 + 8 个审计日志 + 15 个鉴权）
+- **Alembic 迁移环境已初始化**，迁移脚本已生成：
+  - 首次迁移（vote 核心三表）：`services/vote/alembic/versions/2026_07_01_1529_ba4a0034a620_init_vote_tables.py`
+  - 审计日志表：`services/vote/alembic/versions/2026_07_02_0200_c8d2e5f1a730_add_audit_logs_table.py`
 - 本地开发基础设施：`infra/docker-compose.dev.yml`（PostgreSQL 16 + Redis 7）。
 - `.gitignore`、各目录 README 占位、`.env.example` 已配置。
 
@@ -155,7 +158,7 @@
 
 - `vote-service` 端到端可运行验证尚未完成（需 PostgreSQL 环境，Docker 在 CI 沙箱不可用）。
 - ~~JWT 鉴权中间件尚未实现，运营接口缺少真实的角色和权限校验。~~ 已完成，运营接口具备完整的 Scope 校验。
-- 审计日志（`audit_logs` 表）尚未持久化，运营操作的审计记录仅在结构化日志中。
+- ~~审计日志（`audit_logs` 表）尚未持久化，运营操作的审计记录仅在结构化日志中。~~ 已完成，审计日志持久化到 `audit_logs` 表。
 - `10-requirements/` 与 `20-specs/` 仍有一定内容重叠，后续若继续双向修改，容易再次漂移。
 - `40-dev-loop/` 中部分设计偏目标态，若不裁剪就直接照搬，实施成本会偏高。
 
@@ -167,7 +170,7 @@
 4. 启动本地 PostgreSQL 并执行迁移，完成 vote-service 端到端可运行验证。
 5. ~~为 vote-service 补充投票结算逻辑与运营写接口（创建投票周期等）：~~ 已完成。
 6. ~~为 vote-service 实现 JWT 鉴权中间件与角色/Scope 权限校验。~~ 已完成（41 个测试全部通过）。
-7. 补充审计日志持久化（`audit_logs` 表写入）。
+7. ~~补充审计日志持久化（`audit_logs` 表写入）。~~ 已完成（49 个测试全部通过）。
 8. 基于最小投票链路生成第一版需求包（可放在 `docs/packages/first-slice/`），包括从 `20-specs/` 抽出的相关规范子集。
 9. 补异步任务和事件的 payload schema（不阻塞投票 MVP，但内容链路需要）。
 
