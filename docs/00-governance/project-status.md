@@ -22,9 +22,9 @@
 
 ## 当前阶段
 
-- 当前阶段：工程初始化阶段（vote-service + world-service + content-service + generation-service 完成）
-- 当前形态：vote-service + world-service + content-service + generation-service 四个核心服务已完成，区域管理、投票链路、内容包管理、生成请求管理就绪
-- 当前目标：推进内容链路（review-service）
+- 当前阶段：工程初始化阶段（vote-service + world-service + content-service + generation-service + review-service 完成）
+- 当前形态：vote-service + world-service + content-service + generation-service + review-service 五个核心服务已完成，区域管理、投票链路、内容包管理、生成请求管理、内容审核就绪
+- 当前目标：推进剩余服务（gateway/player/ops）或基础设施（workers/Celery/CI）
 
 ## 当前结论
 
@@ -133,7 +133,7 @@
 
 - `game/` Godot 客户端工程尚未初始化（目录已创建，占位 README 就位）。
 - `workers/` Celery 异步任务 Worker 尚未实现（目录已创建）。
-- 除 `vote-service`、`world-service`、`content-service`、`generation-service` 外的其他后端服务（gateway/player/review/ops）尚未初始化。
+- 除 `vote-service`、`world-service`、`content-service`、`generation-service`、`review-service` 外的其他后端服务（gateway/player/ops）尚未初始化。
 - Alembic 数据库迁移脚本尚未生成（world-service），需要连接数据库后初始化。
 - 真实 CI 配置、部署脚本和生产环境配置尚未建立。
 - JWT 鉴权中间件、运营写接口、投票结算 Worker 尚未实现。~~已全部完成：JWT 鉴权、运营写接口、投票结算逻辑。~~
@@ -184,6 +184,15 @@
   - JWT 认证（`review:approve` scope、ops 角色权限）
   - 审计日志持久化
   - 测试用例 47 个全部通过（含运营接口 + 审计日志 + 鉴权 + envelope 格式 + 状态机校验）
+- `review-service` 已完成骨架初始化与内容审核管理：
+  - 数据模型：`ReviewRecord`、`AuditLog`（对应 `backend-data-spec.md`）
+  - 运营 API 路由：审核记录创建/查询/更新、审核批准/拒绝
+  - 审核状态机：pending → approved / rejected / manual_review
+  - 风险等级：low / medium / high / critical
+  - 统一响应 envelope（对齐 `12-api-design.md` 规范）
+  - JWT 认证（`review:approve` scope、reviewer/ops 角色权限）
+  - 审计日志持久化
+  - 测试用例 38 个全部通过（含运营接口 + 审计日志 + 鉴权 + envelope 格式 + 状态机校验）
 - 本地开发基础设施：`infra/docker-compose.dev.yml`（PostgreSQL 16 + Redis 7）。
 - `.gitignore`、各目录 README 占位、`.env.example` 已配置。
 
@@ -211,7 +220,7 @@
 9. 补异步任务和事件的 payload schema（不阻塞投票 MVP，但内容链路需要）。
 10. ~~初始化 content-service（内容包管理、灰度发布、回滚），为内容链路打基础。~~ 已完成（48 个测试全部通过）
 11. ~~初始化 generation-service（AI 内容生成请求与结果落库）。~~ 已完成（47 个测试全部通过）
-12. 初始化 review-service（内容审核、质量评分、人工复核流转）。
+12. ~~初始化 review-service（内容审核、质量评分、人工复核流转）。~~ 已完成（38 个测试全部通过）
 
 ## 进入实施前的建议门槛
 
