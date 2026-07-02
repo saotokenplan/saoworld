@@ -7,9 +7,11 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import selectinload
 
+from app.core.auth import create_test_token
 from app.core.db import Base, get_db
 from app.domain.models import VoteCandidate, VoteCycle
 from app.main import app
+from app.schemas.auth import Role
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///file:testdb?mode=memory&cache=shared&uri=true"
 
@@ -54,6 +56,24 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
     app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture
+def ops_token() -> str:
+    """创建运营角色 JWT Token 用于测试。"""
+    return create_test_token(
+        user_id="test_ops_user",
+        role=Role.OPS,
+    )
+
+
+@pytest_asyncio.fixture
+def player_token() -> str:
+    """创建玩家角色 JWT Token 用于测试。"""
+    return create_test_token(
+        user_id="test_player_user",
+        role=Role.PLAYER,
+    )
 
 
 @pytest_asyncio.fixture

@@ -8,8 +8,14 @@ from app.core.config import settings
 from app.domain.models import VoteCandidate, VoteCycle
 
 
-def _ops_headers(idempotency_key: str | None = None, trace_id: str | None = None) -> dict[str, str]:
-    headers: dict[str, str] = {}
+def _ops_headers(
+    ops_token: str,
+    idempotency_key: str | None = None,
+    trace_id: str | None = None,
+) -> dict[str, str]:
+    headers: dict[str, str] = {
+        "Authorization": f"Bearer {ops_token}",
+    }
     if idempotency_key:
         headers["Idempotency-Key"] = idempotency_key
     if trace_id:
@@ -40,7 +46,7 @@ def _sample_candidates() -> list[dict]:
 
 
 @pytest.mark.asyncio
-async def test_create_vote_cycle_success(client: AsyncClient):
+async def test_create_vote_cycle_success(client: AsyncClient, ops_token: str):
     now = datetime.now(timezone.utc)
     payload = {
         "chapter_id": "chapter_03",
@@ -53,7 +59,7 @@ async def test_create_vote_cycle_success(client: AsyncClient):
     response = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles",
         json=payload,
-        headers=_ops_headers(idempotency_key="test-create-vc-1"),
+        headers=_ops_headers(ops_token, idempotency_key="test-create-vc-1"),
     )
     assert response.status_code == 201
     data = response.json()
@@ -66,7 +72,7 @@ async def test_create_vote_cycle_success(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_create_vote_cycle_ends_at_before_starts_at(client: AsyncClient):
+async def test_create_vote_cycle_ends_at_before_starts_at(client: AsyncClient, ops_token: str):
     now = datetime.now(timezone.utc)
     payload = {
         "chapter_id": "chapter_03",
@@ -79,7 +85,7 @@ async def test_create_vote_cycle_ends_at_before_starts_at(client: AsyncClient):
     response = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles",
         json=payload,
-        headers=_ops_headers(idempotency_key="test-create-vc-2"),
+        headers=_ops_headers(ops_token, idempotency_key="test-create-vc-2"),
     )
     assert response.status_code == 400
     data = response.json()
@@ -88,7 +94,7 @@ async def test_create_vote_cycle_ends_at_before_starts_at(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_create_vote_cycle_with_existing_open_cycle(
-    client: AsyncClient, open_vote_cycle: VoteCycle
+    client: AsyncClient, open_vote_cycle: VoteCycle, ops_token: str
 ):
     now = datetime.now(timezone.utc)
     payload = {
@@ -102,7 +108,7 @@ async def test_create_vote_cycle_with_existing_open_cycle(
     response = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles",
         json=payload,
-        headers=_ops_headers(idempotency_key="test-create-vc-3"),
+        headers=_ops_headers(ops_token, idempotency_key="test-create-vc-3"),
     )
     assert response.status_code == 409
     data = response.json()
@@ -110,7 +116,7 @@ async def test_create_vote_cycle_with_existing_open_cycle(
 
 
 @pytest.mark.asyncio
-async def test_create_vote_cycle_too_few_candidates(client: AsyncClient):
+async def test_create_vote_cycle_too_few_candidates(client: AsyncClient, ops_token: str):
     now = datetime.now(timezone.utc)
     payload = {
         "chapter_id": "chapter_04",
@@ -128,7 +134,7 @@ async def test_create_vote_cycle_too_few_candidates(client: AsyncClient):
     response = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles",
         json=payload,
-        headers=_ops_headers(idempotency_key="test-create-vc-4"),
+        headers=_ops_headers(ops_token, idempotency_key="test-create-vc-4"),
     )
     assert response.status_code == 422
 
@@ -137,7 +143,7 @@ async def test_create_vote_cycle_too_few_candidates(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_full_lifecycle_draft_scheduled_open_closed_finalized(client: AsyncClient):
+async def test_full_lifecycle_draft_scheduled_open_closed_finalized(client: AsyncClient, ops_token: str):
     """测试完整状态迁移路径 draft → scheduled → open → closed → finalized"""
     now = datetime.now(timezone.utc)
 
@@ -152,7 +158,7 @@ async def test_full_lifecycle_draft_scheduled_open_closed_finalized(client: Asyn
     create_resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles",
         json=payload,
-        headers=_ops_headers(idempotency_key="test-lifecycle-1"),
+        headers=_ops_headers(ops_token, idempotency_key="test-lifecycle-1"),
     )
     assert create_resp.status_code == 201
     cycle_id = create_resp.json()["vote_cycle_id"]
@@ -162,7 +168,7 @@ async def test_full_lifecycle_draft_scheduled_open_closed_finalized(client: Asyn
     schedule_resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles/{cycle_id}/schedule",
         json={"reason": "计划上线"},
-        headers=_ops_headers(idempotency_key="test-lifecycle-2"),
+        headers=_ops_headers(ops_token, idempotency_key="test-lifecycle-2"),
     )
     assert schedule_resp.status_code == 200
     assert schedule_resp.json()["status"] == "scheduled"
@@ -171,7 +177,7 @@ async def test_full_lifecycle_draft_scheduled_open_closed_finalized(client: Asyn
     open_resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles/{cycle_id}/open",
         json={"reason": "开放投票"},
-        headers=_ops_headers(idempotency_key="test-lifecycle-3"),
+        headers=_ops_headers(ops_token, idempotency_key="test-lifecycle-3"),
     )
     assert open_resp.status_code == 200
     assert open_resp.json()["status"] == "open"
@@ -180,7 +186,7 @@ async def test_full_lifecycle_draft_scheduled_open_closed_finalized(client: Asyn
     close_resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles/{cycle_id}/close",
         json={"reason": "关闭投票"},
-        headers=_ops_headers(idempotency_key="test-lifecycle-4"),
+        headers=_ops_headers(ops_token, idempotency_key="test-lifecycle-4"),
     )
     assert close_resp.status_code == 200
     assert close_resp.json()["status"] == "closed"
@@ -189,14 +195,14 @@ async def test_full_lifecycle_draft_scheduled_open_closed_finalized(client: Asyn
     finalize_resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles/{cycle_id}/finalize",
         json={"reason": "确认结果"},
-        headers=_ops_headers(idempotency_key="test-lifecycle-5"),
+        headers=_ops_headers(ops_token, idempotency_key="test-lifecycle-5"),
     )
     assert finalize_resp.status_code == 200
     assert finalize_resp.json()["status"] == "finalized"
 
 
 @pytest.mark.asyncio
-async def test_cannot_open_from_draft(client: AsyncClient):
+async def test_cannot_open_from_draft(client: AsyncClient, ops_token: str):
     """测试 draft 不能直接 open"""
     now = datetime.now(timezone.utc)
     payload = {
@@ -209,7 +215,7 @@ async def test_cannot_open_from_draft(client: AsyncClient):
     create_resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles",
         json=payload,
-        headers=_ops_headers(idempotency_key="test-skip-1"),
+        headers=_ops_headers(ops_token, idempotency_key="test-skip-1"),
     )
     assert create_resp.status_code == 201
     cycle_id = create_resp.json()["vote_cycle_id"]
@@ -217,14 +223,14 @@ async def test_cannot_open_from_draft(client: AsyncClient):
     open_resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles/{cycle_id}/open",
         json={"reason": "非法迁移"},
-        headers=_ops_headers(idempotency_key="test-skip-2"),
+        headers=_ops_headers(ops_token, idempotency_key="test-skip-2"),
     )
     assert open_resp.status_code == 409
     assert open_resp.json()["code"] == "INVALID_VOTE_STATE"
 
 
 @pytest.mark.asyncio
-async def test_open_vote_cycle_from_scheduled(client: AsyncClient):
+async def test_open_vote_cycle_from_scheduled(client: AsyncClient, ops_token: str):
     """测试从 scheduled 状态 open 投票周期"""
     from tests.conftest import TestSessionLocal
 
@@ -265,7 +271,7 @@ async def test_open_vote_cycle_from_scheduled(client: AsyncClient):
     open_resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles/{cycle_id}/open",
         json={"reason": "开放投票"},
-        headers=_ops_headers(idempotency_key="test-scheduled-open-1"),
+        headers=_ops_headers(ops_token, idempotency_key="test-scheduled-open-1"),
     )
     assert open_resp.status_code == 200
     data = open_resp.json()
@@ -277,7 +283,7 @@ async def test_open_vote_cycle_from_scheduled(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_close_vote_cycle_with_tally(client: AsyncClient, open_vote_cycle: VoteCycle):
+async def test_close_vote_cycle_with_tally(client: AsyncClient, open_vote_cycle: VoteCycle, ops_token: str):
     """测试关闭投票周期时自动计票"""
     player_1 = uuid.uuid4()
     player_2 = uuid.uuid4()
@@ -307,7 +313,7 @@ async def test_close_vote_cycle_with_tally(client: AsyncClient, open_vote_cycle:
     close_resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles/{open_vote_cycle.vote_cycle_id}/close",
         json={"reason": "投票结束，开始计票"},
-        headers=_ops_headers(idempotency_key="test-close-tally-1"),
+        headers=_ops_headers(ops_token, idempotency_key="test-close-tally-1"),
     )
     assert close_resp.status_code == 200
     data = close_resp.json()
@@ -317,12 +323,12 @@ async def test_close_vote_cycle_with_tally(client: AsyncClient, open_vote_cycle:
 
 
 @pytest.mark.asyncio
-async def test_tally_with_no_votes(client: AsyncClient, open_vote_cycle: VoteCycle):
+async def test_tally_with_no_votes(client: AsyncClient, open_vote_cycle: VoteCycle, ops_token: str):
     """测试无人投票时关闭投票周期"""
     close_resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles/{open_vote_cycle.vote_cycle_id}/close",
         json={"reason": "无人投票"},
-        headers=_ops_headers(idempotency_key="test-no-votes-close-1"),
+        headers=_ops_headers(ops_token, idempotency_key="test-no-votes-close-1"),
     )
     assert close_resp.status_code == 200
     data = close_resp.json()
@@ -334,19 +340,19 @@ async def test_tally_with_no_votes(client: AsyncClient, open_vote_cycle: VoteCyc
 
 
 @pytest.mark.asyncio
-async def test_finalize_vote_cycle(client: AsyncClient, open_vote_cycle: VoteCycle):
+async def test_finalize_vote_cycle(client: AsyncClient, open_vote_cycle: VoteCycle, ops_token: str):
     """测试确认投票结果"""
     close_resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles/{open_vote_cycle.vote_cycle_id}/close",
         json={"reason": "关闭投票"},
-        headers=_ops_headers(idempotency_key="test-finalize-close-1"),
+        headers=_ops_headers(ops_token, idempotency_key="test-finalize-close-1"),
     )
     assert close_resp.status_code == 200
 
     finalize_resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles/{open_vote_cycle.vote_cycle_id}/finalize",
         json={"reason": "确认投票结果，开始内容生成"},
-        headers=_ops_headers(idempotency_key="test-finalize-1"),
+        headers=_ops_headers(ops_token, idempotency_key="test-finalize-1"),
     )
     assert finalize_resp.status_code == 200
     data = finalize_resp.json()
@@ -357,19 +363,19 @@ async def test_finalize_vote_cycle(client: AsyncClient, open_vote_cycle: VoteCyc
 
 
 @pytest.mark.asyncio
-async def test_cannot_finalize_open_cycle(client: AsyncClient, open_vote_cycle: VoteCycle):
+async def test_cannot_finalize_open_cycle(client: AsyncClient, open_vote_cycle: VoteCycle, ops_token: str):
     """测试不能直接从 open finalized"""
     finalize_resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles/{open_vote_cycle.vote_cycle_id}/finalize",
         json={"reason": "非法迁移"},
-        headers=_ops_headers(idempotency_key="test-finalize-invalid-1"),
+        headers=_ops_headers(ops_token, idempotency_key="test-finalize-invalid-1"),
     )
     assert finalize_resp.status_code == 409
     assert finalize_resp.json()["code"] == "INVALID_VOTE_STATE"
 
 
 @pytest.mark.asyncio
-async def test_cannot_close_draft_cycle(client: AsyncClient):
+async def test_cannot_close_draft_cycle(client: AsyncClient, ops_token: str):
     """测试不能关闭 draft 状态的周期"""
     now = datetime.now(timezone.utc)
     payload = {
@@ -382,7 +388,7 @@ async def test_cannot_close_draft_cycle(client: AsyncClient):
     create_resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles",
         json=payload,
-        headers=_ops_headers(idempotency_key="test-draft-close-1"),
+        headers=_ops_headers(ops_token, idempotency_key="test-draft-close-1"),
     )
     assert create_resp.status_code == 201
     cycle_id = create_resp.json()["vote_cycle_id"]
@@ -390,19 +396,19 @@ async def test_cannot_close_draft_cycle(client: AsyncClient):
     close_resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles/{cycle_id}/close",
         json={"reason": "非法迁移"},
-        headers=_ops_headers(idempotency_key="test-draft-close-2"),
+        headers=_ops_headers(ops_token, idempotency_key="test-draft-close-2"),
     )
     assert close_resp.status_code == 409
 
 
 @pytest.mark.asyncio
-async def test_vote_cycle_not_found(client: AsyncClient):
+async def test_vote_cycle_not_found(client: AsyncClient, ops_token: str):
     """测试操作不存在的投票周期"""
     fake_id = str(uuid.uuid4())
     resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles/{fake_id}/open",
         json={"reason": "测试"},
-        headers=_ops_headers(idempotency_key="test-not-found-1"),
+        headers=_ops_headers(ops_token, idempotency_key="test-not-found-1"),
     )
     assert resp.status_code == 404
     assert resp.json()["code"] == "VOTE_CYCLE_NOT_FOUND"

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, s
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
+from app.core.deps import RequireOpsScope, UserPayload
 from app.repositories.vote_repo import VoteRepository
 from app.schemas.vote import (
     CandidateResponse,
@@ -290,6 +291,8 @@ async def get_vote_history(
     status_code=status.HTTP_201_CREATED,
     responses={
         400: {"model": ErrorResponse, "description": "Invalid request"},
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        403: {"model": ErrorResponse, "description": "Forbidden"},
         409: {"model": ErrorResponse, "description": "Conflict"},
     },
     tags=["ops"],
@@ -300,6 +303,7 @@ async def create_vote_cycle(
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
     x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
     db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsScope,
 ) -> CreateVoteCycleResponse:
     if body.ends_at <= body.starts_at:
         raise HTTPException(
@@ -337,7 +341,7 @@ async def create_vote_cycle(
         chapter_id=body.chapter_id,
         starts_at=body.starts_at,
         ends_at=body.ends_at,
-        created_by="ops",  # TODO: 从 JWT 中提取 operator_id
+        created_by=current_user.user_id,  # 从 JWT 中提取 operator_id
         created_reason=body.reason,
         candidates_data=candidates_data,
     )
@@ -363,6 +367,8 @@ async def create_vote_cycle(
     "/vote-cycles/{vote_cycle_id}/schedule",
     response_model=TransitionVoteCycleResponse,
     responses={
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        403: {"model": ErrorResponse, "description": "Forbidden"},
         404: {"model": ErrorResponse, "description": "Vote cycle not found"},
         409: {"model": ErrorResponse, "description": "Invalid state transition"},
     },
@@ -375,6 +381,7 @@ async def schedule_vote_cycle(
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
     x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
     db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsScope,
 ) -> TransitionVoteCycleResponse:
     repo = VoteRepository(db)
 
@@ -413,6 +420,8 @@ async def schedule_vote_cycle(
     "/vote-cycles/{vote_cycle_id}/open",
     response_model=TransitionVoteCycleResponse,
     responses={
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        403: {"model": ErrorResponse, "description": "Forbidden"},
         404: {"model": ErrorResponse, "description": "Vote cycle not found"},
         409: {"model": ErrorResponse, "description": "Invalid state transition"},
     },
@@ -425,6 +434,7 @@ async def open_vote_cycle(
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
     x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
     db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsScope,
 ) -> TransitionVoteCycleResponse:
     repo = VoteRepository(db)
 
@@ -475,6 +485,8 @@ async def open_vote_cycle(
     "/vote-cycles/{vote_cycle_id}/close",
     response_model=TransitionVoteCycleResponse,
     responses={
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        403: {"model": ErrorResponse, "description": "Forbidden"},
         404: {"model": ErrorResponse, "description": "Vote cycle not found"},
         409: {"model": ErrorResponse, "description": "Invalid state transition"},
     },
@@ -487,6 +499,7 @@ async def close_vote_cycle(
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
     x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
     db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsScope,
 ) -> TransitionVoteCycleResponse:
     repo = VoteRepository(db)
 
@@ -533,6 +546,8 @@ async def close_vote_cycle(
     "/vote-cycles/{vote_cycle_id}/finalize",
     response_model=TransitionVoteCycleResponse,
     responses={
+        401: {"model": ErrorResponse, "description": "Unauthorized"},
+        403: {"model": ErrorResponse, "description": "Forbidden"},
         404: {"model": ErrorResponse, "description": "Vote cycle not found"},
         409: {"model": ErrorResponse, "description": "Invalid state transition"},
     },
@@ -545,6 +560,7 @@ async def finalize_vote_cycle(
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
     x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
     db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsScope,
 ) -> TransitionVoteCycleResponse:
     repo = VoteRepository(db)
 
