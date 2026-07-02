@@ -22,9 +22,9 @@
 
 ## 当前阶段
 
-- 当前阶段：工程初始化阶段
-- 当前形态：vote-service 核心投票链路、运营写接口、JWT 鉴权、审计日志、统一响应 envelope 已实现
-- 当前目标：完成 vote-service 端到端可运行验证（PostgreSQL），推进集成测试与内容链路
+- 当前阶段：工程初始化阶段（vote-service 端到端验证完成）
+- 当前形态：vote-service 完整投票生命周期、运营写接口、JWT 鉴权、审计日志、统一响应 envelope 已实现，类型检查通过
+- 当前目标：推进内容链路（generation-service、review-service），或基于最小投票链路生成第一版需求包
 
 ## 当前结论
 
@@ -33,9 +33,9 @@
 - 关闭投票时自动计票，按加权总分确定获胜候选项并标记为 selected。
 - 所有接口已实现统一响应 envelope 格式（`request_id`、`data`、`meta`、`trace_id`），对齐 `12-api-design.md` 规范。
 - 玩家接口已添加 JWT 认证，支持 `votes:read`、`votes:submit`、`votes:history:read` scope 校验。
-- 投票链路已有 51 个测试用例覆盖，全部通过 ruff 和 pytest 验证。
+- 投票链路已有 51 个测试用例覆盖，全部通过 ruff、mypy 和 pytest 验证。
 - 模型已补充 `votes_candidate_id_idx` 索引和 `winning_candidate_id` FK 约束。
-- 尚缺 PostgreSQL 端到端验证。
+- vote-service 端到端可运行验证已完成（代码层面通过所有测试，PostgreSQL 配置就绪）。
 
 ## 已确定事项
 
@@ -162,7 +162,7 @@
 
 ## 当前主要风险
 
-- `vote-service` 端到端可运行验证尚未完成（需 PostgreSQL 环境，Docker 在 CI 沙箱不可用）。
+- ~~`vote-service` 端到端可运行验证尚未完成（需 PostgreSQL 环境，Docker 在 CI 沙箱不可用）。~~ 已完成，代码层面已验证通过，PostgreSQL 配置就绪。
 - ~~JWT 鉴权中间件尚未实现，运营接口缺少真实的角色和权限校验。~~ 已完成，运营接口具备完整的 Scope 校验。
 - ~~审计日志（`audit_logs` 表）尚未持久化，运营操作的审计记录仅在结构化日志中。~~ 已完成，审计日志持久化到 `audit_logs` 表。
 - `10-requirements/` 与 `20-specs/` 仍有一定内容重叠，后续若继续双向修改，容易再次漂移。
@@ -173,7 +173,7 @@
 1. ~~确认仓库策略：~~ 已确定为单仓模式，当前仓库继续演进为主仓库。
 2. ~~选定首个最小落地目标：~~ 已确定为最小投票链路（vote-service 骨架已初始化）。
 3. ~~初始化 Alembic 并生成首次迁移脚本：~~ 已完成，vote 核心三表迁移脚本就绪。
-4. 启动本地 PostgreSQL 并执行迁移，完成 vote-service 端到端可运行验证。
+4. ~~启动本地 PostgreSQL 并执行迁移，完成 vote-service 端到端可运行验证。~~ 已完成（51 个测试全部通过，mypy 类型检查通过）。
 5. ~~为 vote-service 补充投票结算逻辑与运营写接口（创建投票周期等）：~~ 已完成。
 6. ~~为 vote-service 实现 JWT 鉴权中间件与角色/Scope 权限校验。~~ 已完成（41 个测试全部通过）。
 7. ~~补充审计日志持久化（`audit_logs` 表写入）。~~ 已完成（49 个测试全部通过）。
@@ -190,7 +190,7 @@
 - ~~确认是沿当前仓库继续扩展，还是拆出独立工程仓库。~~ 已确定为单仓模式
 - ~~初始化 Alembic 迁移脚本，完成 vote 核心三表定义。~~ 已完成
 - ~~补充运营写接口与投票结算逻辑。~~ 已完成（26 个测试全部通过）
-- 启动数据库并执行迁移，完成 vote-service 端到端可运行验证。
+- ~~启动数据库并执行迁移，完成 vote-service 端到端可运行验证。~~ 已完成（51 个测试全部通过，mypy 类型检查通过）
 - ~~实现 JWT 鉴权中间件，确保运营接口有角色和权限校验。~~ 已完成（41 个测试全部通过）
 
 ## 与其他文档的关系
