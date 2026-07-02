@@ -1,5 +1,7 @@
 """权限校验依赖。"""
 
+from typing import Any, Callable
+
 from fastapi import Depends, Header, HTTPException, status
 
 from app.core.auth import (
@@ -86,14 +88,14 @@ async def get_current_user(
     )
 
 
-def require_scope(required_scope: str | Scope) -> callable:
+def require_scope(required_scope: str | Scope) -> Any:
     """创建 Scope 校验依赖。
 
     Args:
         required_scope: 需要的 Scope
 
     Returns:
-        callable: FastAPI 依赖函数
+        Any: FastAPI 依赖函数
     """
     scope_str = required_scope if isinstance(required_scope, str) else required_scope.value
 
@@ -113,14 +115,14 @@ def require_scope(required_scope: str | Scope) -> callable:
     return Depends(scope_checker)
 
 
-def require_role(required_role: Role) -> callable:
+def require_role(required_role: Role) -> Any:
     """创建角色校验依赖。
 
     Args:
         required_role: 需要的角色
 
     Returns:
-        callable: FastAPI 依赖函数
+        Any: FastAPI 依赖函数
     """
     async def role_checker(
         user: UserPayload = Depends(get_current_user),

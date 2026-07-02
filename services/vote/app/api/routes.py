@@ -33,6 +33,7 @@ from app.schemas.vote import (
     PaginatedMeta,
     TransitionVoteCycleRequest,
     TransitionVoteCycleResponse,
+    VoteCycleStatus,
     VoteHistoryItem,
     VoteHistoryResponse,
     VoteSubmitRequest,
@@ -150,7 +151,7 @@ async def get_current_vote(
         data=CurrentVoteResponse(
             vote_cycle_id=cycle.vote_cycle_id,
             chapter_id=cycle.chapter_id,
-            status=cycle.status,
+            status=VoteCycleStatus(cycle.status),
             starts_at=cycle.starts_at,
             ends_at=cycle.ends_at,
             candidates=candidate_responses,
@@ -443,11 +444,10 @@ async def create_vote_cycle(
         candidates_data=candidates_data,
     )
 
-    # 重新加载以获取 candidates 关系
     loaded_cycle = await repo.get_cycle_by_id(cycle.vote_cycle_id)
+    assert loaded_cycle is not None
     candidates_resp = [CandidateResponse.model_validate(c) for c in loaded_cycle.candidates]
 
-    # 审计日志：投票周期创建
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(
         trace_id=x_trace_id or _make_request_id("trace"),
@@ -467,7 +467,7 @@ async def create_vote_cycle(
         data=CreateVoteCycleResponse(
             vote_cycle_id=cycle.vote_cycle_id,
             chapter_id=cycle.chapter_id,
-            status=cycle.status,
+            status=VoteCycleStatus(cycle.status),
             starts_at=cycle.starts_at,
             ends_at=cycle.ends_at,
             candidates=candidates_resp,
@@ -524,6 +524,7 @@ async def schedule_vote_cycle(
 
     from_status = cycle.status
     updated_cycle = await repo.transition_cycle_status(vote_cycle_id, "scheduled")
+    assert updated_cycle is not None
 
     await _log_transition_audit(
         db,
@@ -540,7 +541,7 @@ async def schedule_vote_cycle(
         request_id=request_id,
         data=TransitionVoteCycleResponse(
             vote_cycle_id=updated_cycle.vote_cycle_id,
-            status=updated_cycle.status,
+            status=VoteCycleStatus(updated_cycle.status),
             request_id=request_id,
             trace_id=x_trace_id,
         ),
@@ -606,6 +607,7 @@ async def open_vote_cycle(
 
     from_status = cycle.status
     updated_cycle = await repo.transition_cycle_status(vote_cycle_id, "open")
+    assert updated_cycle is not None
 
     await _log_transition_audit(
         db,
@@ -622,7 +624,7 @@ async def open_vote_cycle(
         request_id=request_id,
         data=TransitionVoteCycleResponse(
             vote_cycle_id=updated_cycle.vote_cycle_id,
-            status=updated_cycle.status,
+            status=VoteCycleStatus(updated_cycle.status),
             request_id=request_id,
             trace_id=x_trace_id,
         ),
@@ -680,6 +682,7 @@ async def close_vote_cycle(
 
     from_status = cycle.status
     updated_cycle = await repo.transition_cycle_status(vote_cycle_id, "closed")
+    assert updated_cycle is not None
     if winning_candidate_id is not None:
         updated_cycle.winning_candidate_id = winning_candidate_id
 
@@ -698,7 +701,7 @@ async def close_vote_cycle(
         request_id=request_id,
         data=TransitionVoteCycleResponse(
             vote_cycle_id=updated_cycle.vote_cycle_id,
-            status=updated_cycle.status,
+            status=VoteCycleStatus(updated_cycle.status),
             winning_candidate_id=winning_candidate_id,
             request_id=request_id,
             trace_id=x_trace_id,
@@ -753,6 +756,7 @@ async def finalize_vote_cycle(
 
     from_status = cycle.status
     updated_cycle = await repo.transition_cycle_status(vote_cycle_id, "finalized")
+    assert updated_cycle is not None
     updated_cycle.finalized_at = datetime.now(timezone.utc)
 
     await _log_transition_audit(
@@ -770,7 +774,7 @@ async def finalize_vote_cycle(
         request_id=request_id,
         data=TransitionVoteCycleResponse(
             vote_cycle_id=updated_cycle.vote_cycle_id,
-            status=updated_cycle.status,
+            status=VoteCycleStatus(updated_cycle.status),
             winning_candidate_id=updated_cycle.winning_candidate_id,
             request_id=request_id,
             trace_id=x_trace_id,

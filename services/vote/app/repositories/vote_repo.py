@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Sequence
 
-from sqlalchemy import Select, func as sa_func, select
+from sqlalchemy import Row, Select, func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -232,7 +232,7 @@ class VoteRepository:
 
     async def get_vote_history(
         self, player_id: uuid.UUID, limit: int = 20, offset: int = 0
-    ) -> tuple[Sequence[tuple[Vote, VoteCandidate]], int]:
+    ) -> tuple[Sequence[Row[tuple[Vote, VoteCandidate]]], int]:
         count_stmt = select(sa_func.count(Vote.vote_id)).where(Vote.player_id == player_id)
         count_result = await self.db.execute(count_stmt)
         total = count_result.scalar_one()
