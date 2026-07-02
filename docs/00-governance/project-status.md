@@ -22,9 +22,9 @@
 
 ## 当前阶段
 
-- 当前阶段：工程初始化阶段（vote-service 端到端验证完成）
-- 当前形态：vote-service 完整投票生命周期、运营写接口、JWT 鉴权、审计日志、统一响应 envelope 已实现，类型检查通过
-- 当前目标：推进内容链路（generation-service、review-service），或基于最小投票链路生成第一版需求包
+- 当前阶段：工程初始化阶段（vote-service + world-service 完成）
+- 当前形态：vote-service + world-service 两个核心服务已完成，区域管理和投票链路就绪
+- 当前目标：推进内容链路（generation-service、review-service、content-service）
 
 ## 当前结论
 
@@ -133,8 +133,8 @@
 
 - `game/` Godot 客户端工程尚未初始化（目录已创建，占位 README 就位）。
 - `workers/` Celery 异步任务 Worker 尚未实现（目录已创建）。
-- 除 `vote-service` 外的其他后端服务（gateway/player/world/generation/review/content/ops）尚未初始化。
-- Alembic 数据库迁移脚本尚未生成，需要连接数据库后初始化。
+- 除 `vote-service` 外的其他后端服务（gateway/player/generation/review/content/ops）尚未初始化。
+- Alembic 数据库迁移脚本尚未生成（world-service），需要连接数据库后初始化。
 - 真实 CI 配置、部署脚本和生产环境配置尚未建立。
 - JWT 鉴权中间件、运营写接口、投票结算 Worker 尚未实现。~~已全部完成：JWT 鉴权、运营写接口、投票结算逻辑。~~
 
@@ -154,9 +154,18 @@
   - 审计日志持久化（`audit_logs` 表写入，覆盖投票提交、周期创建和状态迁移）
   - 模型约束补全：`votes_candidate_id_idx` 索引、`winning_candidate_id` FK
   - 测试用例 51 个全部通过（含玩家接口 + 运营接口 + 审计日志 + 鉴权 + envelope 格式）
-- **Alembic 迁移环境已初始化**，迁移脚本已生成：
+- **Alembic 迁移环境已初始化**（vote-service），迁移脚本已生成：
   - 首次迁移（vote 核心三表）：`services/vote/alembic/versions/2026_07_01_1529_ba4a0034a620_init_vote_tables.py`
   - 审计日志表：`services/vote/alembic/versions/2026_07_02_0200_c8d2e5f1a730_add_audit_logs_table.py`
+- `world-service` 已完成骨架初始化与区域管理接口：
+  - 数据模型：`Region`、`AuditLog`（对应 `backend-data-spec.md`）
+  - 玩家 API 路由：`GET /api/v1/health`、`GET /api/v1/world/regions`、`GET /api/v1/world/regions/{region_id}`
+  - 运营 API 路由：`POST /api/v1/ops/world/regions`（创建区域）、状态更新
+  - 区域状态机：locked → active → unstable → archived
+  - 统一响应 envelope（对齐 `12-api-design.md` 规范）
+  - JWT 认证（`world:read` scope、ops 角色权限）
+  - 审计日志持久化
+  - 测试用例 40 个全部通过（含玩家接口 + 运营接口 + 审计日志 + 鉴权 + envelope 格式）
 - 本地开发基础设施：`infra/docker-compose.dev.yml`（PostgreSQL 16 + Redis 7）。
 - `.gitignore`、各目录 README 占位、`.env.example` 已配置。
 
@@ -182,6 +191,8 @@
 7.7. ~~补充 votes 表 candidate_id_idx 索引和 winning_candidate_id FK 约束。~~ 已完成。
 8. 基于最小投票链路生成第一版需求包（可放在 `docs/packages/first-slice/`），包括从 `20-specs/` 抽出的相关规范子集。
 9. 补异步任务和事件的 payload schema（不阻塞投票 MVP，但内容链路需要）。
+10. 初始化 content-service（内容包管理、灰度发布、回滚），为内容链路打基础。
+11. 初始化 generation-service（AI 内容生成请求与结果落库）。
 
 ## 进入实施前的建议门槛
 
