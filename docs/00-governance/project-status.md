@@ -22,9 +22,9 @@
 
 ## 当前阶段
 
-- 当前阶段：工程初始化阶段（vote-service + world-service + content-service + generation-service + review-service 完成）
-- 当前形态：vote-service + world-service + content-service + generation-service + review-service 五个核心服务已完成，区域管理、投票链路、内容包管理、生成请求管理、内容审核就绪
-- 当前目标：推进剩余服务（gateway/player/ops）或基础设施（workers/Celery/CI）
+- 当前阶段：工程初始化阶段（vote-service + world-service + content-service + generation-service + review-service + gateway-service 完成）
+- 当前形态：vote-service + world-service + content-service + generation-service + review-service + gateway-service 六个核心服务已完成，区域管理、投票链路、内容包管理、生成请求管理、内容审核、API 网关就绪
+- 当前目标：推进剩余服务（player/ops）或基础设施（workers/Celery/CI）
 
 ## 当前结论
 
@@ -133,7 +133,7 @@
 
 - `game/` Godot 客户端工程尚未初始化（目录已创建，占位 README 就位）。
 - `workers/` Celery 异步任务 Worker 尚未实现（目录已创建）。
-- 除 `vote-service`、`world-service`、`content-service`、`generation-service`、`review-service` 外的其他后端服务（gateway/player/ops）尚未初始化。
+- 除 `vote-service`、`world-service`、`content-service`、`generation-service`、`review-service`、`gateway-service` 外的其他后端服务（player/ops）尚未初始化。
 - Alembic 数据库迁移脚本尚未生成（world-service），需要连接数据库后初始化。
 - 真实 CI 配置、部署脚本和生产环境配置尚未建立。
 - JWT 鉴权中间件、运营写接口、投票结算 Worker 尚未实现。~~已全部完成：JWT 鉴权、运营写接口、投票结算逻辑。~~
@@ -193,6 +193,15 @@
   - JWT 认证（`review:approve` scope、reviewer/ops 角色权限）
   - 审计日志持久化
   - 测试用例 38 个全部通过（含运营接口 + 审计日志 + 鉴权 + envelope 格式 + 状态机校验）
+- `gateway-service` 已完成骨架初始化与 API 网关核心功能：
+  - 核心功能：JWT 认证中间件、令牌桶限流中间件、请求追踪中间件、反向代理路由
+  - 代理路由：vote/world/content/generation/review 服务路由映射
+  - 请求头传递：X-Request-Id、X-Trace-Id、Idempotency-Key 透传
+  - 健康检查：`GET /api/v1/health`、`GET /api/v1/health/services`
+  - 统一响应 envelope（对齐 `12-api-design.md` 规范）
+  - 错误响应格式（统一 error envelope）
+  - 结构化日志（structlog）
+  - 测试用例 32 个全部通过（含认证 + 限流 + 代理 + 追踪 + 健康检查）
 - 本地开发基础设施：`infra/docker-compose.dev.yml`（PostgreSQL 16 + Redis 7）。
 - `.gitignore`、各目录 README 占位、`.env.example` 已配置。
 
