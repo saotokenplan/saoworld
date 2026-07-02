@@ -1,8 +1,9 @@
 """JWT 认证核心逻辑。"""
 
 from datetime import datetime, timezone
+from typing import Any
 
-from jose import JWTError, jwt
+from jose import JWTError, jwt  # type: ignore[import-untyped]
 
 from app.core.config import settings
 from app.schemas.auth import Role, TokenData
@@ -127,8 +128,8 @@ def create_test_token(
         "iat": datetime.now(timezone.utc).timestamp(),
     }
 
-    return jwt.encode(
+    return str(jwt.encode(
         payload,
         settings.jwt_secret,
         algorithm=settings.jwt_algorithm,
-    )
+    ))
