@@ -71,7 +71,7 @@ async def seed():
         print(f"Seeded vote cycle: {cycle_id}")
         print(f"  Chapter: {cycle.chapter_id}")
         print(f"  Status: {cycle.status}")
-        print(f"  Candidates:")
+        print("  Candidates:")
         for c in candidates:
             print(f"    - {c.title} ({c.candidate_id})")
 

@@ -6,6 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import RequireOpsScope, UserPayload
+from app.repositories.audit_repo import (
+    ACTION_VOTE_CYCLE_CREATE,
+    ACTION_VOTE_CYCLE_TRANSITION,
+    ACTION_VOTE_SUBMIT,
+    RESOURCE_VOTE,
+    RESOURCE_VOTE_CYCLE,
+    AuditRepository,
+)
 from app.repositories.vote_repo import VoteRepository
 from app.schemas.vote import (
     CandidateResponse,
@@ -29,6 +37,33 @@ ops_router = APIRouter()
 
 def _make_request_id(prefix: str) -> str:
     return f"{prefix}_{uuid.uuid4().hex[:12]}"
+
+
+async def _log_transition_audit(
+    db: AsyncSession,
+    *,
+    trace_id: str | None,
+    operator_id: str,
+    operator_role: str,
+    vote_cycle_id: uuid.UUID,
+    from_status: str,
+    to_status: str,
+    reason: str | None = None,
+    result_status: int = 200,
+) -> None:
+    """记录投票周期状态迁移审计日志。"""
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        operator_id=operator_id,
+        operator_role=operator_role,
+        action=ACTION_VOTE_CYCLE_TRANSITION,
+        resource_type=RESOURCE_VOTE_CYCLE,
+        resource_id=vote_cycle_id,
+        reason=reason,
+        request_payload_jsonb={"from_status": from_status, "to_status": to_status},
+        result_status=result_status,
+    )
 
 
 # --- 健康检查 ---
@@ -214,6 +249,19 @@ async def submit_vote(
         idempotency_key=idempotency_key,
     )
 
+    # 审计日志：投票提交
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=str(player_uuid),
+        operator_role="player",
+        action=ACTION_VOTE_SUBMIT,
+        resource_type=RESOURCE_VOTE,
+        resource_id=vote.vote_id,
+        request_payload_jsonb={"candidate_id": str(body.candidate_id), "weight": body.weight},
+        result_status=201,
+    )
+
     request_id = _make_request_id("req_vote_submit")
     return VoteSubmitResponse(
         vote_id=vote.vote_id,
@@ -350,6 +398,21 @@ async def create_vote_cycle(
     loaded_cycle = await repo.get_cycle_by_id(cycle.vote_cycle_id)
     candidates_resp = [CandidateResponse.model_validate(c) for c in loaded_cycle.candidates]
 
+    # 审计日志：投票周期创建
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        request_id=None,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_VOTE_CYCLE_CREATE,
+        resource_type=RESOURCE_VOTE_CYCLE,
+        resource_id=cycle.vote_cycle_id,
+        reason=body.reason,
+        request_payload_jsonb=body.model_dump(mode="json"),
+        result_status=201,
+    )
+
     request_id = _make_request_id("req_ops_vc")
     return CreateVoteCycleResponse(
         vote_cycle_id=cycle.vote_cycle_id,
@@ -406,7 +469,20 @@ async def schedule_vote_cycle(
             ).model_dump(),
         )
 
+    from_status = cycle.status
     updated_cycle = await repo.transition_cycle_status(vote_cycle_id, "scheduled")
+
+    await _log_transition_audit(
+        db,
+        trace_id=x_trace_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        vote_cycle_id=vote_cycle_id,
+        from_status=from_status,
+        to_status="scheduled",
+        reason=body.reason,
+    )
+
     request_id = _make_request_id("req_ops_vc_schedule")
     return TransitionVoteCycleResponse(
         vote_cycle_id=updated_cycle.vote_cycle_id,
@@ -471,7 +547,20 @@ async def open_vote_cycle(
             ).model_dump(),
         )
 
+    from_status = cycle.status
     updated_cycle = await repo.transition_cycle_status(vote_cycle_id, "open")
+
+    await _log_transition_audit(
+        db,
+        trace_id=x_trace_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        vote_cycle_id=vote_cycle_id,
+        from_status=from_status,
+        to_status="open",
+        reason=body.reason,
+    )
+
     request_id = _make_request_id("req_ops_vc_open")
     return TransitionVoteCycleResponse(
         vote_cycle_id=updated_cycle.vote_cycle_id,
@@ -528,9 +617,21 @@ async def close_vote_cycle(
     tally_result = await repo.tally_votes(vote_cycle_id)
     winning_candidate_id = tally_result["winning_candidate_id"]
 
+    from_status = cycle.status
     updated_cycle = await repo.transition_cycle_status(vote_cycle_id, "closed")
     if winning_candidate_id is not None:
         updated_cycle.winning_candidate_id = winning_candidate_id
+
+    await _log_transition_audit(
+        db,
+        trace_id=x_trace_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        vote_cycle_id=vote_cycle_id,
+        from_status=from_status,
+        to_status="closed",
+        reason=body.reason,
+    )
 
     request_id = _make_request_id("req_ops_vc_close")
     return TransitionVoteCycleResponse(
@@ -585,8 +686,20 @@ async def finalize_vote_cycle(
             ).model_dump(),
         )
 
+    from_status = cycle.status
     updated_cycle = await repo.transition_cycle_status(vote_cycle_id, "finalized")
     updated_cycle.finalized_at = datetime.now(timezone.utc)
+
+    await _log_transition_audit(
+        db,
+        trace_id=x_trace_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        vote_cycle_id=vote_cycle_id,
+        from_status=from_status,
+        to_status="finalized",
+        reason=body.reason,
+    )
 
     request_id = _make_request_id("req_ops_vc_finalize")
     return TransitionVoteCycleResponse(
