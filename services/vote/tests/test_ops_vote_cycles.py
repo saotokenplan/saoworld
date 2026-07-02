@@ -4,8 +4,10 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from httpx import AsyncClient
 
+from app.core.auth import create_test_token
 from app.core.config import settings
 from app.domain.models import VoteCandidate, VoteCycle
+from app.schemas.auth import Role
 
 
 def _ops_headers(
@@ -21,6 +23,12 @@ def _ops_headers(
     if trace_id:
         headers["X-Trace-Id"] = trace_id
     return headers
+
+
+def _player_headers(player_id: str) -> dict[str, str]:
+    """创建玩家请求头（含 JWT Token）。"""
+    token = create_test_token(user_id=player_id, role=Role.PLAYER)
+    return {"Authorization": f"Bearer {token}"}
 
 
 def _sample_candidates() -> list[dict]:
@@ -62,12 +70,13 @@ async def test_create_vote_cycle_success(client: AsyncClient, ops_token: str):
         headers=_ops_headers(ops_token, idempotency_key="test-create-vc-1"),
     )
     assert response.status_code == 201
-    data = response.json()
+    body = response.json()
+    data = body["data"]
     assert data["vote_cycle_id"]
     assert data["chapter_id"] == "chapter_03"
     assert data["status"] == "draft"
     assert len(data["candidates"]) == 2
-    assert data["request_id"]
+    assert body["request_id"]
     assert "X-Request-Id" in response.headers
 
 
@@ -161,8 +170,8 @@ async def test_full_lifecycle_draft_scheduled_open_closed_finalized(client: Asyn
         headers=_ops_headers(ops_token, idempotency_key="test-lifecycle-1"),
     )
     assert create_resp.status_code == 201
-    cycle_id = create_resp.json()["vote_cycle_id"]
-    assert create_resp.json()["status"] == "draft"
+    cycle_id = create_resp.json()["data"]["vote_cycle_id"]
+    assert create_resp.json()["data"]["status"] == "draft"
 
     # 2. draft → scheduled
     schedule_resp = await client.post(
@@ -171,7 +180,7 @@ async def test_full_lifecycle_draft_scheduled_open_closed_finalized(client: Asyn
         headers=_ops_headers(ops_token, idempotency_key="test-lifecycle-2"),
     )
     assert schedule_resp.status_code == 200
-    assert schedule_resp.json()["status"] == "scheduled"
+    assert schedule_resp.json()["data"]["status"] == "scheduled"
 
     # 3. scheduled → open
     open_resp = await client.post(
@@ -180,7 +189,7 @@ async def test_full_lifecycle_draft_scheduled_open_closed_finalized(client: Asyn
         headers=_ops_headers(ops_token, idempotency_key="test-lifecycle-3"),
     )
     assert open_resp.status_code == 200
-    assert open_resp.json()["status"] == "open"
+    assert open_resp.json()["data"]["status"] == "open"
 
     # 4. open → closed（含计票）
     close_resp = await client.post(
@@ -189,7 +198,7 @@ async def test_full_lifecycle_draft_scheduled_open_closed_finalized(client: Asyn
         headers=_ops_headers(ops_token, idempotency_key="test-lifecycle-4"),
     )
     assert close_resp.status_code == 200
-    assert close_resp.json()["status"] == "closed"
+    assert close_resp.json()["data"]["status"] == "closed"
 
     # 5. closed → finalized
     finalize_resp = await client.post(
@@ -198,7 +207,7 @@ async def test_full_lifecycle_draft_scheduled_open_closed_finalized(client: Asyn
         headers=_ops_headers(ops_token, idempotency_key="test-lifecycle-5"),
     )
     assert finalize_resp.status_code == 200
-    assert finalize_resp.json()["status"] == "finalized"
+    assert finalize_resp.json()["data"]["status"] == "finalized"
 
 
 @pytest.mark.asyncio
@@ -218,7 +227,7 @@ async def test_cannot_open_from_draft(client: AsyncClient, ops_token: str):
         headers=_ops_headers(ops_token, idempotency_key="test-skip-1"),
     )
     assert create_resp.status_code == 201
-    cycle_id = create_resp.json()["vote_cycle_id"]
+    cycle_id = create_resp.json()["data"]["vote_cycle_id"]
 
     open_resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles/{cycle_id}/open",
@@ -274,7 +283,7 @@ async def test_open_vote_cycle_from_scheduled(client: AsyncClient, ops_token: st
         headers=_ops_headers(ops_token, idempotency_key="test-scheduled-open-1"),
     )
     assert open_resp.status_code == 200
-    data = open_resp.json()
+    data = open_resp.json()["data"]
     assert data["status"] == "open"
     assert data["vote_cycle_id"] == str(cycle_id)
 
@@ -285,22 +294,20 @@ async def test_open_vote_cycle_from_scheduled(client: AsyncClient, ops_token: st
 @pytest.mark.asyncio
 async def test_close_vote_cycle_with_tally(client: AsyncClient, open_vote_cycle: VoteCycle, ops_token: str):
     """测试关闭投票周期时自动计票"""
-    player_1 = uuid.uuid4()
-    player_2 = uuid.uuid4()
-    player_3 = uuid.uuid4()
     candidate_1 = open_vote_cycle.candidates[0]
     candidate_2 = open_vote_cycle.candidates[1]
 
     # 3 人投票：2票给 candidate_1，1票给 candidate_2
-    for i, (player_id, candidate, weight) in enumerate([
-        (player_1, candidate_1, 1.0),
-        (player_2, candidate_1, 2.0),
-        (player_3, candidate_2, 1.5),
+    for i, (candidate, weight) in enumerate([
+        (candidate_1, 1.0),
+        (candidate_1, 2.0),
+        (candidate_2, 1.5),
     ]):
+        player_id = str(uuid.uuid4())
         await client.post(
             f"{settings.api_v1_prefix}/votes/submit",
             headers={
-                "X-Player-Id": str(player_id),
+                **_player_headers(player_id),
                 "Idempotency-Key": f"test-tally-{i}",
             },
             json={
@@ -316,7 +323,7 @@ async def test_close_vote_cycle_with_tally(client: AsyncClient, open_vote_cycle:
         headers=_ops_headers(ops_token, idempotency_key="test-close-tally-1"),
     )
     assert close_resp.status_code == 200
-    data = close_resp.json()
+    data = close_resp.json()["data"]
     assert data["status"] == "closed"
     # candidate_1 的加权总分 = 1.0 + 2.0 = 3.0 > candidate_2 的 1.5
     assert data["winning_candidate_id"] == str(candidate_1.candidate_id)
@@ -331,7 +338,7 @@ async def test_tally_with_no_votes(client: AsyncClient, open_vote_cycle: VoteCyc
         headers=_ops_headers(ops_token, idempotency_key="test-no-votes-close-1"),
     )
     assert close_resp.status_code == 200
-    data = close_resp.json()
+    data = close_resp.json()["data"]
     assert data["status"] == "closed"
     assert data["winning_candidate_id"] is None
 
@@ -355,7 +362,7 @@ async def test_finalize_vote_cycle(client: AsyncClient, open_vote_cycle: VoteCyc
         headers=_ops_headers(ops_token, idempotency_key="test-finalize-1"),
     )
     assert finalize_resp.status_code == 200
-    data = finalize_resp.json()
+    data = finalize_resp.json()["data"]
     assert data["status"] == "finalized"
 
 
@@ -391,7 +398,7 @@ async def test_cannot_close_draft_cycle(client: AsyncClient, ops_token: str):
         headers=_ops_headers(ops_token, idempotency_key="test-draft-close-1"),
     )
     assert create_resp.status_code == 201
-    cycle_id = create_resp.json()["vote_cycle_id"]
+    cycle_id = create_resp.json()["data"]["vote_cycle_id"]
 
     close_resp = await client.post(
         f"{settings.api_v1_prefix}/ops/vote-cycles/{cycle_id}/close",

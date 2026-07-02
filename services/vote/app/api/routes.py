@@ -5,7 +5,13 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, s
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
-from app.core.deps import RequireOpsScope, UserPayload
+from app.core.deps import (
+    RequireOpsScope,
+    RequireVotesHistoryReadScope,
+    RequireVotesReadScope,
+    RequireVotesSubmitScope,
+    UserPayload,
+)
 from app.repositories.audit_repo import (
     ACTION_VOTE_CYCLE_CREATE,
     ACTION_VOTE_CYCLE_TRANSITION,
@@ -20,9 +26,11 @@ from app.schemas.vote import (
     CreateVoteCycleRequest,
     CreateVoteCycleResponse,
     CurrentVoteResponse,
+    EnvelopeResponse,
     ErrorDetail,
     ErrorResponse,
     HealthResponse,
+    PaginatedMeta,
     TransitionVoteCycleRequest,
     TransitionVoteCycleResponse,
     VoteHistoryItem,
@@ -37,6 +45,11 @@ ops_router = APIRouter()
 
 def _make_request_id(prefix: str) -> str:
     return f"{prefix}_{uuid.uuid4().hex[:12]}"
+
+
+def _get_trace_id(request: Request) -> str | None:
+    """从请求头获取 trace_id。"""
+    return request.headers.get("X-Trace-Id")
 
 
 async def _log_transition_audit(
@@ -69,13 +82,16 @@ async def _log_transition_audit(
 # --- 健康检查 ---
 
 
-@router.get("/health", response_model=HealthResponse, tags=["health"])
-async def health_check() -> HealthResponse:
+@router.get("/health", tags=["health"])
+async def health_check() -> EnvelopeResponse[HealthResponse]:
     from app.core.config import settings
 
-    return HealthResponse(
-        service=settings.app_name,
-        version=settings.app_version,
+    return EnvelopeResponse(
+        request_id=_make_request_id("req_health"),
+        data=HealthResponse(
+            service=settings.app_name,
+            version=settings.app_version,
+        ),
     )
 
 
@@ -84,17 +100,23 @@ async def health_check() -> HealthResponse:
 
 @router.get(
     "/votes/current",
-    response_model=CurrentVoteResponse,
     responses={
-        404: {"model": ErrorResponse, "description": "No open vote cycle"},
+        404: {"description": "No open vote cycle"},
     },
     tags=["votes"],
 )
 async def get_current_vote(
     request: Request,
+    current_user: UserPayload = RequireVotesReadScope,
     x_player_id: str | None = Header(default=None, alias="X-Player-Id"),
     db: AsyncSession = Depends(get_db),
-) -> CurrentVoteResponse:
+) -> EnvelopeResponse[CurrentVoteResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_vote_current")
+
+    # 优先使用 JWT 中的 user_id，兼容 X-Player-Id
+    player_id_str = current_user.user_id
+
     repo = VoteRepository(db)
     cycle = await repo.get_current_open_cycle()
 
@@ -104,7 +126,7 @@ async def get_current_vote(
             detail=ErrorResponse(
                 code="NO_OPEN_VOTE_CYCLE",
                 message="当前没有开放的投票周期",
-                request_id=_make_request_id("req_vote_current_404"),
+                request_id=request_id,
             ).model_dump(),
         )
 
@@ -114,63 +136,71 @@ async def get_current_vote(
     has_voted = False
     my_vote_candidate_id = None
 
-    if x_player_id:
-        try:
-            player_uuid = uuid.UUID(x_player_id)
-            existing_vote = await repo.has_player_voted(cycle.vote_cycle_id, player_uuid)
-            if existing_vote is not None:
-                has_voted = True
-                my_vote_candidate_id = existing_vote.candidate_id
-        except ValueError:
-            pass
+    try:
+        player_uuid = uuid.UUID(player_id_str)
+        existing_vote = await repo.has_player_voted(cycle.vote_cycle_id, player_uuid)
+        if existing_vote is not None:
+            has_voted = True
+            my_vote_candidate_id = existing_vote.candidate_id
+    except ValueError:
+        pass
 
-    return CurrentVoteResponse(
-        vote_cycle_id=cycle.vote_cycle_id,
-        chapter_id=cycle.chapter_id,
-        status=cycle.status,
-        starts_at=cycle.starts_at,
-        ends_at=cycle.ends_at,
-        candidates=candidate_responses,
-        has_voted=has_voted,
-        my_vote_candidate_id=my_vote_candidate_id,
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=CurrentVoteResponse(
+            vote_cycle_id=cycle.vote_cycle_id,
+            chapter_id=cycle.chapter_id,
+            status=cycle.status,
+            starts_at=cycle.starts_at,
+            ends_at=cycle.ends_at,
+            candidates=candidate_responses,
+            has_voted=has_voted,
+            my_vote_candidate_id=my_vote_candidate_id,
+        ),
+        trace_id=trace_id,
     )
 
 
 @router.post(
     "/votes/submit",
-    response_model=VoteSubmitResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
-        400: {"model": ErrorResponse, "description": "Invalid request"},
-        404: {"model": ErrorResponse, "description": "Vote cycle or candidate not found"},
-        409: {"model": ErrorResponse, "description": "Duplicate vote or state conflict"},
-        422: {"model": ErrorResponse, "description": "Validation error"},
+        400: {"description": "Invalid request"},
+        404: {"description": "Vote cycle or candidate not found"},
+        409: {"description": "Duplicate vote or state conflict"},
+        422: {"description": "Validation error"},
     },
     tags=["votes"],
 )
 async def submit_vote(
     body: VoteSubmitRequest,
     request: Request,
-    x_player_id: str = Header(..., alias="X-Player-Id"),
+    current_user: UserPayload = RequireVotesSubmitScope,
+    x_player_id: str | None = Header(default=None, alias="X-Player-Id"),
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
     x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
     db: AsyncSession = Depends(get_db),
-) -> VoteSubmitResponse:
+) -> EnvelopeResponse[VoteSubmitResponse]:
+    request_id = _make_request_id("req_vote_submit")
+
+    # 优先使用 JWT 中的 user_id，兼容 X-Player-Id
+    player_id_str = current_user.user_id
+
     try:
-        player_uuid = uuid.UUID(x_player_id)
+        player_uuid = uuid.UUID(player_id_str)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ErrorResponse(
                 code="INVALID_PLAYER_ID",
                 message="无效的玩家ID格式",
-                request_id=_make_request_id("req_vote_submit_400"),
+                request_id=request_id,
                 details=[
                     ErrorDetail(
-                        location="header",
-                        field="X-Player-Id",
+                        location="token",
+                        field="sub",
                         issue="invalid_uuid",
-                        rejected_value=x_player_id,
+                        rejected_value=player_id_str,
                     )
                 ],
             ).model_dump(),
@@ -180,12 +210,16 @@ async def submit_vote(
 
     existing_by_key = await repo.vote_exists_by_idempotency_key(idempotency_key)
     if existing_by_key is not None:
-        return VoteSubmitResponse(
-            vote_id=existing_by_key.vote_id,
-            vote_cycle_id=existing_by_key.vote_cycle_id,
-            candidate_id=existing_by_key.candidate_id,
-            submitted_at=existing_by_key.created_at,
+        return EnvelopeResponse(
             request_id=_make_request_id("req_vote_submit_idempotent"),
+            data=VoteSubmitResponse(
+                vote_id=existing_by_key.vote_id,
+                vote_cycle_id=existing_by_key.vote_cycle_id,
+                candidate_id=existing_by_key.candidate_id,
+                submitted_at=existing_by_key.created_at,
+                request_id=request_id,
+                trace_id=x_trace_id,
+            ),
             trace_id=x_trace_id,
         )
 
@@ -196,7 +230,7 @@ async def submit_vote(
             detail=ErrorResponse(
                 code="INVALID_VOTE_STATE",
                 message="当前投票周期不可投票",
-                request_id=_make_request_id("req_vote_submit_409"),
+                request_id=request_id,
             ).model_dump(),
         )
 
@@ -207,7 +241,7 @@ async def submit_vote(
             detail=ErrorResponse(
                 code="CANDIDATE_NOT_FOUND",
                 message="候选项不存在或不属于当前投票周期",
-                request_id=_make_request_id("req_vote_submit_404"),
+                request_id=request_id,
                 details=[
                     ErrorDetail(
                         location="body",
@@ -225,7 +259,7 @@ async def submit_vote(
             detail=ErrorResponse(
                 code="CANDIDATE_NOT_ACTIVE",
                 message="该候选项当前不可投票",
-                request_id=_make_request_id("req_vote_submit_409_cand"),
+                request_id=request_id,
             ).model_dump(),
         )
 
@@ -236,7 +270,7 @@ async def submit_vote(
             detail=ErrorResponse(
                 code="ALREADY_VOTED",
                 message="你已经在本周期投过票",
-                request_id=_make_request_id("req_vote_submit_409_dup"),
+                request_id=request_id,
             ).model_dump(),
         )
 
@@ -262,47 +296,56 @@ async def submit_vote(
         result_status=201,
     )
 
-    request_id = _make_request_id("req_vote_submit")
-    return VoteSubmitResponse(
-        vote_id=vote.vote_id,
-        vote_cycle_id=vote.vote_cycle_id,
-        candidate_id=vote.candidate_id,
-        submitted_at=vote.created_at or datetime.now(timezone.utc),
+    return EnvelopeResponse(
         request_id=request_id,
+        data=VoteSubmitResponse(
+            vote_id=vote.vote_id,
+            vote_cycle_id=vote.vote_cycle_id,
+            candidate_id=vote.candidate_id,
+            submitted_at=vote.created_at or datetime.now(timezone.utc),
+            request_id=request_id,
+            trace_id=x_trace_id,
+        ),
         trace_id=x_trace_id,
     )
 
 
 @router.get(
     "/votes/history",
-    response_model=VoteHistoryResponse,
     responses={
-        400: {"model": ErrorResponse, "description": "Invalid player ID"},
+        400: {"description": "Invalid player ID"},
     },
     tags=["votes"],
 )
 async def get_vote_history(
     request: Request,
-    x_player_id: str = Header(..., alias="X-Player-Id"),
+    current_user: UserPayload = RequireVotesHistoryReadScope,
+    x_player_id: str | None = Header(default=None, alias="X-Player-Id"),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
-) -> VoteHistoryResponse:
+) -> EnvelopeResponse[VoteHistoryResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_vote_history")
+
+    # 优先使用 JWT 中的 user_id
+    player_id_str = current_user.user_id
+
     try:
-        player_uuid = uuid.UUID(x_player_id)
+        player_uuid = uuid.UUID(player_id_str)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ErrorResponse(
                 code="INVALID_PLAYER_ID",
                 message="无效的玩家ID格式",
-                request_id=_make_request_id("req_vote_history_400"),
+                request_id=request_id,
                 details=[
                     ErrorDetail(
-                        location="header",
-                        field="X-Player-Id",
+                        location="token",
+                        field="sub",
                         issue="invalid_uuid",
-                        rejected_value=x_player_id,
+                        rejected_value=player_id_str,
                     )
                 ],
             ).model_dump(),
@@ -323,10 +366,15 @@ async def get_vote_history(
         for v, c in rows
     ]
 
-    return VoteHistoryResponse(
-        player_id=player_uuid,
-        votes=vote_items,
-        total=total,
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=VoteHistoryResponse(
+            player_id=player_uuid,
+            votes=vote_items,
+            total=total,
+        ),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
     )
 
 
@@ -335,13 +383,12 @@ async def get_vote_history(
 
 @ops_router.post(
     "/vote-cycles",
-    response_model=CreateVoteCycleResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
-        400: {"model": ErrorResponse, "description": "Invalid request"},
-        401: {"model": ErrorResponse, "description": "Unauthorized"},
-        403: {"model": ErrorResponse, "description": "Forbidden"},
-        409: {"model": ErrorResponse, "description": "Conflict"},
+        400: {"description": "Invalid request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        409: {"description": "Conflict"},
     },
     tags=["ops"],
 )
@@ -352,14 +399,16 @@ async def create_vote_cycle(
     x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
     db: AsyncSession = Depends(get_db),
     current_user: UserPayload = RequireOpsScope,
-) -> CreateVoteCycleResponse:
+) -> EnvelopeResponse[CreateVoteCycleResponse]:
+    request_id = _make_request_id("req_ops_vc")
+
     if body.ends_at <= body.starts_at:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ErrorResponse(
                 code="INVALID_ARGUMENT",
                 message="投票结束时间必须晚于开始时间",
-                request_id=_make_request_id("req_ops_vc_400"),
+                request_id=request_id,
                 details=[
                     ErrorDetail(
                         location="body",
@@ -380,7 +429,7 @@ async def create_vote_cycle(
             detail=ErrorResponse(
                 code="VOTE_CYCLE_CONFLICT",
                 message="当前章节已存在开放中的投票周期",
-                request_id=_make_request_id("req_ops_vc_409"),
+                request_id=request_id,
             ).model_dump(),
         )
 
@@ -389,7 +438,7 @@ async def create_vote_cycle(
         chapter_id=body.chapter_id,
         starts_at=body.starts_at,
         ends_at=body.ends_at,
-        created_by=current_user.user_id,  # 从 JWT 中提取 operator_id
+        created_by=current_user.user_id,
         created_reason=body.reason,
         candidates_data=candidates_data,
     )
@@ -413,27 +462,29 @@ async def create_vote_cycle(
         result_status=201,
     )
 
-    request_id = _make_request_id("req_ops_vc")
-    return CreateVoteCycleResponse(
-        vote_cycle_id=cycle.vote_cycle_id,
-        chapter_id=cycle.chapter_id,
-        status=cycle.status,
-        starts_at=cycle.starts_at,
-        ends_at=cycle.ends_at,
-        candidates=candidates_resp,
+    return EnvelopeResponse(
         request_id=request_id,
+        data=CreateVoteCycleResponse(
+            vote_cycle_id=cycle.vote_cycle_id,
+            chapter_id=cycle.chapter_id,
+            status=cycle.status,
+            starts_at=cycle.starts_at,
+            ends_at=cycle.ends_at,
+            candidates=candidates_resp,
+            request_id=request_id,
+            trace_id=x_trace_id,
+        ),
         trace_id=x_trace_id,
     )
 
 
 @ops_router.post(
     "/vote-cycles/{vote_cycle_id}/schedule",
-    response_model=TransitionVoteCycleResponse,
     responses={
-        401: {"model": ErrorResponse, "description": "Unauthorized"},
-        403: {"model": ErrorResponse, "description": "Forbidden"},
-        404: {"model": ErrorResponse, "description": "Vote cycle not found"},
-        409: {"model": ErrorResponse, "description": "Invalid state transition"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Vote cycle not found"},
+        409: {"description": "Invalid state transition"},
     },
     tags=["ops"],
 )
@@ -445,7 +496,9 @@ async def schedule_vote_cycle(
     x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
     db: AsyncSession = Depends(get_db),
     current_user: UserPayload = RequireOpsScope,
-) -> TransitionVoteCycleResponse:
+) -> EnvelopeResponse[TransitionVoteCycleResponse]:
+    request_id = _make_request_id("req_ops_vc_schedule")
+
     repo = VoteRepository(db)
 
     cycle = await repo.get_cycle_by_id(vote_cycle_id)
@@ -455,7 +508,7 @@ async def schedule_vote_cycle(
             detail=ErrorResponse(
                 code="VOTE_CYCLE_NOT_FOUND",
                 message="投票周期不存在",
-                request_id=_make_request_id("req_ops_vc_schedule_404"),
+                request_id=request_id,
             ).model_dump(),
         )
 
@@ -465,7 +518,7 @@ async def schedule_vote_cycle(
             detail=ErrorResponse(
                 code="INVALID_VOTE_STATE",
                 message=f"投票周期状态 {cycle.status} 不允许迁移到 scheduled",
-                request_id=_make_request_id("req_ops_vc_schedule_409"),
+                request_id=request_id,
             ).model_dump(),
         )
 
@@ -483,23 +536,25 @@ async def schedule_vote_cycle(
         reason=body.reason,
     )
 
-    request_id = _make_request_id("req_ops_vc_schedule")
-    return TransitionVoteCycleResponse(
-        vote_cycle_id=updated_cycle.vote_cycle_id,
-        status=updated_cycle.status,
+    return EnvelopeResponse(
         request_id=request_id,
+        data=TransitionVoteCycleResponse(
+            vote_cycle_id=updated_cycle.vote_cycle_id,
+            status=updated_cycle.status,
+            request_id=request_id,
+            trace_id=x_trace_id,
+        ),
         trace_id=x_trace_id,
     )
 
 
 @ops_router.post(
     "/vote-cycles/{vote_cycle_id}/open",
-    response_model=TransitionVoteCycleResponse,
     responses={
-        401: {"model": ErrorResponse, "description": "Unauthorized"},
-        403: {"model": ErrorResponse, "description": "Forbidden"},
-        404: {"model": ErrorResponse, "description": "Vote cycle not found"},
-        409: {"model": ErrorResponse, "description": "Invalid state transition"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Vote cycle not found"},
+        409: {"description": "Invalid state transition"},
     },
     tags=["ops"],
 )
@@ -511,7 +566,9 @@ async def open_vote_cycle(
     x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
     db: AsyncSession = Depends(get_db),
     current_user: UserPayload = RequireOpsScope,
-) -> TransitionVoteCycleResponse:
+) -> EnvelopeResponse[TransitionVoteCycleResponse]:
+    request_id = _make_request_id("req_ops_vc_open")
+
     repo = VoteRepository(db)
 
     cycle = await repo.get_cycle_by_id(vote_cycle_id)
@@ -521,7 +578,7 @@ async def open_vote_cycle(
             detail=ErrorResponse(
                 code="VOTE_CYCLE_NOT_FOUND",
                 message="投票周期不存在",
-                request_id=_make_request_id("req_ops_vc_open_404"),
+                request_id=request_id,
             ).model_dump(),
         )
 
@@ -531,7 +588,7 @@ async def open_vote_cycle(
             detail=ErrorResponse(
                 code="INVALID_VOTE_STATE",
                 message=f"投票周期状态 {cycle.status} 不允许迁移到 open",
-                request_id=_make_request_id("req_ops_vc_open_409"),
+                request_id=request_id,
             ).model_dump(),
         )
 
@@ -543,7 +600,7 @@ async def open_vote_cycle(
             detail=ErrorResponse(
                 code="VOTE_CYCLE_CONFLICT",
                 message="当前章节已存在开放中的投票周期",
-                request_id=_make_request_id("req_ops_vc_open_409_conflict"),
+                request_id=request_id,
             ).model_dump(),
         )
 
@@ -561,23 +618,25 @@ async def open_vote_cycle(
         reason=body.reason,
     )
 
-    request_id = _make_request_id("req_ops_vc_open")
-    return TransitionVoteCycleResponse(
-        vote_cycle_id=updated_cycle.vote_cycle_id,
-        status=updated_cycle.status,
+    return EnvelopeResponse(
         request_id=request_id,
+        data=TransitionVoteCycleResponse(
+            vote_cycle_id=updated_cycle.vote_cycle_id,
+            status=updated_cycle.status,
+            request_id=request_id,
+            trace_id=x_trace_id,
+        ),
         trace_id=x_trace_id,
     )
 
 
 @ops_router.post(
     "/vote-cycles/{vote_cycle_id}/close",
-    response_model=TransitionVoteCycleResponse,
     responses={
-        401: {"model": ErrorResponse, "description": "Unauthorized"},
-        403: {"model": ErrorResponse, "description": "Forbidden"},
-        404: {"model": ErrorResponse, "description": "Vote cycle not found"},
-        409: {"model": ErrorResponse, "description": "Invalid state transition"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Vote cycle not found"},
+        409: {"description": "Invalid state transition"},
     },
     tags=["ops"],
 )
@@ -589,7 +648,9 @@ async def close_vote_cycle(
     x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
     db: AsyncSession = Depends(get_db),
     current_user: UserPayload = RequireOpsScope,
-) -> TransitionVoteCycleResponse:
+) -> EnvelopeResponse[TransitionVoteCycleResponse]:
+    request_id = _make_request_id("req_ops_vc_close")
+
     repo = VoteRepository(db)
 
     cycle = await repo.get_cycle_by_id(vote_cycle_id)
@@ -599,7 +660,7 @@ async def close_vote_cycle(
             detail=ErrorResponse(
                 code="VOTE_CYCLE_NOT_FOUND",
                 message="投票周期不存在",
-                request_id=_make_request_id("req_ops_vc_close_404"),
+                request_id=request_id,
             ).model_dump(),
         )
 
@@ -609,7 +670,7 @@ async def close_vote_cycle(
             detail=ErrorResponse(
                 code="INVALID_VOTE_STATE",
                 message=f"投票周期状态 {cycle.status} 不允许迁移到 closed",
-                request_id=_make_request_id("req_ops_vc_close_409"),
+                request_id=request_id,
             ).model_dump(),
         )
 
@@ -633,24 +694,26 @@ async def close_vote_cycle(
         reason=body.reason,
     )
 
-    request_id = _make_request_id("req_ops_vc_close")
-    return TransitionVoteCycleResponse(
-        vote_cycle_id=updated_cycle.vote_cycle_id,
-        status=updated_cycle.status,
-        winning_candidate_id=winning_candidate_id,
+    return EnvelopeResponse(
         request_id=request_id,
+        data=TransitionVoteCycleResponse(
+            vote_cycle_id=updated_cycle.vote_cycle_id,
+            status=updated_cycle.status,
+            winning_candidate_id=winning_candidate_id,
+            request_id=request_id,
+            trace_id=x_trace_id,
+        ),
         trace_id=x_trace_id,
     )
 
 
 @ops_router.post(
     "/vote-cycles/{vote_cycle_id}/finalize",
-    response_model=TransitionVoteCycleResponse,
     responses={
-        401: {"model": ErrorResponse, "description": "Unauthorized"},
-        403: {"model": ErrorResponse, "description": "Forbidden"},
-        404: {"model": ErrorResponse, "description": "Vote cycle not found"},
-        409: {"model": ErrorResponse, "description": "Invalid state transition"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Vote cycle not found"},
+        409: {"description": "Invalid state transition"},
     },
     tags=["ops"],
 )
@@ -662,7 +725,9 @@ async def finalize_vote_cycle(
     x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
     db: AsyncSession = Depends(get_db),
     current_user: UserPayload = RequireOpsScope,
-) -> TransitionVoteCycleResponse:
+) -> EnvelopeResponse[TransitionVoteCycleResponse]:
+    request_id = _make_request_id("req_ops_vc_finalize")
+
     repo = VoteRepository(db)
 
     cycle = await repo.get_cycle_by_id(vote_cycle_id)
@@ -672,7 +737,7 @@ async def finalize_vote_cycle(
             detail=ErrorResponse(
                 code="VOTE_CYCLE_NOT_FOUND",
                 message="投票周期不存在",
-                request_id=_make_request_id("req_ops_vc_finalize_404"),
+                request_id=request_id,
             ).model_dump(),
         )
 
@@ -682,7 +747,7 @@ async def finalize_vote_cycle(
             detail=ErrorResponse(
                 code="INVALID_VOTE_STATE",
                 message=f"投票周期状态 {cycle.status} 不允许迁移到 finalized",
-                request_id=_make_request_id("req_ops_vc_finalize_409"),
+                request_id=request_id,
             ).model_dump(),
         )
 
@@ -701,11 +766,14 @@ async def finalize_vote_cycle(
         reason=body.reason,
     )
 
-    request_id = _make_request_id("req_ops_vc_finalize")
-    return TransitionVoteCycleResponse(
-        vote_cycle_id=updated_cycle.vote_cycle_id,
-        status=updated_cycle.status,
-        winning_candidate_id=updated_cycle.winning_candidate_id,
+    return EnvelopeResponse(
         request_id=request_id,
+        data=TransitionVoteCycleResponse(
+            vote_cycle_id=updated_cycle.vote_cycle_id,
+            status=updated_cycle.status,
+            winning_candidate_id=updated_cycle.winning_candidate_id,
+            request_id=request_id,
+            trace_id=x_trace_id,
+        ),
         trace_id=x_trace_id,
     )

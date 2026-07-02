@@ -2,6 +2,17 @@
 
 > 记录每次自动推进任务的执行情况
 
+## 2026-07-02 04:00 - auto-20260702-0400
+
+- **任务**：vote-service 规范对齐：响应 Envelope、玩家 JWT 认证、模型补全
+- **结果**：成功完成
+- **关键产出**：
+  - 统一响应 envelope 格式（`EnvelopeResponse[T]` + `PaginatedMeta`），对齐 `12-api-design.md`
+  - 玩家接口 JWT 认证（`votes:read`、`votes:submit`、`votes:history:read` scope）
+  - `votes` 表 `candidate_id_idx` 索引、`winning_candidate_id` FK 约束
+  - 全部测试更新（51/51 通过，ruff check 通过）
+- **遗留**：PostgreSQL 端到端验证（Docker 不可用）、Alembic 迁移脚本（需 PG 连接）
+
 ## 2026-07-02 02:25 - auto-20260702-0200
 
 - **任务**：vote-service 审计日志持久化

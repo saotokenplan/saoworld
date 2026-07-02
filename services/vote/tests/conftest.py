@@ -69,9 +69,9 @@ def ops_token() -> str:
 
 @pytest_asyncio.fixture
 def player_token() -> str:
-    """创建玩家角色 JWT Token 用于测试。"""
+    """创建玩家角色 JWT Token 用于测试（user_id 为合法 UUID）。"""
     return create_test_token(
-        user_id="test_player_user",
+        user_id="00000000-0000-0000-0000-000000000001",
         role=Role.PLAYER,
     )
 

@@ -39,7 +39,11 @@ class VoteCycle(Base):
     created_by: Mapped[str] = mapped_column(String(128), nullable=False)
     created_reason: Mapped[str] = mapped_column(Text, nullable=False)
     finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    winning_candidate_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    winning_candidate_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("vote_candidates.candidate_id", use_alter=True, name="fk_vote_cycles_winning_candidate"),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -122,6 +126,7 @@ class Vote(Base):
     __table_args__ = (
         UniqueConstraint("vote_cycle_id", "player_id", name="votes_cycle_player_uniq"),
         CheckConstraint("weight > 0 AND weight <= 10.0", name="votes_weight_range"),
+        Index("votes_candidate_id_idx", "candidate_id"),
     )
 
 

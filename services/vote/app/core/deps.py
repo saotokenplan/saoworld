@@ -141,3 +141,6 @@ def require_role(required_role: Role) -> callable:
 # 常用依赖快捷方式
 RequireOpsScope = require_scope(Scope.OPS_VOTE_CYCLES_WRITE)
 RequireOpsRole = require_role(Role.OPS)
+RequireVotesReadScope = require_scope(Scope.VOTES_READ)
+RequireVotesSubmitScope = require_scope(Scope.VOTES_SUBMIT)
+RequireVotesHistoryReadScope = require_scope(Scope.VOTES_HISTORY_READ)

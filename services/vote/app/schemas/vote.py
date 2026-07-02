@@ -1,8 +1,11 @@
 import uuid
 from datetime import datetime
 from enum import Enum
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
+
+T = TypeVar("T")
 
 
 class VoteCycleStatus(str, Enum):
@@ -162,4 +165,24 @@ class TransitionVoteCycleResponse(BaseModel):
     status: VoteCycleStatus
     winning_candidate_id: uuid.UUID | None = None
     request_id: str
+    trace_id: str | None = None
+
+
+# --- 通用响应 Envelope ---
+
+
+class PaginatedMeta(BaseModel):
+    """分页元信息。"""
+
+    total: int
+    limit: int
+    offset: int
+
+
+class EnvelopeResponse(BaseModel, Generic[T]):
+    """统一响应 envelope，所有成功响应必须使用此格式。"""
+
+    request_id: str
+    data: T
+    meta: PaginatedMeta | None = None
     trace_id: str | None = None

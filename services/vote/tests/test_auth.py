@@ -209,7 +209,7 @@ class TestAuthMiddleware:
         )
 
         assert response.status_code == 201
-        data = response.json()
+        data = response.json()["data"]
         assert data["vote_cycle_id"] is not None
         assert data["chapter_id"] == "chapter_test_auth"
 
@@ -266,6 +266,41 @@ class TestAuthMiddleware:
         assert response.status_code == 401
 
     @pytest.mark.asyncio
+    async def test_player_endpoint_without_token_returns_401(self, client: AsyncClient):
+        """测试玩家接口无 Token 返回 401。"""
+        response = await client.get("/api/v1/votes/current")
+        assert response.status_code == 401
+        data = response.json()
+        assert data["code"] == "MISSING_TOKEN"
+
+    @pytest.mark.asyncio
+    async def test_player_endpoint_with_invalid_token_returns_401(self, client: AsyncClient):
+        """测试玩家接口无效 Token 返回 401。"""
+        response = await client.get(
+            "/api/v1/votes/current",
+            headers={"Authorization": "Bearer invalid_token"},
+        )
+        assert response.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_player_endpoint_with_valid_token_returns_success(
+        self, client: AsyncClient, open_vote_cycle
+    ):
+        """测试玩家接口使用有效 Token 正常工作。"""
+        player_token = create_test_token(
+            user_id=str(uuid.uuid4()),
+            role=Role.PLAYER,
+        )
+        response = await client.get(
+            "/api/v1/votes/current",
+            headers={"Authorization": f"Bearer {player_token}"},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert "data" in body
+        assert "request_id" in body
+
+    @pytest.mark.asyncio
     async def test_full_lifecycle_with_auth(self, client: AsyncClient):
         """测试带鉴权的完整投票周期生命周期。"""
         ops_token = create_test_token(
@@ -302,7 +337,7 @@ class TestAuthMiddleware:
             },
         )
         assert create_response.status_code == 201
-        cycle_id = create_response.json()["vote_cycle_id"]
+        cycle_id = create_response.json()["data"]["vote_cycle_id"]
 
         # 2. schedule
         schedule_response = await client.post(
@@ -314,7 +349,7 @@ class TestAuthMiddleware:
             },
         )
         assert schedule_response.status_code == 200
-        assert schedule_response.json()["status"] == "scheduled"
+        assert schedule_response.json()["data"]["status"] == "scheduled"
 
         # 3. open
         open_response = await client.post(
@@ -326,7 +361,7 @@ class TestAuthMiddleware:
             },
         )
         assert open_response.status_code == 200
-        assert open_response.json()["status"] == "open"
+        assert open_response.json()["data"]["status"] == "open"
 
         # 4. close
         close_response = await client.post(
@@ -338,7 +373,7 @@ class TestAuthMiddleware:
             },
         )
         assert close_response.status_code == 200
-        assert close_response.json()["status"] == "closed"
+        assert close_response.json()["data"]["status"] == "closed"
 
         # 5. finalize
         finalize_response = await client.post(
@@ -350,7 +385,7 @@ class TestAuthMiddleware:
             },
         )
         assert finalize_response.status_code == 200
-        assert finalize_response.json()["status"] == "finalized"
+        assert finalize_response.json()["data"]["status"] == "finalized"
 
 
 class TestUserPayload:

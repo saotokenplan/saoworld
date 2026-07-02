@@ -23,16 +23,19 @@
 ## 当前阶段
 
 - 当前阶段：工程初始化阶段
-- 当前形态：vote-service 核心投票链路与运营写接口已实现，包含完整状态机和计票逻辑
-- 当前目标：完成 vote-service 端到端可运行验证（PostgreSQL），推进集成测试与 JWT 鉴权中间件
+- 当前形态：vote-service 核心投票链路、运营写接口、JWT 鉴权、审计日志、统一响应 envelope 已实现
+- 当前目标：完成 vote-service 端到端可运行验证（PostgreSQL），推进集成测试与内容链路
 
 ## 当前结论
 
 - vote-service 已具备完整的投票生命周期管理能力：创建（draft）→ 计划（scheduled）→ 开放（open）→ 关闭计票（closed）→ 确认结果（finalized）。
 - 运营写接口已实现：`POST /api/v1/ops/vote-cycles`（创建）、`/schedule`、`/open`、`/close`、`/finalize`（状态迁移）。
 - 关闭投票时自动计票，按加权总分确定获胜候选项并标记为 selected。
-- 投票链路已有 26 个测试用例覆盖（含运营接口），全部通过 ruff 和 pytest 验证。
-- 尚缺 PostgreSQL 端到端验证、JWT 鉴权中间件、审计日志持久化。
+- 所有接口已实现统一响应 envelope 格式（`request_id`、`data`、`meta`、`trace_id`），对齐 `12-api-design.md` 规范。
+- 玩家接口已添加 JWT 认证，支持 `votes:read`、`votes:submit`、`votes:history:read` scope 校验。
+- 投票链路已有 51 个测试用例覆盖，全部通过 ruff 和 pytest 验证。
+- 模型已补充 `votes_candidate_id_idx` 索引和 `winning_candidate_id` FK 约束。
+- 尚缺 PostgreSQL 端到端验证。
 
 ## 已确定事项
 
@@ -133,7 +136,7 @@
 - 除 `vote-service` 外的其他后端服务（gateway/player/world/generation/review/content/ops）尚未初始化。
 - Alembic 数据库迁移脚本尚未生成，需要连接数据库后初始化。
 - 真实 CI 配置、部署脚本和生产环境配置尚未建立。
-- JWT 鉴权中间件、运营写接口、投票结算 Worker 尚未实现。
+- JWT 鉴权中间件、运营写接口、投票结算 Worker 尚未实现。~~已全部完成：JWT 鉴权、运营写接口、投票结算逻辑。~~
 
 ## 已初步落地的工程资产
 
@@ -145,9 +148,12 @@
   - 投票结算逻辑：关闭投票时自动计票，确定获胜候选项
   - 状态机校验：严格遵循 draft → scheduled → open → closed → finalized 路径
   - 同章节唯一开放周期校验
+  - 统一响应 envelope（`request_id`、`data`、`meta`、`trace_id`），对齐 `12-api-design.md` 规范
+  - 玩家接口 JWT 认证（`votes:read`、`votes:submit`、`votes:history:read` scope）
   - 错误响应 envelope、幂等键处理、结构化日志、request_id/trace_id 中间件
   - 审计日志持久化（`audit_logs` 表写入，覆盖投票提交、周期创建和状态迁移）
-  - 测试用例 49 个全部通过（含 13 个玩家接口 + 13 个运营接口 + 8 个审计日志 + 15 个鉴权）
+  - 模型约束补全：`votes_candidate_id_idx` 索引、`winning_candidate_id` FK
+  - 测试用例 51 个全部通过（含玩家接口 + 运营接口 + 审计日志 + 鉴权 + envelope 格式）
 - **Alembic 迁移环境已初始化**，迁移脚本已生成：
   - 首次迁移（vote 核心三表）：`services/vote/alembic/versions/2026_07_01_1529_ba4a0034a620_init_vote_tables.py`
   - 审计日志表：`services/vote/alembic/versions/2026_07_02_0200_c8d2e5f1a730_add_audit_logs_table.py`
@@ -171,6 +177,9 @@
 5. ~~为 vote-service 补充投票结算逻辑与运营写接口（创建投票周期等）：~~ 已完成。
 6. ~~为 vote-service 实现 JWT 鉴权中间件与角色/Scope 权限校验。~~ 已完成（41 个测试全部通过）。
 7. ~~补充审计日志持久化（`audit_logs` 表写入）。~~ 已完成（49 个测试全部通过）。
+7.5. ~~实现统一响应 envelope 格式对齐 `12-api-design.md` 规范。~~ 已完成（51 个测试全部通过）。
+7.6. ~~为玩家接口添加 JWT 认证（votes:read/votes:submit/votes:history:read scope）。~~ 已完成。
+7.7. ~~补充 votes 表 candidate_id_idx 索引和 winning_candidate_id FK 约束。~~ 已完成。
 8. 基于最小投票链路生成第一版需求包（可放在 `docs/packages/first-slice/`），包括从 `20-specs/` 抽出的相关规范子集。
 9. 补异步任务和事件的 payload schema（不阻塞投票 MVP，但内容链路需要）。
 

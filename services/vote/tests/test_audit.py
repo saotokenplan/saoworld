@@ -4,12 +4,14 @@ import uuid
 
 from sqlalchemy import select
 
+from app.core.auth import create_test_token
 from app.domain.models import AuditLog
 from app.repositories.audit_repo import (
     ACTION_VOTE_CYCLE_CREATE,
     ACTION_VOTE_CYCLE_TRANSITION,
     ACTION_VOTE_SUBMIT,
 )
+from app.schemas.auth import Role
 
 
 def _sample_candidates() -> list[dict]:
@@ -27,6 +29,12 @@ def _sample_candidates() -> list[dict]:
             "risk_tags": [],
         },
     ]
+
+
+def _player_headers(player_id: str) -> dict[str, str]:
+    """创建玩家请求头（含 JWT Token）。"""
+    token = create_test_token(user_id=player_id, role=Role.PLAYER)
+    return {"Authorization": f"Bearer {token}"}
 
 
 class TestVoteSubmitAuditLog:
@@ -49,7 +57,7 @@ class TestVoteSubmitAuditLog:
                 "device_fingerprint_hash": "hash123",
             },
             headers={
-                "X-Player-Id": player_id,
+                **_player_headers(player_id),
                 "Idempotency-Key": idempotency_key,
                 "X-Trace-Id": trace_id,
             },
@@ -88,7 +96,7 @@ class TestVoteSubmitAuditLog:
                 "device_fingerprint_hash": "hash456",
             },
             headers={
-                "X-Player-Id": player_id,
+                **_player_headers(player_id),
                 "Idempotency-Key": idempotency_key,
             },
         )
@@ -169,7 +177,7 @@ class TestVoteCycleTransitionAuditLog:
             },
         )
         assert resp.status_code == 201
-        return resp.json()["vote_cycle_id"]
+        return resp.json()["data"]["vote_cycle_id"]
 
     async def test_schedule_vote_cycle_creates_audit_log(self, client, ops_token):
         """调度投票周期应写入审计日志。"""
