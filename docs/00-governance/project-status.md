@@ -22,9 +22,9 @@
 
 ## 当前阶段
 
-- 当前阶段：工程初始化阶段（vote-service + world-service 完成）
-- 当前形态：vote-service + world-service 两个核心服务已完成，区域管理和投票链路就绪
-- 当前目标：推进内容链路（generation-service、review-service、content-service）
+- 当前阶段：工程初始化阶段（vote-service + world-service + content-service 完成）
+- 当前形态：vote-service + world-service + content-service 三个核心服务已完成，区域管理、投票链路、内容包管理就绪
+- 当前目标：推进内容链路（generation-service、review-service）
 
 ## 当前结论
 
@@ -166,6 +166,15 @@
   - JWT 认证（`world:read` scope、ops 角色权限）
   - 审计日志持久化
   - 测试用例 40 个全部通过（含玩家接口 + 运营接口 + 审计日志 + 鉴权 + envelope 格式）
+- `content-service` 已完成骨架初始化与内容包管理：
+  - 数据模型：`ContentPackage`、`ReleaseRecord`、`RollbackRecord`、`AuditLog`（对应 `backend-data-spec.md`）
+  - 玩家 API 路由：`GET /api/v1/health`、`GET /api/v1/content/updates`、`GET /api/v1/content/packages/{package_id}`
+  - 运营 API 路由：`POST /api/v1/ops/content-packages`（创建内容包）、发布、回滚
+  - 内容包状态机：packaged → gray → live → archived，gray/live → rolled_back
+  - 统一响应 envelope（对齐 `12-api-design.md` 规范）
+  - JWT 认证（`content:read`、`content:release`、`content:rollback` scope）
+  - 审计日志持久化
+  - 测试用例 48 个全部通过（含玩家接口 + 运营接口 + 审计日志 + 鉴权 + envelope 格式）
 - 本地开发基础设施：`infra/docker-compose.dev.yml`（PostgreSQL 16 + Redis 7）。
 - `.gitignore`、各目录 README 占位、`.env.example` 已配置。
 
@@ -191,8 +200,9 @@
 7.7. ~~补充 votes 表 candidate_id_idx 索引和 winning_candidate_id FK 约束。~~ 已完成。
 8. 基于最小投票链路生成第一版需求包（可放在 `docs/packages/first-slice/`），包括从 `20-specs/` 抽出的相关规范子集。
 9. 补异步任务和事件的 payload schema（不阻塞投票 MVP，但内容链路需要）。
-10. 初始化 content-service（内容包管理、灰度发布、回滚），为内容链路打基础。
+10. ~~初始化 content-service（内容包管理、灰度发布、回滚），为内容链路打基础。~~ 已完成（48 个测试全部通过）
 11. 初始化 generation-service（AI 内容生成请求与结果落库）。
+12. 初始化 review-service（内容审核、质量评分、人工复核流转）。
 
 ## 进入实施前的建议门槛
 
