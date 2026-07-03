@@ -22,9 +22,9 @@
 
 ## 当前阶段
 
-- 当前阶段：工程初始化阶段（vote-service + world-service + content-service + generation-service + review-service + gateway-service + player-service 完成）
-- 当前形态：vote-service + world-service + content-service + generation-service + review-service + gateway-service + player-service 七个核心服务已完成，区域管理、投票链路、内容包管理、生成请求管理、内容审核、API 网关、玩家管理就绪
-- 当前目标：推进剩余服务（ops）或基础设施（workers/Celery/CI）
+- 当前阶段：工程初始化阶段（vote-service + world-service + content-service + generation-service + review-service + gateway-service + player-service + ops-service 完成）
+- 当前形态：vote-service + world-service + content-service + generation-service + review-service + gateway-service + player-service + ops-service 八个核心服务已完成，区域管理、投票链路、内容包管理、生成请求管理、内容审核、API 网关、玩家管理、运营后台就绪
+- 当前目标：推进基础设施（workers/Celery/CI）
 
 ## 当前结论
 
@@ -133,7 +133,7 @@
 
 - `game/` Godot 客户端工程尚未初始化（目录已创建，占位 README 就位）。
 - `workers/` Celery 异步任务 Worker 尚未实现（目录已创建）。
-- 除 `vote-service`、`world-service`、`content-service`、`generation-service`、`review-service`、`gateway-service`、`player-service` 外的其他后端服务（ops）尚未初始化。
+- ~~除 `vote-service`、`world-service`、`content-service`、`generation-service`、`review-service`、`gateway-service`、`player-service` 外的其他后端服务（ops）尚未初始化。~~ 已完成，ops-service 已初始化完成。
 - Alembic 数据库迁移脚本尚未生成（world-service），需要连接数据库后初始化。
 - 真实 CI 配置、部署脚本和生产环境配置尚未建立。
 - JWT 鉴权中间件、运营写接口、投票结算 Worker 尚未实现。~~已全部完成：JWT 鉴权、运营写接口、投票结算逻辑。~~
@@ -212,6 +212,14 @@
   - 审计日志持久化
   - 自定义 UUID 类型兼容 SQLite 测试环境
   - 测试用例 23 个全部通过（含玩家接口 + 运营接口 + 审计日志 + 鉴权 + envelope 格式）
+- `ops-service` 已完成骨架初始化与运营后台接口：
+  - 数据模型：`OpsDashboard`、`OpsAction`、`AuditLog`（对应 `backend-data-spec.md`）
+  - 运营 API 路由：`GET /api/v1/health`、`GET /api/v1/ops/dashboard`（仪表盘）、`GET /api/v1/ops/dashboard/history`（历史）、`GET /api/v1/ops/actions`（运营操作列表）、`GET /api/v1/ops/actions/{action_id}`（操作详情）、`GET /api/v1/ops/system/status`（系统状态）
+  - 统一响应 envelope（对齐 `12-api-design.md` 规范）
+  - JWT 认证（`ops:*` scope）
+  - 审计日志持久化
+  - 自定义请求 ID 头支持
+  - 测试用例 32 个全部通过（含仪表盘 + 运营操作 + 系统状态 + 审计日志 + 鉴权 + envelope 格式）
 - 本地开发基础设施：`infra/docker-compose.dev.yml`（PostgreSQL 16 + Redis 7）。
 - `.gitignore`、各目录 README 占位、`.env.example` 已配置。
 
