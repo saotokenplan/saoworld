@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import RequireOpsRole, RequireReviewApproveScope, UserPayload
+from app.core.event_publisher import event_publisher
 from app.core.metrics import (
     record_generated_object_status,
     record_generation_request_status,
@@ -217,6 +218,19 @@ async def create_generation_request(
         result_status=201,
     )
 
+    # 事件发布：生成请求创建
+    try:
+        await event_publisher.publish_generation_request_created(
+            request_id=str(req.request_id),
+            vote_cycle_id=str(body.vote_cycle_id) if body.vote_cycle_id else "",
+            target_type=body.input_payload.get("target_type", "npc"),
+            region_id=body.input_payload.get("region_id", ""),
+            created_at=req.created_at.isoformat() if req.created_at else "",
+            trace_id=x_trace_id or "",
+        )
+    except Exception:
+        pass
+
     return EnvelopeResponse(
         request_id=request_id,
         data=CreateGenerationRequestResponse(
@@ -333,6 +347,29 @@ async def update_generation_request_status(
         },
         result_status=200,
     )
+
+    # 事件发布：批量生成完成（当状态变为 succeeded 时）
+    if updated_req.status == "succeeded":
+        try:
+            from datetime import datetime, timezone
+            objects = await repo.list_objects(request_id=request_id)
+            generated_objects = [
+                {
+                    "object_id": str(obj.object_id),
+                    "object_type": obj.object_type,
+                    "status": obj.status,
+                }
+                for obj in objects
+            ]
+            await event_publisher.publish_generation_batch_completed(
+                request_id=str(request_id),
+                generated_objects=generated_objects,
+                completed_at=datetime.now(timezone.utc).isoformat(),
+                status="succeeded",
+                trace_id=x_trace_id or "",
+            )
+        except Exception:
+            pass
 
     return EnvelopeResponse(
         request_id=req_id,

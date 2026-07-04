@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import RequireOpsRole, RequireReviewApproveScope, UserPayload
+from app.core.event_publisher import event_publisher
 from app.core.metrics import record_review_create, record_review_result
 from app.repositories.audit_repo import (
     ACTION_REVIEW_APPROVE,
@@ -418,6 +419,22 @@ async def approve_review_object(
         result_status=200,
     )
 
+    # 事件发布：批量审核完成
+    try:
+        from datetime import datetime, timezone
+        import uuid
+        await event_publisher.publish_review_batch_completed(
+            batch_id=str(uuid.uuid4()),
+            request_id="",
+            approved_count=len(updated_reviews),
+            rejected_count=0,
+            needs_revision_count=0,
+            completed_at=datetime.now(timezone.utc).isoformat(),
+            trace_id=x_trace_id or "",
+        )
+    except Exception:
+        pass
+
     return EnvelopeResponse(
         request_id=request_id,
         data=ApproveReviewResponse(
@@ -509,6 +526,22 @@ async def reject_review_object(
         },
         result_status=200,
     )
+
+    # 事件发布：批量审核完成
+    try:
+        from datetime import datetime, timezone
+        import uuid
+        await event_publisher.publish_review_batch_completed(
+            batch_id=str(uuid.uuid4()),
+            request_id="",
+            approved_count=0,
+            rejected_count=len(updated_reviews),
+            needs_revision_count=0,
+            completed_at=datetime.now(timezone.utc).isoformat(),
+            trace_id=x_trace_id or "",
+        )
+    except Exception:
+        pass
 
     return EnvelopeResponse(
         request_id=request_id,
