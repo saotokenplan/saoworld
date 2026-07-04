@@ -1,16 +1,36 @@
 extends Node
-## 后端 API 请求管理器
-## 负责统一发送 API 请求、解析响应、处理错误、管理认证
 
 signal request_started(request_id: String)
 signal request_completed(request_id: String, response: Dictionary)
 signal request_failed(request_id: String, error: Dictionary)
+signal auth_error(request_id: String, message: String)
 
 var base_url: String = "http://localhost:8000/api/v1"
 var auth_token: String = ""
 var trace_id: String = ""
 var request_timeout: float = 30.0
 var schema_version: int = 1
+var max_retries: int = 2
+var retry_delay: float = 2.0
+
+const ERROR_CODES: Dictionary = {
+	"NO_OPEN_VOTE_CYCLE": {"message": "当前没有开放的投票周期", "status": 404},
+	"INVALID_VOTE_STATE": {"message": "投票周期状态不允许投票", "status": 409},
+	"CANDIDATE_NOT_FOUND": {"message": "候选项不存在或不属于当前周期", "status": 404},
+	"CANDIDATE_NOT_ACTIVE": {"message": "候选项当前不可投票", "status": 409},
+	"ALREADY_VOTED": {"message": "您在本周期已投票", "status": 409},
+	"INVALID_PLAYER_ID": {"message": "无效的玩家 ID", "status": 400},
+	"INTERNAL_ERROR": {"message": "服务器内部错误", "status": 500},
+	"RATE_LIMITED": {"message": "请求过于频繁，请稍后重试", "status": 429},
+	"TOKEN_EXPIRED": {"message": "登录已过期，请重新登录", "status": 401},
+	"INVALID_TOKEN": {"message": "无效的登录凭证", "status": 401},
+	"FORBIDDEN": {"message": "权限不足", "status": 403},
+	"NOT_FOUND": {"message": "资源未找到", "status": 404},
+	"BAD_REQUEST": {"message": "请求参数错误", "status": 400},
+	"NETWORK_ERROR": {"message": "网络连接失败", "status": 0},
+	"TIMEOUT": {"message": "请求超时", "status": 0},
+	"INVALID_RESPONSE": {"message": "无效的响应数据", "status": 0}
+}
 
 func _ready() -> void:
 	_load_config()
@@ -38,7 +58,13 @@ func post(endpoint: String, body: Dictionary = {}, headers: Dictionary = {}, ide
 		headers["Idempotency-Key"] = idempotency_key
 	return _make_request("POST", endpoint, body, headers)
 
-func _make_request(method: String, endpoint: String, body: Dictionary, extra_headers: Dictionary) -> Dictionary:
+func put(endpoint: String, body: Dictionary = {}, headers: Dictionary = {}) -> Dictionary:
+	return _make_request("PUT", endpoint, body, headers)
+
+func delete(endpoint: String, headers: Dictionary = {}) -> Dictionary:
+	return _make_request("DELETE", endpoint, {}, headers)
+
+func _make_request(method: String, endpoint: String, body: Dictionary, extra_headers: Dictionary, retry_count: int = 0) -> Dictionary:
 	var request_id: String = generate_request_id()
 	request_started.emit(request_id)
 	
@@ -66,9 +92,14 @@ func _make_request(method: String, endpoint: String, body: Dictionary, extra_hea
 	var error_code: Error = OK
 	var request_body: String = ""
 	
-	if method == "POST" or method == "PUT" or method == "PATCH":
+	if method == "POST":
 		request_body = JSON.stringify(body)
 		error_code = http_request.request(url, headers, HTTPClient.METHOD_POST, request_body)
+	elif method == "PUT":
+		request_body = JSON.stringify(body)
+		error_code = http_request.request(url, headers, HTTPClient.METHOD_PUT, request_body)
+	elif method == "DELETE":
+		error_code = http_request.request(url, headers, HTTPClient.METHOD_DELETE)
 	else:
 		error_code = http_request.request(url, headers, HTTPClient.METHOD_GET)
 	
@@ -104,11 +135,27 @@ func _make_request(method: String, endpoint: String, body: Dictionary, extra_hea
 	if not completed:
 		http_request.cancel_request()
 		_remove_request(http_request)
+		if _can_retry(method) and retry_count < max_retries:
+			await get_tree().create_timer(retry_delay * pow(2, retry_count)).timeout
+			return _make_request(method, endpoint, body, extra_headers, retry_count + 1)
+		
 		var timeout_err: Dictionary = _build_error("TIMEOUT", "Request timed out", request_id)
 		request_failed.emit(request_id, timeout_err)
 		return timeout_err
 	
+	if not response_result.get("success", false):
+		var err_code: String = response_result.get("code", "")
+		if err_code == "TOKEN_EXPIRED" or err_code == "INVALID_TOKEN":
+			auth_error.emit(request_id, response_result.get("message", "Auth error"))
+		if _can_retry(method) and response_result.get("status_code", 0) == 500 and retry_count < max_retries:
+			await get_tree().create_timer(retry_delay * pow(2, retry_count)).timeout
+			return _make_request(method, endpoint, body, extra_headers, retry_count + 1)
+	
 	return response_result
+
+func _can_retry(method: String) -> bool:
+	var safe_methods: Array[String] = ["GET", "HEAD", "OPTIONS"]
+	return method in safe_methods
 
 func _parse_response(data: Dictionary, status_code: int, request_id: String) -> Dictionary:
 	if status_code >= 200 and status_code < 300:
@@ -122,27 +169,58 @@ func _parse_response(data: Dictionary, status_code: int, request_id: String) -> 
 			"meta": data.get("meta", {})
 		}
 	else:
+		var err_code: String = data.get("code", _get_error_code_by_status(status_code))
+		var err_message: String = data.get("message", _get_error_message(err_code))
+		
 		var err: Dictionary = {
 			"success": false,
 			"status_code": status_code,
 			"request_id": data.get("request_id", request_id),
 			"trace_id": data.get("trace_id", trace_id),
-			"code": data.get("code", "UNKNOWN_ERROR"),
-			"message": data.get("message", "Unknown error"),
-			"details": data.get("details", [])
+			"code": err_code,
+			"message": err_message,
+			"details": data.get("details", []),
+			"is_auth_error": status_code == 401,
+			"is_rate_limited": status_code == 429,
+			"is_client_error": status_code >= 400 and status_code < 500,
+			"is_server_error": status_code >= 500
 		}
 		request_failed.emit(request_id, err)
 		return err
 
+func _get_error_code_by_status(status_code: int) -> String:
+	match status_code:
+		400: return "BAD_REQUEST"
+		401: return "INVALID_TOKEN"
+		403: return "FORBIDDEN"
+		404: return "NOT_FOUND"
+		409: return "CONFLICT"
+		429: return "RATE_LIMITED"
+		500: return "INTERNAL_ERROR"
+		_: return "UNKNOWN_ERROR"
+
+func _get_error_message(error_code: String) -> String:
+	if ERROR_CODES.has(error_code):
+		return ERROR_CODES[error_code]["message"]
+	return "未知错误"
+
 func _build_error(code: String, message: String, request_id: String) -> Dictionary:
+	var status: int = 0
+	if ERROR_CODES.has(code):
+		status = ERROR_CODES[code]["status"]
+	
 	return {
 		"success": false,
-		"status_code": 0,
+		"status_code": status,
 		"request_id": request_id,
 		"trace_id": trace_id,
 		"code": code,
 		"message": message,
-		"details": []
+		"details": [],
+		"is_auth_error": status == 401,
+		"is_rate_limited": status == 429,
+		"is_client_error": status >= 400 and status < 500,
+		"is_server_error": status >= 500
 	}
 
 func _remove_request(req: HTTPRequest) -> void:
