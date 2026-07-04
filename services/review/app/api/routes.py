@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import RequireOpsRole, RequireReviewApproveScope, UserPayload
+from app.core.metrics import record_review_create, record_review_result
 from app.repositories.audit_repo import (
     ACTION_REVIEW_APPROVE,
     ACTION_REVIEW_REJECT,
@@ -210,6 +211,8 @@ async def create_review_record(
         risk_level=body.risk_level.value,
     )
 
+    record_review_create()
+
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(
         trace_id=x_trace_id or _make_request_id("trace"),
@@ -397,6 +400,8 @@ async def approve_review_object(
             ).model_dump(),
         )
 
+    record_review_result("approved")
+
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(
         trace_id=x_trace_id or _make_request_id("trace"),
@@ -485,6 +490,8 @@ async def reject_review_object(
                 request_id=request_id,
             ).model_dump(),
         )
+
+    record_review_result("rejected")
 
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(

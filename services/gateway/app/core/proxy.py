@@ -6,6 +6,7 @@ from fastapi import Request, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.core.config import settings
+from app.core.metrics import record_proxy_request
 
 logger = structlog.get_logger()
 
@@ -17,11 +18,26 @@ ROUTE_MAP = {
     "/api/v1/review": settings.review_service_url,
 }
 
+SERVICE_NAME_MAP = {
+    "/api/v1/votes": "vote-service",
+    "/api/v1/world": "world-service",
+    "/api/v1/content": "content-service",
+    "/api/v1/generation": "generation-service",
+    "/api/v1/review": "review-service",
+}
+
 
 async def get_service_url(path: str) -> Optional[str]:
     for prefix, url in ROUTE_MAP.items():
         if path.startswith(prefix):
             return url
+    return None
+
+
+async def get_service_name(path: str) -> Optional[str]:
+    for prefix, name in SERVICE_NAME_MAP.items():
+        if path.startswith(prefix):
+            return name
     return None
 
 
@@ -32,6 +48,10 @@ async def proxy_request(request: Request) -> StreamingResponse:
             status_code=404,
             detail={"code": "NOT_FOUND", "message": "未找到对应的服务"},
         )
+
+    # 业务指标：代理请求计数
+    service_name = await get_service_name(request.url.path) or "unknown"
+    record_proxy_request(service_name)
 
     request_id = request.headers.get(settings.request_id_header)
     trace_id = request.headers.get(settings.trace_id_header)

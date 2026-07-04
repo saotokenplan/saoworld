@@ -6,6 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import RequireOpsScope, UserPayload
+from app.core.metrics import (
+    record_dashboard_view,
+    record_ops_action,
+)
 from app.repositories.audit_repo import (
     ACTION_DASHBOARD_VIEW,
     ACTION_OPS_ACTION_QUERY,
@@ -88,6 +92,8 @@ async def get_dashboard(
         metrics=metrics,
         generated_at=dashboard.generated_at,
     )
+
+    record_dashboard_view()
 
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(
@@ -179,6 +185,8 @@ async def get_ops_actions(
     )
 
     response_data = [OpsActionResponse.model_validate(a) for a in actions]
+
+    record_ops_action("action_query")
 
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(
@@ -279,6 +287,8 @@ async def get_system_status(
         services=services,
         timestamp=datetime.now(timezone.utc),
     )
+
+    record_ops_action("system_status")
 
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(

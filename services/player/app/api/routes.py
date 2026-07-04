@@ -10,6 +10,11 @@ from app.core.deps import (
     RequireQuestsReadScope,
     UserPayload,
 )
+from app.core.metrics import (
+    record_player_create,
+    record_player_region_unlock,
+    record_player_update,
+)
 from app.repositories.audit_repo import (
     ACTION_PLAYER_CREATE,
     ACTION_PLAYER_UPDATE,
@@ -229,6 +234,8 @@ async def create_player(
     repo = PlayerRepository(db)
     player = await repo.create_player(body.display_name, body.chapter_id)
 
+    record_player_create()
+
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(
         trace_id=x_trace_id or _make_request_id("trace"),
@@ -352,6 +359,8 @@ async def update_player(
             ).model_dump(),
         )
 
+    record_player_update()
+
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(
         trace_id=x_trace_id or _make_request_id("trace"),
@@ -393,6 +402,8 @@ async def unlock_player_region(
 
     repo = PlayerRegionRepository(db)
     player_region = await repo.unlock_region(player_id, region_id)
+
+    record_player_region_unlock()
 
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(

@@ -12,6 +12,10 @@ from app.core.deps import (
     RequireVotesSubmitScope,
     UserPayload,
 )
+from app.core.metrics import (
+    record_vote_cycle_transition,
+    record_vote_submission,
+)
 from app.repositories.audit_repo import (
     ACTION_VOTE_CYCLE_CREATE,
     ACTION_VOTE_CYCLE_TRANSITION,
@@ -284,6 +288,9 @@ async def submit_vote(
         idempotency_key=idempotency_key,
     )
 
+    # 业务指标：投票提交计数
+    record_vote_submission()
+
     # 审计日志：投票提交
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(
@@ -537,6 +544,9 @@ async def schedule_vote_cycle(
         reason=body.reason,
     )
 
+    # 业务指标：状态迁移计数
+    record_vote_cycle_transition(from_status, "scheduled")
+
     return EnvelopeResponse(
         request_id=request_id,
         data=TransitionVoteCycleResponse(
@@ -620,6 +630,9 @@ async def open_vote_cycle(
         reason=body.reason,
     )
 
+    # 业务指标：状态迁移计数
+    record_vote_cycle_transition(from_status, "open")
+
     return EnvelopeResponse(
         request_id=request_id,
         data=TransitionVoteCycleResponse(
@@ -697,6 +710,9 @@ async def close_vote_cycle(
         reason=body.reason,
     )
 
+    # 业务指标：状态迁移计数
+    record_vote_cycle_transition(from_status, "closed")
+
     return EnvelopeResponse(
         request_id=request_id,
         data=TransitionVoteCycleResponse(
@@ -769,6 +785,9 @@ async def finalize_vote_cycle(
         to_status="finalized",
         reason=body.reason,
     )
+
+    # 业务指标：状态迁移计数
+    record_vote_cycle_transition(from_status, "finalized")
 
     return EnvelopeResponse(
         request_id=request_id,

@@ -276,6 +276,20 @@
   - 每个服务均提供 `/metrics` 端点，支持 HTTP 请求数、延迟、错误率等指标采集
   - gateway-service 的 `/metrics` 端点已豁免认证，便于 Prometheus 直接采集
   - 每个服务新增 metrics 端点测试用例，全部通过
+- **业务指标（Business Metrics）集成**：
+  - 8 个后端服务均新增 `app/core/metrics.py`，使用 `prometheus_client.Counter` / `Gauge` 定义业务指标
+  - vote-service：`vote_submissions_total`、`vote_cycle_transitions_total`、`vote_cycles_by_status`、`vote_candidates_by_status`
+  - world-service：`world_region_operations_total`、`world_region_transitions_total`、`world_regions_by_status`
+  - content-service：`content_package_operations_total`、`content_releases_total`、`content_rollbacks_total`、`content_packages_by_status`
+  - generation-service：`generation_requests_total`、`generated_objects_total`、`generation_requests_by_status`
+  - review-service：`reviews_total`、`review_operations_total`、`reviews_by_risk_level`
+  - gateway-service：`gateway_proxy_requests_total`、`gateway_rate_limit_hits_total`、`gateway_auth_failures_total`
+  - player-service：`players_total`、`player_operations_total`、`player_quests_by_status`
+  - ops-service：`ops_actions_total`、`ops_dashboard_views_total`
+  - 每个服务在 `routes.py` 关键操作点（创建/状态迁移/提交）埋点，调用 `record_*` 辅助函数
+  - 每个服务在 `tests/test_health.py` 新增 2 个测试（指标暴露 + 指标递增），共 16 个新增测试
+  - Grafana 仪表盘 `infra/grafana/dashboards/game-dashboard.json` 扩展至 20 个面板，覆盖 HTTP 指标 + 8 个服务的业务指标
+  - 全部 8 个服务通过 ruff、mypy、pytest（共 335 个测试用例）验证
 
 ## 当前主要风险
 
@@ -307,6 +321,7 @@
 14. ~~完善客户端与后端 API 联调封装（APIManager、VoteManager、ContentManager、WorldManager、PlayerManager）~~ 已完成，错误码对齐、重试机制、缓存管理、测试用例补充完成
 15. ~~首期内容实例化（世界观、区域、阵营、NPC、任务、章节）~~ 已完成，包含世界观根设定、2个首期区域配置、4个势力阵营、6个核心NPC、7个任务实例（1条主线+6条支线）、3个章节定义
 16. ~~内容包打包与发布流程实现~~ 已完成，包含首期内容包初始化脚本、内容包校验与目录加载、灰度发布范围配置、全量发布升级任务、完整测试覆盖
+17. ~~业务指标（Business Metrics）集成：在 8 个后端服务的关键操作点埋点，扩展 Grafana 仪表盘覆盖业务指标~~ 已完成，全部 8 个服务新增 `app/core/metrics.py` 与 `record_*` 辅助函数，routes.py 在创建/状态迁移/提交等关键操作点埋点，每个服务新增 2 个测试用例（指标暴露 + 指标递增），Grafana 仪表盘扩展至 20 个面板，共 335 个测试全部通过
 
 ## 进入实施前的建议门槛
 

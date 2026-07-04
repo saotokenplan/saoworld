@@ -10,6 +10,11 @@ from app.core.deps import (
     RequireContentRollbackScope,
     UserPayload,
 )
+from app.core.metrics import (
+    record_package_create,
+    record_package_release,
+    record_package_rollback,
+)
 from app.repositories.audit_repo import (
     ACTION_PACKAGE_CREATE,
     ACTION_PACKAGE_RELEASE,
@@ -222,6 +227,9 @@ async def create_package(
         schema_version=body.schema_version,
     )
 
+    # 业务指标：内容包创建计数
+    record_package_create()
+
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(
         trace_id=x_trace_id or _make_request_id("trace"),
@@ -320,6 +328,9 @@ async def release_package(
                 ).model_dump(),
             )
         raise
+
+    # 业务指标：内容包发布计数
+    record_package_release(body.release_mode.value)
 
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(
@@ -421,6 +432,9 @@ async def rollback_package(
                 ).model_dump(),
             )
         raise
+
+    # 业务指标：内容包回滚计数
+    record_package_rollback()
 
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(

@@ -6,6 +6,7 @@ import structlog
 from fastapi import HTTPException, Request
 
 from app.core.config import settings
+from app.core.metrics import record_rate_limit_hit
 
 logger = structlog.get_logger()
 
@@ -45,6 +46,8 @@ async def rate_limit_middleware(request: Request, call_next):
     allowed = await rate_limiter.check(client_id)
     if not allowed:
         logger.warning("rate_limit_exceeded", client_id=client_id)
+        # 业务指标：限流触发计数
+        record_rate_limit_hit()
         raise HTTPException(
             status_code=429,
             detail={"code": "RATE_LIMIT_EXCEEDED", "message": "请求过于频繁，请稍后再试"},
