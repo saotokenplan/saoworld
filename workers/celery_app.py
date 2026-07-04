@@ -1,6 +1,7 @@
 from celery import Celery
 
 from workers.config import settings
+from workers.celery_beat_schedule import beat_schedule
 from workers.utils.logging import configure_logging
 
 configure_logging()
@@ -20,6 +21,7 @@ app.conf.update(
     worker_prefetch_multiplier=settings.worker_prefetch_multiplier,
     worker_max_tasks_per_child=settings.worker_max_tasks_per_child,
     result_expires=settings.result_expires,
+    beat_schedule=beat_schedule,
     task_routes={
         "workers.tasks.content_generation.generate_content_batch": {"queue": "generation"},
         "workers.tasks.content_review.run_world_consistency_review": {"queue": "review"},
@@ -28,6 +30,9 @@ app.conf.update(
         "workers.tasks.content_release.release_content_package": {"queue": "release"},
         "workers.tasks.content_release.rollback_content_package": {"queue": "release"},
         "workers.tasks.gate_scan.daily_gate_scan": {"queue": "gate"},
+        "workers.tasks.scheduled_tasks.daily_gate_scan": {"queue": "scheduled"},
+        "workers.tasks.scheduled_tasks.sync_metrics_gauge": {"queue": "scheduled"},
+        "workers.tasks.scheduled_tasks.daily_content_review": {"queue": "scheduled"},
     },
 )
 
@@ -36,6 +41,7 @@ import workers.tasks.content_review  # noqa: F401
 import workers.tasks.content_packaging  # noqa: F401
 import workers.tasks.content_release  # noqa: F401
 import workers.tasks.gate_scan  # noqa: F401
+import workers.tasks.scheduled_tasks  # noqa: F401
 
 app.autodiscover_tasks([
     "workers.tasks.content_generation",
@@ -43,4 +49,5 @@ app.autodiscover_tasks([
     "workers.tasks.content_packaging",
     "workers.tasks.content_release",
     "workers.tasks.gate_scan",
+    "workers.tasks.scheduled_tasks",
 ])
