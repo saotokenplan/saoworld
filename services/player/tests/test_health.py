@@ -23,3 +23,51 @@ async def test_metrics_endpoint(client: AsyncClient):
     content = response.text
     assert "http_requests_total" in content
     assert "http_request_duration_seconds" in content
+
+
+@pytest.mark.asyncio
+async def test_business_metrics_exposed(client: AsyncClient):
+    """业务指标名应出现在 /metrics 端点输出中。"""
+    response = await client.get("/metrics")
+    assert response.status_code == 200
+    content = response.text
+    assert "players_total" in content
+    assert "player_operations_total" in content
+    assert "player_quests_by_status" in content
+
+
+@pytest.mark.asyncio
+async def test_player_create_metric_incremented(client: AsyncClient, ops_token: str):
+    """创建玩家后，player_operations_total{action="create"} 计数器应递增。"""
+    metrics_before = (await client.get("/metrics")).text
+
+    def _extract_labeled_counter(text: str, name: str, label_filter: str) -> float:
+        for line in text.splitlines():
+            if line.startswith(name) and label_filter in line:
+                parts = line.split()
+                if len(parts) >= 2:
+                    try:
+                        return float(parts[1])
+                    except ValueError:
+                        continue
+        return 0.0
+
+    before = _extract_labeled_counter(
+        metrics_before, "player_operations_total", 'action="create"'
+    )
+
+    create_resp = await client.post(
+        f"{settings.api_v1_prefix}/ops/players",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "metric-test-player-create-001",
+        },
+        json={"display_name": "MetricPlayer", "chapter_id": "ch_prologue_01"},
+    )
+    assert create_resp.status_code == 201
+
+    metrics_after = (await client.get("/metrics")).text
+    after = _extract_labeled_counter(
+        metrics_after, "player_operations_total", 'action="create"'
+    )
+    assert after > before
