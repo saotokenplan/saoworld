@@ -262,6 +262,7 @@
   - 基础场景：Main（主入口）、MainMenu（主菜单）、VotingPanel（投票面板）、WorldMap（世界地图）
   - 数据配置：game_config.json、region_list.json、npc_list.json、quest_list.json（均带 schema_version）
   - GUT 测试框架与基础测试用例（GameState、APIManager）
+  - 投票系统端到端功能完善：VoteManager 增强（loading 状态、错误处理、辅助方法）、VotingPanel 完整交互（加载/选择/提交/反馈）、VoteResultPanel 结果展示（进度条、获胜者高亮、影响信息）、VoteHistoryPanel 历史记录（列表、分页）、主菜单投票入口、场景流转逻辑
 
 ## 当前主要风险
 
@@ -288,6 +289,7 @@
 10. ~~初始化 content-service（内容包管理、灰度发布、回滚），为内容链路打基础。~~ 已完成（48 个测试全部通过）
 11. ~~初始化 generation-service（AI 内容生成请求与结果落库）。~~ 已完成（47 个测试全部通过）
 12. ~~初始化 review-service（内容审核、质量评分、人工复核流转）。~~ 已完成（38 个测试全部通过）
+13. 完善世界探索与任务系统UI（世界地图、任务面板、NPC交互）
 
 ## 进入实施前的建议门槛
 

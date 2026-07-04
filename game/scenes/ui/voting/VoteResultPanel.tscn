@@ -1,0 +1,122 @@
+[gd_scene load_steps=2 format=3 uid="uid://bvoteresultpanel01"]
+
+[ext_resource type="Script" path="res://scripts/ui/vote_result_panel.gd" id="1_result"]
+
+[node name="VoteResultPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_result")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.08, 0.12, 1)
+
+[node name="TopBar" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 70.0
+grow_horizontal = 2
+
+[node name="BackButton" type="Button" parent="TopBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(100, 40)
+text = "返回"
+
+[node name="TitleLabel" type="Label" parent="TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+text = "投票结果"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="TopBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(100, 0)
+
+[node name="Content" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_top = 0.1
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_top = 80.0
+
+[node name="VBox" type="VBoxContainer" parent="Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(700, 0)
+theme_override_constants/separation = 20
+
+[node name="CycleTitle" type="Label" parent="Content/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "投票周期"
+horizontal_alignment = 1
+
+[node name="WinnerBanner" type="PanelContainer" parent="Content/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 60)
+
+[node name="WinnerLabel" type="Label" parent="Content/VBox/WinnerBanner"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(1, 0.84, 0, 1)
+text = "获胜方案"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StatsHBox" type="HBoxContainer" parent="Content/VBox"]
+layout_mode = 2
+
+[node name="TotalVotesLabel" type="Label" parent="Content/VBox/StatsHBox"]
+layout_mode = 2
+text = "总票数：0"
+
+[node name="SpacerStats" type="Control" parent="Content/VBox/StatsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TurnoutLabel" type="Label" parent="Content/VBox/StatsHBox"]
+layout_mode = 2
+text = "参与率：0%"
+
+[node name="CandidatesContainer" type="VBoxContainer" parent="Content/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ImpactSection" type="VBoxContainer" parent="Content/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ImpactTitleLabel" type="Label" parent="Content/VBox/ImpactSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+bbcode_enabled = true
+text = "[b]预计影响[/b]"
+
+[node name="ImpactRegionLabel" type="Label" parent="Content/VBox/ImpactSection"]
+layout_mode = 2
+text = "预计影响区域：待定"
+
+[node name="ExpectedLaunchLabel" type="Label" parent="Content/VBox/ImpactSection"]
+layout_mode = 2
+text = "预计上线周期：待定"
+
+[node name="BackButtonBottom" type="Button" parent="Content/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 50)
+text = "返回"

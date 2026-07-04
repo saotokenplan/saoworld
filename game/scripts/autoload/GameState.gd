@@ -8,9 +8,13 @@ signal region_unlocked(region_id: String)
 
 var player_id: String = ""
 var player_name: String = ""
+var player_level: int = 1
+var player_exp: int = 0
 var chapter_id: String = "chapter_01"
 var unlocked_regions: Array[String] = []
 var reputation_snapshot: Dictionary = {}
+var vote_participation: Array[String] = []
+var last_vote_cycle_id: String = ""
 var schema_version: int = 1
 
 func _ready() -> void:
@@ -45,14 +49,32 @@ func set_chapter(chapter_id: String) -> void:
 func get_chapter() -> String:
 	return chapter_id
 
+func record_vote_participation(vote_cycle_id: String) -> void:
+	if not vote_cycle_id in vote_participation:
+		vote_participation.append(vote_cycle_id)
+	last_vote_cycle_id = vote_cycle_id
+	_save_local_state()
+
+func has_voted_in_cycle(vote_cycle_id: String) -> bool:
+	return vote_cycle_id in vote_participation
+
+func add_exp(amount: int) -> void:
+	player_exp += amount
+	_save_local_state()
+	player_info_changed.emit()
+
 func _save_local_state() -> void:
 	var save_data: Dictionary = {
 		"schema_version": schema_version,
 		"player_id": player_id,
 		"player_name": player_name,
+		"player_level": player_level,
+		"player_exp": player_exp,
 		"chapter_id": chapter_id,
 		"unlocked_regions": unlocked_regions,
-		"reputation_snapshot": reputation_snapshot
+		"reputation_snapshot": reputation_snapshot,
+		"vote_participation": vote_participation,
+		"last_vote_cycle_id": last_vote_cycle_id
 	}
 	var file := FileAccess.open("user://game_state.json", FileAccess.WRITE)
 	if file:
@@ -81,13 +103,25 @@ func _load_local_state() -> void:
 				unlocked_regions = data["unlocked_regions"]
 			if data.has("reputation_snapshot"):
 				reputation_snapshot = data["reputation_snapshot"]
+			if data.has("player_level"):
+				player_level = data["player_level"]
+			if data.has("player_exp"):
+				player_exp = data["player_exp"]
+			if data.has("vote_participation"):
+				vote_participation = data["vote_participation"]
+			if data.has("last_vote_cycle_id"):
+				last_vote_cycle_id = data["last_vote_cycle_id"]
 
 func reset_state() -> void:
 	player_id = ""
 	player_name = ""
+	player_level = 1
+	player_exp = 0
 	chapter_id = "chapter_01"
 	unlocked_regions.clear()
 	reputation_snapshot.clear()
+	vote_participation.clear()
+	last_vote_cycle_id = ""
 	_save_local_state()
 	player_info_changed.emit()
 	chapter_changed.emit()
