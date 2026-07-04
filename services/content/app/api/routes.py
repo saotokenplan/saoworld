@@ -78,15 +78,21 @@ async def list_content_updates(
     chapter_id: str | None = Query(default=None, max_length=64),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    x_player_id: str | None = Header(default=None, alias="X-Player-Id"),
     current_user: UserPayload = RequireContentReadScope,
     db: AsyncSession = Depends(get_db),
 ) -> EnvelopeResponse[ContentPackageListResponse]:
     trace_id = _get_trace_id(request)
     request_id = _make_request_id("req_content_updates")
 
+    player_id = x_player_id or current_user.user_id
+
     repo = ContentRepository(db)
     packages, total = await repo.list_visible_packages(
-        chapter_id=chapter_id, limit=limit, offset=offset
+        chapter_id=chapter_id,
+        player_id=player_id,
+        limit=limit,
+        offset=offset,
     )
 
     package_responses = [

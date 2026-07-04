@@ -1,3 +1,4 @@
+import hashlib
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -17,6 +18,32 @@ VALID_TRANSITIONS: dict[str, set[str]] = {
 }
 
 
+def is_player_in_gray_scope(
+    gray_scope: dict[str, Any] | None,
+    player_id: str,
+    player_region_id: str | None = None,
+) -> bool:
+    if gray_scope is None or not gray_scope:
+        return False
+
+    player_ids = gray_scope.get("player_ids", [])
+    if player_ids:
+        return str(player_id) in [str(pid) for pid in player_ids]
+
+    player_percent = gray_scope.get("player_percent")
+    if player_percent is not None and 0 < player_percent <= 100:
+        hash_input = f"{player_id}_gray_bucket"
+        hash_val = int(hashlib.sha256(hash_input.encode()).hexdigest(), 16)
+        bucket = (hash_val % 100) + 1
+        return bucket <= player_percent
+
+    region_ids = gray_scope.get("region_ids", [])
+    if region_ids and player_region_id:
+        return str(player_region_id) in [str(rid) for rid in region_ids]
+
+    return False
+
+
 class ContentRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -30,30 +57,58 @@ class ContentRepository:
     async def list_visible_packages(
         self,
         chapter_id: str | None = None,
+        player_id: str | None = None,
+        player_region_id: str | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> tuple[list[ContentPackage], int]:
+        if not player_id:
+            query = select(ContentPackage).where(
+                ContentPackage.status.in_(["gray", "live"])
+            )
+            count_query = select(func.count(ContentPackage.content_package_id)).where(
+                ContentPackage.status.in_(["gray", "live"])
+            )
+
+            if chapter_id:
+                query = query.where(ContentPackage.chapter_id == chapter_id)
+                count_query = count_query.where(ContentPackage.chapter_id == chapter_id)
+
+            query = query.order_by(ContentPackage.released_at.desc().nullslast())
+            query = query.offset(offset).limit(limit)
+
+            result = await self.db.execute(query)
+            packages = list(result.scalars().all())
+
+            count_result = await self.db.execute(count_query)
+            total = count_result.scalar_one()
+
+            return packages, total
+
         query = select(ContentPackage).where(
             ContentPackage.status.in_(["gray", "live"])
         )
-        count_query = select(func.count(ContentPackage.content_package_id)).where(
-            ContentPackage.status.in_(["gray", "live"])
-        )
-
         if chapter_id:
             query = query.where(ContentPackage.chapter_id == chapter_id)
-            count_query = count_query.where(ContentPackage.chapter_id == chapter_id)
-
         query = query.order_by(ContentPackage.released_at.desc().nullslast())
-        query = query.offset(offset).limit(limit)
 
         result = await self.db.execute(query)
-        packages = list(result.scalars().all())
+        all_packages = list(result.scalars().all())
 
-        count_result = await self.db.execute(count_query)
-        total = count_result.scalar_one()
+        visible_packages: list[ContentPackage] = []
+        for pkg in all_packages:
+            if pkg.status == "live":
+                visible_packages.append(pkg)
+            elif pkg.status == "gray":
+                if is_player_in_gray_scope(
+                    pkg.gray_scope_jsonb, player_id, player_region_id
+                ):
+                    visible_packages.append(pkg)
 
-        return packages, total
+        total = len(visible_packages)
+        paginated = visible_packages[offset : offset + limit]
+
+        return paginated, total
 
     async def list_all_packages(
         self,

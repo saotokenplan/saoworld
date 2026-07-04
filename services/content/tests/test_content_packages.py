@@ -210,3 +210,172 @@ async def test_get_package_detail_with_trace_id(
     assert response.status_code == 200
     data = response.json()
     assert data["trace_id"] == trace_id
+
+
+@pytest.mark.asyncio
+async def test_gray_package_visible_to_player_in_scope(
+    client: AsyncClient, content_packages
+):
+    from app.core.auth import create_test_token
+    from app.schemas.auth import Role
+
+    player_id_in_scope = "00000000-0000-0000-0000-000000000001"
+    token = create_test_token(user_id=player_id_in_scope, role=Role.PLAYER)
+
+    response = await client.get(
+        "/api/v1/content/updates",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "X-Player-Id": player_id_in_scope,
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    statuses = [pkg["status"] for pkg in data["data"]["packages"]]
+    assert "live" in statuses
+
+
+@pytest.mark.asyncio
+async def test_gray_package_hidden_from_player_not_in_scope(
+    client: AsyncClient, content_packages
+):
+    from app.core.auth import create_test_token
+    from app.schemas.auth import Role
+
+    player_id_outside = "11111111-1111-1111-1111-111111111111"
+    token = create_test_token(user_id=player_id_outside, role=Role.PLAYER)
+
+    response = await client.get(
+        "/api/v1/content/updates",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "X-Player-Id": player_id_outside,
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    statuses = [pkg["status"] for pkg in data["data"]["packages"]]
+    assert "gray" not in statuses
+    for pkg in data["data"]["packages"]:
+        assert pkg["status"] == "live"
+
+
+@pytest.mark.asyncio
+async def test_gray_package_with_player_ids_whitelist(
+    client: AsyncClient, content_packages
+):
+    from app.core.auth import create_test_token
+    from app.core.db import get_db
+    from app.domain.models import ContentPackage
+    from app.schemas.auth import Role
+    from datetime import datetime, timezone
+    import uuid
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    allowed_player_id = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    other_player_id = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+
+    test_engine = create_async_engine(
+        "sqlite+aiosqlite:///file:testdb_gray?mode=memory&cache=shared&uri=true",
+        echo=False,
+        connect_args={"check_same_thread": False},
+    )
+    TestSession = async_sessionmaker(
+        test_engine,
+        expire_on_commit=False,
+    )
+
+    from app.core.db import Base
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    async with TestSession() as session:
+        pkg = ContentPackage(
+            content_package_id=uuid.uuid4(),
+            chapter_id="chapter_03",
+            package_version="pkg_test_gray_01",
+            title="灰度白名单测试包",
+            summary="测试玩家白名单灰度",
+            status="gray",
+            gray_scope_jsonb={"player_ids": [allowed_player_id]},
+            payload_jsonb={"test": "gray_whitelist"},
+            released_at=datetime.now(timezone.utc),
+        )
+        session.add(pkg)
+        await session.commit()
+
+    async def override_db():
+        async with TestSession() as s:
+            yield s
+
+    from app.main import app
+    app.dependency_overrides[get_db] = override_db
+
+    try:
+        allowed_token = create_test_token(user_id=allowed_player_id, role=Role.PLAYER)
+        response = await client.get(
+            "/api/v1/content/updates",
+            headers={
+                "Authorization": f"Bearer {allowed_token}",
+                "X-Player-Id": allowed_player_id,
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        statuses = [pkg["status"] for pkg in data["data"]["packages"]]
+        assert "gray" in statuses
+
+        other_token = create_test_token(user_id=other_player_id, role=Role.PLAYER)
+        response2 = await client.get(
+            "/api/v1/content/updates",
+            headers={
+                "Authorization": f"Bearer {other_token}",
+                "X-Player-Id": other_player_id,
+            },
+        )
+        assert response2.status_code == 200
+        data2 = response2.json()
+        statuses2 = [pkg["status"] for pkg in data2["data"]["packages"]]
+        assert "gray" not in statuses2
+    finally:
+        app.dependency_overrides.clear()
+        await test_engine.dispose()
+
+
+def test_is_player_in_gray_scope_player_ids():
+    from app.repositories.content_repo import is_player_in_gray_scope
+
+    scope = {"player_ids": ["player-001", "player-002"]}
+    assert is_player_in_gray_scope(scope, "player-001") is True
+    assert is_player_in_gray_scope(scope, "player-003") is False
+
+
+def test_is_player_in_gray_scope_empty():
+    from app.repositories.content_repo import is_player_in_gray_scope
+
+    assert is_player_in_gray_scope(None, "player-001") is False
+    assert is_player_in_gray_scope({}, "player-001") is False
+
+
+def test_is_player_in_gray_scope_region_ids():
+    from app.repositories.content_repo import is_player_in_gray_scope
+
+    scope = {"region_ids": ["region_01", "region_02"]}
+    assert is_player_in_gray_scope(scope, "player-001", "region_01") is True
+    assert is_player_in_gray_scope(scope, "player-001", "region_03") is False
+    assert is_player_in_gray_scope(scope, "player-001", None) is False
+
+
+def test_is_player_in_gray_scope_priority():
+    from app.repositories.content_repo import is_player_in_gray_scope
+
+    scope = {
+        "player_ids": ["player-001"],
+        "player_percent": 0,
+        "region_ids": ["region_01"],
+    }
+    assert is_player_in_gray_scope(scope, "player-001", "region_99") is True
+    assert is_player_in_gray_scope(scope, "player-002", "region_01") is False
+
+
+

@@ -104,7 +104,7 @@ async def content_packages() -> list[ContentPackage]:
             title="第一章灰度内容包",
             summary="第一章的灰度测试内容",
             status="gray",
-            gray_scope_jsonb={"player_percent": 10},
+            gray_scope_jsonb={"player_ids": ["00000000-0000-0000-0000-000000000001"]},
             payload_jsonb={"test": "data", "chapter": 1, "type": "gray"},
             released_at=now,
         ),

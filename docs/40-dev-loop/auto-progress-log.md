@@ -2,6 +2,21 @@
 
 > 记录每次自动推进任务的执行情况
 
+## 2026-07-05 02:00 - auto-20260705-0200
+
+- **任务**：完善灰度发布可见性判断 + 修复 Workers API 路径不匹配
+- **结果**：成功完成
+- **关键产出**：
+  - content-service 新增 `is_player_in_gray_scope` 函数，支持三种灰度范围（player_ids、player_percent、region_ids）
+  - 重构 `list_visible_packages` 方法，支持按玩家 ID 过滤灰度内容
+  - `GET /api/v1/content/updates` 接口增加 `X-Player-Id` 请求头支持
+  - 修复分页逻辑：先过滤再分页，确保分页结果正确
+  - 修复 workers 的 content_review.py 中 review-service API 路径（/api/v1/reviews → /api/v1/ops/review/records）
+  - 为 workers 所有 review-service POST 请求增加 Idempotency-Key 和 X-Trace-Id 请求头
+  - 新增 8 个灰度相关测试用例，content-service 共 58 个测试全部通过
+  - 更新 project-status.md，标记第 19 项为已完成
+- **遗留**：workers 的 content_review 测试缺少 ContentServiceClient mock（已有问题）、灰度发布端到端流程需在真实 PostgreSQL 环境验证、灰度期指标监控和自动告警待实现
+
 ## 2026-07-05 01:00 - auto-20260705-0100
 
 - **任务**：完善内容审核四项检查与工具脚本
