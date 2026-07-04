@@ -14,3 +14,12 @@ async def test_health_check(client: AsyncClient):
     assert data["data"]["service"] == settings.app_name
     assert data["data"]["version"] == settings.app_version
     assert data["data"]["status"] == "ok"
+
+
+@pytest.mark.asyncio
+async def test_metrics_endpoint(client: AsyncClient):
+    response = await client.get("/metrics")
+    assert response.status_code == 200
+    content = response.text
+    assert "http_requests_total" in content
+    assert "http_request_duration_seconds" in content

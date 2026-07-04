@@ -26,3 +26,12 @@ async def test_get_current_vote_no_open_cycle(client: AsyncClient, player_token:
     data = response.json()
     assert data["code"] == "NO_OPEN_VOTE_CYCLE"
     assert "request_id" in data
+
+
+@pytest.mark.asyncio
+async def test_metrics_endpoint(client: AsyncClient):
+    response = await client.get("/metrics")
+    assert response.status_code == 200
+    content = response.text
+    assert "http_requests_total" in content
+    assert "http_request_duration_seconds" in content

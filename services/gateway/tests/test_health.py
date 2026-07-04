@@ -34,3 +34,11 @@ class TestHealthEndpoint:
         custom_id = "req_test_12345"
         response = await client.get("/api/v1/health", headers={"X-Request-Id": custom_id})
         assert response.headers["X-Request-Id"] == custom_id
+
+    @pytest.mark.asyncio
+    async def test_metrics_endpoint(self, client):
+        response = await client.get("/metrics")
+        assert response.status_code == 200
+        content = response.text
+        assert "http_requests_total" in content
+        assert "http_request_duration_seconds" in content

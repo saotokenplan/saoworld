@@ -4,6 +4,7 @@ import structlog
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api.routes import ops_router, router as content_router
 from app.core.config import settings
@@ -135,3 +136,5 @@ async def add_request_id_and_logging(request: Request, call_next):
 
 app.include_router(content_router, prefix=settings.api_v1_prefix)
 app.include_router(ops_router, prefix=f"{settings.api_v1_prefix}/ops")
+
+Instrumentator().instrument(app).expose(app)
