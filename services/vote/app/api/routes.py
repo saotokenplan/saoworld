@@ -12,6 +12,7 @@ from app.core.deps import (
     RequireVotesSubmitScope,
     UserPayload,
 )
+from app.core.event_publisher import event_publisher
 from app.core.metrics import (
     record_vote_cycle_transition,
     record_vote_submission,
@@ -713,6 +714,17 @@ async def close_vote_cycle(
     # 业务指标：状态迁移计数
     record_vote_cycle_transition(from_status, "closed")
 
+    # 事件发布：投票周期关闭
+    try:
+        await event_publisher.publish_vote_cycle_closed(
+            vote_cycle_id=str(vote_cycle_id),
+            chapter_id=cycle.chapter_id,
+            closed_at=updated_cycle.updated_at.isoformat() if updated_cycle.updated_at else datetime.now(timezone.utc).isoformat(),
+            trace_id=x_trace_id or "",
+        )
+    except Exception:
+        pass
+
     return EnvelopeResponse(
         request_id=request_id,
         data=TransitionVoteCycleResponse(
@@ -788,6 +800,29 @@ async def finalize_vote_cycle(
 
     # 业务指标：状态迁移计数
     record_vote_cycle_transition(from_status, "finalized")
+
+    # 事件发布：投票结果结算完成
+    try:
+        winning_candidate_name = ""
+        total_votes = 0
+        if updated_cycle.winning_candidate_id is not None:
+            candidates = await repo.get_candidates_for_cycle(vote_cycle_id)
+            for c in candidates:
+                if c.candidate_id == updated_cycle.winning_candidate_id:
+                    winning_candidate_name = c.title
+                    break
+            tally_result = await repo.tally_votes(vote_cycle_id)
+            total_votes = tally_result.get("total_votes", 0)
+        await event_publisher.publish_vote_result_finalized(
+            vote_cycle_id=str(vote_cycle_id),
+            winning_candidate_id=str(updated_cycle.winning_candidate_id) if updated_cycle.winning_candidate_id else "",
+            winning_candidate_name=winning_candidate_name,
+            total_votes=total_votes,
+            finalized_at=updated_cycle.finalized_at.isoformat() if updated_cycle.finalized_at else datetime.now(timezone.utc).isoformat(),
+            trace_id=x_trace_id or "",
+        )
+    except Exception:
+        pass
 
     return EnvelopeResponse(
         request_id=request_id,
