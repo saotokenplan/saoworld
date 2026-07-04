@@ -32,6 +32,8 @@
   - Agent 角色、需求包格式、门禁体系、日志采集、Issue 反馈与回滚流程
 - `engineering-conventions.md`
   - 仓库结构、命名、配置、版本、发布、代码与内容资源协作规范
+- `async-tasks-and-events/`
+  - 异步任务 payload、事件消息格式、重试策略、死信队列、全链路追踪与审计规范
 
 ## 建议使用顺序
 

@@ -103,6 +103,12 @@
   - `docs/30-api/openapi-draft.md`
   - `docs/30-api/api-permissions.md`
   - `docs/30-api/api-error-codes.md`
+- 异步任务与事件规范：
+  - `docs/20-specs/async-tasks-and-events/`
+  - 7 个核心任务 payload schema
+  - 7 个事件主题与消息格式
+  - 重试策略与死信队列规范
+  - 全链路追踪与审计字段规范
 
 ## 未确定事项
 
@@ -264,7 +270,7 @@
 7.6. ~~为玩家接口添加 JWT 认证（votes:read/votes:submit/votes:history:read scope）。~~ 已完成。
 7.7. ~~补充 votes 表 candidate_id_idx 索引和 winning_candidate_id FK 约束。~~ 已完成。
 8. ~~基于最小投票链路生成第一版需求包（可放在 `docs/packages/first-slice/`），包括从 `20-specs/` 抽出的相关规范子集。~~ 已完成，需求包包含投票周期管理、投票提交、结算、结果展示、审计日志等完整规范子集，以及 API 接口清单、数据模型定义、业务流程说明和验收标准。
-9. 补异步任务和事件的 payload schema（不阻塞投票 MVP，但内容链路需要）。
+9. ~~补异步任务和事件的 payload schema（不阻塞投票 MVP，但内容链路需要）。~~ 已完成，异步任务与事件 schema 规范已发布，包含 7 个核心任务 payload、7 个事件主题、重试策略、死信队列、全链路追踪规范。
 10. ~~初始化 content-service（内容包管理、灰度发布、回滚），为内容链路打基础。~~ 已完成（48 个测试全部通过）
 11. ~~初始化 generation-service（AI 内容生成请求与结果落库）。~~ 已完成（47 个测试全部通过）
 12. ~~初始化 review-service（内容审核、质量评分、人工复核流转）。~~ 已完成（38 个测试全部通过）

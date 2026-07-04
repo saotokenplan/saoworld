@@ -64,6 +64,7 @@
 | `docs/20-specs/backend-data-spec.md` | 服务边界、核心数据模型（字段类型/约束/索引）、状态机、枚举值、API 约定、事件与异步任务 | API 契约、权限矩阵、错误码已对齐 OpenAPI；数据模型已有字段字典和状态机 | 强烈保留 | 待补：异步任务/事件 payload schema、ER 图和迁移策略（实施阶段生成） |
 | `docs/20-specs/agent-loop-spec.md` | Agent 角色、需求包、门禁、日志、回滚流程 | 体系完整，但偏治理目标态 | 保留 | 明确哪些是当前阶段必须做，哪些是演进目标 |
 | `docs/20-specs/engineering-conventions.md` | 仓库结构、命名、配置、测试、发布协作规范 | 很有价值，但与当前仓库现状尚未完全对齐 | 保留 | 增加当前仓库适配版，避免直接引用未来目录造成误导 |
+| `docs/20-specs/async-tasks-and-events/` | 异步任务 payload、事件消息格式、重试策略、死信队列、追踪与审计规范 | 内容链路和服务间异步协作的契约规范 | 强烈保留 | 与 workers 任务实现和各服务事件发布保持同步 |
 | `docs/40-dev-loop/ai-coding-game-dev-loop-plan.md` | AI-first 游戏研发流程与多 Agent 编排 | 方法论完整，但依赖大量尚未存在资产 | 保留 | 定位为演进路线图，补充当前可执行最小版本 |
 | `docs/40-dev-loop/loop-engineering-plan.md` | Loop Engineering 总方案、门禁、指标体系 | 治理设计较完整，但偏抽象 | 保留 | 与 `agent-loop-spec.md` 切分职责，避免双份描述同一流程 |
 | `docs/40-dev-loop/issue-templates-loop-engineering.md` | Gate 和 Rule 改进的 Issue 模板 | 实用性强，可直接复用 | 保留 | 后续迁移到真实工程仓库的 Issue Template 目录 |
