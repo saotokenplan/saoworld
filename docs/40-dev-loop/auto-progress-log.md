@@ -2,6 +2,19 @@
 
 > 记录每次自动推进任务的执行情况
 
+## 2026-07-04 13:30 - auto-20260704-1300
+
+- **任务**：后端服务业务指标（Business Metrics）集成
+- **结果**：成功完成
+- **关键产出**：
+  - 8 个后端服务均新增 `app/core/metrics.py`，定义 30+ 个业务指标（Counter / Gauge）
+  - 每个服务在 `routes.py` 关键操作点（创建/状态迁移/提交）埋点，调用 `record_*` 辅助函数
+  - 16 个新增测试用例全部通过（每个服务 2 个：指标暴露 + 指标递增）
+  - Grafana 仪表盘 `infra/grafana/dashboards/game-dashboard.json` 从空面板扩展至 20 个面板（HTTP 概览 + 8 个服务时序图 + 8 个状态分布条形图）
+  - 全部 8 个服务通过 ruff、mypy、pytest 验证（共 335 个测试用例）
+  - 更新 project-status.md，"下一阶段建议" 第 17 项标记为已完成
+- **遗留**：Gauge 状态分布类指标（如 `vote_cycles_by_status`）的周期性同步逻辑待补充（建议通过 Celery 定时任务）、Grafana 仪表盘 PromQL 表达式未在真实环境验证、Redis 分布式限流指标待补充、数据库连接池指标待补充
+
 ## 2026-07-04 12:00 - auto-20260704-1200
 
 - **任务**：后端服务监控指标集成（Prometheus）
