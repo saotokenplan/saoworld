@@ -1,7 +1,7 @@
 # Gate Registry（门禁注册表）
 #
 # 用途：
-# - 统一管理每一个 gate 的“覆盖风险 / 成本 / 命中 / 误报”
+# - 统一管理每一个 gate 的"覆盖风险 / 成本 / 命中 / 误报"
 # - 作为二层 Loop 的输入：决定该新增、修复、降噪还是退役 gate
 # - 作为发布门禁预算的依据：控制 CI 总耗时
 #
@@ -42,38 +42,38 @@ gate_budget:
 
 gates:
   - id: G-STATIC-001
-    name: Lint
+    name: Ruff Lint
     type: static
     owner: QA Agent
-    command: "npm run lint"
+    command: "cd services/<service> && ruff check ."
     scope:
-      paths: ["web/**", "services/**", "tools/**"]
+      paths: ["services/**", "workers/**", "tools/**"]
       trigger: "on_pr"
     risk_coverage: ["style", "regression"]
     cost:
-      expected_seconds: 60
+      expected_seconds: 30
       flakiness_budget: 0.005
     signal:
       severity: blocker
       precision_target: 0.90
     lifecycle:
       status: active
-      created_at: "2026-06-24"
+      created_at: "2026-07-02"
       last_hit_at: null
       hit_30d: 0
       false_positive_30d: 0
     links:
-      docs: "docs/system-design/gates.md#lint"
-      runbook: "docs/runbook/gates/lint.md"
+      docs: ".trae/rules/10-python-backend.md"
+      runbook: "docs/runbook/gates/ruff.md"
       issues: []
 
   - id: G-STATIC-002
-    name: Typecheck
+    name: Mypy Typecheck
     type: static
     owner: QA Agent
-    command: "npm run typecheck"
+    command: "cd services/<service> && mypy app"
     scope:
-      paths: ["web/**", "services/**"]
+      paths: ["services/**", "workers/**"]
       trigger: "on_pr"
     risk_coverage: ["type-safety", "regression"]
     cost:
@@ -84,38 +84,142 @@ gates:
       precision_target: 0.92
     lifecycle:
       status: active
-      created_at: "2026-06-24"
+      created_at: "2026-07-02"
       last_hit_at: null
       hit_30d: 0
       false_positive_30d: 0
     links:
-      docs: "docs/system-design/gates.md#typecheck"
-      runbook: "docs/runbook/gates/typecheck.md"
+      docs: ".trae/rules/10-python-backend.md"
+      runbook: "docs/runbook/gates/mypy.md"
+      issues: []
+
+  - id: G-UNIT-001
+    name: Service Unit Tests (vote)
+    type: unit
+    owner: Backend Agent
+    command: "cd services/vote && pytest"
+    scope:
+      paths: ["services/vote/**"]
+      trigger: "on_pr"
+    risk_coverage: ["regression", "data-integrity"]
+    cost:
+      expected_seconds: 60
+      flakiness_budget: 0.01
+    signal:
+      severity: blocker
+      precision_target: 0.95
+    lifecycle:
+      status: active
+      created_at: "2026-07-01"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/30-api/api-overview.md"
+      runbook: "docs/runbook/gates/vote-tests.md"
+      issues: []
+
+  - id: G-UNIT-002
+    name: Service Unit Tests (world)
+    type: unit
+    owner: Backend Agent
+    command: "cd services/world && pytest"
+    scope:
+      paths: ["services/world/**"]
+      trigger: "on_pr"
+    risk_coverage: ["regression", "data-integrity"]
+    cost:
+      expected_seconds: 45
+      flakiness_budget: 0.01
+    signal:
+      severity: blocker
+      precision_target: 0.95
+    lifecycle:
+      status: active
+      created_at: "2026-07-04"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/30-api/api-overview.md"
+      runbook: "docs/runbook/gates/world-tests.md"
+      issues: []
+
+  - id: G-UNIT-003
+    name: Service Unit Tests (content)
+    type: unit
+    owner: Backend Agent
+    command: "cd services/content && pytest"
+    scope:
+      paths: ["services/content/**"]
+      trigger: "on_pr"
+    risk_coverage: ["regression", "data-integrity"]
+    cost:
+      expected_seconds: 50
+      flakiness_budget: 0.01
+    signal:
+      severity: blocker
+      precision_target: 0.95
+    lifecycle:
+      status: active
+      created_at: "2026-07-04"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/30-api/api-overview.md"
+      runbook: "docs/runbook/gates/content-tests.md"
+      issues: []
+
+  - id: G-UNIT-004
+    name: Workers Unit Tests
+    type: unit
+    owner: Backend Agent
+    command: "cd workers && pytest"
+    scope:
+      paths: ["workers/**", "tools/content_check/**"]
+      trigger: "on_pr"
+    risk_coverage: ["regression", "data-integrity"]
+    cost:
+      expected_seconds: 45
+      flakiness_budget: 0.01
+    signal:
+      severity: blocker
+      precision_target: 0.95
+    lifecycle:
+      status: active
+      created_at: "2026-07-04"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/20-specs/async-tasks-and-events/"
+      runbook: "docs/runbook/gates/workers-tests.md"
       issues: []
 
   - id: G-CONTENT-001
     name: World Consistency Check
     type: content
     owner: Rule Engine
-    command: "python tools/content_check/world_consistency.py --input content/ --rules content/world-rules/"
+    command: "python tools/content_check/world_consistency.py --input <content_dir> --rules game/data/"
     scope:
-      paths: ["content/**"]
-      trigger: "on_pr"
+      paths: ["game/data/**", "tools/content_check/**"]
+      trigger: "on_content_pr"
     risk_coverage: ["world-consistency", "regression"]
     cost:
-      expected_seconds: 120
+      expected_seconds: 60
       flakiness_budget: 0.002
     signal:
       severity: blocker
       precision_target: 0.80
     lifecycle:
       status: active
-      created_at: "2026-06-24"
+      created_at: "2026-07-05"
       last_hit_at: null
       hit_30d: 0
       false_positive_30d: 0
     links:
-      docs: "docs/system-design/gates.md#world-consistency"
+      docs: "docs/20-specs/content-generation-spec.md"
       runbook: "docs/runbook/gates/world_consistency.md"
       issues: []
 
@@ -123,50 +227,102 @@ gates:
     name: Reward Boundary Check
     type: content
     owner: Rule Engine
-    command: "python tools/content_check/reward_boundary.py --input content/ --budget content/world-rules/reward_budget.yaml"
+    command: "python tools/content_check/reward_boundary.py --input <content_dir> --budget game/data/config/"
     scope:
-      paths: ["content/**"]
-      trigger: "on_pr"
+      paths: ["game/data/**", "tools/content_check/**"]
+      trigger: "on_content_pr"
     risk_coverage: ["reward-boundary", "data-integrity"]
     cost:
-      expected_seconds: 90
+      expected_seconds: 45
       flakiness_budget: 0.002
     signal:
       severity: blocker
       precision_target: 0.85
     lifecycle:
       status: active
-      created_at: "2026-06-24"
+      created_at: "2026-07-05"
       last_hit_at: null
       hit_30d: 0
       false_positive_30d: 0
     links:
-      docs: "docs/system-design/gates.md#reward-boundary"
+      docs: "docs/20-specs/content-generation-spec.md"
       runbook: "docs/runbook/gates/reward_boundary.md"
       issues: []
 
+  - id: G-CONTENT-003
+    name: Content Safety Check
+    type: content
+    owner: Rule Engine
+    command: "python tools/content_check/content_safety.py --input <content_dir>"
+    scope:
+      paths: ["game/data/**", "tools/content_check/**"]
+      trigger: "on_content_pr"
+    risk_coverage: ["security", "content-safety"]
+    cost:
+      expected_seconds: 30
+      flakiness_budget: 0.002
+    signal:
+      severity: blocker
+      precision_target: 0.90
+    lifecycle:
+      status: active
+      created_at: "2026-07-05"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/20-specs/content-generation-spec.md"
+      runbook: "docs/runbook/gates/content_safety.md"
+      issues: []
+
+  - id: G-CONTENT-004
+    name: Duplication Check
+    type: content
+    owner: Rule Engine
+    command: "python tools/content_check/duplication.py --input <content_dir> --existing <existing_dir>"
+    scope:
+      paths: ["game/data/**", "tools/content_check/**"]
+      trigger: "on_content_pr"
+    risk_coverage: ["duplication", "regression"]
+    cost:
+      expected_seconds: 90
+      flakiness_budget: 0.005
+    signal:
+      severity: warn
+      precision_target: 0.75
+    lifecycle:
+      status: active
+      created_at: "2026-07-05"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/20-specs/content-generation-spec.md"
+      runbook: "docs/runbook/gates/duplication.md"
+      issues: []
+
   - id: G-E2E-001
-    name: Critical Path E2E
+    name: Critical Path E2E (Vote Flow)
     type: e2e
     owner: QA Agent
-    command: "bash tools/playtest/run_critical_path.sh"
+    command: "bash tools/playtest/run_vote_flow.sh"
     scope:
-      paths: ["game/**", "services/**", "content/**"]
+      paths: ["game/**", "services/vote/**", "services/gateway/**"]
       trigger: "nightly"
     risk_coverage: ["playability", "regression", "crash"]
     cost:
-      expected_seconds: 600
+      expected_seconds: 300
       flakiness_budget: 0.01
     signal:
       severity: blocker
       precision_target: 0.70
     lifecycle:
       status: active
-      created_at: "2026-06-24"
+      created_at: "2026-07-04"
       last_hit_at: null
       hit_30d: 0
       false_positive_30d: 0
     links:
-      docs: "docs/system-design/gates.md#critical-e2e"
+      docs: "docs/packages/first-slice/"
       runbook: "docs/runbook/gates/critical_e2e.md"
       issues: []
