@@ -5,6 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import RequireOpsRole, RequireWorldReadScope, UserPayload
+from app.core.metrics import (
+    record_region_create,
+    record_region_status_transition,
+)
 from app.repositories.audit_repo import (
     ACTION_REGION_CREATE,
     ACTION_REGION_STATUS_UPDATE,
@@ -195,6 +199,9 @@ async def create_region(
         unlock_condition=body.unlock_condition,
     )
 
+    # 业务指标：区域创建计数
+    record_region_create()
+
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(
         trace_id=x_trace_id or _make_request_id("trace"),
@@ -285,6 +292,9 @@ async def update_region_status(
     from_status = region.status
     updated_region = await repo.update_region_status(region_id, body.status.value)
     assert updated_region is not None
+
+    # 业务指标：区域状态迁移计数
+    record_region_status_transition(from_status, body.status.value)
 
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(
