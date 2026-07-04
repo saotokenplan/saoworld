@@ -141,7 +141,7 @@
 - ~~`workers/` Celery 异步任务 Worker 尚未实现（目录已创建）。~~ 已完成，workers Celery Worker 框架已实现，包含 7 个核心异步任务（内容生成、审核、打包、发布、回滚、门禁扫描），19 个测试用例全部通过。
 - ~~除 `vote-service`、`world-service`、`content-service`、`generation-service`、`review-service`、`gateway-service`、`player-service` 外的其他后端服务（ops）尚未初始化。~~ 已完成，ops-service 已初始化完成。
 - ~~Alembic 数据库迁移脚本尚未生成（world-service），需要连接数据库后初始化。~~ 已完成，world-service、content-service、generation-service、review-service、player-service、ops-service 六个服务的 Alembic 迁移环境已全部初始化，首次迁移脚本（核心业务表 + 审计日志表）已生成。
-- 真实 CI 配置、部署脚本和生产环境配置尚未建立。
+- ~~真实 CI 配置、部署脚本和生产环境配置尚未建立。~~ 已完成，CI/CD 配置（GitHub Actions）、各服务 Dockerfile、生产环境 Docker Compose、Nginx 配置、Prometheus/Grafana 监控配置、部署脚本（deploy.sh、rollback.sh、health-check.sh、migrate-all.sh）已就绪。
 - JWT 鉴权中间件、运营写接口、投票结算 Worker 尚未实现。~~已全部完成：JWT 鉴权、运营写接口、投票结算逻辑。~~
 
 ## 已初步落地的工程资产
@@ -248,6 +248,13 @@
 - 本地开发基础设施：`infra/docker-compose.dev.yml`（PostgreSQL 16 + Redis 7）。
 - `.gitignore`、各目录 README 占位、`.env.example` 已配置。
 - `docs/packages/first-slice/` 第一版需求包：包含投票链路完整规范子集（功能特性、API 接口清单、数据模型定义、业务流程说明、验收标准），作为 MVP 投票链路验证的需求基线。
+- **CI/CD 基础设施**：
+  - GitHub Actions 工作流：`ci.yml`（lint、类型检查、测试）、`cd.yml`（部署）、`docker-build.yml`（Docker 构建）
+  - 各服务 Dockerfile（vote、world、content、generation、review、gateway、player、ops、workers）
+  - 生产环境配置：`infra/docker-compose.prod.yml`、`infra/.env.prod.example`
+  - Nginx 反向代理配置：`infra/nginx/conf.d/default.conf`
+  - 监控配置：`infra/prometheus/prometheus.yml`、`infra/grafana/provisioning/datasources/prometheus.yml`、`infra/grafana/dashboards/game-dashboard.json`
+  - 部署脚本：`tools/deploy.sh`、`tools/rollback.sh`、`tools/health-check.sh`、`tools/migrate-all.sh`
 
 ## 当前主要风险
 
