@@ -133,12 +133,15 @@ async def auth_middleware(request: Request, call_next):
         return await call_next(request)
 
     from app.core.auth import authenticate_request
+    from app.core.metrics import record_auth_failure
 
     try:
         user = await authenticate_request(request)
         request.state.user = user
         request.state.player_id = user["player_id"]
     except HTTPException as exc:
+        # 业务指标：认证失败计数
+        record_auth_failure()
         return await http_exception_handler(request, exc)
 
     return await call_next(request)
