@@ -122,8 +122,8 @@
 
 - OpenAPI 单文件草案已完成 12 个端点、特化错误层、安全方案和响应 envelope，但预留错误码（INTERNAL_ERROR、TOKEN_EXPIRED 等）待实现阶段按需落地。
 - 数据库核心表的字段类型、约束、索引、状态机和枚举值已定义在 `backend-data-spec.md`，但 ER 图和迁移脚本（Alembic/SQLAlchemy 模型）尚未生成。
-- 异步任务和事件的 payload schema、重试策略、死信处理等细节仍停留在方向层，未形成工程实施方案。
-- 任务队列、事件总线、中间件、部署方式等基础设施细节仍停留在方向层。
+- ~~异步任务和事件的 payload schema、重试策略、死信处理等细节仍停留在方向层，未形成工程实施方案。~~ 已完成，事件总线基础设施已实现。
+- ~~任务队列、事件总线、中间件、部署方式等基础设施细节仍停留在方向层。~~ 已完成，事件总线基于 Redis Pub/Sub 实现，Celery Beat 定时任务调度器已配置。
 
 ### 工程侧未定
 
@@ -300,6 +300,9 @@
   - 全部 8 个服务通过 ruff、mypy、pytest（共 335 个测试用例）验证
 - **门禁 Runbook 文档**：`docs/runbook/` 目录已创建，包含 11 个门禁的运行手册（Ruff Lint、Mypy Typecheck、vote/world/content/workers 单元测试、四项内容检查、关键路径 E2E 测试），每个 runbook 包含门禁概述、常见失败原因、解决方案、手动执行方法和升级路径
 - **关键路径 E2E 测试脚本**：`tools/playtest/` 目录已创建，包含投票流程端到端测试（创建投票周期 → 添加候选项 → 开放投票 → 提交投票 → 关闭计票 → 验证结果），支持分步执行和完整流程测试
+- **事件总线基础设施**：`workers/events/` 目录已创建，基于 Redis Pub/Sub 实现，包含事件总线客户端、事件发布者、订阅者、7 个核心事件类型定义（vote.cycle.closed、vote.result.finalized、generation.request.created、generation.batch.completed、review.batch.completed、content.package.released、content.package.rolled_back）、事件处理器（投票结算触发内容生成、生成完成触发审核、审核通过触发布打包）
+- **服务间事件发布集成**：vote-service、content-service、generation-service、review-service 均已集成事件发布客户端，在关键操作点（投票结算、内容发布/回滚、生成完成、审核完成）发布对应事件
+- **Celery Beat 定时任务**：配置了 3 个定时任务（每日门禁扫描、每小时指标同步、每日内容审核），支持 scheduled 队列，prometheus-client 依赖已添加到 workers
 
 ## 当前主要风险
 
