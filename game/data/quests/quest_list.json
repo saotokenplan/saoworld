@@ -1,5 +1,109 @@
 {
   "schema_version": 1,
-  "description": "任务数据占位目录",
-  "quests": []
+  "description": "任务列表配置",
+  "quests": [
+    {
+      "quest_id": "quest_rescue_trader_01",
+      "title": "营救商队",
+      "description": "废墟荒原的商队遭到袭击，需要你前往救援幸存者并找回丢失的货物。",
+      "status": "available",
+      "region_id": "region_wasteland_01",
+      "npc_id": "npc_blacksmith_01",
+      "objectives": [
+        {
+          "description": "找到商队幸存者",
+          "progress": 0,
+          "target": 1
+        },
+        {
+          "description": "消灭袭击者",
+          "progress": 0,
+          "target": 5
+        },
+        {
+          "description": "找回丢失的货物",
+          "progress": 0,
+          "target": 3
+        }
+      ],
+      "rewards": {
+        "experience": 500,
+        "gold": 200,
+        "items": ["铁剑", "皮甲"]
+      }
+    },
+    {
+      "quest_id": "quest_scout_forest_01",
+      "title": "森林侦察",
+      "description": "幽光森林边界出现异常，需要你前往侦察并报告情况。",
+      "status": "available",
+      "region_id": "region_forest_01",
+      "npc_id": "npc_guard_captain_01",
+      "objectives": [
+        {
+          "description": "进入幽光森林",
+          "progress": 0,
+          "target": 1
+        },
+        {
+          "description": "收集森林样本",
+          "progress": 0,
+          "target": 5
+        },
+        {
+          "description": "返回报告",
+          "progress": 0,
+          "target": 1
+        }
+      ],
+      "rewards": {
+        "experience": 800,
+        "gold": 300,
+        "items": ["森林药剂"]
+      }
+    },
+    {
+      "quest_id": "quest_collect_scraps_01",
+      "title": "收集废料",
+      "description": "收集荒原上的废弃零件，铁匠需要这些材料来修复工具。",
+      "status": "active",
+      "region_id": "region_wasteland_01",
+      "npc_id": "npc_blacksmith_01",
+      "objectives": [
+        {
+          "description": "收集废铁",
+          "progress": 5,
+          "target": 10
+        },
+        {
+          "description": "收集铜线",
+          "progress": 3,
+          "target": 8
+        }
+      ],
+      "rewards": {
+        "experience": 300,
+        "gold": 150
+      }
+    },
+    {
+      "quest_id": "quest_deliver_message_01",
+      "title": "传递密信",
+      "description": "将一封密信送到森林入口的守卫队长手中。",
+      "status": "completed",
+      "region_id": "region_wasteland_01",
+      "npc_id": "npc_messenger_01",
+      "objectives": [
+        {
+          "description": "将密信交给守卫队长",
+          "progress": 1,
+          "target": 1
+        }
+      ],
+      "rewards": {
+        "experience": 200,
+        "gold": 100
+      }
+    }
+  ]
 }
