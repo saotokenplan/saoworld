@@ -196,10 +196,11 @@
   - 玩家 API 路由：`GET /api/v1/health`、`GET /api/v1/content/updates`、`GET /api/v1/content/packages/{package_id}`
   - 运营 API 路由：`POST /api/v1/ops/content-packages`（创建内容包）、发布、回滚
   - 内容包状态机：packaged → gray → live → archived，gray/live → rolled_back
+  - **灰度发布可见性判断**：支持三种灰度范围（player_ids 白名单、player_percent 百分比、region_ids 区域），优先级 player_ids > player_percent > region_ids
   - 统一响应 envelope（对齐 `12-api-design.md` 规范）
   - JWT 认证（`content:read`、`content:release`、`content:rollback` scope）
   - 审计日志持久化
-  - 测试用例 48 个全部通过（含玩家接口 + 运营接口 + 审计日志 + 鉴权 + envelope 格式）
+  - 测试用例 58 个全部通过（含玩家接口 + 运营接口 + 审计日志 + 鉴权 + envelope 格式 + 灰度可见性）
 - `generation-service` 已完成骨架初始化与内容生成请求管理：
   - 数据模型：`GenerationRequest`、`GeneratedObject`、`AuditLog`（对应 `backend-data-spec.md`）
   - 运营 API 路由：生成请求创建/查询/状态更新、生成对象查询/状态更新（审核）
@@ -330,6 +331,7 @@
 16. ~~内容包打包与发布流程实现~~ 已完成，包含首期内容包初始化脚本、内容包校验与目录加载、灰度发布范围配置、全量发布升级任务、完整测试覆盖
 17. ~~业务指标（Business Metrics）集成：在 8 个后端服务的关键操作点埋点，扩展 Grafana 仪表盘覆盖业务指标~~ 已完成，全部 8 个服务新增 `app/core/metrics.py` 与 `record_*` 辅助函数，routes.py 在创建/状态迁移/提交等关键操作点埋点，每个服务新增 2 个测试用例（指标暴露 + 指标递增），Grafana 仪表盘扩展至 20 个面板，共 335 个测试全部通过
 18. ~~内容审核四项检查与工具脚本（世界一致性、数值边界、内容安全、重复度）~~ 已完成，tools/content_check/ 四个检查器 + 28个测试 + workers 集成 + 门禁注册表更新
+19. ~~灰度发布可见性判断逻辑完善：content-service 支持按玩家/百分比/区域的灰度范围过滤，修复 workers API 路径不匹配问题~~ 已完成，content-service 灰度可见性判断 + workers API 路径修复 + 58 个测试全部通过
 
 ## 进入实施前的建议门槛
 
