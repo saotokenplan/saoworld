@@ -134,7 +134,7 @@
 - `game/` Godot 客户端工程尚未初始化（目录已创建，占位 README 就位）。
 - ~~`workers/` Celery 异步任务 Worker 尚未实现（目录已创建）。~~ 已完成，workers Celery Worker 框架已实现，包含 7 个核心异步任务（内容生成、审核、打包、发布、回滚、门禁扫描），19 个测试用例全部通过。
 - ~~除 `vote-service`、`world-service`、`content-service`、`generation-service`、`review-service`、`gateway-service`、`player-service` 外的其他后端服务（ops）尚未初始化。~~ 已完成，ops-service 已初始化完成。
-- Alembic 数据库迁移脚本尚未生成（world-service），需要连接数据库后初始化。
+- ~~Alembic 数据库迁移脚本尚未生成（world-service），需要连接数据库后初始化。~~ 已完成，world-service、content-service、generation-service、review-service、player-service、ops-service 六个服务的 Alembic 迁移环境已全部初始化，首次迁移脚本（核心业务表 + 审计日志表）已生成。
 - 真实 CI 配置、部署脚本和生产环境配置尚未建立。
 - JWT 鉴权中间件、运营写接口、投票结算 Worker 尚未实现。~~已全部完成：JWT 鉴权、运营写接口、投票结算逻辑。~~
 
@@ -154,9 +154,28 @@
   - 审计日志持久化（`audit_logs` 表写入，覆盖投票提交、周期创建和状态迁移）
   - 模型约束补全：`votes_candidate_id_idx` 索引、`winning_candidate_id` FK
   - 测试用例 51 个全部通过（含玩家接口 + 运营接口 + 审计日志 + 鉴权 + envelope 格式）
-- **Alembic 迁移环境已初始化**（vote-service），迁移脚本已生成：
-  - 首次迁移（vote 核心三表）：`services/vote/alembic/versions/2026_07_01_1529_ba4a0034a620_init_vote_tables.py`
-  - 审计日志表：`services/vote/alembic/versions/2026_07_02_0200_c8d2e5f1a730_add_audit_logs_table.py`
+- **Alembic 迁移环境已初始化**（vote-service + world-service + content-service + generation-service + review-service + player-service + ops-service），迁移脚本已生成：
+  - vote-service：
+    - 首次迁移（vote 核心三表）：`services/vote/alembic/versions/2026_07_01_1529_ba4a0034a620_init_vote_tables.py`
+    - 审计日志表：`services/vote/alembic/versions/2026_07_02_0200_c8d2e5f1a730_add_audit_logs_table.py`
+  - world-service：
+    - 首次迁移（regions 表）：`services/world/alembic/versions/2026_07_04_0201_a1b2c3d4e5f6_init_world_tables.py`
+    - 审计日志表：`services/world/alembic/versions/2026_07_04_0202_b2c3d4e5f6a7_add_audit_logs_table.py`
+  - content-service：
+    - 首次迁移（regions、vote_cycles、content_packages、release_records、rollback_records 表）：`services/content/alembic/versions/2026_07_04_0203_c3d4e5f6a7b8_init_content_tables.py`
+    - 审计日志表：`services/content/alembic/versions/2026_07_04_0204_d4e5f6a7b8c9_add_audit_logs_table.py`
+  - generation-service：
+    - 首次迁移（vote_cycles、vote_candidates、generation_requests、generated_objects 表）：`services/generation/alembic/versions/2026_07_04_0205_e5f6a7b8c9d0_init_generation_tables.py`
+    - 审计日志表：`services/generation/alembic/versions/2026_07_04_0206_f6a7b8c9d0e1_add_audit_logs_table.py`
+  - review-service：
+    - 首次迁移（review_records 表）：`services/review/alembic/versions/2026_07_04_0207_a7b8c9d0e1f2_init_review_tables.py`
+    - 审计日志表：`services/review/alembic/versions/2026_07_04_0208_b8c9d0e1f2a3_add_audit_logs_table.py`
+  - player-service：
+    - 首次迁移（players、player_quests、player_regions 表）：`services/player/alembic/versions/2026_07_04_0209_c9d0e1f2a3b4_init_player_tables.py`
+    - 审计日志表：`services/player/alembic/versions/2026_07_04_0210_d0e1f2a3b4c5_add_audit_logs_table.py`
+  - ops-service：
+    - 首次迁移（ops_dashboards、ops_actions 表）：`services/ops/alembic/versions/2026_07_04_0211_e1f2a3b4c5d6_init_ops_tables.py`
+    - 审计日志表：`services/ops/alembic/versions/2026_07_04_0212_f2a3b4c5d6e7_add_audit_logs_table.py`
 - `world-service` 已完成骨架初始化与区域管理接口：
   - 数据模型：`Region`、`AuditLog`（对应 `backend-data-spec.md`）
   - 玩家 API 路由：`GET /api/v1/health`、`GET /api/v1/world/regions`、`GET /api/v1/world/regions/{region_id}`
