@@ -1,5 +1,71 @@
 {
   "schema_version": 1,
-  "description": "NPC 数据占位目录",
-  "npcs": []
+  "description": "NPC 列表配置",
+  "npcs": [
+    {
+      "npc_id": "npc_blacksmith_01",
+      "name": "老杰克",
+      "role": "铁匠",
+      "region_id": "region_wasteland_01",
+      "description": "废墟荒原的老铁匠，性格豪爽，擅长修复和打造武器装备。",
+      "dialogs": [
+        {
+          "text": "欢迎来到我的铁匠铺！需要打造什么武器吗？"
+        },
+        {
+          "text": "最近商队在东边遭到了袭击，货物都被抢走了。如果你能帮忙找回，我会给你不错的报酬。",
+          "quest_id": "quest_rescue_trader_01"
+        }
+      ]
+    },
+    {
+      "npc_id": "npc_guard_captain_01",
+      "name": "艾琳",
+      "role": "守卫队长",
+      "region_id": "region_forest_01",
+      "description": "幽光森林的守卫队长，负责监视森林边界的异常情况。",
+      "dialogs": [
+        {
+          "text": "欢迎来到幽光森林边界。这里最近不太安全，有很多奇怪的动静。"
+        },
+        {
+          "text": "我需要有人深入森林侦察一下情况。如果你愿意帮忙，我会给予丰厚的奖励。",
+          "quest_id": "quest_scout_forest_01"
+        }
+      ]
+    },
+    {
+      "npc_id": "npc_messenger_01",
+      "name": "小马",
+      "role": "信使",
+      "region_id": "region_wasteland_01",
+      "description": "年轻的信使，负责在各个聚落之间传递消息。",
+      "dialogs": [
+        {
+          "text": "嘿，你好！有什么需要帮忙的吗？"
+        },
+        {
+          "text": "我这里有一封重要的信件需要送到森林入口的艾琳队长那里。你能帮我送一下吗？"
+        },
+        {
+          "text": "太好了！这是你的报酬，谢谢你的帮助！"
+        }
+      ]
+    },
+    {
+      "npc_id": "npc_merchant_01",
+      "name": "莎拉",
+      "role": "商人",
+      "region_id": "region_wasteland_01",
+      "description": "游走各地的商人，出售各种物资和装备。",
+      "dialogs": [
+        {
+          "text": "欢迎光临！看看有什么需要的吧。"
+        },
+        {
+          "text": "我这里有从远方带来的稀有物品，价格公道！"
+        }
+      ]
+    }
+  ]
 }
