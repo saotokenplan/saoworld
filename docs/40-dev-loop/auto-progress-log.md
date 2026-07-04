@@ -2,6 +2,21 @@
 
 > 记录每次自动推进任务的执行情况
 
+## 2026-07-05 09:00 - auto-20260705-0900
+
+- **任务**：服务间事件发布集成（打通端到端事件驱动链路）
+- **结果**：成功完成
+- **关键产出**：
+  - vote-service：投票周期关闭时发布 `vote.cycle.closed` 事件，投票结果结算时发布 `vote.result.finalized` 事件
+  - content-service：内容包发布时发布 `content.package.released` 事件，内容包回滚时发布 `content.package.rolled_back` 事件
+  - generation-service：生成请求创建时发布 `generation.request.created` 事件，批量生成完成时发布 `generation.batch.completed` 事件
+  - review-service：批量审核完成时发布 `review.batch.completed` 事件（批准/拒绝）
+  - 事件消费重试机制：`workers/events/event_subscriber.py` 实现指数退避策略（最大3次重试）和死信队列处理
+  - 修复 `event_publisher.py` 中 `datetime.utcnow()` 弃用警告和未使用导入
+  - vote-service 54 个测试全部通过，ruff 和 mypy 检查通过
+  - 更新 project-status.md，补充事件消费重试机制到已落地资产
+- **遗留**：各服务事件发布集成测试用例待补充、事件处理器与实际业务逻辑集成待完成、Redis 连接配置需改为环境变量
+
 ## 2026-07-05 08:00 - auto-20260705-0800
 
 - **任务**：事件总线集成与服务间通信基础设施

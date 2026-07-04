@@ -10,6 +10,7 @@ from app.core.deps import (
     RequireContentRollbackScope,
     UserPayload,
 )
+from app.core.event_publisher import event_publisher
 from app.core.metrics import (
     record_package_create,
     record_package_release,
@@ -355,6 +356,18 @@ async def release_package(
         result_status=200,
     )
 
+    # 事件发布：内容包发布
+    try:
+        await event_publisher.publish_content_package_released(
+            content_package_id=str(updated_pkg.content_package_id),
+            release_mode=body.release_mode.value,
+            gray_scope=body.gray_scope or {},
+            released_at=updated_pkg.released_at.isoformat() if updated_pkg.released_at else "",
+            trace_id=x_trace_id or "",
+        )
+    except Exception:
+        pass
+
     return EnvelopeResponse(
         request_id=request_id,
         data=ReleasePackageResponse(
@@ -458,6 +471,18 @@ async def rollback_package(
         },
         result_status=200,
     )
+
+    # 事件发布：内容包回滚
+    try:
+        from datetime import datetime, timezone
+        await event_publisher.publish_content_package_rolled_back(
+            content_package_id=str(updated_pkg.content_package_id),
+            rollback_reason=body.reason or "",
+            rolled_back_at=datetime.now(timezone.utc).isoformat(),
+            trace_id=x_trace_id or "",
+        )
+    except Exception:
+        pass
 
     return EnvelopeResponse(
         request_id=request_id,

@@ -2,8 +2,6 @@ from typing import Optional
 
 import redis.asyncio as redis
 
-from services.vote.app.core.config import settings
-
 
 class EventPublisher:
     def __init__(self, redis_url: Optional[str] = None):
@@ -21,13 +19,13 @@ class EventPublisher:
 
     async def publish(self, event_type: str, payload: dict, trace_id: str = "") -> str:
         import json
-        from datetime import datetime
+        from datetime import datetime, timezone
         from uuid import uuid4
 
         event = {
             "event_id": str(uuid4()),
             "event_type": event_type,
-            "occurred_at": datetime.utcnow().isoformat(),
+            "occurred_at": datetime.now(timezone.utc).isoformat(),
             "trace_id": trace_id,
             "producer": "vote-service",
             "payload": payload,
@@ -39,8 +37,9 @@ class EventPublisher:
         if self._redis is None:
             await self.connect()
 
+        assert self._redis is not None
         await self._redis.publish(channel, message)
-        return event["event_id"]
+        return str(event["event_id"])
 
     async def publish_vote_cycle_closed(
         self, vote_cycle_id: str, chapter_id: str, closed_at: str, trace_id: str = ""

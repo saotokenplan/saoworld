@@ -302,6 +302,7 @@
 - **关键路径 E2E 测试脚本**：`tools/playtest/` 目录已创建，包含投票流程端到端测试（创建投票周期 → 添加候选项 → 开放投票 → 提交投票 → 关闭计票 → 验证结果），支持分步执行和完整流程测试
 - **事件总线基础设施**：`workers/events/` 目录已创建，基于 Redis Pub/Sub 实现，包含事件总线客户端、事件发布者、订阅者、7 个核心事件类型定义（vote.cycle.closed、vote.result.finalized、generation.request.created、generation.batch.completed、review.batch.completed、content.package.released、content.package.rolled_back）、事件处理器（投票结算触发内容生成、生成完成触发审核、审核通过触发布打包）
 - **服务间事件发布集成**：vote-service、content-service、generation-service、review-service 均已集成事件发布客户端，在关键操作点（投票结算、内容发布/回滚、生成完成、审核完成）发布对应事件
+- **事件消费重试机制**：`workers/events/event_subscriber.py` 已实现指数退避重试策略（最大3次重试，2^n * base_delay）和死信队列处理（超过重试次数后发送到 `event.dead_letter` 通道）
 - **Celery Beat 定时任务**：配置了 3 个定时任务（每日门禁扫描、每小时指标同步、每日内容审核），支持 scheduled 队列，prometheus-client 依赖已添加到 workers
 
 ## 当前主要风险
