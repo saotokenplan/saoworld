@@ -1,13 +1,11 @@
 import asyncio
 import json
-import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.core.db import async_session
-from app.core.config import settings
 from app.repositories.content_repo import ContentRepository
 
 

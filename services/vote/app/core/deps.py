@@ -1,6 +1,6 @@
 """权限校验依赖。"""
 
-from typing import Any, Callable
+from typing import Any
 
 from fastapi import Depends, Header, HTTPException, status
 
