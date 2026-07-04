@@ -12,6 +12,7 @@ from app.core.deps import (
     RequireVotesSubmitScope,
     UserPayload,
 )
+from app.core.errors import VoteErrorCodes, raise_vote_error
 from app.core.event_publisher import event_publisher
 from app.core.metrics import (
     record_vote_cycle_transition,
@@ -127,13 +128,11 @@ async def get_current_vote(
     cycle = await repo.get_current_open_cycle()
 
     if cycle is None:
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.NO_OPEN_VOTE_CYCLE,
+            "当前没有开放的投票周期",
+            request_id=request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="NO_OPEN_VOTE_CYCLE",
-                message="当前没有开放的投票周期",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     candidates = await repo.get_candidates_for_cycle(cycle.vote_cycle_id)
@@ -195,21 +194,19 @@ async def submit_vote(
     try:
         player_uuid = uuid.UUID(player_id_str)
     except ValueError:
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id=request_id,
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ErrorResponse(
-                code="INVALID_PLAYER_ID",
-                message="无效的玩家ID格式",
-                request_id=request_id,
-                details=[
-                    ErrorDetail(
-                        location="token",
-                        field="sub",
-                        issue="invalid_uuid",
-                        rejected_value=player_id_str,
-                    )
-                ],
-            ).model_dump(),
+            details=[
+                ErrorDetail(
+                    location="token",
+                    field="sub",
+                    issue="invalid_uuid",
+                    rejected_value=player_id_str,
+                )
+            ],
         )
 
     repo = VoteRepository(db)
@@ -231,53 +228,45 @@ async def submit_vote(
 
     cycle = await repo.get_current_open_cycle()
     if cycle is None:
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.INVALID_VOTE_STATE,
+            "当前投票周期不可投票",
+            request_id=request_id,
             status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponse(
-                code="INVALID_VOTE_STATE",
-                message="当前投票周期不可投票",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     candidate = await repo.get_candidate_by_id(body.candidate_id)
     if candidate is None or candidate.vote_cycle_id != cycle.vote_cycle_id:
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.CANDIDATE_NOT_FOUND,
+            "候选项不存在或不属于当前投票周期",
+            request_id=request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="CANDIDATE_NOT_FOUND",
-                message="候选项不存在或不属于当前投票周期",
-                request_id=request_id,
-                details=[
-                    ErrorDetail(
-                        location="body",
-                        field="candidate_id",
-                        issue="not_found",
-                        rejected_value=str(body.candidate_id),
-                    )
-                ],
-            ).model_dump(),
+            details=[
+                ErrorDetail(
+                    location="body",
+                    field="candidate_id",
+                    issue="not_found",
+                    rejected_value=str(body.candidate_id),
+                )
+            ],
         )
 
     if candidate.status != "active":
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.CANDIDATE_NOT_ACTIVE,
+            "该候选项当前不可投票",
+            request_id=request_id,
             status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponse(
-                code="CANDIDATE_NOT_ACTIVE",
-                message="该候选项当前不可投票",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     existing_vote = await repo.has_player_voted(cycle.vote_cycle_id, player_uuid)
     if existing_vote is not None:
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.ALREADY_VOTED,
+            "你已经在本周期投过票",
+            request_id=request_id,
             status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponse(
-                code="ALREADY_VOTED",
-                message="你已经在本周期投过票",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     vote = await repo.create_vote(
@@ -343,21 +332,19 @@ async def get_vote_history(
     try:
         player_uuid = uuid.UUID(player_id_str)
     except ValueError:
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id=request_id,
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ErrorResponse(
-                code="INVALID_PLAYER_ID",
-                message="无效的玩家ID格式",
-                request_id=request_id,
-                details=[
-                    ErrorDetail(
-                        location="token",
-                        field="sub",
-                        issue="invalid_uuid",
-                        rejected_value=player_id_str,
-                    )
-                ],
-            ).model_dump(),
+            details=[
+                ErrorDetail(
+                    location="token",
+                    field="sub",
+                    issue="invalid_uuid",
+                    rejected_value=player_id_str,
+                )
+            ],
         )
 
     repo = VoteRepository(db)
@@ -412,34 +399,30 @@ async def create_vote_cycle(
     request_id = _make_request_id("req_ops_vc")
 
     if body.ends_at <= body.starts_at:
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.INVALID_ARGUMENT,
+            "投票结束时间必须晚于开始时间",
+            request_id=request_id,
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ErrorResponse(
-                code="INVALID_ARGUMENT",
-                message="投票结束时间必须晚于开始时间",
-                request_id=request_id,
-                details=[
-                    ErrorDetail(
-                        location="body",
-                        field="ends_at",
-                        issue="must_be_after_starts_at",
-                        rejected_value=body.ends_at.isoformat(),
-                    )
-                ],
-            ).model_dump(),
+            details=[
+                ErrorDetail(
+                    location="body",
+                    field="ends_at",
+                    issue="must_be_after_starts_at",
+                    rejected_value=body.ends_at.isoformat(),
+                )
+            ],
         )
 
     repo = VoteRepository(db)
 
     existing_open = await repo.get_open_cycle_for_chapter(body.chapter_id)
     if existing_open is not None:
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.VOTE_CYCLE_CONFLICT,
+            "当前章节已存在开放中的投票周期",
+            request_id=request_id,
             status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponse(
-                code="VOTE_CYCLE_CONFLICT",
-                message="当前章节已存在开放中的投票周期",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     candidates_data = [c.model_dump() for c in body.candidates]
@@ -511,23 +494,19 @@ async def schedule_vote_cycle(
 
     cycle = await repo.get_cycle_by_id(vote_cycle_id)
     if cycle is None:
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.VOTE_CYCLE_NOT_FOUND,
+            "投票周期不存在",
+            request_id=request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="VOTE_CYCLE_NOT_FOUND",
-                message="投票周期不存在",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     if not VoteRepository.is_valid_transition(cycle.status, "scheduled"):
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.INVALID_VOTE_STATE,
+            f"投票周期状态 {cycle.status} 不允许迁移到 scheduled",
+            request_id=request_id,
             status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponse(
-                code="INVALID_VOTE_STATE",
-                message=f"投票周期状态 {cycle.status} 不允许迁移到 scheduled",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     from_status = cycle.status
@@ -585,35 +564,29 @@ async def open_vote_cycle(
 
     cycle = await repo.get_cycle_by_id(vote_cycle_id)
     if cycle is None:
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.VOTE_CYCLE_NOT_FOUND,
+            "投票周期不存在",
+            request_id=request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="VOTE_CYCLE_NOT_FOUND",
-                message="投票周期不存在",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     if not VoteRepository.is_valid_transition(cycle.status, "open"):
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.INVALID_VOTE_STATE,
+            f"投票周期状态 {cycle.status} 不允许迁移到 open",
+            request_id=request_id,
             status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponse(
-                code="INVALID_VOTE_STATE",
-                message=f"投票周期状态 {cycle.status} 不允许迁移到 open",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     # 检查同一章节是否已有开放周期
     existing_open = await repo.get_open_cycle_for_chapter(cycle.chapter_id)
     if existing_open is not None and existing_open.vote_cycle_id != vote_cycle_id:
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.VOTE_CYCLE_CONFLICT,
+            "当前章节已存在开放中的投票周期",
+            request_id=request_id,
             status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponse(
-                code="VOTE_CYCLE_CONFLICT",
-                message="当前章节已存在开放中的投票周期",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     from_status = cycle.status
@@ -671,23 +644,19 @@ async def close_vote_cycle(
 
     cycle = await repo.get_cycle_by_id(vote_cycle_id)
     if cycle is None:
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.VOTE_CYCLE_NOT_FOUND,
+            "投票周期不存在",
+            request_id=request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="VOTE_CYCLE_NOT_FOUND",
-                message="投票周期不存在",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     if not VoteRepository.is_valid_transition(cycle.status, "closed"):
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.INVALID_VOTE_STATE,
+            f"投票周期状态 {cycle.status} 不允许迁移到 closed",
+            request_id=request_id,
             status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponse(
-                code="INVALID_VOTE_STATE",
-                message=f"投票周期状态 {cycle.status} 不允许迁移到 closed",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     # 关闭投票时自动计票
@@ -763,23 +732,19 @@ async def finalize_vote_cycle(
 
     cycle = await repo.get_cycle_by_id(vote_cycle_id)
     if cycle is None:
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.VOTE_CYCLE_NOT_FOUND,
+            "投票周期不存在",
+            request_id=request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="VOTE_CYCLE_NOT_FOUND",
-                message="投票周期不存在",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     if not VoteRepository.is_valid_transition(cycle.status, "finalized"):
-        raise HTTPException(
+        raise_vote_error(
+            VoteErrorCodes.INVALID_VOTE_STATE,
+            f"投票周期状态 {cycle.status} 不允许迁移到 finalized",
+            request_id=request_id,
             status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponse(
-                code="INVALID_VOTE_STATE",
-                message=f"投票周期状态 {cycle.status} 不允许迁移到 finalized",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     from_status = cycle.status

@@ -10,6 +10,7 @@ from app.core.deps import (
     RequireContentRollbackScope,
     UserPayload,
 )
+from app.core.errors import ContentErrorCodes, raise_content_error
 from app.core.event_publisher import event_publisher
 from app.core.metrics import (
     record_package_create,
@@ -147,21 +148,19 @@ async def get_package_detail(
     pkg = await repo.get_package_by_id(package_id)
 
     if pkg is None:
-        raise HTTPException(
+        raise_content_error(
+            ContentErrorCodes.PACKAGE_NOT_FOUND,
+            "内容包不存在",
+            request_id=request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="PACKAGE_NOT_FOUND",
-                message="内容包不存在",
-                request_id=request_id,
-                details=[
-                    ErrorDetail(
-                        location="path",
-                        field="package_id",
-                        issue="not_found",
-                        rejected_value=str(package_id),
-                    )
-                ],
-            ).model_dump(),
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="package_id",
+                    issue="not_found",
+                    rejected_value=str(package_id),
+                )
+            ],
         )
 
     if pkg.status not in ("gray", "live") and current_user.role.value not in (
@@ -169,13 +168,11 @@ async def get_package_detail(
         "system",
         "reviewer",
     ):
-        raise HTTPException(
+        raise_content_error(
+            ContentErrorCodes.PACKAGE_NOT_FOUND,
+            "内容包不存在",
+            request_id=request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="PACKAGE_NOT_FOUND",
-                message="内容包不存在",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     return EnvelopeResponse(
@@ -289,21 +286,19 @@ async def release_package(
     pkg = await repo.get_package_by_id(package_id)
 
     if pkg is None:
-        raise HTTPException(
+        raise_content_error(
+            ContentErrorCodes.PACKAGE_NOT_FOUND,
+            "内容包不存在",
+            request_id=request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="PACKAGE_NOT_FOUND",
-                message="内容包不存在",
-                request_id=request_id,
-                details=[
-                    ErrorDetail(
-                        location="path",
-                        field="package_id",
-                        issue="not_found",
-                        rejected_value=str(package_id),
-                    )
-                ],
-            ).model_dump(),
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="package_id",
+                    issue="not_found",
+                    rejected_value=str(package_id),
+                )
+            ],
         )
 
     try:
@@ -318,21 +313,19 @@ async def release_package(
         )
     except ValueError as e:
         if str(e) == "INVALID_PACKAGE_STATE":
-            raise HTTPException(
+            raise_content_error(
+                ContentErrorCodes.INVALID_PACKAGE_STATE,
+                f"内容包状态 {pkg.status} 不允许当前发布操作",
+                request_id=request_id,
                 status_code=status.HTTP_409_CONFLICT,
-                detail=ErrorResponse(
-                    code="INVALID_PACKAGE_STATE",
-                    message=f"内容包状态 {pkg.status} 不允许当前发布操作",
-                    request_id=request_id,
-                    details=[
-                        ErrorDetail(
-                            location="body",
-                            field="release_mode",
-                            issue="invalid_transition",
-                            rejected_value=body.release_mode.value,
-                        )
-                    ],
-                ).model_dump(),
+                details=[
+                    ErrorDetail(
+                        location="body",
+                        field="release_mode",
+                        issue="invalid_transition",
+                        rejected_value=body.release_mode.value,
+                    )
+                ],
             )
         raise
 
@@ -406,21 +399,19 @@ async def rollback_package(
     pkg = await repo.get_package_by_id(package_id)
 
     if pkg is None:
-        raise HTTPException(
+        raise_content_error(
+            ContentErrorCodes.PACKAGE_NOT_FOUND,
+            "内容包不存在",
+            request_id=request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="PACKAGE_NOT_FOUND",
-                message="内容包不存在",
-                request_id=request_id,
-                details=[
-                    ErrorDetail(
-                        location="path",
-                        field="package_id",
-                        issue="not_found",
-                        rejected_value=str(package_id),
-                    )
-                ],
-            ).model_dump(),
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="package_id",
+                    issue="not_found",
+                    rejected_value=str(package_id),
+                )
+            ],
         )
 
     try:
@@ -434,21 +425,19 @@ async def rollback_package(
         )
     except ValueError as e:
         if str(e) == "INVALID_PACKAGE_STATE":
-            raise HTTPException(
+            raise_content_error(
+                ContentErrorCodes.INVALID_PACKAGE_STATE,
+                f"内容包状态 {pkg.status} 不允许回滚操作",
+                request_id=request_id,
                 status_code=status.HTTP_409_CONFLICT,
-                detail=ErrorResponse(
-                    code="INVALID_PACKAGE_STATE",
-                    message=f"内容包状态 {pkg.status} 不允许回滚操作",
-                    request_id=request_id,
-                    details=[
-                        ErrorDetail(
-                            location="body",
-                            field="target_version",
-                            issue="invalid_transition",
-                            rejected_value=body.target_version,
-                        )
-                    ],
-                ).model_dump(),
+                details=[
+                    ErrorDetail(
+                        location="body",
+                        field="target_version",
+                        issue="invalid_transition",
+                        rejected_value=body.target_version,
+                    )
+                ],
             )
         raise
 

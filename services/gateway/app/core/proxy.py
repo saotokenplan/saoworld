@@ -6,6 +6,7 @@ from fastapi import Request, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.core.config import settings
+from app.core.errors import GatewayErrorCodes, raise_gateway_error
 from app.core.metrics import record_proxy_request
 
 logger = structlog.get_logger()
@@ -44,9 +45,10 @@ async def get_service_name(path: str) -> Optional[str]:
 async def proxy_request(request: Request) -> StreamingResponse:
     service_url = await get_service_url(request.url.path)
     if not service_url:
-        raise HTTPException(
+        raise_gateway_error(
+            GatewayErrorCodes.NOT_FOUND,
+            "未找到对应的服务",
             status_code=404,
-            detail={"code": "NOT_FOUND", "message": "未找到对应的服务"},
         )
 
     # 业务指标：代理请求计数
@@ -100,19 +102,22 @@ async def proxy_request(request: Request) -> StreamingResponse:
             )
     except httpx.ConnectError:
         logger.error("proxy_connection_failed", target_url=proxy_url)
-        raise HTTPException(
+        raise_gateway_error(
+            GatewayErrorCodes.SERVICE_UNAVAILABLE,
+            "后端服务不可用",
             status_code=503,
-            detail={"code": "SERVICE_UNAVAILABLE", "message": "后端服务不可用"},
         )
     except httpx.TimeoutException:
         logger.error("proxy_timeout", target_url=proxy_url)
-        raise HTTPException(
+        raise_gateway_error(
+            GatewayErrorCodes.GATEWAY_TIMEOUT,
+            "请求超时",
             status_code=504,
-            detail={"code": "GATEWAY_TIMEOUT", "message": "请求超时"},
         )
     except Exception as exc:
         logger.exception("proxy_request_failed", error=str(exc), target_url=proxy_url)
-        raise HTTPException(
+        raise_gateway_error(
+            GatewayErrorCodes.INTERNAL_ERROR,
+            "网关内部错误",
             status_code=500,
-            detail={"code": "INTERNAL_ERROR", "message": "网关内部错误"},
         )

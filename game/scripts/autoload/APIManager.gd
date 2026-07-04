@@ -29,7 +29,35 @@ const ERROR_CODES: Dictionary = {
 	"BAD_REQUEST": {"message": "请求参数错误", "status": 400},
 	"NETWORK_ERROR": {"message": "网络连接失败", "status": 0},
 	"TIMEOUT": {"message": "请求超时", "status": 0},
-	"INVALID_RESPONSE": {"message": "无效的响应数据", "status": 0}
+	"INVALID_RESPONSE": {"message": "无效的响应数据", "status": 0},
+	
+	"VOTE_CYCLE_NOT_FOUND": {"message": "投票周期不存在", "status": 404},
+	"VOTE_CYCLE_CONFLICT": {"message": "当前章节已存在开放中的投票周期", "status": 409},
+	"INVALID_ARGUMENT": {"message": "参数无效", "status": 400},
+	
+	"REGION_NOT_FOUND": {"message": "区域不存在", "status": 404},
+	"INVALID_REGION_STATUS": {"message": "区域状态不允许当前操作", "status": 409},
+	
+	"PACKAGE_NOT_FOUND": {"message": "内容包不存在", "status": 404},
+	"INVALID_PACKAGE_STATE": {"message": "内容包状态不允许当前操作", "status": 409},
+	
+	"REQUEST_NOT_FOUND": {"message": "生成请求不存在", "status": 404},
+	"OBJECT_NOT_FOUND": {"message": "生成对象不存在", "status": 404},
+	"INVALID_REQUEST_STATUS": {"message": "生成请求状态不允许当前操作", "status": 409},
+	"INVALID_OBJECT_STATUS": {"message": "生成对象状态不允许当前操作", "status": 409},
+	"MAX_RETRIES_EXCEEDED": {"message": "已达到最大重试次数", "status": 409},
+	
+	"REVIEW_NOT_FOUND": {"message": "审核记录不存在", "status": 404},
+	"NO_REVIEWS_FOUND": {"message": "该对象没有审核记录", "status": 404},
+	"INVALID_REVIEW_STATUS": {"message": "审核记录状态不允许当前操作", "status": 409},
+	
+	"PLAYER_NOT_FOUND": {"message": "玩家不存在", "status": 404},
+	"INVALID_QUEST_STATUS": {"message": "无效的任务状态", "status": 400},
+	
+	"ACTION_NOT_FOUND": {"message": "运营操作记录不存在", "status": 404},
+	
+	"SERVICE_UNAVAILABLE": {"message": "后端服务不可用", "status": 503},
+	"GATEWAY_TIMEOUT": {"message": "请求超时", "status": 504}
 }
 
 func _ready() -> void:

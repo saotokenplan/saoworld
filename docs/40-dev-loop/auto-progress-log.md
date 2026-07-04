@@ -2,6 +2,24 @@
 
 > 记录每次自动推进任务的执行情况
 
+## 2026-07-05 13:00 - auto-20260705-1300
+
+- **任务**：迁移各服务 routes.py 使用统一错误码模块
+- **结果**：成功完成
+- **关键产出**：
+  - vote-service routes.py 迁移完成：使用 `VoteErrorCodes` 常量和 `raise_vote_error()` 函数替代硬编码错误码，54 个测试全部通过
+  - world-service routes.py 迁移完成：使用 `WorldErrorCodes` 常量和 `raise_world_error()` 函数，40 个测试全部通过
+  - content-service routes.py 迁移完成：使用 `ContentErrorCodes` 常量和 `raise_content_error()` 函数，58 个测试全部通过
+  - generation-service routes.py 迁移完成：使用 `GenerationErrorCodes` 常量和 `raise_generation_error()` 函数，47 个测试全部通过
+  - review-service routes.py 迁移完成：使用 `ReviewErrorCodes` 常量和 `raise_review_error()` 函数，38 个测试全部通过
+  - player-service routes.py 迁移完成：使用 `PlayerErrorCodes` 常量和 `raise_player_error()` 函数，23 个测试全部通过
+  - ops-service routes.py 迁移完成：使用 `OpsErrorCodes` 常量和 `raise_ops_error()` 函数，32 个测试全部通过
+  - gateway-service routes.py 迁移完成：使用 `GatewayErrorCodes` 常量和 `raise_gateway_error()` 函数，32 个测试全部通过
+  - 客户端 `game/scripts/autoload/APIManager.gd` 错误码映射已更新，对齐服务端错误码
+  - 更新 `project-status.md`，标记第 20 项（统一错误码）相关工作已完成
+  - 更新 `auto-plan-20260705-1300.md`，验收标准全部标记完成
+- **遗留**：测试中硬编码的错误码字符串需同步更新以确保测试准确性、客户端与后端错误码端到端联调待验证
+
 ## 2026-07-05 12:00 - auto-20260705-1200
 
 - **任务**：统一各服务错误码与完善异常处理机制
