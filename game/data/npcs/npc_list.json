@@ -1,71 +1,107 @@
 {
   "schema_version": 1,
-  "description": "NPC 列表配置",
   "npcs": [
     {
-      "npc_id": "npc_blacksmith_01",
-      "name": "老杰克",
-      "role": "铁匠",
-      "region_id": "region_wasteland_01",
-      "description": "废墟荒原的老铁匠，性格豪爽，擅长修复和打造武器装备。",
-      "dialogs": [
-        {
-          "text": "欢迎来到我的铁匠铺！需要打造什么武器吗？"
-        },
-        {
-          "text": "最近商队在东边遭到了袭击，货物都被抢走了。如果你能帮忙找回，我会给你不错的报酬。",
-          "quest_id": "quest_rescue_trader_01"
-        }
-      ]
+      "npc_id": "npc_ironward_leader",
+      "name": "艾瑞尔·铁盾",
+      "title": "铁卫联盟统帅",
+      "faction": "faction_ironward",
+      "role": "leader",
+      "location": "loc_ironward_city",
+      "description": "铁卫联盟的最高统帅，严肃而坚定的中年女性，致力于重建统一的政权",
+      "personality": ["serious", "honorable", "determined"],
+      "dialogues": [
+        {"id": "dia_intro", "text": "欢迎来到铁卫城，旅行者。重建纪元需要每一个人的力量。", "condition": "first_meet"},
+        {"id": "dia_order", "text": "只有统一的秩序才能带来真正的和平。自由派的混乱只会让我们再次陷入黑暗。", "condition": "talk_about_faction"},
+        {"id": "dia_quest", "text": "我们的北方前哨最近遇到了一些麻烦，如果你愿意帮忙，我会给予你应有的奖励。", "condition": "has_quest"}
+      ],
+      "related_quests": ["quest_main_ch02_recruit", "quest_north_outpost_defense"],
+      "rewards": {"reputation": {"faction_ironward": 100}, "experience": 500}
     },
     {
-      "npc_id": "npc_guard_captain_01",
-      "name": "艾琳",
-      "role": "守卫队长",
-      "region_id": "region_forest_01",
-      "description": "幽光森林的守卫队长，负责监视森林边界的异常情况。",
-      "dialogs": [
-        {
-          "text": "欢迎来到幽光森林边界。这里最近不太安全，有很多奇怪的动静。"
-        },
-        {
-          "text": "我需要有人深入森林侦察一下情况。如果你愿意帮忙，我会给予丰厚的奖励。",
-          "quest_id": "quest_scout_forest_01"
-        }
-      ]
+      "npc_blacksmith": "npc_blacksmith",
+      "name": "格尔·铁锤",
+      "title": "首席铁匠",
+      "faction": "faction_ironward",
+      "role": "craftsman",
+      "location": "loc_ironward_city",
+      "description": "铁卫城最出色的铁匠，魁梧的身材和精湛的技艺让人印象深刻",
+      "personality": ["gruff", "skilled", "honest"],
+      "dialogues": [
+        {"id": "dia_intro", "text": "需要武器还是护甲？我的手艺在这一带是最好的。", "condition": "first_meet"},
+        {"id": "dia_work", "text": "好钢要用在刀刃上，这是我师傅教我的。", "condition": "talk_about_work"},
+        {"id": "dia_quest", "text": "我需要一些特殊的材料来打造一把新武器，你能帮我找找吗？", "condition": "has_quest"}
+      ],
+      "related_quests": ["quest_blacksmith_materials"],
+      "rewards": {"reputation": {"faction_ironward": 20}, "experience": 100}
     },
     {
-      "npc_id": "npc_messenger_01",
-      "name": "小马",
-      "role": "信使",
-      "region_id": "region_wasteland_01",
-      "description": "年轻的信使，负责在各个聚落之间传递消息。",
-      "dialogs": [
-        {
-          "text": "嘿，你好！有什么需要帮忙的吗？"
-        },
-        {
-          "text": "我这里有一封重要的信件需要送到森林入口的艾琳队长那里。你能帮我送一下吗？"
-        },
-        {
-          "text": "太好了！这是你的报酬，谢谢你的帮助！"
-        }
-      ]
+      "npc_farmer": "npc_farmer",
+      "name": "玛莎·耕地",
+      "title": "农田管理者",
+      "faction": "faction_ironward",
+      "role": "farmer",
+      "location": "loc_west_farmlands",
+      "description": "西部农田的管理者，勤劳善良的中年妇女，关心每一株庄稼",
+      "personality": ["kind", "hardworking", "worried"],
+      "dialogues": [
+        {"id": "dia_intro", "text": "欢迎来到西部农田！今年的收成看起来不错。", "condition": "first_meet"},
+        {"id": "dia_trouble", "text": "最近有一些野兽在夜里来偷吃庄稼，我们需要有人来保护农田。", "condition": "talk_about_trouble"},
+        {"id": "dia_reward", "text": "如果你能解决这个问题，我会给你一些新鲜的粮食作为感谢。", "condition": "offer_reward"}
+      ],
+      "related_quests": ["quest_farm_protection"],
+      "rewards": {"reputation": {"faction_ironward": 30}, "experience": 150}
     },
     {
-      "npc_id": "npc_merchant_01",
-      "name": "莎拉",
-      "role": "商人",
-      "region_id": "region_wasteland_01",
-      "description": "游走各地的商人，出售各种物资和装备。",
-      "dialogs": [
-        {
-          "text": "欢迎光临！看看有什么需要的吧。"
-        },
-        {
-          "text": "我这里有从远方带来的稀有物品，价格公道！"
-        }
-      ]
+      "npc_merchant": "npc_merchant",
+      "name": "雷克斯·金币",
+      "title": "商会代表",
+      "faction": "faction_harvest",
+      "role": "merchant",
+      "location": "loc_trade_market",
+      "description": "丰收商会在铁卫城的代表，精明的商人，总是面带微笑",
+      "personality": ["friendly", "shrewd", "talkative"],
+      "dialogues": [
+        {"id": "dia_intro", "text": "欢迎光临！看看有什么需要的？我这里应有尽有。", "condition": "first_meet"},
+        {"id": "dia_trade", "text": "贸易是繁荣的基石，没有交易就没有进步。", "condition": "talk_about_trade"},
+        {"id": "dia_info", "text": "我听说灰谷废墟最近有一些新发现，也许你会感兴趣？", "condition": "offer_info"}
+      ],
+      "related_quests": ["quest_relic_hunt"],
+      "rewards": {"reputation": {"faction_harvest": 25}, "experience": 120}
+    },
+    {
+      "npc_shadowveil_researcher": "npc_shadowveil_researcher",
+      "name": "露娜·暗星",
+      "title": "遗迹研究员",
+      "faction": "faction_shadowveil",
+      "role": "researcher",
+      "location": "loc_grayvalley_center",
+      "description": "暗影面纱的年轻研究员，对天裂遗迹充满好奇，知识渊博",
+      "personality": ["curious", "intelligent", "mysterious"],
+      "dialogues": [
+        {"id": "dia_intro", "text": "你好，旅行者。这里隐藏着许多秘密，你愿意和我一起探索吗？", "condition": "first_meet"},
+        {"id": "dia_research", "text": "天裂不仅仅是一场灾难，它可能是一扇通往新世界的大门。", "condition": "talk_about_research"},
+        {"id": "dia_help", "text": "我需要进入地下掩体，但那里太危险了。你能帮我吗？", "condition": "ask_help"}
+      ],
+      "related_quests": ["quest_shadowveil_exploration", "quest_underground_bunker"],
+      "rewards": {"reputation": {"faction_shadowveil": 50}, "experience": 250}
+    },
+    {
+      "npc_scavenger_leader": "npc_scavenger_leader",
+      "name": "杰克·流浪者",
+      "title": "拾荒者首领",
+      "faction": null,
+      "role": "leader",
+      "location": "loc_scavenger_camp",
+      "description": "灰谷废墟拾荒者的首领，经验丰富的流浪者，懂得如何在危险中生存",
+      "personality": ["tough", "cunning", "loyal"],
+      "dialogues": [
+        {"id": "dia_intro", "text": "嘿，新来的！这里可不是游乐场，小心你的小命。", "condition": "first_meet"},
+        {"id": "dia_warning", "text": "废墟深处有一些不该惹的东西，我劝你别去。", "condition": "warn_danger"},
+        {"id": "dia_rescue", "text": "我的一个手下被困在东墙废墟了，如果你能救他出来，我会给你一份不错的报酬。", "condition": "ask_rescue"}
+      ],
+      "related_quests": ["quest_scavenger_rescue"],
+      "rewards": {"experience": 200}
     }
   ]
 }

@@ -1,109 +1,145 @@
 {
   "schema_version": 1,
-  "description": "任务列表配置",
   "quests": [
     {
-      "quest_id": "quest_rescue_trader_01",
-      "title": "营救商队",
-      "description": "废墟荒原的商队遭到袭击，需要你前往救援幸存者并找回丢失的货物。",
+      "quest_id": "quest_main_ch01_start",
+      "title": "觉醒之路",
+      "description": "在废墟中醒来，了解这个世界的基本情况，开始你的冒险之旅",
+      "type": "main",
+      "chapter": "chapter_01",
       "status": "available",
-      "region_id": "region_wasteland_01",
-      "npc_id": "npc_blacksmith_01",
+      "prerequisites": [],
       "objectives": [
-        {
-          "description": "找到商队幸存者",
-          "progress": 0,
-          "target": 1
-        },
-        {
-          "description": "消灭袭击者",
-          "progress": 0,
-          "target": 5
-        },
-        {
-          "description": "找回丢失的货物",
-          "progress": 0,
-          "target": 3
-        }
+        {"id": "obj_wake_up", "description": "在废墟中醒来", "type": "story", "completed": true},
+        {"id": "obj_reach_ironward", "description": "前往铁卫城", "type": "location", "target": "loc_ironward_city"},
+        {"id": "obj_talk_guard", "description": "与城门守卫交谈", "type": "npc", "target": "npc_ironward_guard"},
+        {"id": "obj_report_commander", "description": "向艾瑞尔统帅报告", "type": "npc", "target": "npc_ironward_leader"}
       ],
-      "rewards": {
-        "experience": 500,
-        "gold": 200,
-        "items": ["铁剑", "皮甲"]
-      }
+      "rewards": {"experience": 100, "reputation": {"faction_ironward": 10}},
+      "failure_condition": null,
+      "start_npc": null,
+      "end_npc": "npc_ironward_leader",
+      "region": "region_core_ironward"
     },
     {
-      "quest_id": "quest_scout_forest_01",
-      "title": "森林侦察",
-      "description": "幽光森林边界出现异常，需要你前往侦察并报告情况。",
+      "quest_id": "quest_main_ch02_recruit",
+      "title": "铁卫的召唤",
+      "description": "接受铁卫联盟的招募，完成基础训练，正式成为铁卫的一员",
+      "type": "main",
+      "chapter": "chapter_02",
       "status": "available",
-      "region_id": "region_forest_01",
-      "npc_id": "npc_guard_captain_01",
+      "prerequisites": ["quest_main_ch01_start"],
       "objectives": [
-        {
-          "description": "进入幽光森林",
-          "progress": 0,
-          "target": 1
-        },
-        {
-          "description": "收集森林样本",
-          "progress": 0,
-          "target": 5
-        },
-        {
-          "description": "返回报告",
-          "progress": 0,
-          "target": 1
-        }
+        {"id": "obj_accept_recruit", "description": "接受艾瑞尔统帅的招募", "type": "npc", "target": "npc_ironward_leader"},
+        {"id": "obj_basic_training", "description": "完成基础战斗训练", "type": "combat", "target": 5},
+        {"id": "obj_prove_worth", "description": "证明你的价值", "type": "quest", "target": "quest_north_outpost_defense"},
+        {"id": "obj_take_oath", "description": "宣誓加入铁卫联盟", "type": "story", "target": "ironward_oath"}
       ],
-      "rewards": {
-        "experience": 800,
-        "gold": 300,
-        "items": ["森林药剂"]
-      }
+      "rewards": {"experience": 500, "reputation": {"faction_ironward": 100}},
+      "failure_condition": null,
+      "start_npc": "npc_ironward_leader",
+      "end_npc": "npc_ironward_leader",
+      "region": "region_core_ironward"
     },
     {
-      "quest_id": "quest_collect_scraps_01",
-      "title": "收集废料",
-      "description": "收集荒原上的废弃零件，铁匠需要这些材料来修复工具。",
-      "status": "active",
-      "region_id": "region_wasteland_01",
-      "npc_id": "npc_blacksmith_01",
+      "quest_id": "quest_ironward_supply",
+      "title": "补给运输",
+      "description": "帮助铁卫联盟运输补给物资到北方前哨",
+      "type": "side",
+      "chapter": "chapter_02",
+      "status": "available",
+      "prerequisites": ["quest_main_ch01_start"],
       "objectives": [
-        {
-          "description": "收集废铁",
-          "progress": 5,
-          "target": 10
-        },
-        {
-          "description": "收集铜线",
-          "progress": 3,
-          "target": 8
-        }
+        {"id": "obj_get_supplies", "description": "从仓库领取补给物资", "type": "location", "target": "loc_supply_depot"},
+        {"id": "obj_escort_supplies", "description": "护送补给前往北方前哨", "type": "travel", "target": "loc_north_outpost"},
+        {"id": "obj_deliver_supplies", "description": "将补给交付给前哨指挥官", "type": "npc", "target": "npc_north_commander"}
       ],
-      "rewards": {
-        "experience": 300,
-        "gold": 150
-      }
+      "rewards": {"experience": 150, "reputation": {"faction_ironward": 30}},
+      "failure_condition": {"type": "time_limit", "minutes": 30},
+      "start_npc": "npc_supply_master",
+      "end_npc": "npc_north_commander",
+      "region": "region_core_ironward"
     },
     {
-      "quest_id": "quest_deliver_message_01",
-      "title": "传递密信",
-      "description": "将一封密信送到森林入口的守卫队长手中。",
-      "status": "completed",
-      "region_id": "region_wasteland_01",
-      "npc_id": "npc_messenger_01",
+      "quest_id": "quest_farm_protection",
+      "title": "农田守护者",
+      "description": "帮助玛莎保护西部农田免受野兽侵扰",
+      "type": "side",
+      "chapter": "chapter_02",
+      "status": "available",
+      "prerequisites": ["quest_main_ch01_start"],
       "objectives": [
-        {
-          "description": "将密信交给守卫队长",
-          "progress": 1,
-          "target": 1
-        }
+        {"id": "obj_talk_farmer", "description": "与玛莎交谈了解情况", "type": "npc", "target": "npc_farmer"},
+        {"id": "obj_patrol_farm", "description": "巡逻农田寻找野兽踪迹", "type": "explore", "target": "loc_west_farmlands"},
+        {"id": "obj_defeat_beasts", "description": "击退侵扰农田的野兽", "type": "combat", "target": 3},
+        {"id": "obj_report_success", "description": "向玛莎报告任务完成", "type": "npc", "target": "npc_farmer"}
       ],
-      "rewards": {
-        "experience": 200,
-        "gold": 100
-      }
+      "rewards": {"experience": 150, "reputation": {"faction_ironward": 30}},
+      "failure_condition": null,
+      "start_npc": "npc_farmer",
+      "end_npc": "npc_farmer",
+      "region": "region_core_ironward"
+    },
+    {
+      "quest_id": "quest_shadowveil_exploration",
+      "title": "遗迹探索",
+      "description": "帮助暗影面纱的研究员探索灰谷废墟的中心区域",
+      "type": "side",
+      "chapter": "chapter_02",
+      "status": "available",
+      "prerequisites": ["quest_main_ch01_start"],
+      "objectives": [
+        {"id": "obj_find_researcher", "description": "找到露娜研究员", "type": "npc", "target": "npc_shadowveil_researcher"},
+        {"id": "obj_explore_center", "description": "探索灰谷中心广场", "type": "explore", "target": "loc_grayvalley_center"},
+        {"id": "obj_collect_samples", "description": "收集遗迹样本", "type": "collect", "target": 5},
+        {"id": "obj_return_samples", "description": "将样本交给露娜", "type": "npc", "target": "npc_shadowveil_researcher"}
+      ],
+      "rewards": {"experience": 250, "reputation": {"faction_shadowveil": 50}},
+      "failure_condition": null,
+      "start_npc": "npc_shadowveil_researcher",
+      "end_npc": "npc_shadowveil_researcher",
+      "region": "region_expansion_grayvalley"
+    },
+    {
+      "quest_id": "quest_relic_hunt",
+      "title": "遗物追寻",
+      "description": "根据雷克斯提供的线索，在灰谷废墟中寻找一件旧世界遗物",
+      "type": "side",
+      "chapter": "chapter_02",
+      "status": "available",
+      "prerequisites": ["quest_main_ch01_start"],
+      "objectives": [
+        {"id": "obj_talk_merchant", "description": "与雷克斯交谈获取线索", "type": "npc", "target": "npc_merchant"},
+        {"id": "obj_find_relic_location", "description": "找到遗物所在位置", "type": "explore", "target": "loc_eastern_wall"},
+        {"id": "obj_retrieve_relic", "description": "获取旧世界遗物", "type": "collect", "target": 1},
+        {"id": "obj_deliver_relic", "description": "将遗物交给雷克斯", "type": "npc", "target": "npc_merchant"}
+      ],
+      "rewards": {"experience": 200, "reputation": {"faction_harvest": 40}, "gold": 100},
+      "failure_condition": null,
+      "start_npc": "npc_merchant",
+      "end_npc": "npc_merchant",
+      "region": "region_expansion_grayvalley"
+    },
+    {
+      "quest_id": "quest_scavenger_rescue",
+      "title": "拾荒者救援",
+      "description": "帮助杰克救援被困在东墙废墟的手下",
+      "type": "side",
+      "chapter": "chapter_02",
+      "status": "available",
+      "prerequisites": ["quest_main_ch01_start"],
+      "objectives": [
+        {"id": "obj_talk_scavenger", "description": "与杰克交谈了解情况", "type": "npc", "target": "npc_scavenger_leader"},
+        {"id": "obj_reach_eastern_wall", "description": "前往东墙废墟", "type": "travel", "target": "loc_eastern_wall"},
+        {"id": "obj_defeat_enemies", "description": "清除废墟中的敌人", "type": "combat", "target": 4},
+        {"id": "obj_rescue_prisoner", "description": "救出被困的拾荒者", "type": "rescue", "target": "npc_scavenger_prisoner"},
+        {"id": "obj_return_camp", "description": "返回营地向杰克报告", "type": "npc", "target": "npc_scavenger_leader"}
+      ],
+      "rewards": {"experience": 200, "gold": 80},
+      "failure_condition": {"type": "time_limit", "minutes": 20},
+      "start_npc": "npc_scavenger_leader",
+      "end_npc": "npc_scavenger_leader",
+      "region": "region_expansion_grayvalley"
     }
   ]
 }
