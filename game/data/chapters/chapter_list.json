@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "chapters": [
+    {
+      "chapter_id": "chapter_01",
+      "name": "觉醒之路",
+      "description": "新手引导章节，了解世界背景，熟悉基本操作",
+      "theme": "introduction",
+      "status": "available",
+      "prerequisites": [],
+      "unlock_condition": "game_start",
+      "main_quests": ["quest_main_ch01_start"],
+      "side_quests": [],
+      "regions": ["region_core_ironward"],
+      "level_range": [1, 5],
+      "estimated_time": "30-45 minutes"
+    },
+    {
+      "chapter_id": "chapter_02",
+      "name": "铁卫的召唤",
+      "description": "接触铁卫联盟，了解秩序派立场，开始参与世界事务",
+      "theme": "faction_introduction",
+      "status": "locked",
+      "prerequisites": ["chapter_01"],
+      "unlock_condition": "complete_chapter_01",
+      "main_quests": ["quest_main_ch02_recruit"],
+      "side_quests": ["quest_ironward_supply", "quest_farm_protection", "quest_shadowveil_exploration", "quest_relic_hunt", "quest_scavenger_rescue"],
+      "regions": ["region_core_ironward", "region_expansion_grayvalley"],
+      "level_range": [5, 15],
+      "estimated_time": "2-3 hours"
+    },
+    {
+      "chapter_id": "chapter_03",
+      "name": "自由之声",
+      "description": "接触自由领地，了解自由派立场，面对秩序与自由的抉择",
+      "theme": "faction_conflict",
+      "status": "locked",
+      "prerequisites": ["chapter_02"],
+      "unlock_condition": "complete_chapter_02",
+      "main_quests": [],
+      "side_quests": [],
+      "regions": [],
+      "level_range": [15, 25],
+      "estimated_time": "TBD"
+    }
+  ]
+}

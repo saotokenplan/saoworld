@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "region_id": "region_expansion_grayvalley",
+  "name": "灰谷废墟",
+  "description": "天裂后废弃的旧世界城市遗迹，曾经是繁华的商业中心，如今被风沙和危险生物占据。废墟中隐藏着大量旧世界遗物和未知的秘密。",
+  "type": "expansion",
+  "terrain": ["ruins", "wasteland"],
+  "climate": "arid",
+  "resource_level": "high",
+  "risk_level": "medium_to_high",
+  "status": "unstable",
+  "factions": [
+    {"faction_id": "faction_shadowveil", "influence": 0.4, "presence": "exploring"},
+    {"faction_id": "faction_harvest", "influence": 0.2, "presence": "scavenging"},
+    {"faction_id": "faction_ironward", "influence": 0.1, "presence": "patrol"}
+  ],
+  "key_locations": [
+    {"location_id": "loc_grayvalley_center", "name": "灰谷中心广场", "type": "ruins", "description": "旧世界城市的中心，巨大的纪念碑依然耸立"},
+    {"location_id": "loc_underground_bunker", "name": "地下掩体", "type": "bunker", "description": "天裂时建造的避难所，可能藏有重要遗物"},
+    {"location_id": "loc_eastern_wall", "name": "东墙废墟", "type": "wall", "description": "城市的东部防御墙，部分区域仍完好"},
+    {"location_id": "loc_scavenger_camp", "name": "拾荒者营地", "type": "camp", "description": "流浪者建立的临时营地"}
+  ],
+  "available_quests": ["quest_shadowveil_exploration", "quest_relic_hunt", "quest_scavenger_rescue"],
+  "npcs": ["npc_shadowveil_researcher", "npc_scavenger_leader", "npc_ghost_merchant"]
+}
