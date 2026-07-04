@@ -2,6 +2,21 @@
 
 > 记录每次自动推进任务的执行情况
 
+## 2026-07-05 11:00 - auto-20260705-1100
+
+- **任务**：端到端集成验证与首期内容包灰度发布准备
+- **结果**：成功完成
+- **关键产出**：
+  - 修复 `game/data/npcs/npc_list.json` 数据格式错误（NPC 对象键值对格式）
+  - 修复 content/generation/review-service 的 `event_publisher.py` 错误导入路径
+  - 创建 `services/content/tests/test_seed_packages.py`（4 个测试用例）
+  - 创建 `tools/playtest/e2e_integration_test.py`（端到端集成测试脚本）
+  - 验证所有 8 个后端服务测试通过（349 个测试用例）
+  - 验证 workers 测试通过（29 个测试用例）
+  - 验证内容检查工具测试通过（28 个测试用例）
+  - 更新 project-status.md，标记端到端集成验证完成
+- **遗留**：workers 测试依赖 Redis（7 个测试需 Redis 连接）、seed_packages 测试导入路径待调整、首期内容包需在真实数据库环境初始化、灰度发布需实际执行
+
 ## 2026-07-05 10:00 - auto-20260705-1000
 
 - **任务**：客户端交互稿与界面流文档化

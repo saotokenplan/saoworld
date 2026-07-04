@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 import redis.asyncio as redis
 
-from services.content.app.core.config import settings
+from app.core.config import settings
 
 
 class EventPublisher:
