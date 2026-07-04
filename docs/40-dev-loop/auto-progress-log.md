@@ -2,6 +2,19 @@
 
 > 记录每次自动推进任务的执行情况
 
+## 2026-07-05 07:00 - auto-20260705-0700
+
+- **任务**：补齐门禁 Runbook 文档与关键路径 E2E 测试脚本
+- **结果**：成功完成
+- **关键产出**：
+  - 创建 `docs/runbook/` 目录结构与 README
+  - 创建 11 个门禁 Runbook 文档（Ruff Lint、Mypy Typecheck、vote/world/content/workers 单元测试、四项内容检查、关键路径 E2E 测试）
+  - 每个 runbook 包含门禁概述、常见失败原因、解决方案、手动执行方法、升级路径
+  - 创建 `tools/playtest/` 目录与 E2E 测试脚本（`run_vote_flow.sh`、`test_vote_flow.py`）
+  - 投票流程 E2E 测试支持分步执行（创建周期 → 添加候选 → 开放投票 → 提交投票 → 关闭计票 → 验证结果）
+  - 更新 project-status.md，补充门禁 Runbook 和 E2E 测试脚本到已落地资产
+- **遗留**：E2E 测试脚本当前为模拟实现，后续需接入真实 vote-service API；可扩展更多 E2E 测试路径；建议集成到 CI nightly 任务
+
 ## 2026-07-05 02:00 - auto-20260705-0200
 
 - **任务**：完善灰度发布可见性判断 + 修复 Workers API 路径不匹配

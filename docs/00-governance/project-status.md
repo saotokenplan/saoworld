@@ -298,6 +298,8 @@
   - 每个服务在 `tests/test_health.py` 新增 2 个测试（指标暴露 + 指标递增），共 16 个新增测试
   - Grafana 仪表盘 `infra/grafana/dashboards/game-dashboard.json` 扩展至 20 个面板，覆盖 HTTP 指标 + 8 个服务的业务指标
   - 全部 8 个服务通过 ruff、mypy、pytest（共 335 个测试用例）验证
+- **门禁 Runbook 文档**：`docs/runbook/` 目录已创建，包含 11 个门禁的运行手册（Ruff Lint、Mypy Typecheck、vote/world/content/workers 单元测试、四项内容检查、关键路径 E2E 测试），每个 runbook 包含门禁概述、常见失败原因、解决方案、手动执行方法和升级路径
+- **关键路径 E2E 测试脚本**：`tools/playtest/` 目录已创建，包含投票流程端到端测试（创建投票周期 → 添加候选项 → 开放投票 → 提交投票 → 关闭计票 → 验证结果），支持分步执行和完整流程测试
 
 ## 当前主要风险
 
