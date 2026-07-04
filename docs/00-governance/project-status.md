@@ -271,6 +271,13 @@
   - 内容包打包 Worker 增强（`workers/tasks/content_packaging.py`）：新增 `validate_package_payload` 校验函数、`load_content_from_directory` 目录加载函数、`package_content_from_directory` 任务
   - 内容包发布流程增强（`workers/tasks/content_release.py`）：新增 `build_gray_scope` 灰度范围构建、`promote_to_full_release` 全量发布任务，支持按区域/玩家百分比/指定玩家列表进行灰度
   - 测试用例补充：content_packaging（6个）、content_release（8个），全部通过
+- **内容审核四项检查**：
+  - 工具脚本：`tools/content_check/`（世界一致性、数值边界、内容安全、重复度四项检查）
+  - 基类与配置：`base.py`、`config.py`、`__init__.py`
+  - 各检查器：`world_consistency.py`、`reward_boundary.py`、`content_safety.py`、`duplication.py`
+  - 测试覆盖：28 个单元测试全部通过
+  - 与 Workers 集成：`workers/tasks/content_review.py` 已更新为调用检查器实现
+  - 门禁注册表更新：`gate_registry.yaml` 已新增 4 个 content 类型门禁
 - **Prometheus 监控指标集成**：
   - 所有 8 个后端服务（vote、world、content、generation、review、gateway、player、ops）均已集成 `prometheus-fastapi-instrumentator`
   - 每个服务均提供 `/metrics` 端点，支持 HTTP 请求数、延迟、错误率等指标采集
@@ -307,6 +314,7 @@
 14. ~~完善客户端与后端 API 联调封装（APIManager、VoteManager、ContentManager、WorldManager、PlayerManager）~~ 已完成，错误码对齐、重试机制、缓存管理、测试用例补充完成
 15. ~~首期内容实例化（世界观、区域、阵营、NPC、任务、章节）~~ 已完成，包含世界观根设定、2个首期区域配置、4个势力阵营、6个核心NPC、7个任务实例（1条主线+6条支线）、3个章节定义
 16. ~~内容包打包与发布流程实现~~ 已完成，包含首期内容包初始化脚本、内容包校验与目录加载、灰度发布范围配置、全量发布升级任务、完整测试覆盖
+17. ~~内容审核四项检查与工具脚本（世界一致性、数值边界、内容安全、重复度）~~ 已完成，tools/content_check/ 四个检查器 + 28个测试 + workers 集成 + 门禁注册表更新
 
 ## 进入实施前的建议门槛
 
