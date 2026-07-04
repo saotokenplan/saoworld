@@ -2,6 +2,20 @@
 
 > 记录每次自动推进任务的执行情况
 
+## 2026-07-04 09:00 - auto-20260704-0900
+
+- **任务**：完善客户端与后端 API 联调封装（APIManager、VoteManager、ContentManager、WorldManager、PlayerManager）
+- **结果**：成功完成
+- **关键产出**：
+  - APIManager 增强：后端错误码对齐（15+错误码）、HTTP 状态码处理、幂等请求重试机制、auth_error 信号、PUT/DELETE 方法支持
+  - VoteManager 增强：错误码处理、auth_error 信号联动、can_vote 判断、辅助方法（状态/标题/描述/结束时间）、错误类型判断
+  - ContentManager 增强：版本同步、更新检查机制（自动/手动）、安装/卸载逻辑、loading 状态、auth_error 信号
+  - WorldManager 新增：区域列表 API、区域详情 API、区域状态常量、缓存机制、按状态过滤
+  - PlayerManager 新增：玩家信息 API、任务列表 API、区域状态 API、任务状态常量、玩家数据缓存与同步、区域解锁管理
+  - 测试用例补充：APIManager（11个）、WorldManager（11个）、PlayerManager（14个）
+  - 更新 project-status.md，标记第 14 项为已完成，当前阶段更新为"核心玩法联调阶段"
+- **遗留**：Godot 场景文件需在引擎中创建、GUT 插件待安装、实际网络联调待进行、监控 metrics endpoint 待集成
+
 ## 2026-07-04 08:00 - auto-20260704-0800
 
 - **任务**：完善世界探索与任务系统UI（世界地图、任务面板、NPC交互）
