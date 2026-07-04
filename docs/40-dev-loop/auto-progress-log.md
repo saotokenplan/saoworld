@@ -2,6 +2,21 @@
 
 > 记录每次自动推进任务的执行情况
 
+## 2026-07-05 08:00 - auto-20260705-0800
+
+- **任务**：事件总线集成与服务间通信基础设施
+- **结果**：成功完成
+- **关键产出**：
+  - 创建 `workers/events/` 事件总线基础设施（基于 Redis Pub/Sub），包含 EventBus、EventPublisher、EventSubscriber、7 个核心事件类型定义
+  - 实现事件处理器，建立完整的事件驱动链路（投票结算→生成→审核→打包→发布）
+  - 在 vote-service、content-service、generation-service、review-service 中集成事件发布客户端
+  - 实现 Celery Beat 定时任务调度器，配置 3 个定时任务（每日门禁扫描、每小时指标同步、每日内容审核）
+  - 创建 `workers/utils/metrics.py`，定义 Gauge 指标与同步函数
+  - 更新 `workers/celery_app.py`，集成 beat_schedule 和 scheduled 队列路由
+  - 4 个定时任务测试全部通过
+  - 更新 project-status.md，标记事件总线和定时任务为已完成
+- **遗留**：事件总线测试依赖 Redis 连接、各服务 routes.py 需实际集成事件发布调用、事件消费重试机制待实现、真实指标同步逻辑待完善
+
 ## 2026-07-05 07:00 - auto-20260705-0700
 
 - **任务**：补齐门禁 Runbook 文档与关键路径 E2E 测试脚本
