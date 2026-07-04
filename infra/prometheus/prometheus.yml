@@ -1,0 +1,53 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'vote-service'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['vote-service:8000']
+
+  - job_name: 'world-service'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['world-service:8000']
+
+  - job_name: 'content-service'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['content-service:8000']
+
+  - job_name: 'generation-service'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['generation-service:8000']
+
+  - job_name: 'review-service'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['review-service:8000']
+
+  - job_name: 'gateway-service'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['gateway-service:8000']
+
+  - job_name: 'player-service'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['player-service:8000']
+
+  - job_name: 'ops-service'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['ops-service:8000']
+
+  - job_name: 'postgres'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['postgres:9187']
+
+  - job_name: 'redis'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['redis:6379']
