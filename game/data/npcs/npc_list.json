@@ -19,7 +19,7 @@
       "rewards": {"reputation": {"faction_ironward": 100}, "experience": 500}
     },
     {
-      "npc_blacksmith": "npc_blacksmith",
+      "npc_id": "npc_blacksmith",
       "name": "格尔·铁锤",
       "title": "首席铁匠",
       "faction": "faction_ironward",
@@ -36,7 +36,7 @@
       "rewards": {"reputation": {"faction_ironward": 20}, "experience": 100}
     },
     {
-      "npc_farmer": "npc_farmer",
+      "npc_id": "npc_farmer",
       "name": "玛莎·耕地",
       "title": "农田管理者",
       "faction": "faction_ironward",
@@ -53,7 +53,7 @@
       "rewards": {"reputation": {"faction_ironward": 30}, "experience": 150}
     },
     {
-      "npc_merchant": "npc_merchant",
+      "npc_id": "npc_merchant",
       "name": "雷克斯·金币",
       "title": "商会代表",
       "faction": "faction_harvest",
@@ -70,7 +70,7 @@
       "rewards": {"reputation": {"faction_harvest": 25}, "experience": 120}
     },
     {
-      "npc_shadowveil_researcher": "npc_shadowveil_researcher",
+      "npc_id": "npc_shadowveil_researcher",
       "name": "露娜·暗星",
       "title": "遗迹研究员",
       "faction": "faction_shadowveil",
@@ -87,7 +87,7 @@
       "rewards": {"reputation": {"faction_shadowveil": 50}, "experience": 250}
     },
     {
-      "npc_scavenger_leader": "npc_scavenger_leader",
+      "npc_id": "npc_scavenger_leader",
       "name": "杰克·流浪者",
       "title": "拾荒者首领",
       "faction": null,
