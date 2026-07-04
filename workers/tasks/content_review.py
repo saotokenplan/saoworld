@@ -110,7 +110,14 @@ def run_world_consistency_review(
             "detail_jsonb": check_result.to_dict(),
         }
 
-        response = review_client.post_sync("/api/v1/reviews", json=review_payload)
+        response = review_client.post_sync(
+            "/api/v1/ops/review/records",
+            json=review_payload,
+            headers={
+                "Idempotency-Key": f"review_wc_{content_package_id}_{trace_id}",
+                "X-Trace-Id": trace_id,
+            },
+        )
         response.raise_for_status()
 
         async def _write_audit() -> None:
@@ -137,7 +144,7 @@ def run_world_consistency_review(
 
         return {
             "content_package_id": content_package_id,
-            "result": check_result.status.value,
+            "result": _map_result_status(check_result.status.value),
             "score": check_result.score,
             "issues_count": check_result.issues_count,
             "review_type": "world_consistency",
@@ -188,7 +195,14 @@ def run_balance_review(
             "detail_jsonb": check_result.to_dict(),
         }
 
-        response = review_client.post_sync("/api/v1/reviews", json=review_payload)
+        response = review_client.post_sync(
+            "/api/v1/ops/review/records",
+            json=review_payload,
+            headers={
+                "Idempotency-Key": f"review_balance_{content_package_id}_{trace_id}",
+                "X-Trace-Id": trace_id,
+            },
+        )
         response.raise_for_status()
 
         async def _write_audit() -> None:
@@ -205,17 +219,18 @@ def run_balance_review(
 
         asyncio.run(_write_audit())
 
+        mapped_result = _map_result_status(check_result.status.value)
         logger.info(
             "task_completed",
             content_package_id=content_package_id,
-            result=check_result.status.value,
+            result=mapped_result,
             score=check_result.score,
             issues_count=check_result.issues_count,
         )
 
         return {
             "content_package_id": content_package_id,
-            "result": check_result.status.value,
+            "result": mapped_result,
             "score": check_result.score,
             "issues_count": check_result.issues_count,
             "review_type": "balance",
@@ -264,7 +279,14 @@ def run_safety_review(
             "detail_jsonb": check_result.to_dict(),
         }
 
-        response = review_client.post_sync("/api/v1/reviews", json=review_payload)
+        response = review_client.post_sync(
+            "/api/v1/ops/review/records",
+            json=review_payload,
+            headers={
+                "Idempotency-Key": f"review_safety_{content_package_id}_{trace_id}",
+                "X-Trace-Id": trace_id,
+            },
+        )
         response.raise_for_status()
 
         async def _write_audit() -> None:
@@ -281,17 +303,18 @@ def run_safety_review(
 
         asyncio.run(_write_audit())
 
+        mapped_result = _map_result_status(check_result.status.value)
         logger.info(
             "task_completed",
             content_package_id=content_package_id,
-            result=check_result.status.value,
+            result=mapped_result,
             score=check_result.score,
             issues_count=check_result.issues_count,
         )
 
         return {
             "content_package_id": content_package_id,
-            "result": check_result.status.value,
+            "result": mapped_result,
             "score": check_result.score,
             "issues_count": check_result.issues_count,
             "review_type": "safety",
@@ -359,7 +382,14 @@ def run_duplication_review(
             "detail_jsonb": check_result.to_dict(),
         }
 
-        response = review_client.post_sync("/api/v1/reviews", json=review_payload)
+        response = review_client.post_sync(
+            "/api/v1/ops/review/records",
+            json=review_payload,
+            headers={
+                "Idempotency-Key": f"review_duplication_{content_package_id}_{trace_id}",
+                "X-Trace-Id": trace_id,
+            },
+        )
         response.raise_for_status()
 
         async def _write_audit() -> None:
@@ -376,17 +406,18 @@ def run_duplication_review(
 
         asyncio.run(_write_audit())
 
+        mapped_result = _map_result_status(check_result.status.value)
         logger.info(
             "task_completed",
             content_package_id=content_package_id,
-            result=check_result.status.value,
+            result=mapped_result,
             score=check_result.score,
             issues_count=check_result.issues_count,
         )
 
         return {
             "content_package_id": content_package_id,
-            "result": check_result.status.value,
+            "result": mapped_result,
             "score": check_result.score,
             "issues_count": check_result.issues_count,
             "review_type": "duplication",
