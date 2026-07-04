@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "region_id": "region_core_ironward",
+  "name": "铁卫城周边",
+  "description": "铁卫联盟的核心区域，重建纪元中最繁荣的聚居地之一。平原与丘陵交错，农田连绵，远处可见铁卫城的宏伟城墙。",
+  "type": "core",
+  "terrain": ["plain", "hill"],
+  "climate": "temperate",
+  "resource_level": "medium",
+  "risk_level": "low_to_medium",
+  "status": "active",
+  "factions": [
+    {"faction_id": "faction_ironward", "influence": 0.7, "presence": "strong"},
+    {"faction_id": "faction_freehold", "influence": 0.2, "presence": "minor"},
+    {"faction_id": "faction_harvest", "influence": 0.1, "presence": "trading"}
+  ],
+  "key_locations": [
+    {"location_id": "loc_ironward_city", "name": "铁卫城", "type": "city", "description": "铁卫联盟的首府，重建纪元的政治中心"},
+    {"location_id": "loc_west_farmlands", "name": "西部农田", "type": "farm", "description": "铁卫城的主要粮食供应地"},
+    {"location_id": "loc_north_outpost", "name": "北方前哨", "type": "outpost", "description": "铁卫联盟的北部防御据点"},
+    {"location_id": "loc_trade_market", "name": "贸易集市", "type": "market", "description": "各势力商人聚集的贸易中心"}
+  ],
+  "available_quests": ["quest_main_ch01_start", "quest_ironward_supply", "quest_farm_protection"],
+  "npcs": ["npc_ironward_leader", "npc_blacksmith", "npc_farmer", "npc_merchant"]
+}

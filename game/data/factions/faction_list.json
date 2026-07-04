@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "factions": [
+    {
+      "faction_id": "faction_ironward",
+      "name": "铁卫联盟",
+      "description": "重建纪元中最强大的秩序派势力，致力于恢复旧世界的统一政权",
+      "alignment": "order",
+      "color": "#4A90D9",
+      "base_region": "region_core_ironward",
+      "leader": "npc_ironward_leader",
+      "reputation_levels": {
+        "hated": "被铁卫联盟通缉",
+        "unfriendly": "不受欢迎的外来者",
+        "neutral": "普通访客",
+        "friendly": "受尊敬的盟友",
+        "trusted": "荣誉公民",
+        "honored": "铁卫勋章获得者"
+      }
+    },
+    {
+      "faction_id": "faction_freehold",
+      "name": "自由领地",
+      "description": "主张各聚落自治的自由派势力，反对集权统治",
+      "alignment": "freedom",
+      "color": "#5CB85C",
+      "base_region": "region_west_forest",
+      "leader": "npc_freehold_leader",
+      "reputation_levels": {
+        "hated": "被视为秩序派间谍",
+        "unfriendly": "可疑人物",
+        "neutral": "旅行者",
+        "friendly": "自由之友",
+        "trusted": "荣誉成员",
+        "honored": "自由守护者"
+      }
+    },
+    {
+      "faction_id": "faction_shadowveil",
+      "name": "暗影面纱",
+      "description": "神秘的中立势力，专注于探索天裂遗迹的秘密",
+      "alignment": "neutral",
+      "color": "#7B4D9E",
+      "base_region": "region_east_ruins",
+      "leader": "npc_shadowveil_leader",
+      "reputation_levels": {
+        "hated": "被清除的入侵者",
+        "unfriendly": "被监视的外人",
+        "neutral": "观察者",
+        "friendly": "研究伙伴",
+        "trusted": "核心成员",
+        "honored": "秘密守护者"
+      }
+    },
+    {
+      "faction_id": "faction_harvest",
+      "name": "丰收商会",
+      "description": "以贸易和商业为核心的中立势力，通过经济影响世界",
+      "alignment": "neutral",
+      "color": "#F0AD4E",
+      "base_region": "region_south_oasis",
+      "leader": "npc_harvest_leader",
+      "reputation_levels": {
+        "hated": "欠债不还的失信者",
+        "unfriendly": "不受欢迎的顾客",
+        "neutral": "普通商人",
+        "friendly": "重要客户",
+        "trusted": "商会伙伴",
+        "honored": "商会名誉会长"
+      }
+    }
+  ],
+  "relations": [
+    {"from": "faction_ironward", "to": "faction_freehold", "relation": "hostile"},
+    {"from": "faction_ironward", "to": "faction_shadowveil", "relation": "wary"},
+    {"from": "faction_ironward", "to": "faction_harvest", "relation": "neutral"},
+    {"from": "faction_freehold", "to": "faction_ironward", "relation": "hostile"},
+    {"from": "faction_freehold", "to": "faction_shadowveil", "relation": "neutral"},
+    {"from": "faction_freehold", "to": "faction_harvest", "relation": "friendly"},
+    {"from": "faction_shadowveil", "to": "faction_ironward", "relation": "wary"},
+    {"from": "faction_shadowveil", "to": "faction_freehold", "relation": "neutral"},
+    {"from": "faction_shadowveil", "to": "faction_harvest", "relation": "neutral"},
+    {"from": "faction_harvest", "to": "faction_ironward", "relation": "neutral"},
+    {"from": "faction_harvest", "to": "faction_freehold", "relation": "friendly"},
+    {"from": "faction_harvest", "to": "faction_shadowveil", "relation": "neutral"}
+  ]
+}

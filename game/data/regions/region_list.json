@@ -3,20 +3,54 @@
   "description": "区域列表配置",
   "regions": [
     {
-      "region_id": "region_wasteland_01",
-      "name": "废墟荒原",
-      "description": "被遗忘的荒原地带，散落着旧时代的遗迹。",
+      "region_id": "region_core_ironward",
+      "name": "铁卫城周边",
+      "description": "铁卫联盟的核心区域，重建纪元中最繁荣的聚居地之一。",
       "status": "active",
       "level_range": [1, 10],
-      "faction": "neutral"
+      "type": "core",
+      "risk_level": "low_to_medium",
+      "resource_level": "medium"
     },
     {
-      "region_id": "region_forest_01",
-      "name": "幽光森林",
-      "description": "终年弥漫着微光的神秘森林，据说有变异生物栖息。",
-      "status": "locked",
+      "region_id": "region_expansion_grayvalley",
+      "name": "灰谷废墟",
+      "description": "天裂后废弃的旧世界城市遗迹，隐藏着大量遗物和秘密。",
+      "status": "unstable",
       "level_range": [5, 15],
-      "faction": "neutral"
+      "type": "expansion",
+      "risk_level": "medium_to_high",
+      "resource_level": "high"
+    },
+    {
+      "region_id": "region_west_forest",
+      "name": "幽光森林",
+      "description": "自由领地的根据地，茂密的原始森林，资源丰富。",
+      "status": "locked",
+      "level_range": [10, 20],
+      "type": "expansion",
+      "risk_level": "medium",
+      "resource_level": "high"
+    },
+    {
+      "region_id": "region_east_ruins",
+      "name": "东部废墟",
+      "description": "暗影面纱的活动区域，危险但蕴含大量遗迹。",
+      "status": "locked",
+      "level_range": [15, 25],
+      "type": "expansion",
+      "risk_level": "high",
+      "resource_level": "high"
+    },
+    {
+      "region_id": "region_south_oasis",
+      "name": "南部绿洲",
+      "description": "丰收商会所在地，沙漠中的绿洲贸易枢纽。",
+      "status": "locked",
+      "level_range": [10, 20],
+      "type": "expansion",
+      "risk_level": "low",
+      "resource_level": "medium"
     }
   ]
 }
