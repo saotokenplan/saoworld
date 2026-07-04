@@ -1,0 +1,90 @@
+[gd_scene load_steps=2 format=3 uid="uid://bvotingpanel01"]
+
+[ext_resource type="Script" path="res://scripts/ui/voting_panel.gd" id="1_vote"]
+
+[node name="VotingPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_vote")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.08, 0.12, 1)
+
+[node name="TopBar" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 70.0
+grow_horizontal = 2
+
+[node name="BackButton" type="Button" parent="TopBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(100, 40)
+text = "返回"
+
+[node name="TitleLabel" type="Label" parent="TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+text = "投票"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="TopBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(100, 0)
+
+[node name="Content" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_top = 0.1
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_top = 80.0
+
+[node name="VBox" type="VBoxContainer" parent="Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(600, 0)
+theme_override_constants/separation = 15
+
+[node name="CycleTitle" type="Label" parent="Content/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "投票周期"
+horizontal_alignment = 1
+
+[node name="CycleDescription" type="Label" parent="Content/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "描述"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="CandidatesContainer" type="VBoxContainer" parent="Content/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SubmitButton" type="Button" parent="Content/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 50)
+disabled = true
+text = "提交投票"
+
+[node name="StatusLabel" type="Label" parent="Content/VBox"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1

@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "description": "游戏配置",
+  "api_base_url": "http://localhost:8000/api/v1",
+  "default_chapter": "chapter_01",
+  "request_timeout": 30,
+  "max_retry_count": 3,
+  "retry_delay_seconds": 2
+}

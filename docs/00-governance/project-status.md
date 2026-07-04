@@ -22,9 +22,9 @@
 
 ## 当前阶段
 
-- 当前阶段：工程初始化阶段（vote-service + world-service + content-service + generation-service + review-service + gateway-service + player-service + ops-service 完成）
-- 当前形态：vote-service + world-service + content-service + generation-service + review-service + gateway-service + player-service + ops-service 八个核心服务已完成，区域管理、投票链路、内容包管理、生成请求管理、内容审核、API 网关、玩家管理、运营后台就绪
-- 当前目标：推进基础设施（workers/Celery/CI）
+- 当前阶段：工程初始化阶段（vote-service + world-service + content-service + generation-service + review-service + gateway-service + player-service + ops-service + Godot 客户端 完成）
+- 当前形态：八大核心后端服务 + workers Celery + CI/CD + Godot 客户端骨架已完成，投票链路、内容链路、审核链路、API 网关、运营后台、客户端框架就绪
+- 当前目标：推进核心玩法功能落地（投票UI、世界探索、任务系统）
 
 ## 当前结论
 
@@ -137,7 +137,7 @@
 
 ## 尚未落地的工程资产
 
-- `game/` Godot 客户端工程尚未初始化（目录已创建，占位 README 就位）。
+- ~~`game/` Godot 客户端工程尚未初始化（目录已创建，占位 README 就位）。~~ 已完成，Godot 4 客户端工程骨架已初始化，包含完整目录结构、核心 Autoload 单例、基础场景、数据配置、测试框架。
 - ~~`workers/` Celery 异步任务 Worker 尚未实现（目录已创建）。~~ 已完成，workers Celery Worker 框架已实现，包含 7 个核心异步任务（内容生成、审核、打包、发布、回滚、门禁扫描），19 个测试用例全部通过。
 - ~~除 `vote-service`、`world-service`、`content-service`、`generation-service`、`review-service`、`gateway-service`、`player-service` 外的其他后端服务（ops）尚未初始化。~~ 已完成，ops-service 已初始化完成。
 - ~~Alembic 数据库迁移脚本尚未生成（world-service），需要连接数据库后初始化。~~ 已完成，world-service、content-service、generation-service、review-service、player-service、ops-service 六个服务的 Alembic 迁移环境已全部初始化，首次迁移脚本（核心业务表 + 审计日志表）已生成。
@@ -255,6 +255,13 @@
   - Nginx 反向代理配置：`infra/nginx/conf.d/default.conf`
   - 监控配置：`infra/prometheus/prometheus.yml`、`infra/grafana/provisioning/datasources/prometheus.yml`、`infra/grafana/dashboards/game-dashboard.json`
   - 部署脚本：`tools/deploy.sh`、`tools/rollback.sh`、`tools/health-check.sh`、`tools/migrate-all.sh`
+- **Godot 客户端工程**：
+  - Godot 4 项目骨架已初始化（`project.godot`、`icon.svg`）
+  - 标准目录结构：`scenes/`、`scripts/`、`data/`、`assets/`、`tests/`
+  - 5 个核心 Autoload 单例：GameState、APIManager、VoteManager、ContentManager、AudioManager
+  - 基础场景：Main（主入口）、MainMenu（主菜单）、VotingPanel（投票面板）、WorldMap（世界地图）
+  - 数据配置：game_config.json、region_list.json、npc_list.json、quest_list.json（均带 schema_version）
+  - GUT 测试框架与基础测试用例（GameState、APIManager）
 
 ## 当前主要风险
 

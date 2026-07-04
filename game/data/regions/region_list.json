@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "description": "区域列表配置",
+  "regions": [
+    {
+      "region_id": "region_wasteland_01",
+      "name": "废墟荒原",
+      "description": "被遗忘的荒原地带，散落着旧时代的遗迹。",
+      "status": "active",
+      "level_range": [1, 10],
+      "faction": "neutral"
+    },
+    {
+      "region_id": "region_forest_01",
+      "name": "幽光森林",
+      "description": "终年弥漫着微光的神秘森林，据说有变异生物栖息。",
+      "status": "locked",
+      "level_range": [5, 15],
+      "faction": "neutral"
+    }
+  ]
+}
