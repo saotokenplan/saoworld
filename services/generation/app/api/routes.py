@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import RequireOpsRole, RequireReviewApproveScope, UserPayload
+from app.core.errors import GenerationErrorCodes, raise_generation_error
 from app.core.event_publisher import event_publisher
 from app.core.metrics import (
     record_generated_object_status,
@@ -138,21 +139,19 @@ async def get_generation_request_detail(
     req = await repo.get_request_by_id(request_id)
 
     if req is None:
-        raise HTTPException(
+        raise_generation_error(
+            GenerationErrorCodes.REQUEST_NOT_FOUND,
+            "生成请求不存在",
+            req_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="REQUEST_NOT_FOUND",
-                message="生成请求不存在",
-                request_id=req_id,
-                details=[
-                    ErrorDetail(
-                        location="path",
-                        field="request_id",
-                        issue="not_found",
-                        rejected_value=str(request_id),
-                    )
-                ],
-            ).model_dump(),
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="request_id",
+                    issue="not_found",
+                    rejected_value=str(request_id),
+                )
+            ],
         )
 
     return EnvelopeResponse(
@@ -269,21 +268,19 @@ async def update_generation_request_status(
     req = await repo.get_request_by_id(request_id)
 
     if req is None:
-        raise HTTPException(
+        raise_generation_error(
+            GenerationErrorCodes.REQUEST_NOT_FOUND,
+            "生成请求不存在",
+            req_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="REQUEST_NOT_FOUND",
-                message="生成请求不存在",
-                request_id=req_id,
-                details=[
-                    ErrorDetail(
-                        location="path",
-                        field="request_id",
-                        issue="not_found",
-                        rejected_value=str(request_id),
-                    )
-                ],
-            ).model_dump(),
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="request_id",
+                    issue="not_found",
+                    rejected_value=str(request_id),
+                )
+            ],
         )
 
     try:
@@ -295,38 +292,34 @@ async def update_generation_request_status(
         )
     except ValueError as e:
         if str(e) == "INVALID_REQUEST_STATUS":
-            raise HTTPException(
+            raise_generation_error(
+                GenerationErrorCodes.INVALID_REQUEST_STATUS,
+                f"生成请求状态 {req.status} 不允许当前操作",
+                req_id,
                 status_code=status.HTTP_409_CONFLICT,
-                detail=ErrorResponse(
-                    code="INVALID_REQUEST_STATUS",
-                    message=f"生成请求状态 {req.status} 不允许当前操作",
-                    request_id=req_id,
-                    details=[
-                        ErrorDetail(
-                            location="body",
-                            field="status",
-                            issue="invalid_transition",
-                            rejected_value=body.status.value,
-                        )
-                    ],
-                ).model_dump(),
+                details=[
+                    ErrorDetail(
+                        location="body",
+                        field="status",
+                        issue="invalid_transition",
+                        rejected_value=body.status.value,
+                    )
+                ],
             )
         if str(e) == "MAX_RETRIES_EXCEEDED":
-            raise HTTPException(
+            raise_generation_error(
+                GenerationErrorCodes.MAX_RETRIES_EXCEEDED,
+                "已达到最大重试次数",
+                req_id,
                 status_code=status.HTTP_409_CONFLICT,
-                detail=ErrorResponse(
-                    code="MAX_RETRIES_EXCEEDED",
-                    message="已达到最大重试次数",
-                    request_id=req_id,
-                    details=[
-                        ErrorDetail(
-                            location="body",
-                            field="status",
-                            issue="max_retries_exceeded",
-                            rejected_value=body.status.value,
-                        )
-                    ],
-                ).model_dump(),
+                details=[
+                    ErrorDetail(
+                        location="body",
+                        field="status",
+                        issue="max_retries_exceeded",
+                        rejected_value=body.status.value,
+                    )
+                ],
             )
         raise
 
@@ -456,21 +449,19 @@ async def get_generated_object_detail(
     obj = await repo.get_object_by_id(object_id)
 
     if obj is None:
-        raise HTTPException(
+        raise_generation_error(
+            GenerationErrorCodes.OBJECT_NOT_FOUND,
+            "生成对象不存在",
+            request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="OBJECT_NOT_FOUND",
-                message="生成对象不存在",
-                request_id=request_id,
-                details=[
-                    ErrorDetail(
-                        location="path",
-                        field="object_id",
-                        issue="not_found",
-                        rejected_value=str(object_id),
-                    )
-                ],
-            ).model_dump(),
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="object_id",
+                    issue="not_found",
+                    rejected_value=str(object_id),
+                )
+            ],
         )
 
     return EnvelopeResponse(
@@ -515,21 +506,19 @@ async def update_generated_object_status(
     obj = await repo.get_object_by_id(object_id)
 
     if obj is None:
-        raise HTTPException(
+        raise_generation_error(
+            GenerationErrorCodes.OBJECT_NOT_FOUND,
+            "生成对象不存在",
+            request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="OBJECT_NOT_FOUND",
-                message="生成对象不存在",
-                request_id=request_id,
-                details=[
-                    ErrorDetail(
-                        location="path",
-                        field="object_id",
-                        issue="not_found",
-                        rejected_value=str(object_id),
-                    )
-                ],
-            ).model_dump(),
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="object_id",
+                    issue="not_found",
+                    rejected_value=str(object_id),
+                )
+            ],
         )
 
     try:
@@ -540,21 +529,19 @@ async def update_generated_object_status(
         )
     except ValueError as e:
         if str(e) == "INVALID_OBJECT_STATUS":
-            raise HTTPException(
+            raise_generation_error(
+                GenerationErrorCodes.INVALID_OBJECT_STATUS,
+                f"生成对象状态 {obj.status} 不允许当前操作",
+                request_id,
                 status_code=status.HTTP_409_CONFLICT,
-                detail=ErrorResponse(
-                    code="INVALID_OBJECT_STATUS",
-                    message=f"生成对象状态 {obj.status} 不允许当前操作",
-                    request_id=request_id,
-                    details=[
-                        ErrorDetail(
-                            location="body",
-                            field="status",
-                            issue="invalid_transition",
-                            rejected_value=body.status.value,
-                        )
-                    ],
-                ).model_dump(),
+                details=[
+                    ErrorDetail(
+                        location="body",
+                        field="status",
+                        issue="invalid_transition",
+                        rejected_value=body.status.value,
+                    )
+                ],
             )
         raise
 

@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import RequireOpsRole, RequireWorldReadScope, UserPayload
+from app.core.errors import WorldErrorCodes, raise_world_error
 from app.core.metrics import (
     record_region_create,
     record_region_status_transition,
@@ -125,31 +126,27 @@ async def get_region_detail(
     region = await repo.get_region_by_id(region_id)
 
     if region is None:
-        raise HTTPException(
+        raise_world_error(
+            WorldErrorCodes.REGION_NOT_FOUND,
+            "区域不存在",
+            request_id=request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="REGION_NOT_FOUND",
-                message="区域不存在",
-                request_id=request_id,
-                details=[
-                    ErrorDetail(
-                        location="path",
-                        field="region_id",
-                        issue="not_found",
-                        rejected_value=str(region_id),
-                    )
-                ],
-            ).model_dump(),
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="region_id",
+                    issue="not_found",
+                    rejected_value=str(region_id),
+                )
+            ],
         )
 
     if not region.visible and current_user.role.value not in ("ops", "system", "reviewer"):
-        raise HTTPException(
+        raise_world_error(
+            WorldErrorCodes.REGION_NOT_FOUND,
+            "区域不存在",
+            request_id=request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="REGION_NOT_FOUND",
-                message="区域不存在",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     return EnvelopeResponse(
@@ -254,39 +251,35 @@ async def update_region_status(
     region = await repo.get_region_by_id(region_id)
 
     if region is None:
-        raise HTTPException(
+        raise_world_error(
+            WorldErrorCodes.REGION_NOT_FOUND,
+            "区域不存在",
+            request_id=request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="REGION_NOT_FOUND",
-                message="区域不存在",
-                request_id=request_id,
-                details=[
-                    ErrorDetail(
-                        location="path",
-                        field="region_id",
-                        issue="not_found",
-                        rejected_value=str(region_id),
-                    )
-                ],
-            ).model_dump(),
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="region_id",
+                    issue="not_found",
+                    rejected_value=str(region_id),
+                )
+            ],
         )
 
     if not WorldRepository.is_valid_status_transition(region.status, body.status.value):
-        raise HTTPException(
+        raise_world_error(
+            WorldErrorCodes.INVALID_REGION_STATUS,
+            f"区域状态 {region.status} 不允许迁移到 {body.status.value}",
+            request_id=request_id,
             status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponse(
-                code="INVALID_REGION_STATUS",
-                message=f"区域状态 {region.status} 不允许迁移到 {body.status.value}",
-                request_id=request_id,
-                details=[
-                    ErrorDetail(
-                        location="body",
-                        field="status",
-                        issue="invalid_transition",
-                        rejected_value=body.status.value,
-                    )
-                ],
-            ).model_dump(),
+            details=[
+                ErrorDetail(
+                    location="body",
+                    field="status",
+                    issue="invalid_transition",
+                    rejected_value=body.status.value,
+                )
+            ],
         )
 
     from_status = region.status

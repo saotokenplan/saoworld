@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import RequireOpsScope, UserPayload
+from app.core.errors import OpsErrorCodes, raise_ops_error
 from app.core.metrics import (
     record_dashboard_view,
     record_ops_action,
@@ -235,15 +236,11 @@ async def get_ops_action_detail(
     action = await repo.get_action_by_id(action_id)
 
     if action is None:
-        from app.schemas.ops import ErrorResponse
-
-        raise HTTPException(
+        raise_ops_error(
+            OpsErrorCodes.ACTION_NOT_FOUND,
+            "运营操作记录不存在",
+            request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="ACTION_NOT_FOUND",
-                message="运营操作记录不存在",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     response_data = OpsActionResponse.model_validate(action)

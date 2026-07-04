@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import RequireOpsRole, RequireReviewApproveScope, UserPayload
+from app.core.errors import ReviewErrorCodes, raise_review_error
 from app.core.event_publisher import event_publisher
 from app.core.metrics import record_review_create, record_review_result
 from app.repositories.audit_repo import (
@@ -141,21 +142,19 @@ async def get_review_record_detail(
     review = await repo.get_review_by_id(review_id)
 
     if review is None:
-        raise HTTPException(
+        raise_review_error(
+            ReviewErrorCodes.REVIEW_NOT_FOUND,
+            "审核记录不存在",
+            req_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="REVIEW_NOT_FOUND",
-                message="审核记录不存在",
-                request_id=req_id,
-                details=[
-                    ErrorDetail(
-                        location="path",
-                        field="review_id",
-                        issue="not_found",
-                        rejected_value=str(review_id),
-                    )
-                ],
-            ).model_dump(),
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="review_id",
+                    issue="not_found",
+                    rejected_value=str(review_id),
+                )
+            ],
         )
 
     return EnvelopeResponse(
@@ -264,21 +263,19 @@ async def update_review_result(
     review = await repo.get_review_by_id(review_id)
 
     if review is None:
-        raise HTTPException(
+        raise_review_error(
+            ReviewErrorCodes.REVIEW_NOT_FOUND,
+            "审核记录不存在",
+            req_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="REVIEW_NOT_FOUND",
-                message="审核记录不存在",
-                request_id=req_id,
-                details=[
-                    ErrorDetail(
-                        location="path",
-                        field="review_id",
-                        issue="not_found",
-                        rejected_value=str(review_id),
-                    )
-                ],
-            ).model_dump(),
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="review_id",
+                    issue="not_found",
+                    rejected_value=str(review_id),
+                )
+            ],
         )
 
     try:
@@ -293,21 +290,19 @@ async def update_review_result(
         )
     except ValueError as e:
         if str(e) == "INVALID_REVIEW_STATUS":
-            raise HTTPException(
+            raise_review_error(
+                ReviewErrorCodes.INVALID_REVIEW_STATUS,
+                f"审核记录状态 {review.result} 不允许当前操作",
+                req_id,
                 status_code=status.HTTP_409_CONFLICT,
-                detail=ErrorResponse(
-                    code="INVALID_REVIEW_STATUS",
-                    message=f"审核记录状态 {review.result} 不允许当前操作",
-                    request_id=req_id,
-                    details=[
-                        ErrorDetail(
-                            location="body",
-                            field="result",
-                            issue="invalid_transition",
-                            rejected_value=body.result.value,
-                        )
-                    ],
-                ).model_dump(),
+                details=[
+                    ErrorDetail(
+                        location="body",
+                        field="result",
+                        issue="invalid_transition",
+                        rejected_value=body.result.value,
+                    )
+                ],
             )
         raise
 
@@ -373,32 +368,28 @@ async def approve_review_object(
         )
     except ValueError as e:
         if str(e) == "NO_REVIEWS_FOUND":
-            raise HTTPException(
+            raise_review_error(
+                ReviewErrorCodes.NO_REVIEWS_FOUND,
+                "该对象没有审核记录",
+                request_id,
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorResponse(
-                    code="NO_REVIEWS_FOUND",
-                    message="该对象没有审核记录",
-                    request_id=request_id,
-                    details=[
-                        ErrorDetail(
-                            location="path",
-                            field="object_id",
-                            issue="no_reviews",
-                            rejected_value=str(object_id),
-                        )
-                    ],
-                ).model_dump(),
+                details=[
+                    ErrorDetail(
+                        location="path",
+                        field="object_id",
+                        issue="no_reviews",
+                        rejected_value=str(object_id),
+                    )
+                ],
             )
         raise
 
     if not updated_reviews:
-        raise HTTPException(
+        raise_review_error(
+            ReviewErrorCodes.INVALID_REVIEW_STATUS,
+            "所有审核记录状态不允许批准操作",
+            request_id,
             status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponse(
-                code="INVALID_REVIEW_STATUS",
-                message="所有审核记录状态不允许批准操作",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     record_review_result("approved")
@@ -480,32 +471,28 @@ async def reject_review_object(
         )
     except ValueError as e:
         if str(e) == "NO_REVIEWS_FOUND":
-            raise HTTPException(
+            raise_review_error(
+                ReviewErrorCodes.NO_REVIEWS_FOUND,
+                "该对象没有审核记录",
+                request_id,
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=ErrorResponse(
-                    code="NO_REVIEWS_FOUND",
-                    message="该对象没有审核记录",
-                    request_id=request_id,
-                    details=[
-                        ErrorDetail(
-                            location="path",
-                            field="object_id",
-                            issue="no_reviews",
-                            rejected_value=str(object_id),
-                        )
-                    ],
-                ).model_dump(),
+                details=[
+                    ErrorDetail(
+                        location="path",
+                        field="object_id",
+                        issue="no_reviews",
+                        rejected_value=str(object_id),
+                    )
+                ],
             )
         raise
 
     if not updated_reviews:
-        raise HTTPException(
+        raise_review_error(
+            ReviewErrorCodes.INVALID_REVIEW_STATUS,
+            "所有审核记录状态不允许拒绝操作",
+            request_id,
             status_code=status.HTTP_409_CONFLICT,
-            detail=ErrorResponse(
-                code="INVALID_REVIEW_STATUS",
-                message="所有审核记录状态不允许拒绝操作",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     record_review_result("rejected")

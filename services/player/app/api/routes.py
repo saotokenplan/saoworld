@@ -10,6 +10,7 @@ from app.core.deps import (
     RequireQuestsReadScope,
     UserPayload,
 )
+from app.core.errors import PlayerErrorCodes, raise_player_error
 from app.core.metrics import (
     record_player_create,
     record_player_region_unlock,
@@ -83,26 +84,22 @@ async def get_player_info(
     try:
         player_uuid = uuid.UUID(current_user.user_id)
     except ValueError:
-        raise HTTPException(
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ErrorResponse(
-                code="INVALID_PLAYER_ID",
-                message="无效的玩家ID格式",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     repo = PlayerRepository(db)
     player = await repo.get_player_by_id(player_uuid)
 
     if player is None:
-        raise HTTPException(
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_NOT_FOUND,
+            "玩家不存在",
+            request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="PLAYER_NOT_FOUND",
-                message="玩家不存在",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     return EnvelopeResponse(
@@ -134,23 +131,19 @@ async def get_player_quests(
     try:
         player_uuid = uuid.UUID(current_user.user_id)
     except ValueError:
-        raise HTTPException(
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ErrorResponse(
-                code="INVALID_PLAYER_ID",
-                message="无效的玩家ID格式",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     if quest_status is not None and quest_status not in [s.value for s in QuestStatus]:
-        raise HTTPException(
+        raise_player_error(
+            PlayerErrorCodes.INVALID_QUEST_STATUS,
+            f"无效的任务状态: {quest_status}",
+            request_id,
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ErrorResponse(
-                code="INVALID_QUEST_STATUS",
-                message=f"无效的任务状态: {quest_status}",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     repo = PlayerQuestRepository(db)
@@ -189,13 +182,11 @@ async def get_player_regions(
     try:
         player_uuid = uuid.UUID(current_user.user_id)
     except ValueError:
-        raise HTTPException(
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ErrorResponse(
-                code="INVALID_PLAYER_ID",
-                message="无效的玩家ID格式",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     repo = PlayerRegionRepository(db)
@@ -308,13 +299,11 @@ async def get_player_detail(
     player = await repo.get_player_by_id(player_id)
 
     if player is None:
-        raise HTTPException(
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_NOT_FOUND,
+            "玩家不存在",
+            request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="PLAYER_NOT_FOUND",
-                message="玩家不存在",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     return EnvelopeResponse(
@@ -350,13 +339,11 @@ async def update_player(
     )
 
     if player is None:
-        raise HTTPException(
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_NOT_FOUND,
+            "玩家不存在",
+            request_id,
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=ErrorResponse(
-                code="PLAYER_NOT_FOUND",
-                message="玩家不存在",
-                request_id=request_id,
-            ).model_dump(),
         )
 
     record_player_update()
