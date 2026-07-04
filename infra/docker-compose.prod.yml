@@ -1,0 +1,202 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-game}
+      POSTGRES_USER: ${POSTGRES_USER:-game}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-game}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  vote-service:
+    image: ${DOCKER_REGISTRY:-ghcr.io/example}/vote-service:${IMAGE_VERSION:-latest}
+    environment:
+      VOTE_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-game}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-game}
+      VOTE_REDIS_URL: redis://redis:6379/0
+      VOTE_ENVIRONMENT: production
+      VOTE_LOG_LEVEL: info
+      VOTE_JWT_SECRET_KEY: ${JWT_SECRET_KEY:-changeme}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  world-service:
+    image: ${DOCKER_REGISTRY:-ghcr.io/example}/world-service:${IMAGE_VERSION:-latest}
+    environment:
+      WORLD_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-game}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-game}
+      WORLD_ENVIRONMENT: production
+      WORLD_LOG_LEVEL: info
+      WORLD_JWT_SECRET_KEY: ${JWT_SECRET_KEY:-changeme}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  content-service:
+    image: ${DOCKER_REGISTRY:-ghcr.io/example}/content-service:${IMAGE_VERSION:-latest}
+    environment:
+      CONTENT_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-game}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-game}
+      CONTENT_ENVIRONMENT: production
+      CONTENT_LOG_LEVEL: info
+      CONTENT_JWT_SECRET_KEY: ${JWT_SECRET_KEY:-changeme}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  generation-service:
+    image: ${DOCKER_REGISTRY:-ghcr.io/example}/generation-service:${IMAGE_VERSION:-latest}
+    environment:
+      GENERATION_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-game}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-game}
+      GENERATION_ENVIRONMENT: production
+      GENERATION_LOG_LEVEL: info
+      GENERATION_JWT_SECRET_KEY: ${JWT_SECRET_KEY:-changeme}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  review-service:
+    image: ${DOCKER_REGISTRY:-ghcr.io/example}/review-service:${IMAGE_VERSION:-latest}
+    environment:
+      REVIEW_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-game}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-game}
+      REVIEW_ENVIRONMENT: production
+      REVIEW_LOG_LEVEL: info
+      REVIEW_JWT_SECRET_KEY: ${JWT_SECRET_KEY:-changeme}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  gateway-service:
+    image: ${DOCKER_REGISTRY:-ghcr.io/example}/gateway-service:${IMAGE_VERSION:-latest}
+    environment:
+      GATEWAY_ENVIRONMENT: production
+      GATEWAY_LOG_LEVEL: info
+      GATEWAY_JWT_SECRET_KEY: ${JWT_SECRET_KEY:-changeme}
+    ports:
+      - "8080:8000"
+    depends_on:
+      - vote-service
+      - world-service
+      - content-service
+      - generation-service
+      - review-service
+    restart: unless-stopped
+
+  player-service:
+    image: ${DOCKER_REGISTRY:-ghcr.io/example}/player-service:${IMAGE_VERSION:-latest}
+    environment:
+      PLAYER_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-game}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-game}
+      PLAYER_ENVIRONMENT: production
+      PLAYER_LOG_LEVEL: info
+      PLAYER_JWT_SECRET_KEY: ${JWT_SECRET_KEY:-changeme}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ops-service:
+    image: ${DOCKER_REGISTRY:-ghcr.io/example}/ops-service:${IMAGE_VERSION:-latest}
+    environment:
+      OPS_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-game}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-game}
+      OPS_ENVIRONMENT: production
+      OPS_LOG_LEVEL: info
+      OPS_JWT_SECRET_KEY: ${JWT_SECRET_KEY:-changeme}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  game-workers:
+    image: ${DOCKER_REGISTRY:-ghcr.io/example}/game-workers:${IMAGE_VERSION:-latest}
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      WORKERS_ENVIRONMENT: production
+      WORKERS_LOG_LEVEL: info
+      WORKERS_JWT_SECRET_KEY: ${JWT_SECRET_KEY:-changeme}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      vote-service:
+        condition: service_started
+      world-service:
+        condition: service_started
+      content-service:
+        condition: service_started
+      generation-service:
+        condition: service_started
+      review-service:
+        condition: service_started
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - gateway-service
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ./grafana/dashboards:/etc/grafana/dashboards
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:

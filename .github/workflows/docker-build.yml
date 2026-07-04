@@ -1,0 +1,41 @@
+name: Docker Build
+
+on:
+  push:
+    branches: [main, develop, feature-prd]
+    paths:
+      - 'services/**'
+      - 'workers/**'
+      - 'infra/**'
+  pull_request:
+    branches: [main, develop, feature-prd]
+    paths:
+      - 'services/**'
+      - 'workers/**'
+      - 'infra/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [vote, world, content, generation, review, gateway, player, ops, workers]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.service }}
+        run: |
+          DOCKER_PATH=${{ matrix.service == 'workers' && 'workers' || format('services/{0}', matrix.service) }}
+          docker build --tag ${matrix.service}-service:latest $DOCKER_PATH
+
+      - name: Verify Image
+        run: |
+          docker images | grep "${{ matrix.service }}-service"

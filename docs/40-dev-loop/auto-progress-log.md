@@ -2,6 +2,20 @@
 
 > 记录每次自动推进任务的执行情况
 
+## 2026-07-04 05:00 - auto-20260704-0500
+
+- **任务**：建立 CI/CD 配置与部署脚本
+- **结果**：成功完成
+- **关键产出**：
+  - GitHub Actions 工作流：ci.yml（lint/类型检查/测试矩阵）、cd.yml（版本部署+手动回滚）、docker-build.yml（Docker 构建验证）
+  - 9 个服务/组件 Dockerfile（vote、world、content、generation、review、gateway、player、ops、workers）
+  - 生产环境配置：docker-compose.prod.yml（全服务+Nginx+Prometheus+Grafana）、.env.prod.example
+  - Nginx 反向代理配置（HTTP→HTTPS、请求头透传）
+  - 监控配置：Prometheus 监控目标、Grafana 数据源和仪表盘模板
+  - 部署脚本：deploy.sh、rollback.sh、health-check.sh、migrate-all.sh
+  - 更新 project-status.md，标记 CI/CD 配置完成
+- **遗留**：SSL 证书待配置、GitHub Secrets 待配置、监控 metrics endpoint 待集成、Godot 客户端待初始化
+
 ## 2026-07-04 04:00 - auto-20260704-0400
 
 - **任务**：补充异步任务与事件 payload schema
