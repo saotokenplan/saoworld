@@ -22,9 +22,9 @@
 
 ## 当前阶段
 
-- 当前阶段：核心玩法联调阶段（客户端与后端 API 联调完成）
-- 当前形态：八大核心后端服务 + workers Celery + CI/CD + Godot 客户端骨架已完成，投票链路、内容链路、审核链路、API 网关、运营后台、客户端框架就绪，客户端与后端 API 联调封装完善
-- 当前目标：推进核心玩法功能落地（投票UI、世界探索、任务系统），完成客户端与后端联调
+- 当前阶段：内容实例化阶段（首期内容数据已完成）
+- 当前形态：八大核心后端服务 + workers Celery + CI/CD + Godot 客户端完整，投票链路、内容链路、审核链路、API 网关、运营后台、客户端框架就绪，客户端与后端 API 联调封装完善，首期内容实例化完成（世界观、区域、阵营、NPC、任务、章节）
+- 当前目标：完成首期内容包打包与发布，验证端到端玩法流程，进入内容生成与投票驱动世界更新的闭环
 
 ## 当前结论
 
@@ -265,6 +265,7 @@
   - 投票系统端到端功能完善：VoteManager 增强（loading 状态、错误处理、辅助方法）、VotingPanel 完整交互（加载/选择/提交/反馈）、VoteResultPanel 结果展示（进度条、获胜者高亮、影响信息）、VoteHistoryPanel 历史记录（列表、分页）、主菜单投票入口、场景流转逻辑
   - 世界探索与任务系统完善：WorldMap 增强（区域渲染、状态标识、点击选择、详情展示）、QuestPanel 任务面板（任务列表、详情、目标进度、奖励展示、任务接取）、NPCPanel 和 NPCDialog（NPC 列表、对话交互、任务接取）、数据配置完善（区域列表、任务实例、NPC 实例）、测试用例补充（WorldMap、QuestPanel）
   - 客户端与后端 API 联调完善：APIManager 错误码对齐（NO_OPEN_VOTE_CYCLE、ALREADY_VOTED、TOKEN_EXPIRED 等）、重试机制（幂等请求）、HTTP 方法支持（GET/POST/PUT/DELETE）；VoteManager 错误处理与状态同步（auth_error 信号、can_vote 判断）；ContentManager 版本同步与更新检查（自动检查、手动检查、安装/卸载）；新增 WorldManager（区域列表、详情、缓存）和 PlayerManager（玩家信息、任务列表、区域状态）；测试用例补充（APIManager 错误处理、WorldManager、PlayerManager）
+  - 首期内容实例化：世界观根设定（`docs/20-specs/world-lore-spec.md`）、2个首期区域（铁卫城周边、灰谷废墟）、4个势力阵营（铁卫联盟、自由领地、暗影面纱、丰收商会）、6个核心NPC（艾瑞尔·铁盾、格尔·铁锤、玛莎·耕地、雷克斯·金币、露娜·暗星、杰克·流浪者）、7个任务实例（2条主线+5条支线）、3个章节定义（觉醒之路、铁卫的召唤、自由之声）；所有数据配置均带 schema_version 字段，包含完整的阵营关系矩阵、声望系统规则、区域详情、NPC 对话和任务目标
 
 ## 当前主要风险
 
@@ -293,6 +294,7 @@
 12. ~~初始化 review-service（内容审核、质量评分、人工复核流转）。~~ 已完成（38 个测试全部通过）
 13. ~~完善世界探索与任务系统UI（世界地图、任务面板、NPC交互）~~ 已完成，WorldMap、QuestPanel、NPCPanel、NPCDialog 组件已实现，数据配置已完善，测试用例已补充
 14. ~~完善客户端与后端 API 联调封装（APIManager、VoteManager、ContentManager、WorldManager、PlayerManager）~~ 已完成，错误码对齐、重试机制、缓存管理、测试用例补充完成
+15. ~~首期内容实例化（世界观、区域、阵营、NPC、任务、章节）~~ 已完成，包含世界观根设定、2个首期区域配置、4个势力阵营、6个核心NPC、7个任务实例（1条主线+6条支线）、3个章节定义
 
 ## 进入实施前的建议门槛
 
