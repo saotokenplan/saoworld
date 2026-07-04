@@ -5,6 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import RequireOpsRole, RequireReviewApproveScope, UserPayload
+from app.core.metrics import (
+    record_generated_object_status,
+    record_generation_request_status,
+)
 from app.repositories.audit_repo import (
     ACTION_GENERATED_OBJECT_STATUS_UPDATE,
     ACTION_GENERATION_REQUEST_CREATE,
@@ -199,6 +203,8 @@ async def create_generation_request(
         source_candidate_id=body.source_candidate_id,
     )
 
+    record_generation_request_status(req.status)
+
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(
         trace_id=x_trace_id or _make_request_id("trace"),
@@ -309,6 +315,8 @@ async def update_generation_request_status(
                 ).model_dump(),
             )
         raise
+
+    record_generation_request_status(updated_req.status)
 
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(
@@ -512,6 +520,8 @@ async def update_generated_object_status(
                 ).model_dump(),
             )
         raise
+
+    record_generated_object_status(updated_obj.status)
 
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(
