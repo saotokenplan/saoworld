@@ -73,6 +73,7 @@
 | `RESOURCE_NOT_FOUND` | `404` | 目标资源不存在 | `NotFoundErrorResponse` |
 | `CONFLICT` | `409` | 资源状态冲突（通用） | `ConflictErrorResponse` |
 | `RATE_LIMITED` | `429` | 触发限流或频率限制 | `RateLimitedErrorResponse` |
+| `INTERNAL_ERROR` | `500` | 服务内部未知异常 | `InternalErrorResponse` |
 | `SERVICE_UNAVAILABLE` | `503` | 服务暂不可用 | `ServiceUnavailableErrorResponse` |
 
 ## 预留错误码（未在当前 OpenAPI 中使用）
@@ -80,7 +81,6 @@
 | 错误码 | HTTP 状态码 | 说明 | 预计使用阶段 |
 |---|---|---|---|
 | `TOKEN_EXPIRED` | `401` | Access Token 已过期（与 INVALID_TOKEN 区分，提示刷新） | 接入 Refresh Token 后 |
-| `INTERNAL_ERROR` | `500` | 服务内部未知异常 | 服务端实现时 |
 | `AUDIT_WRITE_FAILED` | `500` | 审计记录写入失败 | 服务端实现时 |
 | `TRACE_ID_MISSING` | `500` | 系统未正确生成链路追踪字段 | 服务端实现时 |
 | `TASK_DISPATCH_FAILED` | `503` | 异步任务分发失败 | 接入任务队列后 |
@@ -90,59 +90,78 @@
 
 | 错误码 | HTTP 状态码 | 说明 | 适用接口 |
 |---|---|---|---|
-| `VOTE_CYCLE_NOT_FOUND` | `404` | 当前不存在有效投票周期 | `GET /votes/current` `POST /votes/submit` |
-| `INVALID_VOTE_STATE` | `409` | 当前投票周期不可投票 | `GET /votes/current` |
-| `PLAYER_NOT_ELIGIBLE` | `403` | 玩家不满足投票资格 | `POST /votes/submit` |
-| `VOTE_RISK_BLOCKED` | `403` | 命中设备或行为风控 | `POST /votes/submit` |
-| `CANDIDATE_NOT_FOUND` | `404` | 候选项不存在 | `POST /votes/submit` |
-| `VOTE_CYCLE_CLOSED` | `409` | 投票周期已关闭 | `POST /votes/submit` |
-| `CANDIDATE_OUT_OF_SCOPE` | `409` | 候选项不属于当前投票周期 | `POST /votes/submit` |
-| `DUPLICATE_VOTE` | `409` | 同一玩家在同一周期重复投票 | `POST /votes/submit` |
+| `NO_OPEN_VOTE_CYCLE` | `404` | 当前没有开放的投票周期 | `GET /votes/current` |
+| `VOTE_CYCLE_NOT_FOUND` | `404` | 投票周期不存在 | 运营接口 `POST /ops/vote-cycles/{id}/schedule` 等 |
+| `INVALID_VOTE_STATE` | `409` | 投票周期状态不允许当前操作 | `GET /votes/current` `POST /votes/submit` 运营接口 |
+| `CANDIDATE_NOT_FOUND` | `404` | 候选项不存在或不属于当前投票周期 | `POST /votes/submit` |
+| `CANDIDATE_NOT_ACTIVE` | `409` | 候选项当前不可投票（已撤回/已当选） | `POST /votes/submit` |
+| `ALREADY_VOTED` | `409` | 玩家在本周期已投票 | `POST /votes/submit` |
+| `INVALID_PLAYER_ID` | `400` | 无效的玩家 ID 格式（非UUID） | `POST /votes/submit` `GET /votes/history` |
+| `VOTE_CYCLE_CONFLICT` | `409` | 同一章节已存在开放中的投票周期 | `POST /ops/vote-cycles` |
 
 ## 内容查询接口错误码（已落地）
 
 | 错误码 | HTTP 状态码 | 说明 | 适用接口 |
 |---|---|---|---|
-| `CONTENT_PACKAGE_NOT_FOUND` | `404` | 内容包不存在 | `GET /content/packages/{id}` |
-| `CONTENT_PACKAGE_NOT_VISIBLE` | `403` | 内容包对当前玩家不可见 | `GET /content/packages/{id}` |
-| `CONTENT_UPDATES_UNAVAILABLE` | `503` | 内容更新列表暂不可用 | `GET /content/updates` |
+| `PACKAGE_NOT_FOUND` | `404` | 内容包不存在 | `GET /content/packages/{id}` 运营接口 |
+| `INVALID_PACKAGE_STATE` | `409` | 内容包状态不允许当前操作 | `POST /ops/content-packages/{id}/release` `POST /ops/content-packages/{id}/rollback` |
 
 ## 世界与任务接口错误码（已落地）
 
 | 错误码 | HTTP 状态码 | 说明 | 适用接口 |
 |---|---|---|---|
-| `REGION_NOT_FOUND` | `404` | 区域不存在 | `GET /world/regions/{region_id}` |
-| `REGION_NOT_VISIBLE` | `403` | 区域当前对玩家不可见 | `GET /world/regions/{region_id}` |
-| `QUEST_LIST_UNAVAILABLE` | `503` | 任务列表暂不可用 | `GET /quests` |
+| `REGION_NOT_FOUND` | `404` | 区域不存在 | `GET /world/regions/{region_id}` 运营接口 |
+| `INVALID_REGION_STATUS` | `409` | 区域状态不允许当前操作 | `POST /ops/world/regions/{id}/status` |
 
-## 运营与审核接口错误码（已落地）
+## 玩家接口错误码（已落地）
 
 | 错误码 | HTTP 状态码 | 说明 | 适用接口 |
 |---|---|---|---|
-| `REASON_REQUIRED` | `400` | 敏感操作缺少原因字段 | 所有运营写接口 |
-| `CONTENT_RELEASE_FORBIDDEN` | `403` | 无内容发布权限 | `POST /ops/content-packages/{id}/release` |
-| `CONTENT_ROLLBACK_FORBIDDEN` | `403` | 无内容回滚权限 | `POST /ops/content-packages/{id}/rollback` |
-| `CONTENT_PACKAGE_NOT_RELEASABLE` | `409` | 内容包不满足发布前置条件 | `POST /ops/content-packages/{id}/release` |
-| `CONTENT_PACKAGE_ALREADY_LIVE` | `409` | 内容包已处于正式生效状态 | `POST /ops/content-packages/{id}/release` |
-| `PACKAGE_SERIALIZATION_REQUIRED` | `409` | 当前已有发布或回滚流程在执行 | release/rollback |
-| `CONTENT_PACKAGE_NOT_ROLLBACKABLE` | `409` | 内容包当前不可回滚 | `POST /ops/content-packages/{id}/rollback` |
-| `ROLLBACK_TARGET_INVALID` | `400` | 回滚目标版本非法 | `POST /ops/content-packages/{id}/rollback` |
-| `VOTE_CYCLE_CONFLICT` | `409` | 投票周期创建冲突 | `POST /ops/vote-cycles` |
-| `REVIEW_OBJECT_NOT_FOUND` | `404` | 审核对象不存在 | `POST /ops/review/{object_id}/approve` |
-| `REVIEW_APPROVAL_FORBIDDEN` | `403` | 无审核批准权限 | `POST /ops/review/{object_id}/approve` |
-| `INVALID_REVIEW_STATE` | `409` | 当前对象不处于可批准状态 | `POST /ops/review/{object_id}/approve` |
+| `PLAYER_NOT_FOUND` | `404` | 玩家不存在 | `GET /player/info` 运营接口 |
+| `INVALID_PLAYER_ID` | `400` | 无效的玩家 ID 格式（非UUID） | `GET /player/info` `GET /player/quests` `GET /player/regions` |
+| `INVALID_QUEST_STATUS` | `400` | 无效的任务状态 | `GET /player/quests` |
 
-## 内容生命周期错误码（预留）
+## 生成服务错误码（已落地）
 
-这些错误码在内容状态流更完整（含生成、打包、审核状态机）后启用：
+| 错误码 | HTTP 状态码 | 说明 | 适用接口 |
+|---|---|---|---|
+| `REQUEST_NOT_FOUND` | `404` | 生成请求不存在 | `GET /generation/requests/{id}` 运营接口 |
+| `OBJECT_NOT_FOUND` | `404` | 生成对象不存在 | `GET /generation/objects/{id}` 运营接口 |
+| `INVALID_REQUEST_STATUS` | `409` | 生成请求状态不允许当前操作 | `POST /generation/requests/{id}/status` |
+| `INVALID_OBJECT_STATUS` | `409` | 生成对象状态不允许当前操作 | `POST /generation/objects/{id}/status` |
+| `MAX_RETRIES_EXCEEDED` | `409` | 已达到最大重试次数 | `POST /generation/requests/{id}/status` |
 
-| 错误码 | HTTP 状态码 | 说明 |
-|---|---|---|
-| `INVALID_OBJECT_STATE` | `409` | 内容对象当前状态不支持本次操作 |
-| `OBJECT_NOT_REVIEWED` | `409` | 对象尚未完成审核 |
-| `OBJECT_NOT_PACKAGED` | `409` | 对象尚未进入内容包 |
-| `PACKAGE_NOT_GRAY_READY` | `409` | 内容包未满足灰度前置条件 |
-| `PACKAGE_NOT_LIVE_READY` | `409` | 内容包未满足正式上线前置条件 |
+## 审核服务错误码（已落地）
+
+| 错误码 | HTTP 状态码 | 说明 | 适用接口 |
+|---|---|---|---|
+| `REVIEW_NOT_FOUND` | `404` | 审核记录不存在 | `GET /review/records/{id}` 运营接口 |
+| `INVALID_REVIEW_STATUS` | `409` | 审核记录状态不允许当前操作 | `POST /review/records/{id}/result` `POST /review/{object_id}/approve` |
+| `NO_REVIEWS_FOUND` | `404` | 该对象没有审核记录 | `POST /review/{object_id}/approve` `POST /review/{object_id}/reject` |
+
+## 运营服务错误码（已落地）
+
+| 错误码 | HTTP 状态码 | 说明 | 适用接口 |
+|---|---|---|---|
+| `ACTION_NOT_FOUND` | `404` | 运营操作记录不存在 | `GET /ops/actions/{id}` |
+
+## 网关服务错误码（已落地）
+
+| 错误码 | HTTP 状态码 | 说明 | 适用场景 |
+|---|---|---|---|
+| `NOT_FOUND` | `404` | 未找到对应的服务 | 网关路由不匹配时 |
+
+## 内容生命周期错误码（部分已落地）
+
+以下错误码部分已在生成、审核、内容服务中落地：
+
+| 错误码 | HTTP 状态码 | 说明 | 落地状态 |
+|---|---|---|---|
+| `INVALID_OBJECT_STATE` | `409` | 内容对象当前状态不支持本次操作 | 已落地（生成/审核服务） |
+| `OBJECT_NOT_REVIEWED` | `409` | 对象尚未完成审核 | 预留 |
+| `OBJECT_NOT_PACKAGED` | `409` | 对象尚未进入内容包 | 预留 |
+| `PACKAGE_NOT_GRAY_READY` | `409` | 内容包未满足灰度前置条件 | 预留 |
+| `PACKAGE_NOT_LIVE_READY` | `409` | 内容包未满足正式上线前置条件 | 预留 |
 
 ## 使用建议
 
