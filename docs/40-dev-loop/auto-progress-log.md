@@ -2,6 +2,19 @@
 
 > 记录每次自动推进任务的执行情况
 
+## 2026-07-04 12:00 - auto-20260704-1200
+
+- **任务**：后端服务监控指标集成（Prometheus）
+- **结果**：成功完成
+- **关键产出**：
+  - 所有 8 个后端服务（vote、world、content、generation、review、gateway、player、ops）均集成 `prometheus-fastapi-instrumentator`
+  - 每个服务提供 `/metrics` 端点，支持 HTTP 请求数、延迟、错误率等指标采集
+  - gateway-service 的 `/metrics` 端点已豁免认证，便于 Prometheus 直接采集
+  - 每个服务新增 metrics 端点测试用例，全部通过
+  - 更新 project-status.md，标记"监控 metrics endpoint 待集成"为已完成，添加 Prometheus 监控指标集成到已落地资产
+  - 自动修复 7 个 F401 未使用导入问题
+- **遗留**：基础 metrics 已集成，后续可添加业务指标（投票数、内容包数等）、Redis 分布式限流指标、数据库连接池指标
+
 ## 2026-07-04 11:00 - auto-20260704-1100
 
 - **任务**：首期内容包打包与发布流程实现
