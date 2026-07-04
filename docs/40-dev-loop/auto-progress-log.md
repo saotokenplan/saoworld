@@ -2,6 +2,18 @@
 
 > 记录每次自动推进任务的执行情况
 
+## 2026-07-04 11:00 - auto-20260704-1100
+
+- **任务**：首期内容包打包与发布流程实现
+- **结果**：成功完成
+- **关键产出**：
+  - 首期内容包初始化脚本（`services/content/scripts/seed_initial_packages.py`）：支持从 game/data/ 读取内容创建区域内容包
+  - 内容包打包 Worker 增强（`workers/tasks/content_packaging.py`）：新增 `validate_package_payload` 校验函数、`load_content_from_directory` 目录加载函数、`package_content_from_directory` 任务
+  - 内容包发布流程增强（`workers/tasks/content_release.py`）：新增 `build_gray_scope` 灰度范围构建、`promote_to_full_release` 全量发布任务，支持按区域/玩家百分比/指定玩家列表进行灰度
+  - 测试用例补充：content_packaging（6个）、content_release（8个），全部通过
+  - 更新 project-status.md，标记第 16 项为已完成，当前阶段更新为"内容发布与验证阶段"
+- **遗留**：首期内容包尚未实际执行初始化（需要 PostgreSQL 数据库环境）、灰度发布的精确用户组判断逻辑需完善、事件总线集成待实现
+
 ## 2026-07-04 10:00 - auto-20260704-1000
 
 - **任务**：首期内容实例化（世界观、区域、阵营、NPC、任务、章节数据）
