@@ -4,6 +4,7 @@ import structlog
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api.routes import router
 from app.core.config import settings
@@ -128,7 +129,7 @@ async def add_request_id_and_logging(request: Request, call_next):
 
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
-    if request.url.path.startswith("/api/v1/health"):
+    if request.url.path.startswith("/api/v1/health") or request.url.path == "/metrics":
         return await call_next(request)
 
     from app.core.auth import authenticate_request
@@ -149,3 +150,5 @@ async def rate_limit(request: Request, call_next):
 
 
 app.include_router(router, prefix=settings.api_v1_prefix)
+
+Instrumentator().instrument(app).expose(app)

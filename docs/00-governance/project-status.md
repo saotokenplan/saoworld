@@ -271,12 +271,18 @@
   - 内容包打包 Worker 增强（`workers/tasks/content_packaging.py`）：新增 `validate_package_payload` 校验函数、`load_content_from_directory` 目录加载函数、`package_content_from_directory` 任务
   - 内容包发布流程增强（`workers/tasks/content_release.py`）：新增 `build_gray_scope` 灰度范围构建、`promote_to_full_release` 全量发布任务，支持按区域/玩家百分比/指定玩家列表进行灰度
   - 测试用例补充：content_packaging（6个）、content_release（8个），全部通过
+- **Prometheus 监控指标集成**：
+  - 所有 8 个后端服务（vote、world、content、generation、review、gateway、player、ops）均已集成 `prometheus-fastapi-instrumentator`
+  - 每个服务均提供 `/metrics` 端点，支持 HTTP 请求数、延迟、错误率等指标采集
+  - gateway-service 的 `/metrics` 端点已豁免认证，便于 Prometheus 直接采集
+  - 每个服务新增 metrics 端点测试用例，全部通过
 
 ## 当前主要风险
 
 - ~~`vote-service` 端到端可运行验证尚未完成（需 PostgreSQL 环境，Docker 在 CI 沙箱不可用）。~~ 已完成，代码层面已验证通过，PostgreSQL 配置就绪。
 - ~~JWT 鉴权中间件尚未实现，运营接口缺少真实的角色和权限校验。~~ 已完成，运营接口具备完整的 Scope 校验。
 - ~~审计日志（`audit_logs` 表）尚未持久化，运营操作的审计记录仅在结构化日志中。~~ 已完成，审计日志持久化到 `audit_logs` 表。
+- ~~监控 metrics endpoint 待集成~~ 已完成，所有 8 个后端服务均已集成 Prometheus metrics，支持 HTTP 请求数、延迟、错误率等指标采集
 - `10-requirements/` 与 `20-specs/` 仍有一定内容重叠，后续若继续双向修改，容易再次漂移。
 - `40-dev-loop/` 中部分设计偏目标态，若不裁剪就直接照搬，实施成本会偏高。
 

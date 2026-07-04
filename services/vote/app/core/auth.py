@@ -1,7 +1,6 @@
 """JWT 认证核心逻辑。"""
 
 from datetime import datetime, timezone
-from typing import Any
 
 from jose import JWTError, jwt  # type: ignore[import-untyped]
 
