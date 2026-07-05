@@ -45,6 +45,7 @@ class EventBus:
         if self._redis is None:
             await self.connect()
 
+        assert self._redis is not None
         await self._redis.publish(channel, message)
         return str(event.event_id)
 
@@ -52,6 +53,7 @@ class EventBus:
         if self._redis is None:
             await self.connect()
 
+        assert self._redis is not None
         pubsub = self._redis.pubsub()
         channels = [f"event.{event_type.value}" for event_type in event_types]
         await pubsub.subscribe(*channels)

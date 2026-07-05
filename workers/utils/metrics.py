@@ -27,10 +27,11 @@ def sync_gauge_metrics() -> None:
     logger.info("Syncing gauge metrics")
 
     try:
-        from workers.clients.http_client import AsyncHTTPClient
+        from workers.clients.http_client import VoteServiceClient
+        from workers.config import settings
 
-        client = AsyncHTTPClient()
-        client.get("/api/v1/health")
+        client = VoteServiceClient(settings.vote_service_url)
+        client.get_sync("/api/v1/health")
     except Exception as e:
         logger.warning(f"Metrics sync skipped (no database connection): {e}")
 

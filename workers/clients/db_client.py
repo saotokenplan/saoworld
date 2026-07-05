@@ -1,10 +1,14 @@
+from typing import Any, AsyncGenerator, Optional
+
 from sqlalchemy import Column, DateTime, func, insert, String, Text
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from workers.config import settings
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 
 class AuditLog(Base):
@@ -21,18 +25,23 @@ class AuditLog(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
-engine = None
-AsyncSessionLocal = None
+engine: Optional[AsyncEngine] = None
+AsyncSessionLocal: Optional[Any] = None
 
 
 def init_engine() -> None:
     global engine, AsyncSessionLocal
     if engine is None:
         engine = create_async_engine(settings.database_url, echo=settings.debug)
-        AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+        AsyncSessionLocal = sessionmaker(
+            bind=engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+        )  # type: ignore[call-overload]
 
 
-async def get_db_session() -> AsyncSession:
+async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
+    assert AsyncSessionLocal is not None
     async with AsyncSessionLocal() as session:
         yield session
 
@@ -48,6 +57,7 @@ async def write_audit_log(
     details_jsonb: str | None = None,
 ) -> None:
     init_engine()
+    assert AsyncSessionLocal is not None
     async with AsyncSessionLocal() as session:
         stmt = insert(AuditLog).values(
             audit_log_id=audit_log_id,

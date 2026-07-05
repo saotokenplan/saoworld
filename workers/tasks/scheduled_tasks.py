@@ -1,7 +1,7 @@
 import logging
 
 from workers.celery_app import app
-from workers.tasks.gate_scan import daily_gate_scan
+from workers.tasks.gate_scan import daily_gate_scan as daily_gate_scan_task
 from workers.tasks.content_review import run_world_consistency_review
 
 logger = logging.getLogger(__name__)
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 def daily_gate_scan(self) -> dict[str, str]:
     logger.info("Running scheduled daily gate scan")
     try:
-        result = daily_gate_scan()
+        result = daily_gate_scan_task()
         return {"status": "success", "result": str(result)}
     except Exception as e:
         logger.error(f"Daily gate scan failed: {e}")

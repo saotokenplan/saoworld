@@ -1,11 +1,18 @@
 import logging
+from typing import Any, Iterable, Mapping, MutableMapping, Callable
+
 import structlog
 
 from workers.config import settings
 
 
 def configure_logging() -> None:
-    processors = [
+    processors: list[
+        Callable[
+            [Any, str, MutableMapping[str, Any]],
+            Mapping[str, Any] | str | bytes | bytearray | tuple[Any, ...],
+        ]
+    ] = [
         structlog.stdlib.add_log_level,
         structlog.processors.TimeStamper(fmt="iso"),
         structlog.processors.StackInfoRenderer(),
@@ -27,7 +34,7 @@ def configure_logging() -> None:
 
 
 def get_logger(task_name: str, trace_id: str | None = None) -> structlog.BoundLogger:
-    logger = structlog.get_logger("workers")
+    logger: structlog.BoundLogger = structlog.get_logger("workers")
     context = {"task_name": task_name}
     if trace_id:
         context["trace_id"] = trace_id

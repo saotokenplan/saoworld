@@ -13,7 +13,7 @@ from workers.utils.tracing import generate_trace_id
 def daily_gate_scan(
     self,
     trace_id: str | None = None,
-) -> dict[str, str]:
+) -> dict[str, int]:
     if trace_id is None:
         trace_id = generate_trace_id()
 
