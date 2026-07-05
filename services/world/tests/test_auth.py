@@ -1,7 +1,12 @@
 import pytest
 from httpx import AsyncClient
 
-from app.core.auth import create_test_token
+from app.core.auth import (
+    ExpiredTokenError,
+    InvalidTokenError,
+    MissingTokenError,
+    create_test_token,
+)
 from app.schemas.auth import Role
 
 
@@ -10,7 +15,7 @@ async def test_no_token_returns_401(client: AsyncClient):
     response = await client.get("/api/v1/world/regions")
     assert response.status_code == 401
     data = response.json()
-    assert data["code"] == "MISSING_TOKEN"
+    assert data["code"] == MissingTokenError().code
 
 
 @pytest.mark.asyncio
@@ -21,7 +26,7 @@ async def test_invalid_token_returns_401(client: AsyncClient):
     )
     assert response.status_code == 401
     data = response.json()
-    assert data["code"] == "INVALID_TOKEN"
+    assert data["code"] == InvalidTokenError().code
 
 
 @pytest.mark.asyncio
@@ -46,7 +51,7 @@ async def test_expired_token_returns_401(client: AsyncClient):
     )
     assert response.status_code == 401
     data = response.json()
-    assert data["code"] == "TOKEN_EXPIRED"
+    assert data["code"] == ExpiredTokenError().code
 
 
 @pytest.mark.asyncio

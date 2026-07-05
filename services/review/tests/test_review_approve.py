@@ -3,6 +3,8 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
+from app.core.errors import ReviewErrorCodes
+
 
 @pytest.mark.asyncio
 async def test_approve_review_object_success(
@@ -38,7 +40,7 @@ async def test_approve_review_object_no_reviews_found(
     )
     assert response.status_code == 404
     data = response.json()
-    assert data["code"] == "NO_REVIEWS_FOUND"
+    assert data["code"] == ReviewErrorCodes.NO_REVIEWS_FOUND
 
 
 @pytest.mark.asyncio
@@ -56,7 +58,7 @@ async def test_approve_review_object_invalid_status(
     )
     assert response.status_code == 409
     data = response.json()
-    assert data["code"] == "INVALID_REVIEW_STATUS"
+    assert data["code"] == ReviewErrorCodes.INVALID_REVIEW_STATUS
 
 
 @pytest.mark.asyncio
@@ -94,7 +96,7 @@ async def test_reject_review_object_no_reviews_found(
     )
     assert response.status_code == 404
     data = response.json()
-    assert data["code"] == "NO_REVIEWS_FOUND"
+    assert data["code"] == ReviewErrorCodes.NO_REVIEWS_FOUND
 
 
 @pytest.mark.asyncio
@@ -112,7 +114,7 @@ async def test_reject_review_object_invalid_status(
     )
     assert response.status_code == 409
     data = response.json()
-    assert data["code"] == "INVALID_REVIEW_STATUS"
+    assert data["code"] == ReviewErrorCodes.INVALID_REVIEW_STATUS
 
 
 @pytest.mark.asyncio

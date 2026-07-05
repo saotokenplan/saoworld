@@ -3,6 +3,8 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
+from app.core.errors import ContentErrorCodes
+
 
 @pytest.mark.asyncio
 async def test_create_package_success(client: AsyncClient, ops_token: str):
@@ -130,7 +132,7 @@ async def test_invalid_transition_packaged_to_live(client: AsyncClient, ops_toke
     )
     assert response.status_code == 409
     data = response.json()
-    assert data["code"] == "INVALID_PACKAGE_STATE"
+    assert data["code"] == ContentErrorCodes.INVALID_PACKAGE_STATE
 
 
 @pytest.mark.asyncio
@@ -193,7 +195,7 @@ async def test_rolled_back_cannot_release(client: AsyncClient, ops_token: str, c
     )
     assert response.status_code == 409
     data = response.json()
-    assert data["code"] == "INVALID_PACKAGE_STATE"
+    assert data["code"] == ContentErrorCodes.INVALID_PACKAGE_STATE
 
 
 @pytest.mark.asyncio
@@ -244,7 +246,7 @@ async def test_release_package_not_found(client: AsyncClient, ops_token: str):
     )
     assert response.status_code == 404
     data = response.json()
-    assert data["code"] == "PACKAGE_NOT_FOUND"
+    assert data["code"] == ContentErrorCodes.PACKAGE_NOT_FOUND
 
 
 @pytest.mark.asyncio
@@ -263,7 +265,7 @@ async def test_rollback_package_not_found(client: AsyncClient, ops_token: str):
     )
     assert response.status_code == 404
     data = response.json()
-    assert data["code"] == "PACKAGE_NOT_FOUND"
+    assert data["code"] == ContentErrorCodes.PACKAGE_NOT_FOUND
 
 
 @pytest.mark.asyncio
@@ -282,7 +284,7 @@ async def test_rollback_packaged_invalid(client: AsyncClient, ops_token: str, co
     )
     assert response.status_code == 409
     data = response.json()
-    assert data["code"] == "INVALID_PACKAGE_STATE"
+    assert data["code"] == ContentErrorCodes.INVALID_PACKAGE_STATE
 
 
 @pytest.mark.asyncio

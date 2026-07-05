@@ -5,6 +5,7 @@ from httpx import AsyncClient
 
 from app.core.auth import create_test_token
 from app.core.config import settings
+from app.core.errors import VoteErrorCodes
 from app.domain.models import VoteCycle
 from app.schemas.auth import Role
 
@@ -139,7 +140,7 @@ async def test_submit_vote_duplicate_rejected(
     )
     assert second.status_code == 409
     data = second.json()
-    assert data["code"] == "ALREADY_VOTED"
+    assert data["code"] == VoteErrorCodes.ALREADY_VOTED
 
 
 @pytest.mark.asyncio
@@ -200,7 +201,7 @@ async def test_submit_vote_candidate_not_found(
     )
     assert response.status_code == 404
     data = response.json()
-    assert data["code"] == "CANDIDATE_NOT_FOUND"
+    assert data["code"] == VoteErrorCodes.CANDIDATE_NOT_FOUND
 
 
 @pytest.mark.asyncio

@@ -3,6 +3,8 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
+from app.core.errors import WorldErrorCodes
+
 
 @pytest.mark.asyncio
 async def test_list_regions_no_token_returns_401(client: AsyncClient):
@@ -123,7 +125,7 @@ async def test_get_region_detail_not_found(
     )
     assert response.status_code == 404
     data = response.json()
-    assert data["code"] == "REGION_NOT_FOUND"
+    assert data["code"] == WorldErrorCodes.REGION_NOT_FOUND
 
 
 @pytest.mark.asyncio
