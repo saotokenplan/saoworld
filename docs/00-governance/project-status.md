@@ -197,14 +197,15 @@
     - 首次迁移（ops_dashboards、ops_actions 表）：`services/ops/alembic/versions/2026_07_04_0211_e1f2a3b4c5d6_init_ops_tables.py`
     - 审计日志表：`services/ops/alembic/versions/2026_07_04_0212_f2a3b4c5d6e7_add_audit_logs_table.py`
 - `world-service` 已完成骨架初始化与区域管理接口：
-  - 数据模型：`Region`、`AuditLog`（对应 `backend-data-spec.md`）
-  - 玩家 API 路由：`GET /api/v1/health`、`GET /api/v1/world/regions`、`GET /api/v1/world/regions/{region_id}`
-  - 运营 API 路由：`POST /api/v1/ops/world/regions`（创建区域）、状态更新
+  - 数据模型：`Region`、`WorldSkeleton`、`AuditLog`（对应 `backend-data-spec.md`）
+  - 玩家 API 路由：`GET /api/v1/health`、`GET /api/v1/world/regions`、`GET /api/v1/world/regions/{region_id}`、`GET /api/v1/world/skeleton`（获取当前世界骨架快照）
+  - 运营 API 路由：`POST /api/v1/ops/world/regions`（创建区域）、状态更新、`POST /api/v1/ops/world/skeleton`（创建世界骨架快照）
   - 区域状态机：locked → active → unstable → archived
+  - **世界骨架快照 API**：支持创建、获取当前活跃快照，包含 world_version、chapter_id、regions、factions、forbidden_tags、reserved_characters、reward_limits 等字段，forbidden_tags 非空校验
   - 统一响应 envelope（对齐 `12-api-design.md` 规范）
   - JWT 认证（`world:read` scope、ops 角色权限）
   - 审计日志持久化
-  - 测试用例 40 个全部通过（含玩家接口 + 运营接口 + 审计日志 + 鉴权 + envelope 格式）
+  - 测试用例 46 个全部通过（含玩家接口 + 运营接口 + 审计日志 + 鉴权 + envelope 格式 + 骨架快照）
 - `content-service` 已完成骨架初始化与内容包管理：
   - 数据模型：`ContentPackage`、`ReleaseRecord`、`RollbackRecord`、`AuditLog`（对应 `backend-data-spec.md`）
   - 玩家 API 路由：`GET /api/v1/health`、`GET /api/v1/content/updates`、`GET /api/v1/content/packages/{package_id}`
@@ -218,12 +219,13 @@
 - `generation-service` 已完成骨架初始化与内容生成请求管理：
   - 数据模型：`GenerationRequest`、`GeneratedObject`、`AuditLog`（对应 `backend-data-spec.md`）
   - 运营 API 路由：生成请求创建/查询/状态更新、生成对象查询/状态更新（审核）
+  - **世界骨架快照校验**：生成请求创建前自动校验当前活跃骨架快照存在、forbidden_tags 非空、chapter_id 和 region_id 有效
   - 生成请求状态机：pending → processing → succeeded / failed_retryable → pending（重试） / failed_permanent
   - 生成对象状态机：pending_review → approved / rejected / needs_revision
   - 统一响应 envelope（对齐 `12-api-design.md` 规范）
   - JWT 认证（`review:approve` scope、ops 角色权限）
   - 审计日志持久化
-  - 测试用例 47 个全部通过（含运营接口 + 审计日志 + 鉴权 + envelope 格式 + 状态机校验）
+  - 测试用例 53 个全部通过（含运营接口 + 审计日志 + 鉴权 + envelope 格式 + 状态机校验 + 骨架校验）
 - `review-service` 已完成骨架初始化与内容审核管理：
   - 数据模型：`ReviewRecord`、`AuditLog`（对应 `backend-data-spec.md`）
   - 运营 API 路由：审核记录创建/查询/更新、审核批准/拒绝
@@ -358,6 +360,7 @@
 19. ~~灰度发布可见性判断逻辑完善：content-service 支持按玩家/百分比/区域的灰度范围过滤，修复 workers API 路径不匹配问题~~ 已完成，content-service 灰度可见性判断 + workers API 路径修复 + 58 个测试全部通过
 20. ~~统一各服务错误码与异常处理：为 8 个后端服务创建统一的错误码模块（errors.py），对齐 api-error-codes.md 文档，确保各服务错误码命名与 API 规范一致~~ 已完成，8 个服务新增 errors.py 模块，api-error-codes.md 文档更新对齐，vote-service 54 个测试全部通过
 21. ~~扩展端到端集成测试覆盖：实现投票完整流程（创建→提交→结算）和内容包完整流程（创建→发布→回滚）的集成测试~~ 已完成，vote-service 54 个测试全部通过，content-service 58 个测试通过
+22. ~~实现世界骨架快照 API 与内容生成校验：world-service 添加骨架快照创建/获取接口，generation-service 在生成请求创建前校验骨架存在、forbidden_tags 非空、chapter_id/region_id 有效~~ 已完成，world-service 46 个测试通过，generation-service 53 个测试通过
 
 ## 进入实施前的建议门槛
 

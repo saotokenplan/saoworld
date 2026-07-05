@@ -47,6 +47,30 @@ class Region(Base):
     )
 
 
+class WorldSkeleton(Base):
+    __tablename__ = "world_skeletons"
+
+    skeleton_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    world_version: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    chapter_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    regions: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    factions: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    reserved_characters: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    forbidden_tags: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    reward_limits: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    is_active: Mapped[bool] = mapped_column(nullable=False, default=True, server_default="true", index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        Index("world_skeletons_is_active_idx", "is_active"),
+    )
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 

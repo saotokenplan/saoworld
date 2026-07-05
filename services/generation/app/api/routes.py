@@ -11,6 +11,7 @@ from app.core.metrics import (
     record_generated_object_status,
     record_generation_request_status,
 )
+from app.core.skeleton_validator import skeleton_validator
 from app.repositories.audit_repo import (
     ACTION_GENERATED_OBJECT_STATUS_UPDATE,
     ACTION_GENERATION_REQUEST_CREATE,
@@ -181,6 +182,7 @@ async def get_generation_request_detail(
         400: {"description": "Invalid request"},
         401: {"description": "Unauthorized"},
         403: {"description": "Forbidden"},
+        404: {"description": "World skeleton not found"},
     },
     tags=["ops"],
 )
@@ -193,6 +195,8 @@ async def create_generation_request(
     current_user: UserPayload = RequireOpsRole,
 ) -> EnvelopeResponse[CreateGenerationRequestResponse]:
     request_id = _make_request_id("req_ops_gen_request")
+
+    await skeleton_validator.validate_generation_request(body.input_payload, request_id)
 
     repo = GenerationRepository(db)
     req = await repo.create_request(
