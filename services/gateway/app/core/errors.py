@@ -1,3 +1,5 @@
+from typing import NoReturn
+
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 
@@ -11,6 +13,7 @@ class GatewayErrorCodes:
     INSUFFICIENT_SCOPE = "INSUFFICIENT_SCOPE"
     RATE_LIMITED = "RATE_LIMITED"
     SERVICE_UNAVAILABLE = "SERVICE_UNAVAILABLE"
+    GATEWAY_TIMEOUT = "GATEWAY_TIMEOUT"
     INVALID_ARGUMENT = "INVALID_ARGUMENT"
     AUDIT_WRITE_FAILED = "AUDIT_WRITE_FAILED"
     TRACE_ID_MISSING = "TRACE_ID_MISSING"
@@ -23,7 +26,7 @@ def raise_gateway_error(
     message: str,
     status_code: int = 400,
     details: list[ErrorDetail] | None = None,
-) -> None:
+) -> NoReturn:
     error_response = ErrorResponse(
         code=code,
         message=message,
