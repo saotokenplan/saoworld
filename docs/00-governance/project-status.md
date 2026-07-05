@@ -40,6 +40,7 @@
 - 预留错误码已落地：`AUDIT_WRITE_FAILED`、`TRACE_ID_MISSING`、`TASK_DISPATCH_FAILED`、`DEPENDENCY_UNAVAILABLE` 四个预留错误码已在所有 8 个后端服务的 `errors.py` 中定义，`api-error-codes.md` 文档已同步更新。
 - **mypy 类型检查门禁已生效**：所有 8 个后端服务 + workers 的 mypy 类型错误全部修复（约 129 个错误），CI 配置移除 `|| true` 绕过，类型检查成为真正的阻塞门禁。
 - **datetime.utcnow() 弃用警告修复**：vote、content、generation、review 服务的 event_publisher 已从 `datetime.utcnow()` 迁移到 `datetime.now(timezone.utc)`，消除 Python 3.12+ 弃用警告。
+- **二层 Loop 基础设施已实现**：`tools/loop_logging/` 模块包含结构化日志采集（agent_session_log、ci_failures、prod_incidents）、失败签名提取、失败聚类、缺口分类（缺gate/覆盖不足/信噪比低）、Gate Improvement Issue 自动生成工具，以及完整的 CLI 命令行工具，24 个测试用例全部通过。
 
 ## 已确定事项
 

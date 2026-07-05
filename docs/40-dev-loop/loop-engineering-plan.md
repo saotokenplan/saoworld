@@ -29,10 +29,13 @@
 
 ### 后续阶段目标
 
-**二层 Loop：门禁改进 Loop** ⏳ 待实现
-- 结构化日志收集：Agent Session Log、CI Failures、Prod Incidents
-- 偏差发现：模式 → 缺口映射
-- 输出：Gate Improvement Issue
+**二层 Loop：门禁改进 Loop** ✅ 基础设施已完成
+- 结构化日志收集：`tools/loop_logging/` 模块已实现 Agent Session Log、CI Failures、Prod Incidents 三类日志采集
+- 失败签名提取：支持 mypy/ruff/pytest/runtime/content 等多种错误类型的签名提取
+- 失败聚类：按签名聚类失败模式，支持趋势分析和重复失败检测
+- 缺口分类：将失败模式归类为缺gate/覆盖不足/信噪比低三类，附带置信度评分
+- Gate Improvement Issue 自动生成：根据缺口类型生成标准化改进建议，输出 JSON Lines 格式
+- CLI 工具：支持 agent-log/ci-failure/prod-incident/scan 四种命令
 
 **三层 Loop：规则改进 Loop** ⏳ 待实现
 - 反馈信号采集：Issue 处理结果
