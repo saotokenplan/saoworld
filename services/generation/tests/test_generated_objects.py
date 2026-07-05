@@ -1,6 +1,8 @@
 import pytest
 from httpx import AsyncClient
 
+from app.core.errors import GenerationErrorCodes
+
 
 @pytest.mark.asyncio
 async def test_list_generated_objects_success(
@@ -95,7 +97,7 @@ async def test_get_generated_object_not_found(
     )
     assert response.status_code == 404
     data = response.json()
-    assert data["code"] == "OBJECT_NOT_FOUND"
+    assert data["code"] == GenerationErrorCodes.OBJECT_NOT_FOUND
 
 
 @pytest.mark.asyncio
@@ -188,7 +190,7 @@ async def test_update_object_status_invalid_transition(
     )
     assert response.status_code == 409
     data = response.json()
-    assert data["code"] == "INVALID_OBJECT_STATUS"
+    assert data["code"] == GenerationErrorCodes.INVALID_OBJECT_STATUS
 
 
 @pytest.mark.asyncio
@@ -208,7 +210,7 @@ async def test_update_object_status_not_found(
     )
     assert response.status_code == 404
     data = response.json()
-    assert data["code"] == "OBJECT_NOT_FOUND"
+    assert data["code"] == GenerationErrorCodes.OBJECT_NOT_FOUND
 
 
 @pytest.mark.asyncio

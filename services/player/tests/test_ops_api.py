@@ -4,6 +4,7 @@ import pytest
 from httpx import AsyncClient
 
 from app.core.config import settings
+from app.core.errors import PlayerErrorCodes
 
 
 @pytest.mark.asyncio
@@ -71,7 +72,7 @@ async def test_get_player_detail_not_found(client: AsyncClient, ops_token: str):
     )
     assert response.status_code == 404
     data = response.json()
-    assert data["code"] == "PLAYER_NOT_FOUND"
+    assert data["code"] == PlayerErrorCodes.PLAYER_NOT_FOUND
 
 
 @pytest.mark.asyncio

@@ -1,5 +1,7 @@
 import pytest
 
+from app.core.errors import GatewayErrorCodes
+
 
 class TestAuthentication:
     @pytest.mark.asyncio
@@ -17,7 +19,7 @@ class TestAuthentication:
         )
         assert response.status_code == 401
         data = response.json()
-        assert data["code"] == "INVALID_TOKEN"
+        assert data["code"] == GatewayErrorCodes.INVALID_TOKEN
 
     @pytest.mark.asyncio
     async def test_expired_token_returns_401(self, client, expired_token):

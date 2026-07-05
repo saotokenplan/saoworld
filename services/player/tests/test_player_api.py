@@ -2,6 +2,7 @@ import pytest
 from httpx import AsyncClient
 
 from app.core.config import settings
+from app.core.errors import PlayerErrorCodes
 
 
 @pytest.mark.asyncio
@@ -26,7 +27,7 @@ async def test_get_player_info_not_found(client: AsyncClient, player_token: str)
     )
     assert response.status_code == 404
     data = response.json()
-    assert data["code"] == "PLAYER_NOT_FOUND"
+    assert data["code"] == PlayerErrorCodes.PLAYER_NOT_FOUND
 
 
 @pytest.mark.asyncio
@@ -73,7 +74,7 @@ async def test_get_player_quests_invalid_status(client: AsyncClient, player_toke
     )
     assert response.status_code == 400
     data = response.json()
-    assert data["code"] == "INVALID_QUEST_STATUS"
+    assert data["code"] == PlayerErrorCodes.INVALID_QUEST_STATUS
 
 
 @pytest.mark.asyncio

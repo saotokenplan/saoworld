@@ -2,6 +2,8 @@ import uuid
 
 import pytest
 
+from app.core.errors import OpsErrorCodes
+
 
 @pytest.mark.asyncio
 async def test_get_ops_actions_empty(async_client, test_token):
@@ -53,7 +55,7 @@ async def test_get_ops_action_detail_not_found(async_client, test_token):
     )
     assert response.status_code == 404
     data = response.json()
-    assert data["code"] == "ACTION_NOT_FOUND"
+    assert data["code"] == OpsErrorCodes.ACTION_NOT_FOUND
 
 
 @pytest.mark.asyncio

@@ -6,6 +6,7 @@ from httpx import AsyncClient
 
 from app.core.auth import create_test_token
 from app.core.config import settings
+from app.core.errors import VoteErrorCodes
 from app.domain.models import VoteCandidate, VoteCycle
 from app.schemas.auth import Role
 
@@ -98,7 +99,7 @@ async def test_create_vote_cycle_ends_at_before_starts_at(client: AsyncClient, o
     )
     assert response.status_code == 400
     data = response.json()
-    assert data["code"] == "INVALID_ARGUMENT"
+    assert data["code"] == VoteErrorCodes.INVALID_ARGUMENT
 
 
 @pytest.mark.asyncio
@@ -121,7 +122,7 @@ async def test_create_vote_cycle_with_existing_open_cycle(
     )
     assert response.status_code == 409
     data = response.json()
-    assert data["code"] == "VOTE_CYCLE_CONFLICT"
+    assert data["code"] == VoteErrorCodes.VOTE_CYCLE_CONFLICT
 
 
 @pytest.mark.asyncio
@@ -235,7 +236,7 @@ async def test_cannot_open_from_draft(client: AsyncClient, ops_token: str):
         headers=_ops_headers(ops_token, idempotency_key="test-skip-2"),
     )
     assert open_resp.status_code == 409
-    assert open_resp.json()["code"] == "INVALID_VOTE_STATE"
+    assert open_resp.json()["code"] == VoteErrorCodes.INVALID_VOTE_STATE
 
 
 @pytest.mark.asyncio
@@ -378,7 +379,7 @@ async def test_cannot_finalize_open_cycle(client: AsyncClient, open_vote_cycle: 
         headers=_ops_headers(ops_token, idempotency_key="test-finalize-invalid-1"),
     )
     assert finalize_resp.status_code == 409
-    assert finalize_resp.json()["code"] == "INVALID_VOTE_STATE"
+    assert finalize_resp.json()["code"] == VoteErrorCodes.INVALID_VOTE_STATE
 
 
 @pytest.mark.asyncio
@@ -418,4 +419,4 @@ async def test_vote_cycle_not_found(client: AsyncClient, ops_token: str):
         headers=_ops_headers(ops_token, idempotency_key="test-not-found-1"),
     )
     assert resp.status_code == 404
-    assert resp.json()["code"] == "VOTE_CYCLE_NOT_FOUND"
+    assert resp.json()["code"] == VoteErrorCodes.VOTE_CYCLE_NOT_FOUND

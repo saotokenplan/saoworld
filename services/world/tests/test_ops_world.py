@@ -3,6 +3,8 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
+from app.core.errors import WorldErrorCodes
+
 
 @pytest.mark.asyncio
 async def test_create_region_no_token_returns_401(client: AsyncClient):
@@ -155,7 +157,7 @@ async def test_update_region_status_not_found(client: AsyncClient, ops_token: st
     )
     assert response.status_code == 404
     data = response.json()
-    assert data["code"] == "REGION_NOT_FOUND"
+    assert data["code"] == WorldErrorCodes.REGION_NOT_FOUND
 
 
 @pytest.mark.asyncio
@@ -178,7 +180,7 @@ async def test_update_region_status_invalid_transition(
     )
     assert response.status_code == 409
     data = response.json()
-    assert data["code"] == "INVALID_REGION_STATUS"
+    assert data["code"] == WorldErrorCodes.INVALID_REGION_STATUS
 
 
 @pytest.mark.asyncio

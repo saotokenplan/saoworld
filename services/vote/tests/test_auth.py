@@ -5,7 +5,13 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
-from app.core.auth import create_test_token, decode_jwt_token
+from app.core.auth import (
+    ExpiredTokenError,
+    InvalidTokenError,
+    MissingTokenError,
+    create_test_token,
+    decode_jwt_token,
+)
 from app.schemas.auth import Role, Scope
 
 
@@ -95,7 +101,7 @@ class TestAuthMiddleware:
 
         assert response.status_code == 401
         data = response.json()
-        assert data["code"] == "MISSING_TOKEN"
+        assert data["code"] == MissingTokenError().code
 
     @pytest.mark.asyncio
     async def test_ops_endpoint_with_invalid_token_returns_401(self, client: AsyncClient):
@@ -130,7 +136,7 @@ class TestAuthMiddleware:
 
         assert response.status_code == 401
         data = response.json()
-        assert data["code"] == "INVALID_TOKEN"
+        assert data["code"] == InvalidTokenError().code
 
     @pytest.mark.asyncio
     async def test_ops_endpoint_with_player_token_returns_403(self, client: AsyncClient):
@@ -271,7 +277,7 @@ class TestAuthMiddleware:
         response = await client.get("/api/v1/votes/current")
         assert response.status_code == 401
         data = response.json()
-        assert data["code"] == "MISSING_TOKEN"
+        assert data["code"] == MissingTokenError().code
 
     @pytest.mark.asyncio
     async def test_player_endpoint_with_invalid_token_returns_401(self, client: AsyncClient):

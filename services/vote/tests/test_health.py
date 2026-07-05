@@ -5,6 +5,7 @@ from httpx import AsyncClient
 
 from app.core.auth import create_test_token
 from app.core.config import settings
+from app.core.errors import VoteErrorCodes
 from app.domain.models import VoteCycle
 from app.schemas.auth import Role
 
@@ -29,7 +30,7 @@ async def test_get_current_vote_no_open_cycle(client: AsyncClient, player_token:
     )
     assert response.status_code == 404
     data = response.json()
-    assert data["code"] == "NO_OPEN_VOTE_CYCLE"
+    assert data["code"] == VoteErrorCodes.NO_OPEN_VOTE_CYCLE
     assert "request_id" in data
 
 

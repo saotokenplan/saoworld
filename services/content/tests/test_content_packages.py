@@ -3,6 +3,8 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
+from app.core.errors import ContentErrorCodes
+
 
 @pytest.mark.asyncio
 async def test_list_content_updates_returns_visible_packages(
@@ -124,7 +126,7 @@ async def test_get_package_detail_not_found(
     )
     assert response.status_code == 404
     data = response.json()
-    assert data["code"] == "PACKAGE_NOT_FOUND"
+    assert data["code"] == ContentErrorCodes.PACKAGE_NOT_FOUND
 
 
 @pytest.mark.asyncio

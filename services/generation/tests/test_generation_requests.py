@@ -1,6 +1,8 @@
 import pytest
 from httpx import AsyncClient
 
+from app.core.errors import GenerationErrorCodes
+
 
 @pytest.mark.asyncio
 async def test_list_generation_requests_success(
@@ -79,7 +81,7 @@ async def test_get_generation_request_not_found(
     )
     assert response.status_code == 404
     data = response.json()
-    assert data["code"] == "REQUEST_NOT_FOUND"
+    assert data["code"] == GenerationErrorCodes.REQUEST_NOT_FOUND
 
 
 @pytest.mark.asyncio
@@ -225,7 +227,7 @@ async def test_update_request_status_invalid_transition(
     )
     assert response.status_code == 409
     data = response.json()
-    assert data["code"] == "INVALID_REQUEST_STATUS"
+    assert data["code"] == GenerationErrorCodes.INVALID_REQUEST_STATUS
 
 
 @pytest.mark.asyncio
@@ -245,7 +247,7 @@ async def test_update_request_status_not_found(
     )
     assert response.status_code == 404
     data = response.json()
-    assert data["code"] == "REQUEST_NOT_FOUND"
+    assert data["code"] == GenerationErrorCodes.REQUEST_NOT_FOUND
 
 
 @pytest.mark.asyncio
@@ -298,4 +300,4 @@ async def test_max_retries_exceeded(
     )
     assert response.status_code == 409
     data = response.json()
-    assert data["code"] == "INVALID_REQUEST_STATUS"
+    assert data["code"] == GenerationErrorCodes.INVALID_REQUEST_STATUS
