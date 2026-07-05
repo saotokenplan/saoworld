@@ -5,6 +5,25 @@
 
 ## 进度记录
 
+### auto-20260706-1400 - 首期内容包灰度发布准备与验证
+
+**执行时间**：2026-07-06 14:00
+**状态**：已完成
+**任务描述**：完成首期内容包灰度发布准备工作，验证 seed_initial_packages.py 脚本，完善 verify-release.sh 发布验证脚本，更新项目状态文档
+
+**完成内容**：
+- 验证 seed_initial_packages.py 脚本逻辑完整，可正确从 game/data/ 读取内容并创建区域内容包
+- 完善 verify-release.sh：新增内容包状态检查、灰度范围验证、系统状态检查
+- 更新 project-status.md：当前阶段更新为"首期内容包灰度发布准备完成"
+- 修复 content-service 未使用导入（HTTPException、ErrorResponse、settings）
+- content-service 62 个测试通过，ruff 和 mypy 检查通过
+
+**产出文件**：
+- `docs/40-dev-loop/auto-plan-20260706-1400.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260706-1400.md`（执行摘要）
+
+---
+
 ### auto-20260706-1000 - 完善 gateway-service 路由映射（player + ops 服务）
 
 **执行时间**：2026-07-06 10:00
