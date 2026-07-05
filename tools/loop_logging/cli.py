@@ -14,6 +14,12 @@ from .clusterer import FailureClusterer
 from .gap_classifier import GapClassifier
 from .issue_generator import GateImprovementIssueGenerator
 from .schema import AgentSessionStage, AgentSessionEvent, CIStatus, CITriggerType, IncidentEnvironment, IncidentSeverity, GapType
+from .rule_registry import RuleRegistry
+from .threshold_manager import ThresholdManager
+from .golden_case_manager import GoldenCaseManager
+from .feedback_collector import IssueFeedbackCollector
+from .rule_evaluator import RuleEvaluator
+from .rule_improvement_generator import RuleImprovementGenerator
 
 
 def cmd_agent_log(args: argparse.Namespace) -> None:
@@ -234,6 +240,22 @@ def main() -> int:
     scan_parser.add_argument("--days", type=int, default=7, help="Days to look back")
     scan_parser.add_argument("--output-dir", help="Output directory for issues")
 
+    rule_improvement_parser = subparsers.add_parser("rule-improvement", help="Rule improvement commands")
+    rule_improvement_sub = rule_improvement_parser.add_subparsers(dest="action", required=True)
+
+    rule_evaluate = rule_improvement_sub.add_parser("evaluate", help="Evaluate all rules")
+    rule_evaluate.add_argument("--patterns-dir", default="tools/loop_logging/patterns", help="Patterns directory")
+    rule_evaluate.add_argument("--thresholds-file", default="tools/loop_logging/thresholds.yaml", help="Thresholds file")
+    rule_evaluate.add_argument("--golden-cases-dir", default="tools/loop_logging/golden_cases", help="Golden cases directory")
+    rule_evaluate.add_argument("--feedback-dir", default=".trae/loop-log/feedback", help="Feedback directory")
+
+    rule_generate = rule_improvement_sub.add_parser("generate", help="Generate rule improvement issues")
+    rule_generate.add_argument("--patterns-dir", default="tools/loop_logging/patterns", help="Patterns directory")
+    rule_generate.add_argument("--thresholds-file", default="tools/loop_logging/thresholds.yaml", help="Thresholds file")
+    rule_generate.add_argument("--golden-cases-dir", default="tools/loop_logging/golden_cases", help="Golden cases directory")
+    rule_generate.add_argument("--feedback-dir", default=".trae/loop-log/feedback", help="Feedback directory")
+    rule_generate.add_argument("--output-dir", default=".trae/loop-log", help="Output directory for issues")
+
     args = parser.parse_args()
 
     if args.command == "agent-log":
@@ -244,8 +266,82 @@ def main() -> int:
         cmd_prod_incident(args)
     elif args.command == "scan":
         cmd_scan(args)
+    elif args.command == "rule-improvement":
+        cmd_rule_improvement(args)
 
     return 0
+
+
+def cmd_rule_improvement(args: argparse.Namespace) -> None:
+    thresholds = ThresholdManager(args.thresholds_file)
+    rule_registry = RuleRegistry(args.patterns_dir)
+    golden_case_manager = GoldenCaseManager(args.golden_cases_dir)
+    feedback_collector = IssueFeedbackCollector(args.feedback_dir)
+
+    threshold_config = thresholds.get_all_thresholds()
+
+    if args.action == "evaluate":
+        evaluator = RuleEvaluator(feedback_collector, golden_case_manager, threshold_config["rule_improvement"])
+        evaluations = evaluator.evaluate_all_rules()
+
+        if not evaluations:
+            print("No rules with feedback data found")
+            return
+
+        print(f"Evaluated {len(evaluations)} rules:")
+        for eval_result in evaluations:
+            print(f"\nRule: {eval_result.rule_name} ({eval_result.rule_id})")
+            print(f"  Total Issues: {eval_result.total_issues}")
+            print(f"  Accepted: {eval_result.accepted_issues}")
+            print(f"  Rejected: {eval_result.rejected_issues}")
+            print(f"  Adoption Rate: {eval_result.adoption_rate:.2f}")
+            print(f"  False Positive Rate: {eval_result.false_positive_rate:.2f}")
+            print(f"  False Negative Count: {eval_result.false_negative_count}")
+            print(f"  Needs Improvement: {eval_result.needs_improvement}")
+            if eval_result.improvement_reasons:
+                print("  Reasons:")
+                for reason in eval_result.improvement_reasons:
+                    print(f"    - {reason}")
+
+    elif args.action == "generate":
+        evaluator = RuleEvaluator(feedback_collector, golden_case_manager, threshold_config["rule_improvement"])
+        evaluations = evaluator.evaluate_all_rules()
+
+        generator = RuleImprovementGenerator()
+        issues = generator.generate_all_improvement_issues(evaluations, threshold_config["rule_improvement"])
+
+        output_dir = Path(args.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        output_file = output_dir / f"rule_improvement_issues_{datetime.now().strftime('%Y-%m-%d')}.jsonl"
+
+        with open(output_file, "w", encoding="utf-8") as f:
+            for issue in issues:
+                issue_dict = {
+                    "ts": issue.ts.isoformat(),
+                    "issue_id": issue.issue_id,
+                    "issue_type": issue.issue_type,
+                    "rule_id": issue.rule_id,
+                    "rule_name": issue.rule_name,
+                    "change_type": issue.change_type,
+                    "priority": issue.priority,
+                    "context": issue.context,
+                    "observed_drift": issue.observed_drift,
+                    "proposed_change": issue.proposed_change,
+                    "acceptance": issue.acceptance,
+                    "validation_data": issue.validation_data,
+                    "risk": issue.risk,
+                }
+                f.write(json.dumps(issue_dict) + "\n")
+
+        print(f"Generated {len(issues)} rule improvement issues")
+        print(f"Issues written to: {output_file}")
+
+        for issue in issues[:5]:
+            print(f"\nPriority: {issue.priority}")
+            print(f"Rule: {issue.rule_name}")
+            print(f"Change Type: {issue.change_type}")
+            print(f"Context: {json.dumps(issue.context, indent=2)}")
 
 
 if __name__ == "__main__":

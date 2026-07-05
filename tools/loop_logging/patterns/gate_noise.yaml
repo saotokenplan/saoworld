@@ -1,0 +1,16 @@
+rules:
+  - rule_id: "gate_noise"
+    rule_name: "Gate Noise Detector"
+    gap_type: "gate_noise"
+    description: "Detect gates with high flakiness or false positive rate"
+    match_patterns:
+      - "flaky"
+      - "intermittent"
+      - "random failure"
+      - "unstable test"
+    exclude_patterns:
+      - "known issue"
+      - "expected failure"
+    confidence_threshold: 0.65
+    priority: "p2"
+    version: "1.0.0"
