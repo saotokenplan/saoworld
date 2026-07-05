@@ -31,11 +31,12 @@ def is_player_in_gray_scope(
         return str(player_id) in [str(pid) for pid in player_ids]
 
     player_percent = gray_scope.get("player_percent")
-    if player_percent is not None and 0 < player_percent <= 100:
+    if player_percent is not None and isinstance(player_percent, (int, float)) and 0 < player_percent <= 100:
         hash_input = f"{player_id}_gray_bucket"
         hash_val = int(hashlib.sha256(hash_input.encode()).hexdigest(), 16)
         bucket = (hash_val % 100) + 1
-        return bucket <= player_percent
+        result: bool = bucket <= player_percent
+        return result
 
     region_ids = gray_scope.get("region_ids", [])
     if region_ids and player_region_id:
