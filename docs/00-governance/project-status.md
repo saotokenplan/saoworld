@@ -257,11 +257,12 @@
 - `ops-service` 已完成骨架初始化与运营后台接口：
   - 数据模型：`OpsDashboard`、`OpsAction`、`AuditLog`（对应 `backend-data-spec.md`）
   - 运营 API 路由：`GET /api/v1/health`、`GET /api/v1/ops/dashboard`（仪表盘）、`GET /api/v1/ops/dashboard/history`（历史）、`GET /api/v1/ops/actions`（运营操作列表）、`GET /api/v1/ops/actions/{action_id}`（操作详情）、`GET /api/v1/ops/system/status`（系统状态）
+  - **系统状态健康检查**：通过 HTTP 调用各服务 `/api/v1/health` 接口获取真实状态，支持超时设置和错误处理，服务正常返回 `ok`，异常返回 `unavailable`
   - 统一响应 envelope（对齐 `12-api-design.md` 规范）
   - JWT 认证（`ops:*` scope）
   - 审计日志持久化
   - 自定义请求 ID 头支持
-  - 测试用例 32 个全部通过（含仪表盘 + 运营操作 + 系统状态 + 审计日志 + 鉴权 + envelope 格式）
+  - 测试用例 39 个全部通过（含仪表盘 + 运营操作 + 系统状态 + 审计日志 + 鉴权 + envelope 格式 + 健康检查客户端）
 - 本地开发基础设施：`infra/docker-compose.dev.yml`（PostgreSQL 16 + Redis 7）。
 - `.gitignore`、各目录 README 占位、`.env.example` 已配置。
 - `docs/packages/first-slice/` 第一版需求包：包含投票链路完整规范子集（功能特性、API 接口清单、数据模型定义、业务流程说明、验收标准），作为 MVP 投票链路验证的需求基线。
