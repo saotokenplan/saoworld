@@ -5,6 +5,29 @@
 
 ## 进度记录
 
+### auto-20260706-1000 - 完善 gateway-service 路由映射（player + ops 服务）
+
+**执行时间**：2026-07-06 10:00
+**状态**：已完成
+**任务描述**：完善 gateway-service 的路由映射配置，添加 player-service 和 ops-service 的代理路由支持，确保所有 7 个后端服务都能通过 API 网关统一访问
+
+**完成内容**：
+- 添加 player_service_url（8006）和 ops_service_url（8007）配置项
+- 添加 /api/v1/player 和 /api/v1/ops 路由映射
+- 更新健康检查服务列表（5→7 个服务）
+- 补充代理测试用例（2个）和健康检查测试断言
+- 修复 ruff 未使用导入警告
+- 所有 37 个测试通过，ruff 和 mypy 检查通过
+
+**产出文件**：
+- `docs/40-dev-loop/auto-plan-20260706-1000.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260706-1000.md`（执行摘要）
+
+**项目状态更新**：
+- 更新 gateway-service 描述：代理路由从 5 个服务扩展到 7 个，测试用例从 32 个增加到 37 个
+
+---
+
 ### auto-20260706-0900 - 完善投票触发内容生成闭环
 
 **执行时间**：2026-07-06 09:00

@@ -2,7 +2,7 @@ from typing import Optional
 
 import httpx
 import structlog
-from fastapi import Request, HTTPException
+from fastapi import Request
 from fastapi.responses import StreamingResponse
 
 from app.core.config import settings
@@ -17,6 +17,8 @@ ROUTE_MAP = {
     "/api/v1/content": settings.content_service_url,
     "/api/v1/generation": settings.generation_service_url,
     "/api/v1/review": settings.review_service_url,
+    "/api/v1/player": settings.player_service_url,
+    "/api/v1/ops": settings.ops_service_url,
 }
 
 SERVICE_NAME_MAP = {
@@ -25,6 +27,8 @@ SERVICE_NAME_MAP = {
     "/api/v1/content": "content-service",
     "/api/v1/generation": "generation-service",
     "/api/v1/review": "review-service",
+    "/api/v1/player": "player-service",
+    "/api/v1/ops": "ops-service",
 }
 
 

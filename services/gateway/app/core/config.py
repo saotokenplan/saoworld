@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     content_service_url: str = "http://localhost:8003"
     generation_service_url: str = "http://localhost:8004"
     review_service_url: str = "http://localhost:8005"
+    player_service_url: str = "http://localhost:8006"
+    ops_service_url: str = "http://localhost:8007"
 
 
 settings = Settings()

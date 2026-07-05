@@ -43,6 +43,22 @@ class TestProxyRouting:
         assert response.status_code == 503
 
     @pytest.mark.asyncio
+    async def test_player_service_route(self, client, valid_token):
+        response = await client.get(
+            "/api/v1/player/info",
+            headers={"Authorization": f"Bearer {valid_token}"},
+        )
+        assert response.status_code == 503
+
+    @pytest.mark.asyncio
+    async def test_ops_service_route(self, client, valid_token):
+        response = await client.get(
+            "/api/v1/ops/dashboard",
+            headers={"Authorization": f"Bearer {valid_token}"},
+        )
+        assert response.status_code == 503
+
+    @pytest.mark.asyncio
     async def test_unknown_route_returns_404(self, client, valid_token):
         response = await client.get(
             "/api/v1/unknown/path",
