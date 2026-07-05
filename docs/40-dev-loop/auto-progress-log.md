@@ -68,3 +68,28 @@
 
 **项目状态更新**：
 - 将"40-dev-loop/ 中部分设计偏目标态，若不裁剪就直接照搬，实施成本会偏高"风险标记为已解决
+
+---
+
+### auto-20260705-1700 - 完善门禁注册表与运行手册
+
+**执行时间**：2026-07-05 17:00
+**状态**：已完成
+**任务描述**：完善门禁体系，为 generation、review、player、ops、gateway 5个服务添加单元测试门禁配置及运行手册
+
+**完成内容**：
+- gate_registry.yaml：新增 G-UNIT-005（generation）、G-UNIT-006（review）、G-UNIT-007（player）、G-UNIT-008（ops）、G-UNIT-009（gateway）门禁配置
+- 创建 5 个运行手册文档：generation-tests.md、review-tests.md、player-tests.md、ops-tests.md、gateway-tests.md
+- project-status.md：更新门禁 Runbook 文档数量（11→16），添加门禁注册表完善说明
+
+**产出文件**：
+- `docs/40-dev-loop/auto-plan-20260705-1700.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260705-1700.md`（执行摘要）
+- `docs/runbook/gates/generation-tests.md`（运行手册）
+- `docs/runbook/gates/review-tests.md`（运行手册）
+- `docs/runbook/gates/player-tests.md`（运行手册）
+- `docs/runbook/gates/ops-tests.md`（运行手册）
+- `docs/runbook/gates/gateway-tests.md`（运行手册）
+
+**项目状态更新**：
+- 将门禁体系完善说明添加到"已初步落地的工程资产"章节
