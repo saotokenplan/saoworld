@@ -1,0 +1,22 @@
+gate_improvement:
+  min_confidence: 0.7
+  min_cluster_size: 3
+  max_false_positive_rate: 0.3
+  max_recurrence_days: 7
+
+rule_improvement:
+  min_issue_adoption_rate: 0.6
+  max_false_positive_rate: 0.35
+  max_false_negative_rate: 0.2
+  min_precision_improvement: 0.1
+  max_latency_hours: 24
+
+clustering:
+  min_similarity_score: 0.8
+  max_cluster_count: 50
+  min_samples_per_cluster: 2
+
+drift_detection:
+  alert_threshold: 0.2
+  window_days: 30
+  min_samples_for_trend: 10

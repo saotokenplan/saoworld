@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from tools.loop_logging.signature_extractor import FailureSignatureExtractor
-from tools.loop_logging.clusterer import FailureClusterer, FailureCluster
-from tools.loop_logging.gap_classifier import GapClassifier
+from ..signature_extractor import FailureSignatureExtractor
+from ..clusterer import FailureClusterer, FailureCluster
+from ..gap_classifier import GapClassifier
 
 
 class TestSignatureExtractor:

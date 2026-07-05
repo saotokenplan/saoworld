@@ -7,10 +7,10 @@ from datetime import datetime
 
 import pytest
 
-from tools.loop_logging.agent_session_logger import AgentSessionLogger
-from tools.loop_logging.ci_failure_logger import CIFailureLogger
-from tools.loop_logging.prod_incident_logger import ProdIncidentLogger
-from tools.loop_logging.schema import AgentSessionStage, AgentSessionEvent, CIStatus, CITriggerType, IncidentEnvironment, IncidentSeverity
+from ..agent_session_logger import AgentSessionLogger
+from ..ci_failure_logger import CIFailureLogger
+from ..prod_incident_logger import ProdIncidentLogger
+from ..schema import AgentSessionStage, AgentSessionEvent, CIStatus, CITriggerType, IncidentEnvironment, IncidentSeverity
 
 
 class TestAgentSessionLogger:

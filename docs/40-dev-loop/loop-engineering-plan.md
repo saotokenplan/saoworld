@@ -37,10 +37,12 @@
 - Gate Improvement Issue 自动生成：根据缺口类型生成标准化改进建议，输出 JSON Lines 格式
 - CLI 工具：支持 agent-log/ci-failure/prod-incident/scan 四种命令
 
-**三层 Loop：规则改进 Loop** ⏳ 待实现
-- 反馈信号采集：Issue 处理结果
-- 规则版本化：可配置规则集
-- 输出：Rule Improvement PR
+**三层 Loop：规则改进 Loop** ✅ 基础设施已完成
+- 规则版本化管理：`RuleRegistry`（patterns/ 目录）、`ThresholdManager`（thresholds.yaml）、`GoldenCaseManager`（golden_cases/ 目录）
+- 反馈信号采集：`IssueFeedbackCollector` 采集 Gate Improvement Issue 的处理结果（采纳/拒绝/讨论内容/最终效果）
+- 规则评估：`RuleEvaluator` 评估规则命中率、误报率、漏报率、漂移分数
+- Rule Improvement Issue 生成：`RuleImprovementGenerator` 根据评估结果生成改进建议
+- CLI 命令：`rule-improvement evaluate` 和 `rule-improvement generate`
 
 ### 当前重点
 

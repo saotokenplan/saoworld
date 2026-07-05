@@ -1,0 +1,16 @@
+rules:
+  - rule_id: "missing_gate"
+    rule_name: "Missing Gate Detector"
+    gap_type: "missing_gate"
+    description: "Detect failures that should have been caught by a gate but weren't"
+    match_patterns:
+      - "type error"
+      - "lint error"
+      - "import error"
+      - "syntax error"
+    exclude_patterns:
+      - "test failure"
+      - "integration error"
+    confidence_threshold: 0.75
+    priority: "p1"
+    version: "1.0.0"

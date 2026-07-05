@@ -1,0 +1,17 @@
+rules:
+  - rule_id: "coverage_gap"
+    rule_name: "Coverage Gap Detector"
+    gap_type: "coverage_gap"
+    description: "Detect repeated failures indicating insufficient test coverage"
+    match_patterns:
+      - "null pointer"
+      - "index out of bounds"
+      - "key error"
+      - "value error"
+      - "attribute error"
+    exclude_patterns:
+      - "network error"
+      - "timeout"
+    confidence_threshold: 0.7
+    priority: "p1"
+    version: "1.0.0"

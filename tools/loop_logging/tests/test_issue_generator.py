@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from tools.loop_logging.issue_generator import GateImprovementIssueGenerator
-from tools.loop_logging.clusterer import FailureCluster
-from tools.loop_logging.schema import GapType, GateType, GateTrigger
+from ..issue_generator import GateImprovementIssueGenerator
+from ..clusterer import FailureCluster
+from ..schema import GapType, GateType, GateTrigger
 
 
 class TestGateImprovementIssueGenerator:
