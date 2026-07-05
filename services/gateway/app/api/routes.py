@@ -42,6 +42,8 @@ async def services_health():
         {"service": "content-service", "url": settings.content_service_url},
         {"service": "generation-service", "url": settings.generation_service_url},
         {"service": "review-service", "url": settings.review_service_url},
+        {"service": "player-service", "url": settings.player_service_url},
+        {"service": "ops-service", "url": settings.ops_service_url},
     ]
 
     results: list[ServiceHealth] = []
