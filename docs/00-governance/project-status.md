@@ -323,6 +323,7 @@
 - **服务间事件发布集成**：vote-service、content-service、generation-service、review-service 均已集成事件发布客户端，在关键操作点（投票结算、内容发布/回滚、生成完成、审核完成）发布对应事件
 - **事件消费重试机制**：`workers/events/event_subscriber.py` 已实现指数退避重试策略（最大3次重试，2^n * base_delay）和死信队列处理（超过重试次数后发送到 `event.dead_letter` 通道）
 - **Celery Beat 定时任务**：配置了 3 个定时任务（每日门禁扫描、每小时指标同步、每日内容审核），支持 scheduled 队列，prometheus-client 依赖已添加到 workers
+- **投票触发内容生成闭环**：事件处理器参数与任务签名已对齐，`handle_vote_result_finalized` 正确调用 `generate_content_batch`（传递 vote_cycle_id、winning_candidate_id），`handle_generation_batch_completed` 触发打包流程，`handle_review_batch_completed` 触发完整审核，事件处理器使用 `EventType` 枚举注册，新增 `handle_content_package_rolled_back` 处理器
 
 ## 当前主要风险
 

@@ -5,6 +5,29 @@
 
 ## 进度记录
 
+### auto-20260706-0900 - 完善投票触发内容生成闭环
+
+**执行时间**：2026-07-06 09:00
+**状态**：已完成
+**任务描述**：完善投票结果触发内容生成的闭环链路，修复事件处理器参数不匹配问题，编写集成测试验证完整流程
+
+**完成内容**：
+- 更新 `generate_content_batch` 任务签名支持 vote_cycle_id 和 winning_candidate_id 参数
+- 修复事件处理器参数不匹配问题（handle_vote_result_finalized、handle_generation_batch_completed、handle_review_batch_completed）
+- 使用 EventType 枚举注册事件处理器，确保类型一致
+- 新增 handle_content_package_rolled_back 处理器
+- 创建集成测试文件 test_vote_to_content_flow.py 验证完整流程
+- vote-service 54 个测试全部通过，workers 29 个测试通过
+
+**产出文件**：
+- `docs/40-dev-loop/auto-plan-20260706-0900.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260706-0900.md`（执行摘要）
+
+**项目状态更新**：
+- 添加投票触发内容生成闭环已完成的说明
+
+---
+
 ### auto-20260705-1500 - 清理 10-requirements/ 与 20-specs/ 内容重叠
 
 **执行时间**：2026-07-05 15:00
