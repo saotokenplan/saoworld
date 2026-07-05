@@ -263,7 +263,7 @@
   - 5 个核心 Autoload 单例：GameState、APIManager、VoteManager、ContentManager、AudioManager
   - 基础场景：Main（主入口）、MainMenu（主菜单）、VotingPanel（投票面板）、WorldMap（世界地图）
   - 数据配置：game_config.json、region_list.json、npc_list.json、quest_list.json（均带 schema_version）
-  - GUT 测试框架与基础测试用例（GameState、APIManager）
+  - GUT 测试框架与完整测试覆盖：8 个测试文件共 57 个测试用例，覆盖 GameState、APIManager、VoteManager、WorldManager、PlayerManager、WorldMap、QuestPanel、NPCDialog；测试文档 `game/tests/README.md` 包含完整测试清单和覆盖说明
   - 投票系统端到端功能完善：VoteManager 增强（loading 状态、错误处理、辅助方法）、VotingPanel 完整交互（加载/选择/提交/反馈）、VoteResultPanel 结果展示（进度条、获胜者高亮、影响信息）、VoteHistoryPanel 历史记录（列表、分页）、主菜单投票入口、场景流转逻辑
   - 世界探索与任务系统完善：WorldMap 增强（区域渲染、状态标识、点击选择、详情展示）、QuestPanel 任务面板（任务列表、详情、目标进度、奖励展示、任务接取）、NPCPanel 和 NPCDialog（NPC 列表、对话交互、任务接取）、数据配置完善（区域列表、任务实例、NPC 实例）、测试用例补充（WorldMap、QuestPanel）
   - 客户端与后端 API 联调完善：APIManager 错误码对齐（NO_OPEN_VOTE_CYCLE、ALREADY_VOTED、TOKEN_EXPIRED 等）、重试机制（幂等请求）、HTTP 方法支持（GET/POST/PUT/DELETE）；VoteManager 错误处理与状态同步（auth_error 信号、can_vote 判断）；ContentManager 版本同步与更新检查（自动检查、手动检查、安装/卸载）；新增 WorldManager（区域列表、详情、缓存）和 PlayerManager（玩家信息、任务列表、区域状态）；测试用例补充（APIManager 错误处理、WorldManager、PlayerManager）
