@@ -5,6 +5,30 @@
 
 ## 进度记录
 
+### auto-20260706-1500 - 初始化 telemetry/ 遥测目录
+
+**执行时间**：2026-07-06 15:00
+**状态**：已完成
+**任务描述**：初始化 telemetry/ 目录，创建指标定义、日志 schema、告警规则和仪表盘配置说明，确保项目具备完整的可观测性基础
+
+**完成内容**：
+- 创建 `telemetry/metrics/metrics.yaml`：定义所有 8 个后端服务 + workers + event-bus 的业务指标和 HTTP 指标
+- 创建 `telemetry/logs/log-schemas.yaml`：定义 9 种日志类型（请求、业务、审计、错误、任务、事件、数据库、安全、健康检查）的标准字段
+- 创建 `telemetry/alerts/alerts.yaml`：定义 9 类告警规则，支持 critical/high/medium/low 四级严重程度
+- 创建 `telemetry/dashboards/README.md`：仪表盘配置说明文档
+- 更新 `telemetry/README.md`：添加完整目录说明和使用指南
+- 更新 `project-status.md`：在"已初步落地的工程资产"和"当前结论"章节添加 telemetry/ 初始化完成说明
+
+**产出文件**：
+- `telemetry/metrics/metrics.yaml`（指标定义）
+- `telemetry/logs/log-schemas.yaml`（日志 schema）
+- `telemetry/alerts/alerts.yaml`（告警规则）
+- `telemetry/dashboards/README.md`（仪表盘说明）
+- `docs/40-dev-loop/auto-plan-20260706-1500.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260706-1500.md`（执行摘要）
+
+---
+
 ### auto-20260706-1400 - 首期内容包灰度发布准备与验证
 
 **执行时间**：2026-07-06 14:00

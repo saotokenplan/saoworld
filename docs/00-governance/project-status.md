@@ -53,6 +53,7 @@
 - **全面质量验证已完成**：所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；workers 29 个测试通过（7 个 Redis 环境限制）；内容检查工具 28 个测试通过；Loop 基础设施 36 个测试通过；ruff 和 mypy 检查通过。
 - **首期内容包灰度发布准备已完成**：seed_initial_packages.py 脚本已验证可正确从 game/data/ 读取内容并创建区域内容包（铁卫城周边 + 灰谷废墟）；verify-release.sh 发布验证脚本已完善，新增内容包状态检查、灰度范围验证、系统状态检查功能。
 - **测试修复**：修复了 content-service 的 seed_initial_packages.py 异步调用问题（load_json_file 不应为 async）和测试数据库会话获取方式；修复了 generation-service 的 skeleton_validator 测试 mock 问题（AsyncMock 替代普通 mock）。
+- **telemetry/ 遥测基础设施已初始化**：包含指标定义（metrics.yaml）、日志 schema（log-schemas.yaml）、告警规则（alerts.yaml）、仪表盘配置说明（dashboards/README.md），覆盖所有 8 个后端服务、workers 和事件总线。
 
 ## 已确定事项
 
@@ -164,6 +165,11 @@
 ## 已初步落地的工程资产
 
 - 单仓模式目标目录结构已创建：`game/`、`services/`、`workers/`、`tools/`、`infra/`、`telemetry/`。
+- **telemetry/ 遥测基础设施已初始化**：
+  - `metrics/metrics.yaml`：定义所有 8 个后端服务 + workers + event-bus 的业务指标和 HTTP 指标
+  - `logs/log-schemas.yaml`：定义请求日志、业务日志、审计日志、错误日志、任务日志、事件日志、数据库日志、安全日志、健康检查日志 9 种日志类型的标准字段
+  - `alerts/alerts.yaml`：定义服务健康、HTTP 错误、延迟、数据库、业务指标、任务、事件总线、安全、资源 9 类告警规则，支持 critical/high/medium/low 四级严重程度
+  - `dashboards/README.md`：仪表盘配置说明文档
 - `vote-service` 已完成骨架初始化与运营写接口实现（FastAPI + SQLAlchemy + Pydantic + pytest），见 `services/vote/`。
   - 数据模型：`VoteCycle`、`VoteCandidate`、`Vote`（对应 `backend-data-spec.md`）
   - 玩家 API 路由：`GET /api/v1/health`、`GET /api/v1/votes/current`、`POST /api/v1/votes/submit`、`GET /api/v1/votes/history`
