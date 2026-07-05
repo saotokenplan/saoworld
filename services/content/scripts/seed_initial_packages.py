@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.core.db import async_session
+from app.core.db import async_session_factory as async_session
 from app.repositories.content_repo import ContentRepository
 
 

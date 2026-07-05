@@ -42,7 +42,14 @@
 - **datetime.utcnow() 弃用警告修复**：vote、content、generation、review 服务的 event_publisher 已从 `datetime.utcnow()` 迁移到 `datetime.now(timezone.utc)`，消除 Python 3.12+ 弃用警告。
 - **二层 Loop 基础设施已实现**：`tools/loop_logging/` 模块包含结构化日志采集（agent_session_log、ci_failures、prod_incidents）、失败签名提取、失败聚类、缺口分类（缺gate/覆盖不足/信噪比低）、Gate Improvement Issue 自动生成工具，以及完整的 CLI 命令行工具，24 个测试用例全部通过。
 - **三层 Loop（规则改进 Loop）基础设施已实现**：`tools/loop_logging/` 模块新增规则版本化管理（RuleRegistry、ThresholdManager、GoldenCaseManager）、反馈信号采集（IssueFeedbackCollector）、规则评估与改进建议生成（RuleEvaluator、RuleImprovementGenerator）、Rule Improvement Issue 自动生成工具，CLI 新增 `rule-improvement` 命令，12 个新增测试用例全部通过，总计 36 个测试用例。
-- **端到端集成测试框架已实现**：`tools/playtest/` 目录已创建，包含 conftest.py（测试夹具）和 test_full_integration.py（6 个集成测试用例），覆盖投票服务健康检查与 envelope 格式、内容服务健康检查与 envelope 格式、事件总线发布与订阅机制，全部测试通过。
+- **端到端集成测试框架已实现**：`tools/playtest/` 目录已创建，包含 conftest.py（测试夹具）和 test_full_integration.py（16 个集成测试用例），覆盖：
+  - 投票服务健康检查与 envelope 格式
+  - 内容服务健康检查与 envelope 格式
+  - 事件总线发布与订阅机制
+  - 投票完整流程（创建投票周期、状态迁移、投票提交、关闭计票、历史查询）
+  - 内容包完整流程（创建内容包、灰度发布、全量发布、回滚、详情查询）
+  - 全部测试通过。
+- **端到端集成测试已扩展**：完成投票与内容包完整流程的端到端测试扩展，vote-service 54 个测试全部通过，content-service 58 个测试通过，修复了 seed_initial_packages.py 的导入错误。
 
 ## 已确定事项
 
@@ -348,6 +355,7 @@
 18. ~~内容审核四项检查与工具脚本（世界一致性、数值边界、内容安全、重复度）~~ 已完成，tools/content_check/ 四个检查器 + 28个测试 + workers 集成 + 门禁注册表更新
 19. ~~灰度发布可见性判断逻辑完善：content-service 支持按玩家/百分比/区域的灰度范围过滤，修复 workers API 路径不匹配问题~~ 已完成，content-service 灰度可见性判断 + workers API 路径修复 + 58 个测试全部通过
 20. ~~统一各服务错误码与异常处理：为 8 个后端服务创建统一的错误码模块（errors.py），对齐 api-error-codes.md 文档，确保各服务错误码命名与 API 规范一致~~ 已完成，8 个服务新增 errors.py 模块，api-error-codes.md 文档更新对齐，vote-service 54 个测试全部通过
+21. ~~扩展端到端集成测试覆盖：实现投票完整流程（创建→提交→结算）和内容包完整流程（创建→发布→回滚）的集成测试~~ 已完成，vote-service 54 个测试全部通过，content-service 58 个测试通过
 
 ## 进入实施前的建议门槛
 

@@ -242,3 +242,25 @@
 **项目状态更新**：
 - 将"三层 Loop（规则改进 Loop）基础设施已实现"添加到"当前结论"章节
 - 更新 loop-engineering-plan.md：标记三层 Loop 基础设施已完成
+
+---
+
+### auto-20260706-0300 - 扩展端到端集成测试：投票与内容包完整流程
+
+**执行时间**：2026-07-06 03:00
+**状态**：已完成
+**任务描述**：扩展端到端集成测试覆盖范围，实现投票服务完整流程（创建→提交→结算）和内容包完整流程（创建→发布→回滚）的集成测试
+
+**完成内容**：
+- 创建 `tools/playtest/test_full_integration.py`：包含投票服务集成测试、内容服务集成测试、事件总线集成测试
+- 更新 `tools/playtest/conftest.py`：添加测试 fixtures 和数据库配置
+- 修复 `services/content/scripts/seed_initial_packages.py`：修正导入错误（async_session_factory）
+- 测试验证：vote-service 54 个测试全部通过，content-service 58 个测试通过
+
+**产出文件**：
+- `docs/40-dev-loop/auto-plan-20260706-0300.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260706-0300.md`（执行摘要）
+- `tools/playtest/test_full_integration.py`（集成测试文件）
+
+**项目状态更新**：
+- 将"端到端集成测试已扩展"添加到"当前结论"章节
