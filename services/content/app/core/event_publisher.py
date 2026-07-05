@@ -2,8 +2,6 @@ from typing import Any, Optional
 
 import redis.asyncio as redis
 
-from app.core.config import settings
-
 
 class EventPublisher:
     def __init__(self, redis_url: Optional[str] = None):

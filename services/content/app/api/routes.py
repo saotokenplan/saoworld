@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Header, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
@@ -32,7 +32,6 @@ from app.schemas.content import (
     CreatePackageResponse,
     EnvelopeResponse,
     ErrorDetail,
-    ErrorResponse,
     HealthResponse,
     PackageStatus,
     PaginatedMeta,
