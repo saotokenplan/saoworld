@@ -274,7 +274,7 @@
   - Godot 4 项目骨架已初始化（`project.godot`、`icon.svg`）
   - 标准目录结构：`scenes/`、`scripts/`、`data/`、`assets/`、`tests/`
   - 5 个核心 Autoload 单例：GameState、APIManager、VoteManager、ContentManager、AudioManager
-  - 基础场景：Main（主入口）、MainMenu（主菜单）、VotingPanel（投票面板）、WorldMap（世界地图）
+  - 完整场景实现：Main（主入口）、MainMenu（主菜单）、VotingPanel（投票面板）、VoteResultPanel（投票结果）、VoteHistoryPanel（投票历史）、WorldMap（世界地图）、NPCPanel（NPC列表）、QuestPanel（任务面板）；所有场景文件与脚本匹配，支持场景切换和信号通信
   - 数据配置：game_config.json、region_list.json、npc_list.json、quest_list.json（均带 schema_version）
   - GUT 测试框架与完整测试覆盖：8 个测试文件共 57 个测试用例，覆盖 GameState、APIManager、VoteManager、WorldManager、PlayerManager、WorldMap、QuestPanel、NPCDialog；测试文档 `game/tests/README.md` 包含完整测试清单和覆盖说明
   - 投票系统端到端功能完善：VoteManager 增强（loading 状态、错误处理、辅助方法）、VotingPanel 完整交互（加载/选择/提交/反馈）、VoteResultPanel 结果展示（进度条、获胜者高亮、影响信息）、VoteHistoryPanel 历史记录（列表、分页）、主菜单投票入口、场景流转逻辑

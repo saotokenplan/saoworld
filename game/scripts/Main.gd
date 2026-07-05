@@ -1,12 +1,12 @@
 extends Node
-## 主入口场景脚本
-## 负责游戏初始化、场景切换、全局事件绑定
 
 const MAIN_MENU_SCENE: PackedScene = preload("res://scenes/ui/main_menu/MainMenu.tscn")
 const WORLD_MAP_SCENE: PackedScene = preload("res://scenes/world/WorldMap.tscn")
 const VOTING_PANEL_SCENE: PackedScene = preload("res://scenes/ui/voting/VotingPanel.tscn")
 const VOTE_RESULT_SCENE: PackedScene = preload("res://scenes/ui/voting/VoteResultPanel.tscn")
 const VOTE_HISTORY_SCENE: PackedScene = preload("res://scenes/ui/voting/VoteHistoryPanel.tscn")
+const NPC_PANEL_SCENE: PackedScene = preload("res://scenes/ui/npc/NPCPanel.tscn")
+const QUEST_PANEL_SCENE: PackedScene = preload("res://scenes/ui/quests/QuestPanel.tscn")
 
 var current_scene: Node = null
 
@@ -48,6 +48,12 @@ func _connect_scene_signals(scene_node: Node) -> void:
 		scene_node.back_pressed.connect(_on_back_pressed)
 	if scene_node.has_signal("quit_pressed"):
 		scene_node.quit_pressed.connect(quit_game)
+	if scene_node.has_signal("npcs_pressed"):
+		scene_node.npcs_pressed.connect(_on_npcs_pressed)
+	if scene_node.has_signal("quests_pressed"):
+		scene_node.quests_pressed.connect(_on_quests_pressed)
+	if scene_node.has_signal("back_to_menu"):
+		scene_node.back_to_menu.connect(_on_back_to_menu)
 
 func _on_start_game_pressed() -> void:
 	_switch_scene(WORLD_MAP_SCENE)
@@ -59,7 +65,16 @@ func _on_vote_pressed() -> void:
 func _on_world_map_pressed() -> void:
 	_switch_scene(WORLD_MAP_SCENE)
 
+func _on_npcs_pressed() -> void:
+	_switch_scene(NPC_PANEL_SCENE, true)
+
+func _on_quests_pressed() -> void:
+	_switch_scene(QUEST_PANEL_SCENE, true)
+
 func _on_back_pressed() -> void:
+	_show_main_menu()
+
+func _on_back_to_menu() -> void:
 	_show_main_menu()
 
 func quit_game() -> void:
