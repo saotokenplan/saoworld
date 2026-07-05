@@ -48,13 +48,36 @@ async def setup_db():
         await conn.run_sync(Base.metadata.drop_all)
 
 
+from unittest.mock import AsyncMock, patch
+
+
 @pytest_asyncio.fixture
 async def client() -> AsyncGenerator[AsyncClient, None]:
     app.dependency_overrides[get_db] = override_get_db
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        yield ac
+    
+    mock_skeleton = {
+        "skeleton_id": "skel_test_001",
+        "world_version": "v1.0",
+        "chapter_id": "chapter_01",
+        "regions": {
+            "region_core_ironward": {"chapter_id": "chapter_01"},
+            "region_expansion_grayvalley": {"chapter_id": "chapter_02"},
+        },
+        "factions": {},
+        "reserved_characters": {},
+        "forbidden_tags": ["violence", "nsfw"],
+        "reward_limits": {},
+        "is_active": True,
+    }
+    
     app.dependency_overrides.clear()
+    app.dependency_overrides[get_db] = override_get_db
+    
+    with patch("app.api.routes.skeleton_validator") as mock_validator:
+        mock_validator.validate_generation_request = AsyncMock(return_value=mock_skeleton)
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            yield ac
 
 
 @pytest_asyncio.fixture
