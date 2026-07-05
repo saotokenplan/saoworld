@@ -57,7 +57,7 @@ jobs:
       - name: Run mypy
         run: |
           cd ${{ matrix.service == 'workers' && 'workers' || format('services/{0}', matrix.service) }}
-          mypy app || true
+          ${{ matrix.service == 'workers' && 'mypy .' || 'mypy app' }}
 
   test:
     name: Test (pytest)
