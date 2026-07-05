@@ -20,6 +20,8 @@ from app.repositories.world_repo import WorldRepository
 from app.schemas.world import (
     CreateRegionRequest,
     CreateRegionResponse,
+    CreateWorldSkeletonRequest,
+    CreateWorldSkeletonResponse,
     EnvelopeResponse,
     ErrorDetail,
     ErrorResponse,
@@ -30,6 +32,7 @@ from app.schemas.world import (
     RegionStatus,
     UpdateRegionStatusRequest,
     UpdateRegionStatusResponse,
+    WorldSkeletonResponse,
 )
 
 router = APIRouter()
@@ -307,6 +310,134 @@ async def update_region_status(
         data=UpdateRegionStatusResponse(
             region_id=updated_region.region_id,
             status=RegionStatus(updated_region.status),
+            request_id=request_id,
+            trace_id=x_trace_id,
+        ),
+        trace_id=x_trace_id,
+    )
+
+
+@router.get(
+    "/world/skeleton",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "World skeleton not found"},
+    },
+    tags=["world"],
+)
+async def get_world_skeleton(
+    request: Request,
+    current_user: UserPayload = RequireWorldReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[WorldSkeletonResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_world_skeleton")
+
+    repo = WorldRepository(db)
+    skeleton = await repo.get_current_skeleton()
+
+    if skeleton is None:
+        raise_world_error(
+            WorldErrorCodes.SKELETON_NOT_FOUND,
+            "当前没有活跃的世界骨架快照",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=WorldSkeletonResponse(
+            skeleton_id=skeleton.skeleton_id,
+            world_version=skeleton.world_version,
+            chapter_id=skeleton.chapter_id,
+            regions=skeleton.regions,
+            factions=skeleton.factions,
+            reserved_characters=skeleton.reserved_characters,
+            forbidden_tags=skeleton.forbidden_tags,
+            reward_limits=skeleton.reward_limits,
+            is_active=skeleton.is_active,
+            created_at=skeleton.created_at,
+            updated_at=skeleton.updated_at,
+        ),
+        trace_id=trace_id,
+    )
+
+
+ACTION_SKELETON_CREATE = "skeleton_create"
+RESOURCE_SKELETON = "skeleton"
+
+
+@ops_router.post(
+    "/world/skeleton",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"description": "Invalid request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        409: {"description": "Version already exists"},
+    },
+    tags=["ops"],
+)
+async def create_world_skeleton(
+    body: CreateWorldSkeletonRequest,
+    request: Request,
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[CreateWorldSkeletonResponse]:
+    request_id = _make_request_id("req_ops_skeleton")
+
+    repo = WorldRepository(db)
+
+    existing = await repo.get_skeleton_by_version(body.world_version)
+    if existing is not None:
+        raise_world_error(
+            WorldErrorCodes.SKELETON_VERSION_EXISTS,
+            f"世界版本 {body.world_version} 已存在",
+            request_id=request_id,
+            status_code=status.HTTP_409_CONFLICT,
+            details=[
+                ErrorDetail(
+                    location="body",
+                    field="world_version",
+                    issue="already_exists",
+                    rejected_value=body.world_version,
+                )
+            ],
+        )
+
+    skeleton = await repo.create_skeleton(
+        world_version=body.world_version,
+        chapter_id=body.chapter_id,
+        regions=body.regions,
+        factions=body.factions,
+        reserved_characters=body.reserved_characters,
+        forbidden_tags=body.forbidden_tags,
+        reward_limits=body.reward_limits,
+        is_active=body.is_active,
+    )
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_SKELETON_CREATE,
+        resource_type=RESOURCE_SKELETON,
+        resource_id=skeleton.skeleton_id,
+        request_payload_jsonb=body.model_dump(mode="json"),
+        result_status=201,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=CreateWorldSkeletonResponse(
+            skeleton_id=skeleton.skeleton_id,
+            world_version=skeleton.world_version,
+            chapter_id=skeleton.chapter_id,
+            is_active=skeleton.is_active,
             request_id=request_id,
             trace_id=x_trace_id,
         ),

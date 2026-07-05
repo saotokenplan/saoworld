@@ -4,7 +4,7 @@ from typing import Any, Sequence
 from sqlalchemy import Select, func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domain.models import Region
+from app.domain.models import Region, WorldSkeleton
 
 VALID_STATUS_TRANSITIONS: dict[str, set[str]] = {
     "locked": {"active"},
@@ -112,3 +112,62 @@ class WorldRepository:
     def is_valid_status_transition(current_status: str, new_status: str) -> bool:
         allowed = VALID_STATUS_TRANSITIONS.get(current_status, set())
         return new_status in allowed
+
+    async def create_skeleton(
+        self,
+        *,
+        world_version: str,
+        chapter_id: str,
+        regions: dict[str, Any],
+        factions: dict[str, Any],
+        forbidden_tags: list[str],
+        reserved_characters: dict[str, Any] | None = None,
+        reward_limits: dict[str, Any] | None = None,
+        is_active: bool = True,
+    ) -> WorldSkeleton:
+        skeleton = WorldSkeleton(
+            world_version=world_version,
+            chapter_id=chapter_id,
+            regions=regions,
+            factions=factions,
+            forbidden_tags=forbidden_tags,
+            reserved_characters=reserved_characters,
+            reward_limits=reward_limits,
+            is_active=is_active,
+        )
+        self.db.add(skeleton)
+        await self.db.flush()
+        return skeleton
+
+    async def get_current_skeleton(self) -> WorldSkeleton | None:
+        stmt: Select[tuple[WorldSkeleton]] = (
+            select(WorldSkeleton)
+            .where(WorldSkeleton.is_active)
+            .order_by(WorldSkeleton.created_at.desc())
+            .limit(1)
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_skeleton_by_version(self, world_version: str) -> WorldSkeleton | None:
+        stmt: Select[tuple[WorldSkeleton]] = select(WorldSkeleton).where(
+            WorldSkeleton.world_version == world_version
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def update_skeleton(
+        self,
+        skeleton_id: uuid.UUID,
+        **kwargs: Any,
+    ) -> WorldSkeleton | None:
+        skeleton = await self.db.get(WorldSkeleton, skeleton_id)
+        if skeleton is None:
+            return None
+        for key, value in kwargs.items():
+            setattr(skeleton, key, value)
+        await self.db.flush()
+        return skeleton
+
+    async def deactivate_skeleton(self, skeleton_id: uuid.UUID) -> WorldSkeleton | None:
+        return await self.update_skeleton(skeleton_id, is_active=False)

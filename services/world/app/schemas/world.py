@@ -96,3 +96,39 @@ class UpdateRegionStatusResponse(BaseModel):
     status: RegionStatus
     request_id: str
     trace_id: str | None = None
+
+
+class WorldSkeletonResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    skeleton_id: uuid.UUID
+    world_version: str
+    chapter_id: str
+    regions: dict[str, object]
+    factions: dict[str, object]
+    reserved_characters: dict[str, object] | None = None
+    forbidden_tags: list[str]
+    reward_limits: dict[str, object] | None = None
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class CreateWorldSkeletonRequest(BaseModel):
+    world_version: str = Field(min_length=1, max_length=64)
+    chapter_id: str = Field(min_length=1, max_length=64)
+    regions: dict[str, object] = Field(min_length=1)
+    factions: dict[str, object] = Field(min_length=1)
+    reserved_characters: dict[str, object] | None = None
+    forbidden_tags: list[str] = Field(min_length=1)
+    reward_limits: dict[str, object] | None = None
+    is_active: bool = True
+
+
+class CreateWorldSkeletonResponse(BaseModel):
+    skeleton_id: uuid.UUID
+    world_version: str
+    chapter_id: str
+    is_active: bool
+    request_id: str
+    trace_id: str | None = None
