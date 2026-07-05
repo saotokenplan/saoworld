@@ -115,3 +115,102 @@ def mock_user_payload():
             Scope.CONTENT_READ,
         ],
     )
+
+
+@pytest.fixture(scope="session")
+def mock_vote_repo():
+    repo = MagicMock()
+    repo.create_vote_cycle = AsyncMock(return_value=MagicMock(vote_cycle_id=uuid.uuid4()))
+    repo.get_cycle_by_id = AsyncMock(return_value=MagicMock(
+        vote_cycle_id=uuid.uuid4(),
+        chapter_id="chapter_01",
+        status="draft",
+        starts_at=datetime.now(timezone.utc),
+        ends_at=datetime.now(timezone.utc) + timedelta(hours=24),
+        candidates=[],
+        updated_at=datetime.now(timezone.utc),
+        finalized_at=None,
+        winning_candidate_id=None,
+    ))
+    repo.get_current_open_cycle = AsyncMock(return_value=MagicMock(
+        vote_cycle_id=uuid.uuid4(),
+        chapter_id="chapter_01",
+        status="open",
+        starts_at=datetime.now(timezone.utc),
+        ends_at=datetime.now(timezone.utc) + timedelta(hours=24),
+    ))
+    repo.get_candidates_for_cycle = AsyncMock(return_value=[
+        MagicMock(candidate_id=uuid.uuid4(), title="Candidate A", status="active"),
+        MagicMock(candidate_id=uuid.uuid4(), title="Candidate B", status="active"),
+    ])
+    repo.get_candidate_by_id = AsyncMock(return_value=MagicMock(
+        candidate_id=uuid.uuid4(),
+        vote_cycle_id=uuid.uuid4(),
+        status="active",
+    ))
+    repo.create_vote = AsyncMock(return_value=MagicMock(
+        vote_id=uuid.uuid4(),
+        vote_cycle_id=uuid.uuid4(),
+        candidate_id=uuid.uuid4(),
+        created_at=datetime.now(timezone.utc),
+    ))
+    repo.has_player_voted = AsyncMock(return_value=None)
+    repo.vote_exists_by_idempotency_key = AsyncMock(return_value=None)
+    repo.transition_cycle_status = AsyncMock(return_value=MagicMock(
+        vote_cycle_id=uuid.uuid4(),
+        status="open",
+        updated_at=datetime.now(timezone.utc),
+        winning_candidate_id=None,
+    ))
+    repo.tally_votes = AsyncMock(return_value={
+        "winning_candidate_id": uuid.uuid4(),
+        "total_votes": 100,
+    })
+    repo.get_open_cycle_for_chapter = AsyncMock(return_value=None)
+    repo.is_valid_transition = MagicMock(return_value=True)
+    repo.get_vote_history = AsyncMock(return_value=([], 0))
+    return repo
+
+
+@pytest.fixture(scope="session")
+def mock_content_repo():
+    repo = MagicMock()
+    repo.create_package = AsyncMock(return_value=MagicMock(
+        content_package_id=uuid.uuid4(),
+        chapter_id="chapter_01",
+        region_id="region_test_01",
+        title="Test Content Package",
+        status="packaged",
+        package_version="pkg_test_01",
+        gray_scope_jsonb=None,
+        payload_jsonb={},
+        schema_version=1,
+        released_at=None,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    ))
+    repo.get_package_by_id = AsyncMock(return_value=MagicMock(
+        content_package_id=uuid.uuid4(),
+        chapter_id="chapter_01",
+        region_id="region_test_01",
+        title="Test Content Package",
+        status="packaged",
+        package_version="pkg_test_01",
+        gray_scope_jsonb=None,
+        payload_jsonb={},
+        schema_version=1,
+        released_at=None,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    ))
+    repo.release_package = AsyncMock(return_value=MagicMock(
+        content_package_id=uuid.uuid4(),
+        status="gray",
+        released_at=datetime.now(timezone.utc),
+    ))
+    repo.rollback_package = AsyncMock(return_value=MagicMock(
+        content_package_id=uuid.uuid4(),
+        status="rolled_back",
+    ))
+    repo.list_visible_packages = AsyncMock(return_value=([], 0))
+    return repo
