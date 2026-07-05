@@ -264,12 +264,14 @@
 - `.gitignore`、各目录 README 占位、`.env.example` 已配置。
 - `docs/packages/first-slice/` 第一版需求包：包含投票链路完整规范子集（功能特性、API 接口清单、数据模型定义、业务流程说明、验收标准），作为 MVP 投票链路验证的需求基线。
 - **CI/CD 基础设施**：
-  - GitHub Actions 工作流：`ci.yml`（lint、类型检查、测试）、`cd.yml`（部署）、`docker-build.yml`（Docker 构建）
+  - GitHub Actions 工作流：`ci.yml`（lint、类型检查、测试、内容检查、E2E 测试）、`cd.yml`（灰度发布、全量发布、回滚）、`docker-build.yml`（Docker 构建）
+  - CI 流水线新增：内容检查门禁（世界一致性、数值边界、内容安全、重复度四项检查）、E2E 端到端测试
+  - CD 流水线新增：灰度发布阶段（gray-release）、全量发布升级（promote-to-full）、支持 workflow_dispatch 手动触发
   - 各服务 Dockerfile（vote、world、content、generation、review、gateway、player、ops、workers）
   - 生产环境配置：`infra/docker-compose.prod.yml`、`infra/.env.prod.example`
   - Nginx 反向代理配置：`infra/nginx/conf.d/default.conf`
   - 监控配置：`infra/prometheus/prometheus.yml`、`infra/grafana/provisioning/datasources/prometheus.yml`、`infra/grafana/dashboards/game-dashboard.json`
-  - 部署脚本：`tools/deploy.sh`、`tools/rollback.sh`、`tools/health-check.sh`、`tools/migrate-all.sh`
+  - 部署脚本：`tools/deploy.sh`、`tools/rollback.sh`（支持回滚日志记录）、`tools/health-check.sh`（支持服务级别检查）、`tools/migrate-all.sh`、`tools/gray-release.sh`（灰度发布脚本）、`tools/verify-release.sh`（发布验证脚本）
 - **Godot 客户端工程**：
   - Godot 4 项目骨架已初始化（`project.godot`、`icon.svg`）
   - 标准目录结构：`scenes/`、`scripts/`、`data/`、`assets/`、`tests/`
