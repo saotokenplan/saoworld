@@ -264,3 +264,28 @@
 
 **项目状态更新**：
 - 将"端到端集成测试已扩展"添加到"当前结论"章节
+
+---
+
+### auto-20260706-0400 - 完善 Godot 客户端场景实现
+
+**执行时间**：2026-07-06 04:00
+**状态**：已完成
+**任务描述**：完善 Godot 客户端场景实现，修复 WorldMap.tscn 节点缺失问题，创建 NPCPanel.tscn 和 QuestPanel.tscn 场景，更新主菜单和场景切换逻辑
+
+**完成内容**：
+- 修复 WorldMap.tscn：添加 RegionContainer、RegionDetail、BackButton 等节点
+- 创建 NPCPanel.tscn：包含 NPC 列表和返回按钮
+- 创建 QuestPanel.tscn：包含任务列表、详情面板、接取按钮
+- 更新 Main.gd：添加场景预加载和信号处理
+- 更新主菜单：新增 NPC 列表和任务列表按钮及信号处理
+- 更新项目状态文档：记录客户端场景完善状态
+
+**产出文件**：
+- `docs/40-dev-loop/auto-plan-20260706-0400.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260706-0400.md`（执行摘要）
+- `game/scenes/ui/npc/NPCPanel.tscn`（新建场景）
+- `game/scenes/ui/quests/QuestPanel.tscn`（新建场景）
+
+**项目状态更新**：
+- 将客户端场景描述更新为"完整场景实现"，包含所有 8 个场景文件
