@@ -42,6 +42,7 @@
 - **datetime.utcnow() 弃用警告修复**：vote、content、generation、review 服务的 event_publisher 已从 `datetime.utcnow()` 迁移到 `datetime.now(timezone.utc)`，消除 Python 3.12+ 弃用警告。
 - **二层 Loop 基础设施已实现**：`tools/loop_logging/` 模块包含结构化日志采集（agent_session_log、ci_failures、prod_incidents）、失败签名提取、失败聚类、缺口分类（缺gate/覆盖不足/信噪比低）、Gate Improvement Issue 自动生成工具，以及完整的 CLI 命令行工具，24 个测试用例全部通过。
 - **三层 Loop（规则改进 Loop）基础设施已实现**：`tools/loop_logging/` 模块新增规则版本化管理（RuleRegistry、ThresholdManager、GoldenCaseManager）、反馈信号采集（IssueFeedbackCollector）、规则评估与改进建议生成（RuleEvaluator、RuleImprovementGenerator）、Rule Improvement Issue 自动生成工具，CLI 新增 `rule-improvement` 命令，12 个新增测试用例全部通过，总计 36 个测试用例。
+- **端到端集成测试框架已实现**：`tools/playtest/` 目录已创建，包含 conftest.py（测试夹具）和 test_full_integration.py（6 个集成测试用例），覆盖投票服务健康检查与 envelope 格式、内容服务健康检查与 envelope 格式、事件总线发布与订阅机制，全部测试通过。
 
 ## 已确定事项
 

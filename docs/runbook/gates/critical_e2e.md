@@ -7,15 +7,20 @@
 
 ## 门禁概述
 
-Critical Path E2E (Vote Flow) 是投票流程的端到端测试门禁，验证投票周期管理、投票提交、结算的完整链路。
+Critical Path E2E (Vote Flow) 是投票流程的端到端测试门禁，验证投票周期管理、投票提交、结算的完整链路，以及内容包发布/回滚流程和事件总线集成。
 
 **触发条件**：
-- 路径：`game/**`, `services/vote/**`, `services/gateway/**`
+- 路径：`game/**`, `services/vote/**`, `services/content/**`, `services/gateway/**`, `workers/**`, `tools/playtest/**`
 - 触发：`nightly`
 
 **执行命令**：
 ```bash
 bash tools/playtest/run_vote_flow.sh
+```
+
+**执行命令（完整集成测试）**：
+```bash
+cd tools/playtest && pytest -v
 ```
 
 **预期耗时**：300 秒
@@ -97,6 +102,42 @@ bash tools/playtest/run_vote_flow.sh --verbose
 cd services/vote && pytest -k "auth" -v
 ```
 
+### 5. 内容包发布失败
+
+**现象**：
+- 创建内容包失败
+- 灰度发布或回滚操作失败
+
+**解决方案**：
+```bash
+# 查看详细错误日志
+cd tools/playtest && pytest -v -k "content"
+
+# 检查内容包服务
+# 文件：services/content/app/repositories/content_repo.py
+
+# 运行内容服务测试
+cd services/content && pytest -v
+```
+
+### 6. 事件总线集成失败
+
+**现象**：
+- 事件发布/订阅测试失败
+- 投票结算后事件未触发
+
+**解决方案**：
+```bash
+# 查看详细错误日志
+cd tools/playtest && pytest -v -k "event"
+
+# 检查事件总线配置
+# 文件：workers/events/event_bus.py
+
+# 运行 workers 测试
+cd workers && pytest -v -k "event"
+```
+
 ## 手动执行
 
 ```bash
@@ -110,6 +151,18 @@ bash tools/playtest/run_vote_flow.sh --verbose
 bash tools/playtest/run_vote_flow.sh --step create_cycle
 bash tools/playtest/run_vote_flow.sh --step submit_vote
 bash tools/playtest/run_vote_flow.sh --step close_and_count
+
+# 运行完整端到端集成测试
+cd tools/playtest && pytest -v
+
+# 运行投票链路测试
+cd tools/playtest && pytest -v -k "vote"
+
+# 运行内容包流程测试
+cd tools/playtest && pytest -v -k "content"
+
+# 运行事件总线测试
+cd tools/playtest && pytest -v -k "event"
 ```
 
 ## 升级路径
