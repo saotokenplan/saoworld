@@ -198,3 +198,47 @@
 **项目状态更新**：
 - 将"二层 Loop 基础设施已实现"添加到"当前结论"章节
 - 更新 loop-engineering-plan.md：标记二层 Loop 基础设施已完成
+
+---
+
+### auto-20260705-2200 - 实现三层 Loop（规则改进 Loop）基础设施
+
+**执行时间**：2026-07-05 22:00
+**状态**：已完成
+**任务描述**：实现三层 Loop（规则改进 Loop）核心基础设施，包括规则版本化管理、反馈信号采集、规则评估与改进建议生成、Rule Improvement Issue 自动生成工具
+
+**完成内容**：
+- 创建规则版本化管理模块：rule_registry.py、threshold_manager.py、golden_case_manager.py
+- 创建反馈信号采集模块：feedback_collector.py
+- 创建规则评估与改进系统：rule_evaluator.py、rule_improvement_generator.py
+- 创建 patterns/ 目录和规则文件（missing_gate.yaml、coverage_gap.yaml、gate_noise.yaml）
+- 创建 thresholds.yaml 阈值配置文件
+- 创建 golden_cases/ 目录和样本文件
+- 更新 CLI 工具，新增 rule-improvement 命令（evaluate/generate）
+- 编写 12 个测试用例，全部 36 个测试通过
+- 更新 project-status.md：添加三层 Loop 基础设施已实现说明
+- 更新 loop-engineering-plan.md：标记三层 Loop 基础设施已完成
+
+**产出文件**：
+- `docs/40-dev-loop/auto-plan-20260705-2200.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260705-2200.md`（执行摘要）
+- `tools/loop_logging/rule_registry.py`
+- `tools/loop_logging/threshold_manager.py`
+- `tools/loop_logging/golden_case_manager.py`
+- `tools/loop_logging/feedback_collector.py`
+- `tools/loop_logging/rule_evaluator.py`
+- `tools/loop_logging/rule_improvement_generator.py`
+- `tools/loop_logging/patterns/missing_gate.yaml`
+- `tools/loop_logging/patterns/coverage_gap.yaml`
+- `tools/loop_logging/patterns/gate_noise.yaml`
+- `tools/loop_logging/thresholds.yaml`
+- `tools/loop_logging/golden_cases/missing_gate_cases.jsonl`
+- `tools/loop_logging/golden_cases/coverage_gap_cases.jsonl`
+- `tools/loop_logging/golden_cases/gate_noise_cases.jsonl`
+- `tools/loop_logging/tests/test_rule_registry.py`
+- `tools/loop_logging/tests/test_feedback_collector.py`
+- `tools/loop_logging/tests/test_rule_evaluator.py`
+
+**项目状态更新**：
+- 将"三层 Loop（规则改进 Loop）基础设施已实现"添加到"当前结论"章节
+- 更新 loop-engineering-plan.md：标记三层 Loop 基础设施已完成
