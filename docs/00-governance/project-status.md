@@ -253,7 +253,7 @@
   - JWT 认证（`world:read`、`quests:read` scope、ops 角色权限）
   - 审计日志持久化
   - 自定义 UUID 类型兼容 SQLite 测试环境
-  - 测试用例 23 个全部通过（含玩家接口 + 运营接口 + 审计日志 + 鉴权 + envelope 格式）
+  - 测试用例 37 个全部通过（含玩家接口 + 运营接口 + 审计日志 + 鉴权 + envelope 格式 + 分页测试 + 指标测试）
 - `ops-service` 已完成骨架初始化与运营后台接口：
   - 数据模型：`OpsDashboard`、`OpsAction`、`AuditLog`（对应 `backend-data-spec.md`）
   - 运营 API 路由：`GET /api/v1/health`、`GET /api/v1/ops/dashboard`（仪表盘）、`GET /api/v1/ops/dashboard/history`（历史）、`GET /api/v1/ops/actions`（运营操作列表）、`GET /api/v1/ops/actions/{action_id}`（操作详情）、`GET /api/v1/ops/system/status`（系统状态）
