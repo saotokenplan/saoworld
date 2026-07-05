@@ -337,3 +337,34 @@
 
 **项目状态更新**：
 - 更新预留错误码落地状态描述，包含 `TOKEN_EXPIRED`，当前所有预留错误码均已落地
+
+---
+
+### auto-20260706-0700 - 实现世界骨架快照 API 与内容生成校验
+
+**执行时间**：2026-07-06 07:00
+**状态**：已完成
+**任务描述**：实现世界骨架快照功能，确保 AI 内容生成前必须载入世界骨架快照并通过校验，为首期内容包灰度发布和内容生成闭环做好准备
+
+**完成内容**：
+- world-service：新增 `WorldSkeleton` 模型、Repository 方法、玩家接口 `GET /api/v1/world/skeleton`、运营接口 `POST /api/v1/ops/world/skeleton`、Schemas、Alembic 迁移脚本
+- generation-service：新增 `SkeletonValidator` 校验器、错误码（SKELETON_NOT_FOUND、INVALID_CHAPTER_ID、INVALID_REGION_ID、FORBIDDEN_TAGS_EMPTY）、集成到生成请求创建流程
+- 测试用例：world-service 6 个测试通过，generation-service 6 个测试通过
+- 项目状态更新：记录骨架快照功能已实现
+
+**产出文件**：
+- `docs/40-dev-loop/auto-plan-20260706-0700.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260706-0700.md`（执行摘要）
+- `services/world/app/domain/models.py`（新增 WorldSkeleton）
+- `services/world/app/repositories/world_repo.py`（新增骨架快照方法）
+- `services/world/app/api/routes.py`（新增骨架快照接口）
+- `services/world/app/schemas/world.py`（新增骨架快照 schemas）
+- `services/world/alembic/versions/2026_07_06_0700_add_world_skeletons_table.py`（迁移脚本）
+- `services/world/tests/test_world_skeleton.py`（测试用例）
+- `services/generation/app/core/skeleton_validator.py`（校验器）
+- `services/generation/app/core/errors.py`（错误码）
+- `services/generation/tests/test_skeleton_validator.py`（测试用例）
+
+**项目状态更新**：
+- 更新 world-service 和 generation-service 的已落地资产描述
+- 在"下一阶段建议"中添加第 22 项并标记为已完成
