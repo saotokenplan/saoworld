@@ -1,0 +1,296 @@
+version: "1.0"
+
+service_level_metrics:
+  http_requests_total:
+    type: counter
+    description: "Total HTTP requests received"
+    labels:
+      - name: method
+        description: "HTTP method (GET/POST/PUT/DELETE)"
+      - name: path
+        description: "Request path"
+      - name: status_code
+        description: "HTTP status code"
+      - name: service
+        description: "Service name"
+
+  http_request_duration_seconds:
+    type: histogram
+    description: "HTTP request duration in seconds"
+    labels:
+      - name: method
+        description: "HTTP method"
+      - name: path
+        description: "Request path"
+      - name: status_code
+        description: "HTTP status code"
+      - name: service
+        description: "Service name"
+    buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0]
+
+  http_errors_total:
+    type: counter
+    description: "Total HTTP errors"
+    labels:
+      - name: method
+        description: "HTTP method"
+      - name: path
+        description: "Request path"
+      - name: status_code
+        description: "HTTP status code"
+      - name: service
+        description: "Service name"
+
+  active_connections:
+    type: gauge
+    description: "Number of active connections"
+    labels:
+      - name: service
+        description: "Service name"
+
+vote_service_metrics:
+  vote_submissions_total:
+    type: counter
+    description: "Total vote submissions"
+    labels:
+      - name: vote_cycle_id
+        description: "Vote cycle ID"
+      - name: candidate_id
+        description: "Candidate ID"
+
+  vote_cycle_transitions_total:
+    type: counter
+    description: "Total vote cycle state transitions"
+    labels:
+      - name: from_status
+        description: "Previous status"
+      - name: to_status
+        description: "New status"
+
+  vote_cycles_by_status:
+    type: gauge
+    description: "Number of vote cycles by status"
+    labels:
+      - name: status
+        description: "Vote cycle status (draft/scheduled/open/closed/finalized)"
+
+  vote_candidates_by_status:
+    type: gauge
+    description: "Number of vote candidates by status"
+    labels:
+      - name: status
+        description: "Candidate status (active/withdrawn/selected)"
+
+world_service_metrics:
+  world_region_operations_total:
+    type: counter
+    description: "Total world region operations"
+    labels:
+      - name: operation
+        description: "Operation type (create/update/delete)"
+      - name: region_id
+        description: "Region ID"
+
+  world_region_transitions_total:
+    type: counter
+    description: "Total region state transitions"
+    labels:
+      - name: from_status
+        description: "Previous status"
+      - name: to_status
+        description: "New status"
+
+  world_regions_by_status:
+    type: gauge
+    description: "Number of regions by status"
+    labels:
+      - name: status
+        description: "Region status (locked/active/unstable/archived)"
+
+content_service_metrics:
+  content_package_operations_total:
+    type: counter
+    description: "Total content package operations"
+    labels:
+      - name: operation
+        description: "Operation type (create/release/rollback/archive)"
+      - name: package_id
+        description: "Content package ID"
+
+  content_releases_total:
+    type: counter
+    description: "Total content releases"
+    labels:
+      - name: release_mode
+        description: "Release mode (gray/full)"
+
+  content_rollbacks_total:
+    type: counter
+    description: "Total content rollbacks"
+    labels:
+      - name: reason
+        description: "Rollback reason"
+
+  content_packages_by_status:
+    type: gauge
+    description: "Number of content packages by status"
+    labels:
+      - name: status
+        description: "Package status (packaged/gray/live/archived/rolled_back)"
+
+generation_service_metrics:
+  generation_requests_total:
+    type: counter
+    description: "Total generation requests"
+    labels:
+      - name: status
+        description: "Request status"
+
+  generated_objects_total:
+    type: counter
+    description: "Total generated objects"
+    labels:
+      - name: object_type
+        description: "Object type (npc/quest/event/settlement)"
+      - name: status
+        description: "Object status"
+
+  generation_requests_by_status:
+    type: gauge
+    description: "Number of generation requests by status"
+    labels:
+      - name: status
+        description: "Request status (pending/processing/succeeded/failed_retryable/failed_permanent)"
+
+review_service_metrics:
+  reviews_total:
+    type: counter
+    description: "Total review records"
+    labels:
+      - name: result
+        description: "Review result (approved/rejected/manual_review)"
+      - name: risk_level
+        description: "Risk level (low/medium/high/critical)"
+
+  review_operations_total:
+    type: counter
+    description: "Total review operations"
+    labels:
+      - name: operation
+        description: "Operation type (create/approve/reject)"
+
+  reviews_by_risk_level:
+    type: gauge
+    description: "Number of reviews by risk level"
+    labels:
+      - name: risk_level
+        description: "Risk level"
+
+gateway_service_metrics:
+  gateway_proxy_requests_total:
+    type: counter
+    description: "Total proxy requests"
+    labels:
+      - name: upstream_service
+        description: "Upstream service name"
+      - name: status_code
+        description: "HTTP status code"
+
+  gateway_rate_limit_hits_total:
+    type: counter
+    description: "Total rate limit hits"
+    labels:
+      - name: endpoint
+        description: "Endpoint path"
+
+  gateway_auth_failures_total:
+    type: counter
+    description: "Total authentication failures"
+    labels:
+      - name: reason
+        description: "Failure reason"
+
+player_service_metrics:
+  players_total:
+    type: gauge
+    description: "Total number of players"
+
+  player_operations_total:
+    type: counter
+    description: "Total player operations"
+    labels:
+      - name: operation
+        description: "Operation type (create/update/delete)"
+
+  player_quests_by_status:
+    type: gauge
+    description: "Number of player quests by status"
+    labels:
+      - name: status
+        description: "Quest status (available/active/completed/failed)"
+
+ops_service_metrics:
+  ops_actions_total:
+    type: counter
+    description: "Total operations actions"
+    labels:
+      - name: action_type
+        description: "Action type"
+      - name: operator_role
+        description: "Operator role (player/ops/reviewer/system)"
+
+  ops_dashboard_views_total:
+    type: counter
+    description: "Total dashboard views"
+
+workers_metrics:
+  task_executions_total:
+    type: counter
+    description: "Total task executions"
+    labels:
+      - name: task_name
+        description: "Task name"
+      - name: status
+        description: "Execution status (success/failure/retry)"
+
+  task_execution_duration_seconds:
+    type: histogram
+    description: "Task execution duration"
+    labels:
+      - name: task_name
+        description: "Task name"
+    buckets: [5.0, 10.0, 30.0, 60.0, 120.0, 300.0]
+
+  task_retries_total:
+    type: counter
+    description: "Total task retries"
+    labels:
+      - name: task_name
+        description: "Task name"
+
+event_bus_metrics:
+  events_published_total:
+    type: counter
+    description: "Total events published"
+    labels:
+      - name: event_type
+        description: "Event type"
+      - name: producer
+        description: "Event producer"
+
+  events_consumed_total:
+    type: counter
+    description: "Total events consumed"
+    labels:
+      - name: event_type
+        description: "Event type"
+      - name: consumer
+        description: "Event consumer"
+
+  event_processing_duration_seconds:
+    type: histogram
+    description: "Event processing duration"
+    labels:
+      - name: event_type
+        description: "Event type"
+    buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1.0]
