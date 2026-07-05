@@ -21,13 +21,14 @@ class EventPublisher:
 
     async def publish(self, event_type: str, payload: dict, trace_id: str = "") -> str:
         import json
-        from datetime import datetime
+        from datetime import datetime, timezone
         from uuid import uuid4
 
+        event_id: str = str(uuid4())
         event = {
-            "event_id": str(uuid4()),
+            "event_id": event_id,
             "event_type": event_type,
-            "occurred_at": datetime.utcnow().isoformat(),
+            "occurred_at": datetime.now(timezone.utc).isoformat(),
             "trace_id": trace_id,
             "producer": "content-service",
             "payload": payload,
@@ -39,8 +40,9 @@ class EventPublisher:
         if self._redis is None:
             await self.connect()
 
+        assert self._redis is not None
         await self._redis.publish(channel, message)
-        return event["event_id"]
+        return event_id
 
     async def publish_content_package_released(
         self,

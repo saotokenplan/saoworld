@@ -1,5 +1,6 @@
 import json
 import uuid
+from typing import Any
 
 from workers.celery_app import app
 from workers.clients.db_client import write_audit_log
@@ -13,7 +14,7 @@ def build_gray_scope(
     region_ids: list[str] | None = None,
     player_percent: int | None = None,
     player_ids: list[str] | None = None,
-) -> dict[str, Any]:
+) -> dict[str, Any] | None:
     scope: dict[str, Any] = {}
     if region_ids:
         scope["region_ids"] = region_ids
@@ -44,11 +45,11 @@ def release_content_package(
     try:
         content_client = ContentServiceClient(settings.content_service_url)
 
-        gray_scope = gray_scope_jsonb
+        gray_scope: dict[str, Any] | None = gray_scope_jsonb
         if not gray_scope and release_mode == "gray":
             gray_scope = build_gray_scope(region_ids, player_percent, player_ids)
 
-        release_payload = {
+        release_payload: dict[str, Any] = {
             "release_mode": release_mode,
         }
         if gray_scope:
@@ -161,11 +162,12 @@ def promote_to_full_release(
     logger.info("task_started", content_package_id=content_package_id)
 
     try:
-        return release_content_package(
+        result: dict[str, str] = release_content_package(
             content_package_id=content_package_id,
             release_mode="full",
             trace_id=trace_id,
         )
+        return result
 
     except Exception as e:
         logger.error("task_failed", error=str(e))

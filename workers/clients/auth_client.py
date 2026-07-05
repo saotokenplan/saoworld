@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 from jose import jwt
 
@@ -16,7 +17,7 @@ def create_jwt_token(
 
     expire = datetime.now(timezone.utc) + expires_delta
 
-    claims = {
+    claims: dict[str, Any] = {
         "sub": subject,
         "role": role,
         "exp": expire,
@@ -26,7 +27,7 @@ def create_jwt_token(
     if scopes:
         claims["scopes"] = scopes
 
-    token = jwt.encode(claims, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+    token: str = jwt.encode(claims, settings.jwt_secret, algorithm=settings.jwt_algorithm)
     return token
 
 

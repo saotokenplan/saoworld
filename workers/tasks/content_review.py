@@ -128,7 +128,7 @@ def run_world_consistency_review(
                 operator_role="system",
                 action="review.world_consistency_completed",
                 resource_type="content_package",
-                resource_id=uuid.UUID(content_package_id) if _is_uuid(content_package_id) else None,
+                resource_id=content_package_id if _is_uuid(content_package_id) else None,
                 details_jsonb=json.dumps(check_result.to_dict()),
             )
 
@@ -213,7 +213,7 @@ def run_balance_review(
                 operator_role="system",
                 action="review.balance_completed",
                 resource_type="content_package",
-                resource_id=uuid.UUID(content_package_id) if _is_uuid(content_package_id) else None,
+                resource_id=content_package_id if _is_uuid(content_package_id) else None,
                 details_jsonb=json.dumps(check_result.to_dict()),
             )
 
@@ -297,7 +297,7 @@ def run_safety_review(
                 operator_role="system",
                 action="review.safety_completed",
                 resource_type="content_package",
-                resource_id=uuid.UUID(content_package_id) if _is_uuid(content_package_id) else None,
+                resource_id=content_package_id if _is_uuid(content_package_id) else None,
                 details_jsonb=json.dumps(check_result.to_dict()),
             )
 
@@ -400,7 +400,7 @@ def run_duplication_review(
                 operator_role="system",
                 action="review.duplication_completed",
                 resource_type="content_package",
-                resource_id=uuid.UUID(content_package_id) if _is_uuid(content_package_id) else None,
+                resource_id=content_package_id if _is_uuid(content_package_id) else None,
                 details_jsonb=json.dumps(check_result.to_dict()),
             )
 
@@ -469,7 +469,7 @@ def run_full_content_review(
                 operator_role="system",
                 action="review.full_content_review_completed",
                 resource_type="content_package",
-                resource_id=uuid.UUID(content_package_id) if _is_uuid(content_package_id) else None,
+                resource_id=content_package_id if _is_uuid(content_package_id) else None,
                 details_jsonb=json.dumps({
                     "overall_result": overall_result,
                     "average_score": total_score,

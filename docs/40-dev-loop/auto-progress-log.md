@@ -134,3 +134,26 @@
 
 **项目状态更新**：
 - 将客户端测试状态更新为"GUT 测试框架与完整测试覆盖"，包含 8 个测试文件、57 个测试用例
+
+---
+
+### auto-20260705-2000 - 修复所有服务 mypy 类型错误，启用类型检查门禁
+
+**执行时间**：2026-07-05 20:00
+**状态**：已完成
+**任务描述**：修复所有 8 个后端服务 + workers 的 mypy 类型错误（约 129 个），移除 CI 中 mypy 的 `|| true` 绕过，让类型检查成为真正的阻塞门禁
+
+**完成内容**：
+- 修复 vote-service（27→0）、world-service（13→0）、content-service（25→0）、generation-service（38→0）、review-service（20→0）、gateway-service（4→0）、player-service（1→0）、workers（33→0）的 mypy 错误
+- 核心修复：将各服务 errors.py 中的 raise 函数返回类型改为 NoReturn，解决约 80% 的 union-attr 错误
+- 添加 redis、celery、jose、prometheus_client 等模块的 mypy ignore_missing_imports 配置
+- 修复 datetime.utcnow() 弃用警告（vote/content/generation/review 服务）
+- 更新 CI 配置：移除 mypy 的 `|| true` 绕过，修正 workers mypy 路径
+- 所有 8 个后端服务 342 个测试全部通过
+
+**产出文件**：
+- `docs/40-dev-loop/auto-plan-20260705-2000.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260705-2000.md`（执行摘要）
+
+**项目状态更新**：
+- 在"当前结论"中添加 mypy 类型检查门禁已生效和 datetime 弃用警告修复说明

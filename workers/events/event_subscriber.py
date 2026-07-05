@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Callable, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from workers.events.event_bus import EventBus
 from workers.events.schemas import Event, EventType
@@ -11,13 +11,13 @@ logger = logging.getLogger(__name__)
 class EventSubscriber:
     def __init__(self, event_bus: EventBus | None = None):
         self.event_bus = event_bus or EventBus.create()
-        self._handlers: Dict[EventType, List[Callable[[Event], None]]] = {}
+        self._handlers: Dict[EventType, List[Callable[[Event], Any]]] = {}
         self._max_retries: int = 3
         self._base_delay: float = 1.0
         self._dead_letter_channel: str = "event.dead_letter"
 
     def register_handler(
-        self, event_type: EventType, handler: Callable[[Event], None]
+        self, event_type: EventType, handler: Callable[[Event], Any]
     ) -> None:
         if event_type not in self._handlers:
             self._handlers[event_type] = []
@@ -42,8 +42,8 @@ class EventSubscriber:
         for handler in handlers:
             await self._execute_with_retry(handler, event)
 
-    async def _execute_with_retry(self, handler: Callable[[Event], None], event: Event) -> None:
-        last_exception = None
+    async def _execute_with_retry(self, handler: Callable[[Event], Any], event: Event) -> None:
+        last_exception: Exception | None = None
         for attempt in range(self._max_retries + 1):
             try:
                 result = handler(event)
@@ -67,6 +67,7 @@ class EventSubscriber:
             self._max_retries + 1,
             event.event_id,
         )
+        assert last_exception is not None
         await self._send_to_dead_letter(event, last_exception)
 
     async def _send_to_dead_letter(self, event: Event, exception: Exception) -> None:
@@ -85,6 +86,7 @@ class EventSubscriber:
             "error_type": type(exception).__name__,
         }
         try:
+            assert self.event_bus._redis is not None
             await self.event_bus._redis.publish(
                 self._dead_letter_channel,
                 json.dumps(dead_letter_message),

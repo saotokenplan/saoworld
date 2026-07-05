@@ -38,6 +38,8 @@
 - vote-service 端到端可运行验证已完成（代码层面通过所有测试，PostgreSQL 配置就绪）。
 - 端到端集成验证已完成：投票链路、内容链路、审核链路、事件总线、API 网关路由映射均已验证通过，所有 8 个后端服务共 349 个测试用例全部通过，workers 29 个测试用例通过，内容检查工具 28 个测试用例通过。
 - 预留错误码已落地：`AUDIT_WRITE_FAILED`、`TRACE_ID_MISSING`、`TASK_DISPATCH_FAILED`、`DEPENDENCY_UNAVAILABLE` 四个预留错误码已在所有 8 个后端服务的 `errors.py` 中定义，`api-error-codes.md` 文档已同步更新。
+- **mypy 类型检查门禁已生效**：所有 8 个后端服务 + workers 的 mypy 类型错误全部修复（约 129 个错误），CI 配置移除 `|| true` 绕过，类型检查成为真正的阻塞门禁。
+- **datetime.utcnow() 弃用警告修复**：vote、content、generation、review 服务的 event_publisher 已从 `datetime.utcnow()` 迁移到 `datetime.now(timezone.utc)`，消除 Python 3.12+ 弃用警告。
 
 ## 已确定事项
 
