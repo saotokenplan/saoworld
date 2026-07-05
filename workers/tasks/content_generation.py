@@ -12,7 +12,9 @@ from workers.utils.tracing import generate_trace_id
 @app.task(bind=True, max_retries=3, retry_backoff=2, name="workers.tasks.content_generation.generate_content_batch")
 def generate_content_batch(
     self,
-    template_type: str,
+    vote_cycle_id: str | None = None,
+    winning_candidate_id: str | None = None,
+    template_type: str = "npc",
     count: int = 1,
     region_id: str | None = None,
     chapter_id: str | None = None,
@@ -22,7 +24,14 @@ def generate_content_batch(
         trace_id = generate_trace_id()
 
     logger = get_logger("generate_content_batch", trace_id)
-    logger.info("task_started", template_type=template_type, count=count, region_id=region_id)
+    logger.info(
+        "task_started",
+        vote_cycle_id=vote_cycle_id,
+        winning_candidate_id=winning_candidate_id,
+        template_type=template_type,
+        count=count,
+        region_id=region_id,
+    )
 
     try:
         client = GenerationServiceClient(settings.generation_service_url)
@@ -31,6 +40,10 @@ def generate_content_batch(
             "template_type": template_type,
             "count": count,
         }
+        if vote_cycle_id:
+            payload["vote_cycle_id"] = vote_cycle_id
+        if winning_candidate_id:
+            payload["winning_candidate_id"] = winning_candidate_id
         if region_id:
             payload["region_id"] = region_id
         if chapter_id:
@@ -41,7 +54,11 @@ def generate_content_batch(
         result = response.json()
 
         request_id = result["data"]["request_id"]
-        logger.info("generation_request_created", request_id=request_id)
+        logger.info(
+            "generation_request_created",
+            request_id=request_id,
+            vote_cycle_id=vote_cycle_id,
+        )
 
         import asyncio
 
