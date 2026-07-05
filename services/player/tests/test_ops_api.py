@@ -119,3 +119,75 @@ async def test_unlock_region_success(client: AsyncClient, ops_token: str, test_p
     assert "request_id" in data
     assert data["data"]["region_id"] == "region_forest_01"
     assert data["data"]["unlocked_at"] is not None
+
+
+@pytest.mark.asyncio
+async def test_unlock_region_player_not_found(client: AsyncClient, ops_token: str):
+    fake_id = uuid.uuid4()
+    response = await client.post(
+        f"{settings.api_v1_prefix}/ops/players/{fake_id}/regions/region_forest_01/unlock",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-unlock-region-not-found",
+        },
+    )
+    assert response.status_code == 404
+    data = response.json()
+    assert data["code"] == PlayerErrorCodes.PLAYER_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_list_players_pagination(client: AsyncClient, ops_token: str, test_player):
+    response = await client.get(
+        f"{settings.api_v1_prefix}/ops/players?limit=10&offset=0",
+        headers={"Authorization": f"Bearer {ops_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["meta"]["limit"] == 10
+    assert data["meta"]["offset"] == 0
+    assert data["meta"]["total"] >= 1
+
+
+@pytest.mark.asyncio
+async def test_create_player_with_chapter(client: AsyncClient, ops_token: str):
+    response = await client.post(
+        f"{settings.api_v1_prefix}/ops/players",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-create-player-chapter",
+        },
+        json={"display_name": "ChapterPlayer", "chapter_id": "ch_chapter_02"},
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["data"]["display_name"] == "ChapterPlayer"
+    assert data["data"]["chapter_id"] == "ch_chapter_02"
+
+
+@pytest.mark.asyncio
+async def test_update_player_chapter_id(client: AsyncClient, ops_token: str, test_player):
+    response = await client.put(
+        f"{settings.api_v1_prefix}/ops/players/{test_player.player_id}",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-update-player-chapter",
+        },
+        json={"chapter_id": "ch_chapter_02"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["data"]["chapter_id"] == "ch_chapter_02"
+
+
+@pytest.mark.asyncio
+async def test_update_player_empty_display_name(client: AsyncClient, ops_token: str, test_player):
+    response = await client.put(
+        f"{settings.api_v1_prefix}/ops/players/{test_player.player_id}",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-update-player-empty-name",
+        },
+        json={"display_name": ""},
+    )
+    assert response.status_code == 422

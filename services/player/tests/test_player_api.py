@@ -90,3 +90,53 @@ async def test_get_player_regions_success(client: AsyncClient, player_token: str
     assert len(data["data"]) == 1
     assert data["data"][0]["region_id"] == "region_wasteland_01"
     assert data["data"][0]["reputation"] == 50
+
+
+@pytest.mark.asyncio
+async def test_get_player_quests_pagination(client: AsyncClient, player_token: str, test_player, test_player_quest):
+    response = await client.get(
+        f"{settings.api_v1_prefix}/player/quests?limit=1&offset=0",
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "meta" in data
+    assert data["meta"]["limit"] == 1
+    assert data["meta"]["offset"] == 0
+    assert data["meta"]["total"] == 1
+
+
+@pytest.mark.asyncio
+async def test_get_player_quests_empty(client: AsyncClient, player_token: str, test_player):
+    response = await client.get(
+        f"{settings.api_v1_prefix}/player/quests",
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["data"]) == 0
+    assert data["meta"]["total"] == 0
+
+
+@pytest.mark.asyncio
+async def test_get_player_regions_pagination(client: AsyncClient, player_token: str, test_player, test_player_region):
+    response = await client.get(
+        f"{settings.api_v1_prefix}/player/regions?limit=10&offset=0",
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "meta" in data
+    assert data["meta"]["total"] == 1
+
+
+@pytest.mark.asyncio
+async def test_get_player_regions_empty(client: AsyncClient, player_token: str, test_player):
+    response = await client.get(
+        f"{settings.api_v1_prefix}/player/regions",
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["data"]) == 0
+    assert data["meta"]["total"] == 0
