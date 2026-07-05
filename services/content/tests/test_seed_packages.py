@@ -1,8 +1,10 @@
 import json
 from pathlib import Path
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
+
+from tests.conftest import TestSessionLocal
 
 
 @pytest.mark.asyncio
@@ -19,7 +21,7 @@ async def test_load_json_file():
 
 
 @pytest.mark.asyncio
-async def test_create_ironward_package(client):
+async def test_create_ironward_package():
     from scripts.seed_initial_packages import create_ironward_package
     from app.repositories.content_repo import ContentRepository
     
@@ -27,7 +29,8 @@ async def test_create_ironward_package(client):
     mock_repo.create_package.return_value = AsyncMock(content_package_id="test_package_id")
     
     with patch.object(ContentRepository, "__new__", return_value=mock_repo):
-        await create_ironward_package(client._transport.app.dependency_overrides.get("get_db")())
+        async with TestSessionLocal() as session:
+            await create_ironward_package(session)
     
     mock_repo.create_package.assert_called_once()
     call_args = mock_repo.create_package.call_args
@@ -38,7 +41,7 @@ async def test_create_ironward_package(client):
 
 
 @pytest.mark.asyncio
-async def test_create_grayvalley_package(client):
+async def test_create_grayvalley_package():
     from scripts.seed_initial_packages import create_grayvalley_package
     from app.repositories.content_repo import ContentRepository
     
@@ -46,7 +49,8 @@ async def test_create_grayvalley_package(client):
     mock_repo.create_package.return_value = AsyncMock(content_package_id="test_package_id")
     
     with patch.object(ContentRepository, "__new__", return_value=mock_repo):
-        await create_grayvalley_package(client._transport.app.dependency_overrides.get("get_db")())
+        async with TestSessionLocal() as session:
+            await create_grayvalley_package(session)
     
     mock_repo.create_package.assert_called_once()
     call_args = mock_repo.create_package.call_args
@@ -57,7 +61,7 @@ async def test_create_grayvalley_package(client):
 
 
 @pytest.mark.asyncio
-async def test_package_payload_contains_required_fields(client):
+async def test_package_payload_contains_required_fields():
     from scripts.seed_initial_packages import create_ironward_package
     from app.repositories.content_repo import ContentRepository
     
@@ -65,7 +69,8 @@ async def test_package_payload_contains_required_fields(client):
     mock_repo.create_package.return_value = AsyncMock(content_package_id="test_package_id")
     
     with patch.object(ContentRepository, "__new__", return_value=mock_repo):
-        await create_ironward_package(client._transport.app.dependency_overrides.get("get_db")())
+        async with TestSessionLocal() as session:
+            await create_ironward_package(session)
     
     call_args = mock_repo.create_package.call_args
     payload = call_args.kwargs["payload"]
