@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Header, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
@@ -266,18 +266,16 @@ async def get_system_status(
     x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
     db: AsyncSession = Depends(get_db),
 ) -> EnvelopeResponse[SystemStatusResponse]:
+    from app.core.health_check_client import check_all_services_health
+
     request_id = _get_request_id(request)
     trace_id = x_trace_id or _make_request_id("trace")
 
+    health_results = await check_all_services_health()
+
     services = [
-        SystemServiceStatus(name="vote-service", status="ok", version="0.1.0"),
-        SystemServiceStatus(name="world-service", status="ok", version="0.1.0"),
-        SystemServiceStatus(name="content-service", status="ok", version="0.1.0"),
-        SystemServiceStatus(name="generation-service", status="ok", version="0.1.0"),
-        SystemServiceStatus(name="review-service", status="ok", version="0.1.0"),
-        SystemServiceStatus(name="gateway-service", status="ok", version="0.1.0"),
-        SystemServiceStatus(name="player-service", status="ok", version="0.1.0"),
-        SystemServiceStatus(name="ops-service", status="ok", version="0.1.0"),
+        SystemServiceStatus(name=name, status=status, version=version)
+        for name, (status, version) in health_results.items()
     ]
 
     response_data = SystemStatusResponse(
