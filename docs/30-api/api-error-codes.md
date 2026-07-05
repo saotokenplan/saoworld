@@ -69,6 +69,7 @@
 |---|---|---|---|
 | `INVALID_ARGUMENT` | `400` | 请求参数非法（缺字段、格式错误、枚举非法等） | `ValidationErrorResponse` / `PathParameterErrorResponse` |
 | `INVALID_TOKEN` | `401` | Token 格式或签名非法、未认证 | `UnauthorizedErrorResponse` |
+| `TOKEN_EXPIRED` | `401` | Access Token 已过期（与 INVALID_TOKEN 区分，提示刷新） | `TokenExpiredErrorResponse` |
 | `INSUFFICIENT_SCOPE` | `403` | 访问令牌缺少所需作用域 | `ScopeErrorResponse` |
 | `RESOURCE_NOT_FOUND` | `404` | 目标资源不存在 | `NotFoundErrorResponse` |
 | `CONFLICT` | `409` | 资源状态冲突（通用） | `ConflictErrorResponse` |
@@ -82,9 +83,7 @@
 
 ## 预留错误码（未在当前 OpenAPI 中使用）
 
-| 错误码 | HTTP 状态码 | 说明 | 预计使用阶段 |
-|---|---|---|---|
-| `TOKEN_EXPIRED` | `401` | Access Token 已过期（与 INVALID_TOKEN 区分，提示刷新） | 接入 Refresh Token 后 |
+当前无预留错误码。
 
 ## 投票接口错误码（已落地）
 

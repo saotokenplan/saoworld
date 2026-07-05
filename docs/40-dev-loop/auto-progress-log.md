@@ -315,3 +315,25 @@
 
 **项目状态更新**：
 - 更新 CI/CD 基础设施描述，包含新增的内容检查门禁、E2E 测试、灰度发布流程、新增脚本
+
+---
+
+### auto-20260706-0600 - 预留错误码 TOKEN_EXPIRED 落地到 OpenAPI 草案与服务端实现
+
+**执行时间**：2026-07-06 06:00
+**状态**：已完成
+**任务描述**：将最后一个预留错误码 `TOKEN_EXPIRED` 落地到 OpenAPI 草案和所有 8 个后端服务的 errors.py 中，确保 API 规范与服务端实现完全对齐，为首期内容包灰度发布做好准备
+
+**完成内容**：
+- OpenAPI 草案更新：在 `GenericErrorCode` 枚举中添加 `TOKEN_EXPIRED`，创建 `TokenExpiredErrorResponse` Schema
+- API 错误码文档更新：将 `TOKEN_EXPIRED` 从预留移到已落地，清理预留表
+- 服务端错误码同步：为 vote、world、content、generation、review、player、ops、gateway 8 个服务添加 `TOKEN_EXPIRED` 常量
+- 项目状态更新：记录预留错误码完善状态
+- 测试验证：vote-service 54 个测试用例全部通过
+
+**产出文件**：
+- `docs/40-dev-loop/auto-plan-20260706-0600.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260706-0600.md`（执行摘要）
+
+**项目状态更新**：
+- 更新预留错误码落地状态描述，包含 `TOKEN_EXPIRED`，当前所有预留错误码均已落地
