@@ -138,15 +138,15 @@
 
 ### 技术侧未定
 
-- OpenAPI 单文件草案已完成 12 个端点、特化错误层、安全方案和响应 envelope，但预留错误码（INTERNAL_ERROR、TOKEN_EXPIRED 等）待实现阶段按需落地。
-- 数据库核心表的字段类型、约束、索引、状态机和枚举值已定义在 `backend-data-spec.md`，但 ER 图和迁移脚本（Alembic/SQLAlchemy 模型）尚未生成。
-- ~~异步任务和事件的 payload schema、重试策略、死信处理等细节仍停留在方向层，未形成工程实施方案。~~ 已完成，事件总线基础设施已实现。
+- ~~OpenAPI 单文件草案已完成 12 个端点、特化错误层、安全方案和响应 envelope，但预留错误码（INTERNAL_ERROR、TOKEN_EXPIRED 等）待实现阶段按需落地。~~ 已完成，所有预留错误码（AUDIT_WRITE_FAILED、TRACE_ID_MISSING、TASK_DISPATCH_FAILED、DEPENDENCY_UNAVAILABLE、TOKEN_EXPIRED）已落地到所有 8 个后端服务的 errors.py 中，api-error-codes.md 文档已同步更新，OpenAPI 草案已添加 TokenExpiredErrorResponse Schema。
+- ~~数据库核心表的字段类型、约束、索引、状态机和枚举值已定义在 `backend-data-spec.md`，但 ER 图和迁移脚本（Alembic/SQLAlchemy 模型）尚未生成。~~ 已完成，所有 8 个后端服务（vote、world、content、generation、review、player、ops、gateway）的 Alembic 迁移环境已初始化，核心业务表和审计日志表的迁移脚本已生成。
+- ~~异步任务和事件的 payload schema、重试策略、死信处理等细节仍停留在方向层，未形成工程实施方案。~~ 已完成，事件总线基础设施已实现，7 个核心异步任务（内容生成、审核、打包、发布、回滚、门禁扫描）已实现，重试策略（指数退避）和死信队列已配置。
 - ~~任务队列、事件总线、中间件、部署方式等基础设施细节仍停留在方向层。~~ 已完成，事件总线基于 Redis Pub/Sub 实现，Celery Beat 定时任务调度器已配置。
 
 ### 工程侧未定
 
-- CI 规则、测试入口、发布流水线和环境配置文件尚未建立。
-- 异步任务和事件的具体工程实现细节仍需在实施中细化。
+- ~~CI 规则、测试入口、发布流水线和环境配置文件尚未建立。~~ 已完成，CI/CD 配置（GitHub Actions）、各服务 Dockerfile、生产环境 Docker Compose、Nginx 配置、Prometheus/Grafana 监控配置、部署脚本已就绪。
+- ~~异步任务和事件的具体工程实现细节仍需在实施中细化。~~ 已完成，workers 包含 7 个核心异步任务，事件总线支持 7 个核心事件类型，服务间事件发布集成已完成。
 
 ### 工程侧已确定
 
@@ -160,7 +160,7 @@
 - ~~除 `vote-service`、`world-service`、`content-service`、`generation-service`、`review-service`、`gateway-service`、`player-service` 外的其他后端服务（ops）尚未初始化。~~ 已完成，ops-service 已初始化完成。
 - ~~Alembic 数据库迁移脚本尚未生成（world-service），需要连接数据库后初始化。~~ 已完成，world-service、content-service、generation-service、review-service、player-service、ops-service 六个服务的 Alembic 迁移环境已全部初始化，首次迁移脚本（核心业务表 + 审计日志表）已生成。
 - ~~真实 CI 配置、部署脚本和生产环境配置尚未建立。~~ 已完成，CI/CD 配置（GitHub Actions）、各服务 Dockerfile、生产环境 Docker Compose、Nginx 配置、Prometheus/Grafana 监控配置、部署脚本（deploy.sh、rollback.sh、health-check.sh、migrate-all.sh）已就绪。
-- JWT 鉴权中间件、运营写接口、投票结算 Worker 尚未实现。~~已全部完成：JWT 鉴权、运营写接口、投票结算逻辑。~~
+- ~~JWT 鉴权中间件、运营写接口、投票结算 Worker 尚未实现。~~ 已全部完成：JWT 鉴权、运营写接口、投票结算逻辑。
 
 ## 已初步落地的工程资产
 
