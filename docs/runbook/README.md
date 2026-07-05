@@ -28,6 +28,11 @@
 | G-UNIT-002 | [world-tests.md](gates/world-tests.md) | world-service 单元测试 |
 | G-UNIT-003 | [content-tests.md](gates/content-tests.md) | content-service 单元测试 |
 | G-UNIT-004 | [workers-tests.md](gates/workers-tests.md) | workers 单元测试 |
+| G-UNIT-005 | [generation-tests.md](gates/generation-tests.md) | generation-service 单元测试 |
+| G-UNIT-006 | [review-tests.md](gates/review-tests.md) | review-service 单元测试 |
+| G-UNIT-007 | [player-tests.md](gates/player-tests.md) | player-service 单元测试 |
+| G-UNIT-008 | [ops-tests.md](gates/ops-tests.md) | ops-service 单元测试 |
+| G-UNIT-009 | [gateway-tests.md](gates/gateway-tests.md) | gateway-service 单元测试 |
 | G-CONTENT-001 | [world_consistency.md](gates/world_consistency.md) | 世界一致性检查 |
 | G-CONTENT-002 | [reward_boundary.md](gates/reward_boundary.md) | 数值平衡检查 |
 | G-CONTENT-003 | [content_safety.md](gates/content_safety.md) | 内容安全检查 |
