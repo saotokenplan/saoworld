@@ -197,6 +197,136 @@ gates:
       runbook: "docs/runbook/gates/workers-tests.md"
       issues: []
 
+  - id: G-UNIT-005
+    name: Service Unit Tests (generation)
+    type: unit
+    owner: Backend Agent
+    command: "cd services/generation && pytest"
+    scope:
+      paths: ["services/generation/**"]
+      trigger: "on_pr"
+    risk_coverage: ["regression", "data-integrity"]
+    cost:
+      expected_seconds: 55
+      flakiness_budget: 0.01
+    signal:
+      severity: blocker
+      precision_target: 0.95
+    lifecycle:
+      status: active
+      created_at: "2026-07-04"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/30-api/api-overview.md"
+      runbook: "docs/runbook/gates/generation-tests.md"
+      issues: []
+
+  - id: G-UNIT-006
+    name: Service Unit Tests (review)
+    type: unit
+    owner: Backend Agent
+    command: "cd services/review && pytest"
+    scope:
+      paths: ["services/review/**"]
+      trigger: "on_pr"
+    risk_coverage: ["regression", "data-integrity"]
+    cost:
+      expected_seconds: 40
+      flakiness_budget: 0.01
+    signal:
+      severity: blocker
+      precision_target: 0.95
+    lifecycle:
+      status: active
+      created_at: "2026-07-04"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/30-api/api-overview.md"
+      runbook: "docs/runbook/gates/review-tests.md"
+      issues: []
+
+  - id: G-UNIT-007
+    name: Service Unit Tests (player)
+    type: unit
+    owner: Backend Agent
+    command: "cd services/player && pytest"
+    scope:
+      paths: ["services/player/**"]
+      trigger: "on_pr"
+    risk_coverage: ["regression", "data-integrity"]
+    cost:
+      expected_seconds: 35
+      flakiness_budget: 0.01
+    signal:
+      severity: blocker
+      precision_target: 0.95
+    lifecycle:
+      status: active
+      created_at: "2026-07-04"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/30-api/api-overview.md"
+      runbook: "docs/runbook/gates/player-tests.md"
+      issues: []
+
+  - id: G-UNIT-008
+    name: Service Unit Tests (ops)
+    type: unit
+    owner: Backend Agent
+    command: "cd services/ops && pytest"
+    scope:
+      paths: ["services/ops/**"]
+      trigger: "on_pr"
+    risk_coverage: ["regression", "data-integrity"]
+    cost:
+      expected_seconds: 40
+      flakiness_budget: 0.01
+    signal:
+      severity: blocker
+      precision_target: 0.95
+    lifecycle:
+      status: active
+      created_at: "2026-07-04"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/30-api/api-overview.md"
+      runbook: "docs/runbook/gates/ops-tests.md"
+      issues: []
+
+  - id: G-UNIT-009
+    name: Service Unit Tests (gateway)
+    type: unit
+    owner: Backend Agent
+    command: "cd services/gateway && pytest"
+    scope:
+      paths: ["services/gateway/**"]
+      trigger: "on_pr"
+    risk_coverage: ["regression", "security"]
+    cost:
+      expected_seconds: 45
+      flakiness_budget: 0.01
+    signal:
+      severity: blocker
+      precision_target: 0.95
+    lifecycle:
+      status: active
+      created_at: "2026-07-04"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/30-api/api-overview.md"
+      runbook: "docs/runbook/gates/gateway-tests.md"
+      issues: []
+
   - id: G-CONTENT-001
     name: World Consistency Check
     type: content

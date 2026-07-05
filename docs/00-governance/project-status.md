@@ -299,7 +299,8 @@
   - 每个服务在 `tests/test_health.py` 新增 2 个测试（指标暴露 + 指标递增），共 16 个新增测试
   - Grafana 仪表盘 `infra/grafana/dashboards/game-dashboard.json` 扩展至 20 个面板，覆盖 HTTP 指标 + 8 个服务的业务指标
   - 全部 8 个服务通过 ruff、mypy、pytest（共 335 个测试用例）验证
-- **门禁 Runbook 文档**：`docs/runbook/` 目录已创建，包含 11 个门禁的运行手册（Ruff Lint、Mypy Typecheck、vote/world/content/workers 单元测试、四项内容检查、关键路径 E2E 测试），每个 runbook 包含门禁概述、常见失败原因、解决方案、手动执行方法和升级路径
+- **门禁 Runbook 文档**：`docs/runbook/` 目录已创建，包含 16 个门禁的运行手册（Ruff Lint、Mypy Typecheck、vote/world/content/generation/review/player/ops/gateway/workers 单元测试、四项内容检查、关键路径 E2E 测试），每个 runbook 包含门禁概述、常见失败原因、解决方案、手动执行方法和升级路径
+- **门禁注册表完善**：`docs/40-dev-loop/gate_registry.yaml` 已补充完整，包含所有 8 个后端服务（vote、world、content、generation、review、player、ops、gateway）和 workers 的单元测试门禁配置，以及静态检查、内容检查、E2E 测试等门禁定义
 - **关键路径 E2E 测试脚本**：`tools/playtest/` 目录已创建，包含投票流程端到端测试（创建投票周期 → 添加候选项 → 开放投票 → 提交投票 → 关闭计票 → 验证结果），支持分步执行和完整流程测试
 - **事件总线基础设施**：`workers/events/` 目录已创建，基于 Redis Pub/Sub 实现，包含事件总线客户端、事件发布者、订阅者、7 个核心事件类型定义（vote.cycle.closed、vote.result.finalized、generation.request.created、generation.batch.completed、review.batch.completed、content.package.released、content.package.rolled_back）、事件处理器（投票结算触发内容生成、生成完成触发审核、审核通过触发布打包）
 - **服务间事件发布集成**：vote-service、content-service、generation-service、review-service 均已集成事件发布客户端，在关键操作点（投票结算、内容发布/回滚、生成完成、审核完成）发布对应事件
