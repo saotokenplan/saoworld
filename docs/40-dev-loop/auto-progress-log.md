@@ -5,6 +5,28 @@
 
 ## 进度记录
 
+### auto-20260706-1700 - 补全门禁 Runbook 文档
+
+**执行时间**：2026-07-06 17:00
+**状态**：已完成
+**任务描述**：补全 `docs/runbook/gates/` 目录下的 16 个门禁 Runbook 文档，确保每个 CI 门禁都有对应的故障排查手册，提升门禁失败时的处理效率
+
+**完成内容**：
+- 创建 `docs/runbook/gates/` 目录
+- 静态检查类 Runbook（2个）：ruff、mypy
+- 单元测试类 Runbook（9个）：vote、world、content、workers、generation、review、player、ops、gateway
+- 内容检查类 Runbook（4个）：世界一致性、数值边界、内容安全、重复度
+- E2E 测试类 Runbook（1个）：关键路径 E2E 测试
+- 每个 Runbook 包含：门禁概述、常见失败原因、解决方案、手动执行、升级路径五个章节
+- 更新 `project-status.md`：在"已初步落地的工程资产"章节添加门禁 Runbook 完成说明
+
+**产出文件**：
+- `docs/runbook/gates/`（目录，16 个 Runbook 文档）
+- `docs/40-dev-loop/auto-plan-20260706-1700.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260706-1700.md`（执行摘要）
+
+---
+
 ### auto-20260706-1600 - 更新项目状态文档与标记已完成事项
 
 **执行时间**：2026-07-06 16:00
