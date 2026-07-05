@@ -69,12 +69,30 @@ text = "世界地图"
 layout_mode = 2
 custom_minimum_size = Vector2(0, 20)
 
+[node name="NPCButton" type="Button" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 50)
+text = "NPC 列表"
+
+[node name="Spacer5" type="Control" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 20)
+
+[node name="QuestButton" type="Button" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 50)
+text = "任务列表"
+
+[node name="Spacer6" type="Control" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 20)
+
 [node name="SettingsButton" type="Button" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 50)
 text = "设置"
 
-[node name="Spacer5" type="Control" parent="CenterContainer/VBoxContainer"]
+[node name="Spacer7" type="Control" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 20)
 
