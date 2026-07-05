@@ -53,7 +53,7 @@ class TestJWTToken:
 
     def test_decode_expired_token(self):
         """测试解析过期 Token 抛出错误。"""
-        from app.core.auth import ExpiredTokenError, create_test_token
+        from app.core.auth import create_test_token
 
         # 创建一个已经过期的 Token（过期时间设为负数）
         token = create_test_token(

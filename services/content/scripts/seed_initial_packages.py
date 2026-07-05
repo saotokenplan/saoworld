@@ -9,7 +9,7 @@ from app.core.db import async_session_factory as async_session
 from app.repositories.content_repo import ContentRepository
 
 
-async def load_json_file(path: Path) -> dict:
+def load_json_file(path: Path) -> dict:
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 

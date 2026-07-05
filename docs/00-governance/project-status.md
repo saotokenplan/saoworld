@@ -50,6 +50,8 @@
   - 内容包完整流程（创建内容包、灰度发布、全量发布、回滚、详情查询）
   - 全部测试通过。
 - **端到端集成测试已扩展**：完成投票与内容包完整流程的端到端测试扩展，vote-service 54 个测试全部通过，content-service 58 个测试通过，修复了 seed_initial_packages.py 的导入错误。
+- **全面质量验证已完成**：所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；workers 29 个测试通过（7 个 Redis 环境限制）；内容检查工具 28 个测试通过；Loop 基础设施 36 个测试通过；ruff 和 mypy 检查通过。
+- **测试修复**：修复了 content-service 的 seed_initial_packages.py 异步调用问题（load_json_file 不应为 async）和测试数据库会话获取方式；修复了 generation-service 的 skeleton_validator 测试 mock 问题（AsyncMock 替代普通 mock）。
 
 ## 已确定事项
 
