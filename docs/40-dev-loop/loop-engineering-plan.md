@@ -1,8 +1,9 @@
 # Loop Engineering 方案（面向 AI 全自动研发闭环）
 
 > 文档状态：active
-> 适用阶段：当前
+> 适用阶段：当前（一层 Loop 已完成）
 > 维护要求：持续维护
+> 当前阶段：一层 Loop（需求交付 Loop）已完成，二层/三层 Loop 为后续阶段目标
 
 ## 适用范围
 
@@ -15,6 +16,36 @@
 - 本文档是研发闭环层的 Loop Engineering 方案文档，用于回答“如何让门禁与规则本身进入持续进化循环”。
 - 本文档聚焦三层 Loop 架构、指标和最小落地路径，不单独定义某条 gate 的具体实现或日志字段明细。
 - 当方法论描述与正式执行规范冲突时，应优先以 `docs/20-specs/agent-loop-spec.md` 和本目录下专项文档为准。
+
+## 当前实施阶段说明
+
+### 已完成阶段
+
+**一层 Loop：需求交付 Loop** ✅ 已完成
+- 需求包格式：`auto-plan` 文档模板（含目标、步骤、验收标准）
+- 门禁体系：lint（ruff）、typecheck（mypy）、unit/integration（pytest）、e2e（playtest）、内容检查（四项检查）
+- Agent 执行方式：PR 驱动 + 失败即回写（自动修复循环）
+- 验收信号：CI 门禁全部通过 + 验收用例满足
+
+### 后续阶段目标
+
+**二层 Loop：门禁改进 Loop** ⏳ 待实现
+- 结构化日志收集：Agent Session Log、CI Failures、Prod Incidents
+- 偏差发现：模式 → 缺口映射
+- 输出：Gate Improvement Issue
+
+**三层 Loop：规则改进 Loop** ⏳ 待实现
+- 反馈信号采集：Issue 处理结果
+- 规则版本化：可配置规则集
+- 输出：Rule Improvement PR
+
+### 当前重点
+
+当前项目已进入**内容发布与验证阶段**，核心目标是：
+- 完善一层 Loop 的门禁覆盖
+- 确保 CI/CD 流水线稳定运行
+- 验证端到端玩法流程
+- 准备进入内容生成与投票驱动世界更新的闭环
 
 ## 目标与边界
 
