@@ -71,3 +71,76 @@ async def test_player_create_metric_incremented(client: AsyncClient, ops_token: 
         metrics_after, "player_operations_total", 'action="create"'
     )
     assert after > before
+
+
+@pytest.mark.asyncio
+async def test_player_update_metric_incremented(client: AsyncClient, ops_token: str, test_player):
+    """更新玩家后，player_operations_total{action="update"} 计数器应递增。"""
+    metrics_before = (await client.get("/metrics")).text
+
+    def _extract_labeled_counter(text: str, name: str, label_filter: str) -> float:
+        for line in text.splitlines():
+            if line.startswith(name) and label_filter in line:
+                parts = line.split()
+                if len(parts) >= 2:
+                    try:
+                        return float(parts[1])
+                    except ValueError:
+                        continue
+        return 0.0
+
+    before = _extract_labeled_counter(
+        metrics_before, "player_operations_total", 'action="update"'
+    )
+
+    update_resp = await client.put(
+        f"{settings.api_v1_prefix}/ops/players/{test_player.player_id}",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "metric-test-player-update-001",
+        },
+        json={"display_name": "UpdatedMetricPlayer"},
+    )
+    assert update_resp.status_code == 200
+
+    metrics_after = (await client.get("/metrics")).text
+    after = _extract_labeled_counter(
+        metrics_after, "player_operations_total", 'action="update"'
+    )
+    assert after > before
+
+
+@pytest.mark.asyncio
+async def test_region_unlock_metric_incremented(client: AsyncClient, ops_token: str, test_player):
+    """解锁区域后，player_operations_total{action="unlock_region"} 计数器应递增。"""
+    metrics_before = (await client.get("/metrics")).text
+
+    def _extract_labeled_counter(text: str, name: str, label_filter: str) -> float:
+        for line in text.splitlines():
+            if line.startswith(name) and label_filter in line:
+                parts = line.split()
+                if len(parts) >= 2:
+                    try:
+                        return float(parts[1])
+                    except ValueError:
+                        continue
+        return 0.0
+
+    before = _extract_labeled_counter(
+        metrics_before, "player_operations_total", 'action="unlock_region"'
+    )
+
+    unlock_resp = await client.post(
+        f"{settings.api_v1_prefix}/ops/players/{test_player.player_id}/regions/region_metric_01/unlock",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "metric-test-region-unlock-001",
+        },
+    )
+    assert unlock_resp.status_code == 200
+
+    metrics_after = (await client.get("/metrics")).text
+    after = _extract_labeled_counter(
+        metrics_after, "player_operations_total", 'action="unlock_region"'
+    )
+    assert after > before
