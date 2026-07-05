@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Header, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
@@ -30,7 +30,6 @@ from app.repositories.player_repo import PlayerRepository
 from app.schemas.player import (
     CreatePlayerRequest,
     EnvelopeResponse,
-    ErrorResponse,
     HealthResponse,
     PaginatedMeta,
     PlayerQuestResponse,
@@ -386,6 +385,16 @@ async def unlock_player_region(
     current_user: UserPayload = RequireOpsRole,
 ) -> EnvelopeResponse[PlayerRegionResponse]:
     request_id = _make_request_id("req_ops_region_unlock")
+
+    player_repo = PlayerRepository(db)
+    player = await player_repo.get_player_by_id(player_id)
+    if player is None:
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_NOT_FOUND,
+            "玩家不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
 
     repo = PlayerRegionRepository(db)
     player_region = await repo.unlock_region(player_id, region_id)
