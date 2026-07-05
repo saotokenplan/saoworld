@@ -170,6 +170,10 @@
   - `logs/log-schemas.yaml`：定义请求日志、业务日志、审计日志、错误日志、任务日志、事件日志、数据库日志、安全日志、健康检查日志 9 种日志类型的标准字段
   - `alerts/alerts.yaml`：定义服务健康、HTTP 错误、延迟、数据库、业务指标、任务、事件总线、安全、资源 9 类告警规则，支持 critical/high/medium/low 四级严重程度
   - `dashboards/README.md`：仪表盘配置说明文档
+- **门禁 Runbook 文档已补全**：
+  - `docs/runbook/gates/` 目录下 16 个门禁 Runbook 文档全部创建完成
+  - 覆盖：静态检查（2个：ruff、mypy）、单元测试（9个：vote/world/content/generation/review/player/ops/gateway/workers）、内容检查（4个：世界一致性、数值边界、内容安全、重复度）、E2E测试（1个：关键路径）
+  - 每个 Runbook 包含：门禁概述、常见失败原因、解决方案、手动执行、升级路径五个章节
 - `vote-service` 已完成骨架初始化与运营写接口实现（FastAPI + SQLAlchemy + Pydantic + pytest），见 `services/vote/`。
   - 数据模型：`VoteCycle`、`VoteCandidate`、`Vote`（对应 `backend-data-spec.md`）
   - 玩家 API 路由：`GET /api/v1/health`、`GET /api/v1/votes/current`、`POST /api/v1/votes/submit`、`GET /api/v1/votes/history`

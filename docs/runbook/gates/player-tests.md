@@ -9,9 +9,13 @@
 
 Player Service Unit Tests 是 player-service 的单元测试门禁，验证玩家信息管理、任务状态跟踪、区域解锁等核心功能。
 
+**门禁名称**：Service Unit Tests (player)
+**门禁 ID**：G-UNIT-007
+**门禁类型**：unit
 **触发条件**：
 - 路径：`services/player/**`
 - 触发：`on_pr`
+**覆盖的风险类型**：regression, data-integrity
 
 **执行命令**：
 ```bash
@@ -22,64 +26,186 @@ cd services/player && pytest
 
 ## 常见失败原因
 
+以下按发生频率从高到低排序：
+
 ### 1. 数据库连接失败
 
 **现象**：
 - `sqlalchemy.exc.OperationalError`
-- 测试数据库未启动
+- 测试数据库未启动或连接字符串错误
 
-**解决方案**：
+### 2. 测试数据问题
+
+**现象**：
+- `IntegrityError: UNIQUE constraint failed`
+- 测试 fixture 数据冲突或清理不彻底
+- 玩家任务状态与预期不一致
+
+### 3. 断言失败
+
+**现象**：
+- `AssertionError`
+- 任务状态机迁移结果不符合预期
+- 区域解锁逻辑结果与预期不符
+
+### 4. 异步测试问题
+
+**现象**：
+- 异步测试超时
+- `asyncio` 事件循环相关错误
+- 数据库会话未正确关闭
+
+### 5. Mock 配置错误
+
+**现象**：
+- Mock 对象返回值不正确
+- Mock 路径配置错误导致实际方法被调用
+- 依赖项未正确 Mock
+
+### 6. 环境变量缺失
+
+**现象**：
+- `pydantic-settings` 配置加载失败
+- 必需的环境变量未设置
+- 测试环境配置不正确
+
+### 7. 依赖未安装
+
+**现象**：
+- `ModuleNotFoundError`
+- 依赖包版本不兼容
+- `pip install -e ".[dev]"` 未执行
+
+### 8. 认证/权限问题
+
+**现象**：
+- 玩家信息查询接口权限检查测试失败
+- JWT Token 验证失败
+- 玩家 ID 与 Token 不匹配
+
+## 解决方案
+
+### 1. 数据库连接失败
+
 ```bash
+# 启动本地开发数据库
 cd infra && docker compose -f docker-compose.dev.yml up -d
+
+# 等待数据库就绪
 sleep 10
-cd services/player && alembic upgrade head
+
+# 确认数据库连接正常
+docker compose -f docker-compose.dev.yml ps
+
+# 重新运行测试
 cd services/player && pytest
 ```
 
-### 2. 任务状态机校验失败
+### 2. 测试数据问题
 
-**现象**：
-- 玩家任务状态迁移测试失败
-- 非法状态转换被允许
-
-**解决方案**：
 ```bash
+# 查看具体失败的测试用例
 cd services/player && pytest -v --tb=short
-# 检查文件：services/player/app/domain/models.py
-# 确认状态转换逻辑是否正确（available → active → completed/failed）
+
+# 清理测试环境后重新运行
+cd services/player && pytest --cache-clear
+
+# 单独运行失败的测试，检查数据准备逻辑
+cd services/player && pytest tests/test_player_api.py::test_specific_case -xvs
 ```
 
-### 3. 区域解锁逻辑错误
+### 3. 断言失败
 
-**现象**：
-- 区域解锁接口测试失败
-- 玩家无法解锁新区域
-
-**解决方案**：
 ```bash
-cd services/player && pytest -k "unlock" -v
-# 检查文件：services/player/app/repositories/player_region_repo.py
-# 确认区域解锁逻辑是否正确
+# 查看详细断言信息
+cd services/player && pytest -v --tb=long
+
+# 运行特定测试文件定位问题
+cd services/player && pytest tests/test_player_quests.py -v
+
+# 检查状态机实现
+# 文件：services/player/app/domain/models.py
+# 确认任务状态转换逻辑是否正确（available → active → completed/failed）
 ```
 
-### 4. UUID 类型兼容问题
+### 4. 异步测试问题
 
-**现象**：
-- SQLite 测试环境下 UUID 类型转换失败
-
-**解决方案**：
 ```bash
-cd services/player && pytest -xvs
-# 检查文件：services/player/app/domain/uuid_type.py
-# 确认自定义 UUID 类型是否正确实现
+# 检查 pytest-asyncio 配置
+cd services/player && pytest -v --tb=short -k "async"
+
+# 确认测试使用正确的 async 标记
+# 检查 conftest.py 中的 event_loop fixture
+# 文件：services/player/tests/conftest.py
+```
+
+### 5. Mock 配置错误
+
+```bash
+# 运行带详细输出的测试
+cd services/player && pytest -xvs -k "mock"
+
+# 检查 mock 路径是否正确
+# 确认 Mock 的是使用处的引用，而非定义处
+```
+
+### 6. 环境变量缺失
+
+```bash
+# 检查环境变量模板
+cat services/player/.env.example
+
+# 确认测试环境变量设置
+cd services/player && python -c "from app.core.config import settings; print(settings.model_dump())"
+
+# 设置必需的环境变量后运行
+export PLAYER_ENVIRONMENT=test
+cd services/player && pytest
+```
+
+### 7. 依赖未安装
+
+```bash
+# 安装开发依赖
+cd services/player && pip install -e ".[dev]"
+
+# 验证依赖安装
+cd services/player && pip list | grep -E "pytest|sqlalchemy|fastapi"
+
+# 重新运行测试
+cd services/player && pytest
+```
+
+### 8. 认证/权限问题
+
+```bash
+# 运行认证相关测试
+cd services/player && pytest -k "auth" -v
+
+# 检查权限校验逻辑
+# 文件：services/player/app/core/auth.py
+# 确认玩家身份验证逻辑是否正确
+
+# 检查测试中的 Token 生成逻辑
+# 文件：services/player/tests/conftest.py
 ```
 
 ## 手动执行
 
 ```bash
+# 运行所有测试
 cd services/player && pytest
+
+# 运行特定测试文件
 cd services/player && pytest tests/test_player_api.py -v
+
+# 运行特定测试函数
 cd services/player && pytest tests/test_ops_api.py::test_unlock_region -v
+
+# 查看详细输出
+cd services/player && pytest -xvs
+
+# 查看覆盖率报告
 cd services/player && pytest --cov=app --cov-report=html
 ```
 
@@ -88,8 +214,13 @@ cd services/player && pytest --cov=app --cov-report=html
 | 级别 | 处理方式 |
 |------|----------|
 | 数据库问题 | 启动 Docker 数据库或检查连接字符串 |
-| 状态机问题 | 检查 models.py 中的状态转换逻辑 |
-| UUID 类型问题 | 检查 uuid_type.py 中的自定义类型实现 |
+| 测试数据问题 | 清理测试缓存或检查 fixture 数据 |
+| 断言失败 | 检查对应的 repository 或 route 实现 |
+| 异步问题 | 检查 conftest.py 中的 event_loop 配置 |
+| Mock 问题 | 确认 mock 路径和返回值配置 |
+| 环境变量问题 | 检查 .env 文件和 settings 配置 |
+| 依赖问题 | 重新执行 pip install -e ".[dev]" |
+| 权限问题 | 检查 auth.py 中的身份验证逻辑 |
 | 无法解决 | 联系 Backend Agent |
 
 ## 相关链接
