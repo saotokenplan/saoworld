@@ -1,0 +1,283 @@
+version: "1.0"
+
+alert_severity:
+  critical:
+    description: "Immediate action required - service or critical functionality is unavailable"
+    notification_channels: ["pagerduty", "slack", "email"]
+    escalation_level: 1
+
+  high:
+    description: "Action required within 15 minutes - significant degradation detected"
+    notification_channels: ["slack", "email"]
+    escalation_level: 2
+
+  medium:
+    description: "Investigation recommended - potential issue detected"
+    notification_channels: ["slack"]
+    escalation_level: 3
+
+  low:
+    description: "Monitoring recommended - informational alert"
+    notification_channels: []
+    escalation_level: 4
+
+service_health_alerts:
+  service_unavailable:
+    severity: critical
+    description: "Service is unavailable"
+    condition: "avg(up{service=\"{{service}}\"}) < 1"
+    duration: "5m"
+    labels:
+      service: "{{service}}"
+      alert_type: "health"
+    annotations:
+      summary: "Service {{service}} is unavailable"
+      description: "Service {{service}} health check failed for more than 5 minutes"
+
+  service_degraded:
+    severity: high
+    description: "Service is degraded"
+    condition: "avg(up{service=\"{{service}}\"}) < 0.5"
+    duration: "10m"
+    labels:
+      service: "{{service}}"
+      alert_type: "health"
+    annotations:
+      summary: "Service {{service}} is degraded"
+      description: "Service {{service}} health check shows degradation for more than 10 minutes"
+
+http_error_alerts:
+  high_error_rate:
+    severity: critical
+    description: "High HTTP error rate detected"
+    condition: "sum(rate(http_errors_total{service=\"{{service}}\",status_code=~\"5..\"}[5m])) / sum(rate(http_requests_total{service=\"{{service}}\"}[5m])) > 0.01"
+    duration: "5m"
+    labels:
+      service: "{{service}}"
+      alert_type: "http"
+    annotations:
+      summary: "High error rate on {{service}}"
+      description: "Error rate exceeds 1% on service {{service}}"
+
+  rate_limit_exceeded:
+    severity: medium
+    description: "Rate limit exceeded"
+    condition: "sum(rate(gateway_rate_limit_hits_total[5m])) > 100"
+    duration: "1m"
+    labels:
+      service: "gateway"
+      alert_type: "http"
+    annotations:
+      summary: "Rate limit exceeded on gateway"
+      description: "Gateway rate limit hits exceeded 100 in 5 minutes"
+
+latency_alerts:
+  high_p95_latency:
+    severity: high
+    description: "High P95 latency detected"
+    condition: "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{service=\"{{service}}\"}[5m])) by (le)) > 1.0"
+    duration: "5m"
+    labels:
+      service: "{{service}}"
+      alert_type: "latency"
+    annotations:
+      summary: "High P95 latency on {{service}}"
+      description: "P95 latency exceeds 1 second on service {{service}}"
+
+  high_p99_latency:
+    severity: critical
+    description: "High P99 latency detected"
+    condition: "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{service=\"{{service}}\"}[5m])) by (le)) > 5.0"
+    duration: "5m"
+    labels:
+      service: "{{service}}"
+      alert_type: "latency"
+    annotations:
+      summary: "High P99 latency on {{service}}"
+      description: "P99 latency exceeds 5 seconds on service {{service}}"
+
+database_alerts:
+  database_connection_error:
+    severity: critical
+    description: "Database connection error"
+    condition: "sum(rate(http_errors_total{service=\"{{service}}\",status_code=\"503\"}[5m])) > 0"
+    duration: "2m"
+    labels:
+      service: "{{service}}"
+      alert_type: "database"
+    annotations:
+      summary: "Database connection error on {{service}}"
+      description: "Service {{service}} is experiencing database connection errors"
+
+  slow_queries:
+    severity: medium
+    description: "Slow database queries detected"
+    condition: "sum(rate(database_query_duration_seconds_bucket{le=\"30.0\"}[5m])) > 10"
+    duration: "5m"
+    labels:
+      service: "{{service}}"
+      alert_type: "database"
+    annotations:
+      summary: "Slow queries on {{service}}"
+      description: "More than 10 queries took over 30 seconds on service {{service}}"
+
+business_metrics_alerts:
+  low_vote_submissions:
+    severity: medium
+    description: "Low vote submission rate"
+    condition: "sum(rate(vote_submissions_total[1h])) < 10"
+    duration: "1h"
+    labels:
+      service: "vote"
+      alert_type: "business"
+    annotations:
+      summary: "Low vote submissions"
+      description: "Vote submissions dropped below 10 per hour"
+
+  content_rollback_rate:
+    severity: high
+    description: "High content rollback rate"
+    condition: "sum(rate(content_rollbacks_total[1h])) / sum(rate(content_releases_total[1h])) > 0.2"
+    duration: "1h"
+    labels:
+      service: "content"
+      alert_type: "business"
+    annotations:
+      summary: "High rollback rate on content service"
+      description: "Rollback rate exceeds 20% of releases"
+
+  generation_failure_rate:
+    severity: high
+    description: "High generation failure rate"
+    condition: "sum(rate(generation_requests_total{status=\"failed_permanent\"}[1h])) / sum(rate(generation_requests_total[1h])) > 0.1"
+    duration: "1h"
+    labels:
+      service: "generation"
+      alert_type: "business"
+    annotations:
+      summary: "High generation failure rate"
+      description: "Generation failure rate exceeds 10%"
+
+task_alerts:
+  task_failure_rate:
+    severity: high
+    description: "High task failure rate"
+    condition: "sum(rate(task_executions_total{status=\"failure\"}[5m])) / sum(rate(task_executions_total[5m])) > 0.1"
+    duration: "5m"
+    labels:
+      service: "workers"
+      alert_type: "task"
+    annotations:
+      summary: "High task failure rate"
+      description: "Task failure rate exceeds 10%"
+
+  task_retry_rate:
+    severity: medium
+    description: "High task retry rate"
+    condition: "sum(rate(task_retries_total[5m])) / sum(rate(task_executions_total[5m])) > 0.2"
+    duration: "5m"
+    labels:
+      service: "workers"
+      alert_type: "task"
+    annotations:
+      summary: "High task retry rate"
+      description: "Task retry rate exceeds 20%"
+
+  long_running_task:
+    severity: medium
+    description: "Long running task detected"
+    condition: "sum(task_execution_duration_seconds_bucket{le=\"300.0\"}[10m]) > 0"
+    duration: "10m"
+    labels:
+      service: "workers"
+      alert_type: "task"
+    annotations:
+      summary: "Long running task detected"
+      description: "Task execution exceeds 5 minutes"
+
+event_bus_alerts:
+  event_production_stopped:
+    severity: high
+    description: "Event production stopped"
+    condition: "sum(rate(events_published_total[5m])) == 0"
+    duration: "10m"
+    labels:
+      service: "events"
+      alert_type: "event"
+    annotations:
+      summary: "Event production stopped"
+      description: "No events published for more than 10 minutes"
+
+  event_consumption_lag:
+    severity: medium
+    description: "Event consumption lag detected"
+    condition: "sum(rate(events_published_total[5m])) - sum(rate(events_consumed_total[5m])) > 100"
+    duration: "5m"
+    labels:
+      service: "events"
+      alert_type: "event"
+    annotations:
+      summary: "Event consumption lag"
+      description: "Event production exceeds consumption by 100 events"
+
+security_alerts:
+  auth_failure_rate:
+    severity: high
+    description: "High authentication failure rate"
+    condition: "sum(rate(gateway_auth_failures_total[5m])) > 50"
+    duration: "2m"
+    labels:
+      service: "gateway"
+      alert_type: "security"
+    annotations:
+      summary: "High auth failure rate"
+      description: "Authentication failures exceed 50 in 5 minutes"
+
+  suspicious_activity:
+    severity: critical
+    description: "Suspicious activity detected"
+    condition: "sum(rate(security_events_total{severity=\"critical\"}[5m])) > 0"
+    duration: "1m"
+    labels:
+      service: "gateway"
+      alert_type: "security"
+    annotations:
+      summary: "Critical security event"
+      description: "Critical security event detected"
+
+resource_alerts:
+  high_cpu_usage:
+    severity: high
+    description: "High CPU usage"
+    condition: "avg(process_cpu_seconds_total{service=\"{{service}}\"}[5m]) > 0.8"
+    duration: "5m"
+    labels:
+      service: "{{service}}"
+      alert_type: "resource"
+    annotations:
+      summary: "High CPU usage on {{service}}"
+      description: "CPU usage exceeds 80% on service {{service}}"
+
+  high_memory_usage:
+    severity: high
+    description: "High memory usage"
+    condition: "avg(process_resident_memory_bytes{service=\"{{service}}\"}) > 2.0e9"
+    duration: "10m"
+    labels:
+      service: "{{service}}"
+      alert_type: "resource"
+    annotations:
+      summary: "High memory usage on {{service}}"
+      description: "Memory usage exceeds 2GB on service {{service}}"
+
+  disk_space_low:
+    severity: critical
+    description: "Low disk space"
+    condition: "avg(node_filesystem_avail_bytes{mountpoint=\"/\"}) / avg(node_filesystem_size_bytes{mountpoint=\"/\"}) < 0.1"
+    duration: "5m"
+    labels:
+      service: "{{service}}"
+      alert_type: "resource"
+    annotations:
+      summary: "Low disk space"
+      description: "Disk space available is less than 10%"

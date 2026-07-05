@@ -1,0 +1,379 @@
+version: "1.0"
+
+base_fields:
+  timestamp:
+    type: string
+    format: "ISO 8601"
+    description: "Timestamp in UTC"
+    required: true
+
+  level:
+    type: string
+    enum: ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+    description: "Log level"
+    required: true
+
+  service:
+    type: string
+    description: "Service name"
+    required: true
+
+  request_id:
+    type: string
+    format: "req_<uuid>"
+    description: "Request ID for tracing"
+    required: false
+
+  trace_id:
+    type: string
+    format: "trace_<uuid>"
+    description: "Distributed trace ID"
+    required: false
+
+  message:
+    type: string
+    description: "Human-readable log message"
+    required: true
+
+  event:
+    type: string
+    description: "Event name (snake_case)"
+    required: false
+
+request_log:
+  extends: base_fields
+  additional_fields:
+    method:
+      type: string
+      enum: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+      description: "HTTP method"
+      required: true
+
+    path:
+      type: string
+      description: "Request path"
+      required: true
+
+    status_code:
+      type: integer
+      description: "HTTP status code"
+      required: true
+
+    duration_ms:
+      type: integer
+      description: "Request duration in milliseconds"
+      required: true
+
+    client_ip:
+      type: string
+      description: "Client IP address"
+      required: false
+
+    user_agent:
+      type: string
+      description: "Client User-Agent"
+      required: false
+
+    payload_size_bytes:
+      type: integer
+      description: "Request payload size"
+      required: false
+
+business_log:
+  extends: base_fields
+  additional_fields:
+    resource_type:
+      type: string
+      description: "Type of resource being operated"
+      required: true
+
+    resource_id:
+      type: string
+      description: "ID of the resource"
+      required: true
+
+    action:
+      type: string
+      description: "Action performed"
+      required: true
+
+    operator_id:
+      type: string
+      description: "ID of the operator (player or service)"
+      required: false
+
+    operator_role:
+      type: string
+      enum: ["player", "ops", "reviewer", "system"]
+      description: "Role of the operator"
+      required: false
+
+    result:
+      type: string
+      enum: ["success", "failure", "partial"]
+      description: "Operation result"
+      required: true
+
+    details:
+      type: object
+      description: "Additional details about the operation"
+      required: false
+
+audit_log:
+  extends: base_fields
+  additional_fields:
+    audit_id:
+      type: string
+      format: "uuid"
+      description: "Unique audit log ID"
+      required: true
+
+    operator_id:
+      type: string
+      description: "ID of the operator"
+      required: true
+
+    operator_role:
+      type: string
+      enum: ["player", "ops", "reviewer", "system"]
+      description: "Role of the operator"
+      required: true
+
+    resource_type:
+      type: string
+      description: "Type of resource"
+      required: true
+
+    resource_id:
+      type: string
+      description: "ID of the resource"
+      required: true
+
+    action:
+      type: string
+      description: "Action performed"
+      required: true
+
+    before_state:
+      type: object
+      description: "State before the operation"
+      required: false
+
+    after_state:
+      type: object
+      description: "State after the operation"
+      required: false
+
+    reason:
+      type: string
+      description: "Reason for the operation"
+      required: false
+
+error_log:
+  extends: base_fields
+  additional_fields:
+    error_code:
+      type: string
+      description: "Machine-readable error code"
+      required: true
+
+    error_type:
+      type: string
+      description: "Type of error (e.g., HTTPException, DatabaseError)"
+      required: true
+
+    stack_trace:
+      type: string
+      description: "Stack trace for debugging"
+      required: false
+
+    details:
+      type: object
+      description: "Additional error details"
+      required: false
+
+    retry_attempt:
+      type: integer
+      description: "Number of retry attempts"
+      required: false
+
+task_log:
+  extends: base_fields
+  additional_fields:
+    task_id:
+      type: string
+      description: "Task ID"
+      required: true
+
+    task_name:
+      type: string
+      description: "Name of the task"
+      required: true
+
+    task_status:
+      type: string
+      enum: ["pending", "processing", "success", "failure", "retry"]
+      description: "Task status"
+      required: true
+
+    duration_ms:
+      type: integer
+      description: "Task duration in milliseconds"
+      required: false
+
+    retry_count:
+      type: integer
+      description: "Number of retry attempts"
+      required: false
+
+    result:
+      type: object
+      description: "Task result"
+      required: false
+
+event_log:
+  extends: base_fields
+  additional_fields:
+    event_id:
+      type: string
+      format: "uuid"
+      description: "Unique event ID"
+      required: true
+
+    event_type:
+      type: string
+      description: "Event type"
+      required: true
+
+    producer:
+      type: string
+      description: "Event producer service"
+      required: true
+
+    occurred_at:
+      type: string
+      format: "ISO 8601"
+      description: "When the event occurred"
+      required: true
+
+    payload:
+      type: object
+      description: "Event payload"
+      required: false
+
+    consumer:
+      type: string
+      description: "Event consumer (for consumed events)"
+      required: false
+
+    processing_status:
+      type: string
+      enum: ["received", "processing", "completed", "failed"]
+      description: "Processing status"
+      required: false
+
+database_log:
+  extends: base_fields
+  additional_fields:
+    query_type:
+      type: string
+      enum: ["SELECT", "INSERT", "UPDATE", "DELETE", "TRANSACTION"]
+      description: "Type of database operation"
+      required: true
+
+    table_name:
+      type: string
+      description: "Table name"
+      required: true
+
+    duration_ms:
+      type: integer
+      description: "Query duration in milliseconds"
+      required: false
+
+    rows_affected:
+      type: integer
+      description: "Number of rows affected"
+      required: false
+
+    query_id:
+      type: string
+      description: "Query ID for tracing"
+      required: false
+
+security_log:
+  extends: base_fields
+  additional_fields:
+    security_event:
+      type: string
+      description: "Security event type"
+      required: true
+
+    severity:
+      type: string
+      enum: ["low", "medium", "high", "critical"]
+      description: "Security severity level"
+      required: true
+
+    source_ip:
+      type: string
+      description: "Source IP address"
+      required: false
+
+    user_id:
+      type: string
+      description: "User ID involved"
+      required: false
+
+    action:
+      type: string
+      description: "Action being attempted"
+      required: false
+
+    outcome:
+      type: string
+      enum: ["allowed", "blocked", "failed"]
+      description: "Outcome of the security event"
+      required: true
+
+    reason:
+      type: string
+      description: "Reason for the outcome"
+      required: false
+
+health_check_log:
+  extends: base_fields
+  additional_fields:
+    check_name:
+      type: string
+      description: "Name of the health check"
+      required: true
+
+    check_type:
+      type: string
+      enum: ["service", "database", "cache", "external"]
+      description: "Type of health check"
+      required: true
+
+    status:
+      type: string
+      enum: ["healthy", "unhealthy", "degraded"]
+      description: "Check status"
+      required: true
+
+    latency_ms:
+      type: integer
+      description: "Check latency in milliseconds"
+      required: false
+
+    dependencies:
+      type: array
+      items:
+        type: string
+      description: "Dependencies checked"
+      required: false
+
+    error_message:
+      type: string
+      description: "Error message if unhealthy"
+      required: false
