@@ -157,3 +157,44 @@
 
 **项目状态更新**：
 - 在"当前结论"中添加 mypy 类型检查门禁已生效和 datetime 弃用警告修复说明
+
+---
+
+### auto-20260705-2100 - 实现二层 Loop（门禁改进 Loop）基础设施
+
+**执行时间**：2026-07-05 21:00
+**状态**：已完成
+**任务描述**：实现二层 Loop（门禁改进 Loop）核心基础设施，包括结构化日志采集、失败签名提取、失败聚类、缺口分类和 Gate Improvement Issue 生成工具
+
+**完成内容**：
+- 创建 `tools/loop_logging/` 模块，包含 schema、agent_session_logger、ci_failure_logger、prod_incident_logger、signature_extractor、clusterer、gap_classifier、issue_generator、cli 等 9 个核心文件
+- 实现 Agent Session Log、CI Failures、Prod Incidents 三类结构化日志采集
+- 实现失败签名提取器（支持 static/test/runtime/content 四类）
+- 实现失败聚类系统（聚类、趋势分析、重复失败检测）
+- 实现缺口分类器（缺gate/覆盖不足/信噪比低，置信度评分）
+- 实现 Issue 生成器（按优先级排序，对齐 issue-templates 格式）
+- 实现 CLI 命令行工具（agent-log/ci-failure/prod-incident/scan）
+- 编写 24 个测试用例，全部通过
+- 更新 project-status.md：添加二层 Loop 基础设施已实现说明
+- 更新 loop-engineering-plan.md：标记二层 Loop 基础设施已完成
+
+**产出文件**：
+- `docs/40-dev-loop/auto-plan-20260705-2100.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260705-2100.md`（执行摘要）
+- `tools/loop_logging/__init__.py`
+- `tools/loop_logging/schema.py`
+- `tools/loop_logging/agent_session_logger.py`
+- `tools/loop_logging/ci_failure_logger.py`
+- `tools/loop_logging/prod_incident_logger.py`
+- `tools/loop_logging/signature_extractor.py`
+- `tools/loop_logging/clusterer.py`
+- `tools/loop_logging/gap_classifier.py`
+- `tools/loop_logging/issue_generator.py`
+- `tools/loop_logging/cli.py`
+- `tools/loop_logging/tests/test_loggers.py`
+- `tools/loop_logging/tests/test_clustering.py`
+- `tools/loop_logging/tests/test_issue_generator.py`
+
+**项目状态更新**：
+- 将"二层 Loop 基础设施已实现"添加到"当前结论"章节
+- 更新 loop-engineering-plan.md：标记二层 Loop 基础设施已完成
