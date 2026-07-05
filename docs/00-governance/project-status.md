@@ -286,7 +286,7 @@
   - 客户端与后端 API 联调完善：APIManager 错误码对齐（NO_OPEN_VOTE_CYCLE、ALREADY_VOTED、TOKEN_EXPIRED 等）、重试机制（幂等请求）、HTTP 方法支持（GET/POST/PUT/DELETE）；VoteManager 错误处理与状态同步（auth_error 信号、can_vote 判断）；ContentManager 版本同步与更新检查（自动检查、手动检查、安装/卸载）；新增 WorldManager（区域列表、详情、缓存）和 PlayerManager（玩家信息、任务列表、区域状态）；测试用例补充（APIManager 错误处理、WorldManager、PlayerManager）
   - **首期内容实例化**：世界观根设定（`docs/20-specs/world-lore-spec.md`）、2个首期区域（铁卫城周边、灰谷废墟）、4个势力阵营（铁卫联盟、自由领地、暗影面纱、丰收商会）、6个核心NPC（艾瑞尔·铁盾、格尔·铁锤、玛莎·耕地、雷克斯·金币、露娜·暗星、杰克·流浪者）、7个任务实例（2条主线+5条支线）、3个章节定义（觉醒之路、铁卫的召唤、自由之声）；所有数据配置均带 schema_version 字段，包含完整的阵营关系矩阵、声望系统规则、区域详情、NPC 对话和任务目标
 - **内容包打包与发布流程**：
-  - 首期内容包初始化脚本（`services/content/scripts/seed_initial_packages.py`），支持从 game/data/ 读取内容并创建区域内容包
+  - 首期内容包初始化脚本（`services/content/scripts/seed_initial_packages.py`），支持从 game/data/ 读取内容并创建区域内容包（铁卫城周边 + 灰谷废墟），脚本代码已验证正确，测试用例（4个）全部通过，等待部署环境执行
   - 内容包打包 Worker 增强（`workers/tasks/content_packaging.py`）：新增 `validate_package_payload` 校验函数、`load_content_from_directory` 目录加载函数、`package_content_from_directory` 任务
   - 内容包发布流程增强（`workers/tasks/content_release.py`）：新增 `build_gray_scope` 灰度范围构建、`promote_to_full_release` 全量发布任务，支持按区域/玩家百分比/指定玩家列表进行灰度
   - 测试用例补充：content_packaging（6个）、content_release（8个），全部通过
