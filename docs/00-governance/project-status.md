@@ -237,13 +237,13 @@
   - 测试用例 38 个全部通过（含运营接口 + 审计日志 + 鉴权 + envelope 格式 + 状态机校验）
 - `gateway-service` 已完成骨架初始化与 API 网关核心功能：
   - 核心功能：JWT 认证中间件、令牌桶限流中间件、请求追踪中间件、反向代理路由
-  - 代理路由：vote/world/content/generation/review 服务路由映射
+  - 代理路由：vote/world/content/generation/review/player/ops 7 个服务路由映射
   - 请求头传递：X-Request-Id、X-Trace-Id、Idempotency-Key 透传
   - 健康检查：`GET /api/v1/health`、`GET /api/v1/health/services`
   - 统一响应 envelope（对齐 `12-api-design.md` 规范）
   - 错误响应格式（统一 error envelope）
   - 结构化日志（structlog）
-  - 测试用例 32 个全部通过（含认证 + 限流 + 代理 + 追踪 + 健康检查）
+  - 测试用例 37 个全部通过（含认证 + 限流 + 代理 + 追踪 + 健康检查）
 - `player-service` 已完成骨架初始化与玩家管理接口：
   - 数据模型：`Player`、`PlayerQuest`、`PlayerRegion`、`AuditLog`（对应 `backend-data-spec.md`）
   - 玩家 API 路由：`GET /api/v1/health`、`GET /api/v1/player/info`、`GET /api/v1/player/quests`、`GET /api/v1/player/regions`
