@@ -1753,6 +1753,7 @@ components:
       enum:
         - INVALID_ARGUMENT
         - INVALID_TOKEN
+        - TOKEN_EXPIRED
         - INSUFFICIENT_SCOPE
         - RESOURCE_NOT_FOUND
         - CONFLICT
@@ -1960,6 +1961,16 @@ components:
               type: string
               enum: [INVALID_TOKEN]
       description: 未认证错误响应（401）
+    TokenExpiredErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponseBase'
+        - type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [TOKEN_EXPIRED]
+      description: Token 过期错误响应（401）；与 INVALID_TOKEN 区分，提示客户端刷新 Access Token
     NotFoundErrorResponse:
       allOf:
         - $ref: '#/components/schemas/ErrorResponseBase'
