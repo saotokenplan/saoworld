@@ -96,6 +96,26 @@
 
 ---
 
+### auto-20260705-1900 - 预留错误码落地到服务端实现
+
+**执行时间**：2026-07-05 19:00
+**状态**：已完成
+**任务描述**：将 api-error-codes.md 中定义的 4 个预留错误码（AUDIT_WRITE_FAILED、TRACE_ID_MISSING、TASK_DISPATCH_FAILED、DEPENDENCY_UNAVAILABLE）落地到所有 8 个后端服务的 errors.py 中，确保服务端实现与 API 规范对齐
+
+**完成内容**：
+- 为 vote、world、content、generation、review、player、ops、gateway 8 个服务的 errors.py 添加 4 个错误码常量定义
+- 更新 api-error-codes.md：将预留错误码从"预留"表移动到"已落地"表
+- 更新 project-status.md：记录错误码完善状态
+
+**产出文件**：
+- `docs/40-dev-loop/auto-plan-20260705-1900.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260705-1900.md`（执行摘要）
+
+**项目状态更新**：
+- 将"预留错误码已落地"添加到"当前结论"章节
+
+---
+
 ### auto-20260705-1800 - 完善客户端 GUT 测试用例与测试文档
 
 **执行时间**：2026-07-05 18:00

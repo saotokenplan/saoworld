@@ -74,17 +74,17 @@
 | `CONFLICT` | `409` | 资源状态冲突（通用） | `ConflictErrorResponse` |
 | `RATE_LIMITED` | `429` | 触发限流或频率限制 | `RateLimitedErrorResponse` |
 | `INTERNAL_ERROR` | `500` | 服务内部未知异常 | `InternalErrorResponse` |
+| `AUDIT_WRITE_FAILED` | `500` | 审计记录写入失败 | `InternalErrorResponse` |
+| `TRACE_ID_MISSING` | `500` | 系统未正确生成链路追踪字段 | `InternalErrorResponse` |
 | `SERVICE_UNAVAILABLE` | `503` | 服务暂不可用 | `ServiceUnavailableErrorResponse` |
+| `TASK_DISPATCH_FAILED` | `503` | 异步任务分发失败 | `ServiceUnavailableErrorResponse` |
+| `DEPENDENCY_UNAVAILABLE` | `503` | 下游依赖或队列不可用 | `ServiceUnavailableErrorResponse` |
 
 ## 预留错误码（未在当前 OpenAPI 中使用）
 
 | 错误码 | HTTP 状态码 | 说明 | 预计使用阶段 |
 |---|---|---|---|
 | `TOKEN_EXPIRED` | `401` | Access Token 已过期（与 INVALID_TOKEN 区分，提示刷新） | 接入 Refresh Token 后 |
-| `AUDIT_WRITE_FAILED` | `500` | 审计记录写入失败 | 服务端实现时 |
-| `TRACE_ID_MISSING` | `500` | 系统未正确生成链路追踪字段 | 服务端实现时 |
-| `TASK_DISPATCH_FAILED` | `503` | 异步任务分发失败 | 接入任务队列后 |
-| `DEPENDENCY_UNAVAILABLE` | `503` | 下游依赖或队列不可用 | 接入外部依赖后 |
 
 ## 投票接口错误码（已落地）
 
