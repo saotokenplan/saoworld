@@ -460,3 +460,27 @@
 
 **项目状态更新**：
 - 更新 player-service 测试数量：23→37 个测试全部通过
+
+---
+
+### auto-20260706-1200 - 实现 ops-service 系统状态实际健康检查
+
+**执行时间**：2026-07-06 12:00
+**状态**：已完成
+**任务描述**：将 ops-service 的系统状态接口从硬编码返回改进为实际 HTTP 调用各服务的健康检查接口，实现真实的服务健康状态监控
+
+**完成内容**：
+- 配置文件更新：添加 8 个服务的健康检查 URL 和超时配置
+- 创建健康检查客户端：实现 `check_service_health()` 和 `check_all_services_health()` 函数
+- 修改系统状态接口：使用真实健康检查获取服务状态
+- 补充测试用例：创建 `test_health_check_client.py`（4个），更新 `test_system_status.py`（4个）
+- 代码清理：移除未使用导入
+
+**产出文件**：
+- `docs/40-dev-loop/auto-plan-20260706-1200.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260706-1200.md`（执行摘要）
+- `services/ops/app/core/health_check_client.py`（健康检查客户端）
+- `services/ops/tests/test_health_check_client.py`（测试文件）
+
+**项目状态更新**：
+- 更新 ops-service 描述：新增系统状态健康检查功能说明，测试数量 32→39 个

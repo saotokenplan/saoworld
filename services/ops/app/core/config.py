@@ -22,5 +22,16 @@ class Settings(BaseSettings):
 
     api_v1_prefix: str = "/api/v1"
 
+    vote_service_url: str = "http://localhost:8000"
+    world_service_url: str = "http://localhost:8001"
+    content_service_url: str = "http://localhost:8002"
+    generation_service_url: str = "http://localhost:8003"
+    review_service_url: str = "http://localhost:8004"
+    gateway_service_url: str = "http://localhost:8005"
+    player_service_url: str = "http://localhost:8006"
+    ops_service_url: str = "http://localhost:8007"
+
+    health_check_timeout: int = 5
+
 
 settings = Settings()
