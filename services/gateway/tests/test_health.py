@@ -22,7 +22,15 @@ class TestHealthEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["gateway"]["status"] == "ok"
-        assert len(data["services"]) == 5
+        assert len(data["services"]) == 7
+        service_names = [s["service"] for s in data["services"]]
+        assert "vote-service" in service_names
+        assert "world-service" in service_names
+        assert "content-service" in service_names
+        assert "generation-service" in service_names
+        assert "review-service" in service_names
+        assert "player-service" in service_names
+        assert "ops-service" in service_names
 
     @pytest.mark.asyncio
     async def test_request_id_header(self, client):
