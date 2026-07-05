@@ -5,6 +5,27 @@
 
 ## 进度记录
 
+### auto-20260705-1500 - 清理 10-requirements/ 与 20-specs/ 内容重叠
+
+**执行时间**：2026-07-05 15:00
+**状态**：已完成
+**任务描述**：清理需求背景层文档与执行规范层的内容重叠，使 10-requirements/ 回归"保留需求背景、方案讨论与立项上下文"的定位
+
+**完成内容**：
+- open-world-ai-game-prd.md：清理与 product-spec.md 重叠的执行规范细节
+- 功能设计.md：清理与 content-generation-spec.md 和 product-spec.md 重叠的执行规范细节
+- 技术方案.md：清理与 backend-data-spec.md 和 content-generation-spec.md 重叠的执行规范细节
+- 项目状态文档：标记重叠问题已解决
+
+**产出文件**：
+- `docs/40-dev-loop/auto-plan-20260705-1500.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260705-1500.md`（执行摘要）
+
+**项目状态更新**：
+- 将"10-requirements/ 与 20-specs/ 仍有内容重叠"风险标记为已解决
+
+---
+
 ### auto-20260705-1400 - 更新测试文件使用统一错误码常量
 
 **执行时间**：2026-07-05 14:00
