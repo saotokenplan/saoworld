@@ -219,11 +219,13 @@ async def create_generation_request(
 
     # 事件发布：生成请求创建
     try:
+        target_type = body.input_payload.get("target_type", "npc")
+        region_id = body.input_payload.get("region_id", "")
         await event_publisher.publish_generation_request_created(
             request_id=str(req.request_id),
             vote_cycle_id=str(body.vote_cycle_id) if body.vote_cycle_id else "",
-            target_type=body.input_payload.get("target_type", "npc"),
-            region_id=body.input_payload.get("region_id", ""),
+            target_type=str(target_type),
+            region_id=str(region_id),
             created_at=req.created_at.isoformat() if req.created_at else "",
             trace_id=x_trace_id or "",
         )
@@ -345,7 +347,7 @@ async def update_generation_request_status(
     if updated_req.status == "succeeded":
         try:
             from datetime import datetime, timezone
-            objects = await repo.list_objects(request_id=request_id)
+            objects = await repo.list_objects_by_request_id(request_id=request_id)
             generated_objects = [
                 {
                     "object_id": str(obj.object_id),
