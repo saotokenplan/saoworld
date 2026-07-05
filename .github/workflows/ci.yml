@@ -83,6 +83,56 @@ jobs:
           cd ${{ matrix.service == 'workers' && 'workers' || format('services/{0}', matrix.service) }}
           pytest -v --tb=short
 
+  content-check:
+    name: Content Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install content check dependencies
+        run: |
+          pip install -e "tools/content_check[dev]"
+
+      - name: Run world consistency check
+        run: |
+          python -m pytest tools/content_check/tests/test_world_consistency.py -v
+
+      - name: Run reward boundary check
+        run: |
+          python -m pytest tools/content_check/tests/test_reward_boundary.py -v
+
+      - name: Run content safety check
+        run: |
+          python -m pytest tools/content_check/tests/test_content_safety.py -v
+
+      - name: Run duplication check
+        run: |
+          python -m pytest tools/content_check/tests/test_duplication.py -v
+
+  e2e-test:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install playtest dependencies
+        run: |
+          pip install -e "tools/playtest[dev]"
+
+      - name: Run E2E tests
+        run: |
+          python -m pytest tools/playtest/ -v --tb=short
+
   check-docs:
     name: Check Documentation
     runs-on: ubuntu-latest
