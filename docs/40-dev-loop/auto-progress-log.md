@@ -5,6 +5,27 @@
 
 ## 进度记录
 
+### auto-20260706-1800 - 完善 Runbook 门禁列表与文档一致性
+
+**执行时间**：2026-07-06 18:00
+**状态**：已完成
+**任务描述**：完善 `docs/runbook/README.md` 的门禁 Runbook 列表，补充缺失的 5 个单元测试门禁链接，确保门禁列表与 `gate_registry.yaml` 注册表和 `gates/` 目录下的实际文件保持一致
+
+**完成内容**：
+- 补充 G-UNIT-005 (generation-service 单元测试)
+- 补充 G-UNIT-006 (review-service 单元测试)
+- 补充 G-UNIT-007 (player-service 单元测试)
+- 补充 G-UNIT-008 (ops-service 单元测试)
+- 补充 G-UNIT-009 (gateway-service 单元测试)
+- 文档一致性验证通过：README = registry = 实际文件数 = 16
+
+**产出文件**：
+- `docs/runbook/README.md`（更新，门禁列表从 11 个补充到 16 个）
+- `docs/40-dev-loop/auto-plan-20260706-1800.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260706-1800.md`（执行摘要）
+
+---
+
 ### auto-20260706-1700 - 补全门禁 Runbook 文档
 
 **执行时间**：2026-07-06 17:00
