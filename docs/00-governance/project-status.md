@@ -55,6 +55,7 @@
 - **测试修复**：修复了 content-service 的 seed_initial_packages.py 异步调用问题（load_json_file 不应为 async）和测试数据库会话获取方式；修复了 generation-service 的 skeleton_validator 测试 mock 问题（AsyncMock 替代普通 mock）。
 - **telemetry/ 遥测基础设施已初始化**：包含指标定义（metrics.yaml）、日志 schema（log-schemas.yaml）、告警规则（alerts.yaml）、仪表盘配置说明（dashboards/README.md），覆盖所有 8 个后端服务、workers 和事件总线。
 - **灰度发布就绪全面验证已完成**：所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）。项目已具备首期内容包灰度发布条件。
+- **playtest 端到端测试环境隔离修复完成**：`tools/playtest/test_vote_integration.py` 和 `tools/playtest/test_content_integration.py` 已修复服务隔离问题（sys.modules 清理 + prometheus 指标注册中心清理），确保投票服务和内容服务测试在同一测试套件中运行时不会互相干扰，全部 15 个 playtest 端到端测试用例通过。
 
 ## 已确定事项
 
