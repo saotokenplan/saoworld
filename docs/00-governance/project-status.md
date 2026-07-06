@@ -57,7 +57,7 @@
 - **灰度发布就绪全面验证已完成**：所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）。项目已具备首期内容包灰度发布条件。
 - **playtest 端到端测试环境隔离修复完成**：`tools/playtest/test_vote_integration.py` 和 `tools/playtest/test_content_integration.py` 已修复服务隔离问题（sys.modules 清理 + prometheus 指标注册中心清理），确保投票服务和内容服务测试在同一测试套件中运行时不会互相干扰，全部 15 个 playtest 端到端测试用例通过。
 - **基础设施配置完整性验证通过**：所有 8 个后端服务的 Dockerfile 和 pyproject.toml 配置完整；CI/CD 流水线配置（ci.yml、cd.yml、docker-build.yml）完整；部署脚本（deploy.sh、rollback.sh、health-check.sh、migrate-all.sh、gray-release.sh、verify-release.sh）完整；基础设施配置（Docker Compose、Nginx、Prometheus、Grafana）完整。
-- **P2 阶段（多代理协同期）代理角色技术设计文档框架已创建**：`docs/40-dev-loop/p2-agent-design/` 目录下包含 9 个代理角色规范文档（Product Agent、System Designer Agent、Gameplay Agent、World Agent、Backend Agent、QA Agent、Build Agent、Ops Agent、Orchestrator），为后续多代理协同研发做准备。
+- **P2 阶段（多代理协同期）代理角色技术设计文档已完善**：`docs/40-dev-loop/p2-agent-design/` 目录下 9 个代理角色规范文档（Product Agent、System Designer Agent、Gameplay Agent、World Agent、Backend Agent、QA Agent、Build Agent、Ops Agent、Orchestrator）均已完善，包含详细的接口定义、工作流程、输入输出数据结构、协作机制、错误处理和验收标准，文档状态均为 active，为后续多代理协同研发奠定基础。
 
 ## 已确定事项
 
