@@ -327,6 +327,28 @@
   - 测试覆盖：28 个单元测试全部通过
   - 与 Workers 集成：`workers/tasks/content_review.py` 已更新为调用检查器实现
   - 门禁注册表更新：`gate_registry.yaml` 已新增 4 个 content 类型门禁
+- **Tools 模块工程化与 CI 门禁补全**：
+  - 为 4 个 tools 模块添加 `pyproject.toml`，统一依赖管理与工具配置：
+    - `tools/content_check/`：PyYAML 依赖，完整 ruff/mypy/pytest 配置
+    - `tools/loop_logging/`：PyYAML + scikit-learn + numpy 依赖，完整 ruff/mypy/pytest 配置
+    - `tools/agents/`：PyYAML + Pydantic 依赖，ruff 配置（含 E402/F841 忽略规则）
+    - `tools/playtest/`：fastapi + httpx + pytest 依赖，ruff 配置
+  - CI 配置（`.github/workflows/ci.yml`）扩展：
+    - lint 任务新增 content_check、loop_logging、agents、playtest 4 个工具
+    - type-check 任务新增 content_check、loop_logging
+    - test 任务新增 content_check、loop_logging
+    - content-check 任务简化为统一 pytest 执行
+    - e2e-test 任务增强：先安装所有后端服务依赖，再安装 playtest
+  - 门禁注册表新增 4 个门禁：
+    - G-UNIT-010：Tools Unit Tests (loop_logging)
+    - G-UNIT-011：Tools Unit Tests (content_check)
+    - G-STATIC-003：Ruff Lint (tools)
+    - G-E2E-002：Full Integration E2E (playtest)
+  - 代码质量修复：
+    - `tools/loop_logging/schema.py`：修复 `log_excerpt` 未定义 → `self.log_excerpt`
+    - `tools/loop_logging/cli.py`：删除未使用变量 `rule_registry`
+    - `tools/loop_logging/rule_evaluator.py`：删除未使用参数 `max_false_negative_rate`
+    - `tools/system_designer_agent/system_designer_agent.py`：修复 list comprehension 变量名 `file` → `f`
 - **Prometheus 监控指标集成**：
   - 所有 8 个后端服务（vote、world、content、generation、review、gateway、player、ops）均已集成 `prometheus-fastapi-instrumentator`
   - 每个服务均提供 `/metrics` 端点，支持 HTTP 请求数、延迟、错误率等指标采集
@@ -392,6 +414,7 @@
 20. ~~统一各服务错误码与异常处理：为 8 个后端服务创建统一的错误码模块（errors.py），对齐 api-error-codes.md 文档，确保各服务错误码命名与 API 规范一致~~ 已完成，8 个服务新增 errors.py 模块，api-error-codes.md 文档更新对齐，vote-service 54 个测试全部通过
 21. ~~扩展端到端集成测试覆盖：实现投票完整流程（创建→提交→结算）和内容包完整流程（创建→发布→回滚）的集成测试~~ 已完成，vote-service 54 个测试全部通过，content-service 58 个测试通过
 22. ~~实现世界骨架快照 API 与内容生成校验：world-service 添加骨架快照创建/获取接口，generation-service 在生成请求创建前校验骨架存在、forbidden_tags 非空、chapter_id/region_id 有效~~ 已完成，world-service 46 个测试通过，generation-service 53 个测试通过
+23. ~~tools 模块工程化配置与 CI 门禁补全：为 content_check、loop_logging、agents、playtest 添加 pyproject.toml，扩展 CI 配置，补充门禁注册表~~ 已完成，4 个 tools 模块配置齐全，CI 任务扩展，新增 4 个门禁
 
 ## 进入实施前的建议门槛
 

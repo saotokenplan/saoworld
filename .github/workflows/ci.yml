@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [vote, world, content, generation, review, gateway, player, ops, workers]
+        service: [vote, world, content, generation, review, gateway, player, ops, workers, content_check, loop_logging, agents, playtest]
     steps:
       - uses: actions/checkout@v4
 
@@ -27,12 +27,24 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd ${{ matrix.service == 'workers' && 'workers' || format('services/{0}', matrix.service) }}
+          if [ "${{ matrix.service }}" = "workers" ]; then
+            cd workers
+          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging|agents|playtest)$ ]]; then
+            cd tools/${{ matrix.service }}
+          else
+            cd services/${{ matrix.service }}
+          fi
           pip install -e ".[dev]"
 
       - name: Run ruff
         run: |
-          cd ${{ matrix.service == 'workers' && 'workers' || format('services/{0}', matrix.service) }}
+          if [ "${{ matrix.service }}" = "workers" ]; then
+            cd workers
+          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging|agents|playtest)$ ]]; then
+            cd tools/${{ matrix.service }}
+          else
+            cd services/${{ matrix.service }}
+          fi
           ruff check .
 
   type-check:
@@ -40,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [vote, world, content, generation, review, gateway, player, ops, workers]
+        service: [vote, world, content, generation, review, gateway, player, ops, workers, content_check, loop_logging]
     steps:
       - uses: actions/checkout@v4
 
@@ -51,20 +63,31 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd ${{ matrix.service == 'workers' && 'workers' || format('services/{0}', matrix.service) }}
+          if [ "${{ matrix.service }}" = "workers" ]; then
+            cd workers
+          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging)$ ]]; then
+            cd tools/${{ matrix.service }}
+          else
+            cd services/${{ matrix.service }}
+          fi
           pip install -e ".[dev]"
 
       - name: Run mypy
         run: |
-          cd ${{ matrix.service == 'workers' && 'workers' || format('services/{0}', matrix.service) }}
-          ${{ matrix.service == 'workers' && 'mypy .' || 'mypy app' }}
+          if [ "${{ matrix.service }}" = "workers" ]; then
+            cd workers && mypy .
+          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging)$ ]]; then
+            cd tools/${{ matrix.service }} && mypy .
+          else
+            cd services/${{ matrix.service }} && mypy app
+          fi
 
   test:
     name: Test (pytest)
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [vote, world, content, generation, review, gateway, player, ops, workers]
+        service: [vote, world, content, generation, review, gateway, player, ops, workers, content_check, loop_logging]
     steps:
       - uses: actions/checkout@v4
 
@@ -75,13 +98,24 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd ${{ matrix.service == 'workers' && 'workers' || format('services/{0}', matrix.service) }}
+          if [ "${{ matrix.service }}" = "workers" ]; then
+            cd workers
+          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging)$ ]]; then
+            cd tools/${{ matrix.service }}
+          else
+            cd services/${{ matrix.service }}
+          fi
           pip install -e ".[dev]"
 
       - name: Run pytest
         run: |
-          cd ${{ matrix.service == 'workers' && 'workers' || format('services/{0}', matrix.service) }}
-          pytest -v --tb=short
+          if [ "${{ matrix.service }}" = "workers" ]; then
+            cd workers && pytest -v --tb=short
+          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging)$ ]]; then
+            cd tools/${{ matrix.service }} && pytest -v --tb=short
+          else
+            cd services/${{ matrix.service }} && pytest -v --tb=short
+          fi
 
   content-check:
     name: Content Checks
@@ -96,23 +130,13 @@ jobs:
 
       - name: Install content check dependencies
         run: |
-          pip install -e "tools/content_check[dev]"
+          cd tools/content_check
+          pip install -e ".[dev]"
 
-      - name: Run world consistency check
+      - name: Run content check tests
         run: |
-          python -m pytest tools/content_check/tests/test_world_consistency.py -v
-
-      - name: Run reward boundary check
-        run: |
-          python -m pytest tools/content_check/tests/test_reward_boundary.py -v
-
-      - name: Run content safety check
-        run: |
-          python -m pytest tools/content_check/tests/test_content_safety.py -v
-
-      - name: Run duplication check
-        run: |
-          python -m pytest tools/content_check/tests/test_duplication.py -v
+          cd tools/content_check
+          pytest -v --tb=short
 
   e2e-test:
     name: End-to-End Tests
@@ -125,13 +149,23 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install backend service dependencies
+        run: |
+          for service in vote world content generation review player ops gateway; do
+            cd services/$service
+            pip install -e ".[dev]"
+            cd ../..
+          done
+
       - name: Install playtest dependencies
         run: |
-          pip install -e "tools/playtest[dev]"
+          cd tools/playtest
+          pip install -e ".[dev]"
 
       - name: Run E2E tests
         run: |
-          python -m pytest tools/playtest/ -v --tb=short
+          cd tools/playtest
+          pytest -v --tb=short
 
   check-docs:
     name: Check Documentation

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 
 from .feedback_collector import IssueFeedbackCollector, IssueFeedback
 from .golden_case_manager import GoldenCaseManager
@@ -139,7 +139,6 @@ class RuleEvaluator:
 
         min_adoption_rate = self.thresholds.get("min_issue_adoption_rate", 0.6)
         max_false_positive_rate = self.thresholds.get("max_false_positive_rate", 0.35)
-        max_false_negative_rate = self.thresholds.get("max_false_negative_rate", 0.2)
         max_latency_hours = self.thresholds.get("max_latency_hours", 24)
         alert_threshold = self.thresholds.get("alert_threshold", 0.2)
 
