@@ -954,6 +954,26 @@
 
 ---
 
+### auto-20260707-1400 - 验证首期内容包灰度发布端到端流程
+
+**执行时间**：2026-07-07 14:00
+**状态**：已完成
+**任务描述**：验证项目首期内容包灰度发布的完整端到端流程，包括内容包创建、灰度发布、全量发布和回滚流程
+
+**完成内容**：
+- 验证内容包创建流程（seed_initial_packages.py 脚本、ContentRepository.create_package 方法）
+- 验证灰度发布流程（build_gray_scope 灰度范围构建、灰度可见性判断逻辑）
+- 验证全量发布流程（promote_to_full_release 任务、gray→live 状态迁移）
+- 验证回滚流程（gray/live→rolled_back 状态迁移、rolled_back 终态约束）
+- 全面质量验证：所有 8 个后端服务 375 个测试全部通过，workers 29 个测试通过（7 个 Redis 环境限制），content_check 28 个测试通过，loop_logging 36 个测试通过
+
+**产出文件**：
+- `docs/40-dev-loop/auto-plan-20260707-1400.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260707-1400.md`（执行摘要）
+- `docs/00-governance/project-status.md`（更新）
+
+---
+
 ### auto-20260708-0900 - 实现 Gameplay Agent
 
 **执行时间**：2026-07-08 09:00
