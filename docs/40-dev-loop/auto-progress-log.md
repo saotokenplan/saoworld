@@ -692,3 +692,24 @@
 - `docs/40-dev-loop/auto-plan-20260707-0000.md`（任务计划）
 - `docs/40-dev-loop/auto-execution-summary-20260707-0000.md`（执行摘要）
 - `docs/00-governance/project-status.md`（更新）
+
+---
+
+### auto-20260707-0100 - 修复 playtest 端到端测试环境隔离问题
+
+**执行时间**：2026-07-07 01:00
+**状态**：已完成
+**任务描述**：修复 playtest 端到端测试在完整测试套件中运行时的服务隔离问题，确保投票服务和内容服务测试不会互相干扰
+
+**完成内容**：
+- 分析问题：Python 模块缓存（sys.modules）导致 vote-service 和 content-service 的 `app` 包互相污染，prometheus_client 全局指标注册中心导致指标重复注册错误
+- 修复方案：在 `_clean_app_modules()` 函数中清理所有以 `app` 开头的模块和 prometheus 指标注册中心
+- 更新 `tools/playtest/test_vote_integration.py`：在所有 fixture 中执行模块清理和 prometheus 指标清理
+- 更新 `tools/playtest/test_content_integration.py`：在所有 fixture 中执行模块清理和 prometheus 指标清理
+- 测试验证：完整 playtest 测试套件 15 个测试用例全部通过
+
+**产出文件**：
+- `docs/40-dev-loop/auto-plan-20260707-0100.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260707-0100.md`（执行摘要）
+- `tools/playtest/test_vote_integration.py`（更新）
+- `tools/playtest/test_content_integration.py`（更新）
