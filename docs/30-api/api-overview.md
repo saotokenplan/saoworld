@@ -119,6 +119,11 @@
 - 投票链路：`docs/30-api/api-examples-vote.md`
 - 内容查询/发布/回滚：`docs/30-api/api-examples-content.md`
 - 世界/任务/运营审核：`docs/30-api/api-examples-world-ops.md`
+- 玩家接口：`docs/30-api/api-examples-player.md`
+- 审核接口：`docs/30-api/api-examples-review.md`
+- 生成接口：`docs/30-api/api-examples-generation.md`
+- 运营接口：`docs/30-api/api-examples-ops.md`
+- 网关接口：`docs/30-api/api-examples-gateway.md`
 
 ## 关键状态关系
 
@@ -187,6 +192,11 @@
 | `api-examples-vote.md` | 投票链路请求响应样例 |
 | `api-examples-content.md` | 内容查询、发布与回滚链路样例 |
 | `api-examples-world-ops.md` | 世界、任务查询及运营写接口样例 |
+| `api-examples-player.md` | 玩家信息、任务列表、区域状态及运营玩家管理接口样例 |
+| `api-examples-review.md` | 审核记录查询、审核批准与拒绝接口样例 |
+| `api-examples-generation.md` | 生成请求创建、查询及生成对象查询接口样例 |
+| `api-examples-ops.md` | 运营仪表盘、运营操作记录、系统状态监控接口样例 |
+| `api-examples-gateway.md` | 网关健康检查、服务状态监控接口样例 |
 | `openapi-draft.md` | OpenAPI 草案入口、分批次阅读片段 |
 | `openapi-v1-draft.yaml` | **权威**单文件 OpenAPI 3.1 草案（12 个接口） |
 

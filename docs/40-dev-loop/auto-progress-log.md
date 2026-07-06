@@ -767,6 +767,34 @@
 
 ---
 
+### auto-20260707-0500 - 补充缺失的 API 示例文档
+
+**执行时间**：2026-07-07 05:00
+**状态**：已完成
+**任务描述**：补充 `docs/30-api/` 目录下缺失的 API 示例文档，完善 player、review、generation、ops、gateway 5 个服务的请求响应样例，确保 API 参考文档的完整性
+
+**完成内容**：
+- 创建 player-service API 示例文档（8 个接口：玩家信息、任务列表、区域状态、运营玩家管理）
+- 创建 review-service API 示例文档（4 个接口：审核记录查询、审核批准、审核拒绝）
+- 创建 generation-service API 示例文档（5 个接口：生成请求创建/查询、生成对象查询）
+- 创建 ops-service API 示例文档（5 个接口：仪表盘、历史记录、运营操作、系统状态）
+- 创建 gateway-service API 示例文档（2 个接口：健康检查、服务状态）
+- 更新 api-overview.md：添加新示例文档链接，更新文档资产清单
+- 更新 project-status.md：添加 API 示例文档完善说明
+
+**产出文件**：
+- `docs/30-api/api-examples-player.md`（新建）
+- `docs/30-api/api-examples-review.md`（新建）
+- `docs/30-api/api-examples-generation.md`（新建）
+- `docs/30-api/api-examples-ops.md`（新建）
+- `docs/30-api/api-examples-gateway.md`（新建）
+- `docs/30-api/api-overview.md`（更新）
+- `docs/00-governance/project-status.md`（更新）
+- `docs/40-dev-loop/auto-plan-20260707-0500.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260707-0500.md`（执行摘要）
+
+---
+
 ### auto-20260707-0400 - 完善 P2 阶段代理角色技术设计文档
 
 **执行时间**：2026-07-07 04:00
