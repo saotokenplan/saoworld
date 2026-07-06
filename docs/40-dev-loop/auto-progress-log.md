@@ -5,6 +5,30 @@
 
 ## 进度记录
 
+### auto-20260706-2100 - 修复后端服务缺失的 redis 依赖
+
+**执行时间**：2026-07-06 21:00
+**状态**：已完成
+**任务描述**：为 vote、content、generation、review 四个后端服务补充 redis 依赖声明，修复因缺少 redis 依赖导致的测试导入错误
+
+**完成内容**：
+- 为 vote-service 添加 redis>=5.0.0 依赖
+- 为 content-service 添加 redis>=5.0.0 依赖
+- 为 generation-service 添加 redis>=5.0.0 依赖
+- 为 review-service 添加 redis>=5.0.0 依赖
+- 验证 4 个服务测试全部通过（vote 54、content 62、generation 56、review 41）
+- 检查其他 4 个服务（world/player/ops/gateway），确认不使用 redis，无此问题
+
+**产出文件**：
+- `services/vote/pyproject.toml`（更新）
+- `services/content/pyproject.toml`（更新）
+- `services/generation/pyproject.toml`（更新）
+- `services/review/pyproject.toml`（更新）
+- `docs/40-dev-loop/auto-plan-20260706-2100.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260706-2100.md`（执行摘要）
+
+---
+
 ### auto-20260706-1900 - 更新项目状态文档 - 标记产品侧未定事项为已完成
 
 **执行时间**：2026-07-06 19:00
