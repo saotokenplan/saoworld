@@ -171,7 +171,7 @@ class CIFailureLogEntry:
         if self.commit:
             result["commit"] = self.commit
         if self.log_excerpt:
-            result["log_excerpt"] = log_excerpt
+            result["log_excerpt"] = self.log_excerpt
         if self.suspected_category:
             result["suspected_category"] = self.suspected_category.value
         if self.related_task_id:

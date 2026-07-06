@@ -456,3 +456,107 @@ gates:
       docs: "docs/packages/first-slice/"
       runbook: "docs/runbook/gates/critical_e2e.md"
       issues: []
+
+  - id: G-UNIT-010
+    name: Tools Unit Tests (loop_logging)
+    type: unit
+    owner: QA Agent
+    command: "cd tools/loop_logging && pytest"
+    scope:
+      paths: ["tools/loop_logging/**"]
+      trigger: "on_pr"
+    risk_coverage: ["regression", "data-integrity"]
+    cost:
+      expected_seconds: 30
+      flakiness_budget: 0.01
+    signal:
+      severity: blocker
+      precision_target: 0.95
+    lifecycle:
+      status: active
+      created_at: "2026-07-07"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/40-dev-loop/loop-engineering-plan.md"
+      runbook: "docs/runbook/gates/loop_logging-tests.md"
+      issues: []
+
+  - id: G-UNIT-011
+    name: Tools Unit Tests (content_check)
+    type: unit
+    owner: QA Agent
+    command: "cd tools/content_check && pytest"
+    scope:
+      paths: ["tools/content_check/**"]
+      trigger: "on_content_pr"
+    risk_coverage: ["world-consistency", "reward-boundary", "content-safety", "duplication"]
+    cost:
+      expected_seconds: 30
+      flakiness_budget: 0.01
+    signal:
+      severity: blocker
+      precision_target: 0.95
+    lifecycle:
+      status: active
+      created_at: "2026-07-07"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/20-specs/content-generation-spec.md"
+      runbook: "docs/runbook/gates/content_check-tests.md"
+      issues: []
+
+  - id: G-STATIC-003
+    name: Ruff Lint (tools)
+    type: static
+    owner: QA Agent
+    command: "cd tools/<tool> && ruff check ."
+    scope:
+      paths: ["tools/**"]
+      trigger: "on_pr"
+    risk_coverage: ["style", "regression"]
+    cost:
+      expected_seconds: 20
+      flakiness_budget: 0.005
+    signal:
+      severity: blocker
+      precision_target: 0.90
+    lifecycle:
+      status: active
+      created_at: "2026-07-07"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: ".trae/rules/10-python-backend.md"
+      runbook: "docs/runbook/gates/ruff.md"
+      issues: []
+
+  - id: G-E2E-002
+    name: Full Integration E2E (playtest)
+    type: e2e
+    owner: QA Agent
+    command: "cd tools/playtest && pytest"
+    scope:
+      paths: ["tools/playtest/**", "services/**"]
+      trigger: "nightly"
+    risk_coverage: ["playability", "regression", "crash"]
+    cost:
+      expected_seconds: 180
+      flakiness_budget: 0.02
+    signal:
+      severity: blocker
+      precision_target: 0.75
+    lifecycle:
+      status: active
+      created_at: "2026-07-07"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/40-dev-loop/"
+      runbook: "docs/runbook/gates/playtest_e2e.md"
+      issues: []

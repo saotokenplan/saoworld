@@ -5,7 +5,6 @@ import json
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
 
 from .agent_session_logger import AgentSessionLogger
 from .ci_failure_logger import CIFailureLogger
@@ -13,8 +12,6 @@ from .prod_incident_logger import ProdIncidentLogger
 from .clusterer import FailureClusterer
 from .gap_classifier import GapClassifier
 from .issue_generator import GateImprovementIssueGenerator
-from .schema import AgentSessionStage, AgentSessionEvent, CIStatus, CITriggerType, IncidentEnvironment, IncidentSeverity, GapType
-from .rule_registry import RuleRegistry
 from .threshold_manager import ThresholdManager
 from .golden_case_manager import GoldenCaseManager
 from .feedback_collector import IssueFeedbackCollector
@@ -274,7 +271,6 @@ def main() -> int:
 
 def cmd_rule_improvement(args: argparse.Namespace) -> None:
     thresholds = ThresholdManager(args.thresholds_file)
-    rule_registry = RuleRegistry(args.patterns_dir)
     golden_case_manager = GoldenCaseManager(args.golden_cases_dir)
     feedback_collector = IssueFeedbackCollector(args.feedback_dir)
 

@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional, Any
 import uuid
 from datetime import datetime, timezone
-from .input_schemas import Task, TaskInput, RuleLibrary, VersionBrief
+from .input_schemas import TaskInput
 from .output_schemas import (
     DesignNote,
     DesignNoteMetadata,
@@ -15,13 +15,6 @@ from .output_schemas import (
     ModuleChange,
     ArchitectureValidationReport,
     ValidationResult,
-)
-from .error_handler import (
-    SystemDesignerError,
-    RequirementAmbiguityError,
-    TechnicalFeasibilityError,
-    ModuleConflictError,
-    PerformanceRiskError,
 )
 
 
@@ -63,7 +56,7 @@ class SystemDesignerAgent:
         }
 
         for module, files in existing.items():
-            if any(keyword in file.lower() for keyword in ["model", "schema", "route"]):
+            if any(keyword in f.lower() for f in files for keyword in ["model", "schema", "route"]):
                 check_result["reusable_components"].append(f"{module}: {files}")
 
         self.analysis_cache["system_check"] = check_result
@@ -93,7 +86,7 @@ class SystemDesignerAgent:
         overview += "3. 业务服务处理并更新数据库\n"
         overview += "4. 发布事件通知相关服务\n"
 
-        overview += f"\n约束条件：\n"
+        overview += "\n约束条件：\n"
         overview += f"- 禁止标签：{', '.join(rules.constraints.forbidden_tags) if rules.constraints.forbidden_tags else '无'}\n"
         overview += f"- 最大区域等级：{rules.world_rules.max_region_level}\n"
 
