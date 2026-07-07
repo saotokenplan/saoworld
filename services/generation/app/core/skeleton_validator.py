@@ -2,7 +2,6 @@ from typing import Any, TypedDict
 
 import httpx
 
-from app.core.config import settings
 from app.core.errors import GenerationErrorCodes, raise_generation_error
 
 
