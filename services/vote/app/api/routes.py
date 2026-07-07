@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
+import structlog
 from fastapi import APIRouter, Depends, Header, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -47,6 +48,8 @@ from app.schemas.vote import (
 
 router = APIRouter()
 ops_router = APIRouter()
+
+logger = structlog.get_logger()
 
 
 def _make_request_id(prefix: str) -> str:
@@ -690,8 +693,8 @@ async def close_vote_cycle(
             closed_at=updated_cycle.updated_at.isoformat() if updated_cycle.updated_at else datetime.now(timezone.utc).isoformat(),
             trace_id=x_trace_id or "",
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.error("event_publish_failed", event_type="vote_cycle_closed", vote_cycle_id=str(vote_cycle_id), error=str(exc))
 
     return EnvelopeResponse(
         request_id=request_id,
@@ -785,8 +788,8 @@ async def finalize_vote_cycle(
             finalized_at=updated_cycle.finalized_at.isoformat() if updated_cycle.finalized_at else datetime.now(timezone.utc).isoformat(),
             trace_id=x_trace_id or "",
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.error("event_publish_failed", event_type="vote_result_finalized", vote_cycle_id=str(vote_cycle_id), error=str(exc))
 
     return EnvelopeResponse(
         request_id=request_id,

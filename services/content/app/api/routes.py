@@ -1,5 +1,6 @@
 import uuid
 
+import structlog
 from fastapi import APIRouter, Depends, Header, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -43,6 +44,8 @@ from app.schemas.content import (
 
 router = APIRouter()
 ops_router = APIRouter()
+
+logger = structlog.get_logger()
 
 
 def _make_request_id(prefix: str) -> str:
@@ -357,8 +360,8 @@ async def release_package(
             released_at=updated_pkg.released_at.isoformat() if updated_pkg.released_at else "",
             trace_id=x_trace_id or "",
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.error("event_publish_failed", event_type="content_package_released", content_package_id=str(updated_pkg.content_package_id), error=str(exc))
 
     return EnvelopeResponse(
         request_id=request_id,
@@ -469,8 +472,8 @@ async def rollback_package(
             rolled_back_at=datetime.now(timezone.utc).isoformat(),
             trace_id=x_trace_id or "",
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.error("event_publish_failed", event_type="content_package_rolled_back", content_package_id=str(updated_pkg.content_package_id), error=str(exc))
 
     return EnvelopeResponse(
         request_id=request_id,

@@ -1,5 +1,6 @@
 import uuid
 
+import structlog
 from fastapi import APIRouter, Depends, Header, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -38,6 +39,8 @@ from app.schemas.review import (
 
 router = APIRouter()
 ops_router = APIRouter()
+
+logger = structlog.get_logger()
 
 
 def _make_request_id(prefix: str) -> str:
@@ -422,8 +425,8 @@ async def approve_review_object(
             completed_at=datetime.now(timezone.utc).isoformat(),
             trace_id=x_trace_id or "",
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.error("event_publish_failed", event_type="review_batch_completed", object_id=str(object_id), error=str(exc))
 
     return EnvelopeResponse(
         request_id=request_id,
@@ -526,8 +529,8 @@ async def reject_review_object(
             completed_at=datetime.now(timezone.utc).isoformat(),
             trace_id=x_trace_id or "",
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.error("event_publish_failed", event_type="review_batch_completed", object_id=str(object_id), error=str(exc))
 
     return EnvelopeResponse(
         request_id=request_id,

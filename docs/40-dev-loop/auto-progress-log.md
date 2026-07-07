@@ -5,6 +5,30 @@
 
 ## 进度记录
 
+### auto-20260708-2100 - 事件发布异常处理修复与错误码完善
+
+**执行时间**：2026-07-08 21:00
+**状态**：已完成
+**任务描述**：修复 vote、content、generation、review 四个服务共 7 处事件发布失败时的静默异常处理（except Exception: pass），替换为 structlog 错误日志记录，提升系统可观测性。验证 CANDIDATE_NOT_ACTIVE 错误码正确使用。
+
+**完成内容**：
+- 为 vote/content/generation/review 四个服务的 routes.py 添加 structlog 导入和 logger
+- 修复 7 处 `except Exception: pass` → `except Exception as exc: logger.error("event_publish_failed", ...)`
+- 确认 CANDIDATE_NOT_ACTIVE 错误码在 vote-service 中正确使用
+- 确认 world/player/ops 服务无类似静默异常问题
+- 所有 8 个后端服务 375 个测试通过，ruff 和 mypy 检查通过
+
+**产出文件**：
+- `services/vote/app/api/routes.py`（修复 2 处）
+- `services/content/app/api/routes.py`（修复 2 处）
+- `services/generation/app/api/routes.py`（修复 2 处）
+- `services/review/app/api/routes.py`（修复 2 处）
+- `docs/40-dev-loop/auto-plan-20260708-2100.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260708-2100.md`（执行摘要）
+- `docs/00-governance/project-status.md`（更新状态记录）
+
+---
+
 ### auto-20260708-2000 - 灰度发布就绪持续验证
 
 **执行时间**：2026-07-08 20:00

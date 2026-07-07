@@ -1,5 +1,6 @@
 import uuid
 
+import structlog
 from fastapi import APIRouter, Depends, Header, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -42,6 +43,8 @@ from app.schemas.generation import (
 
 router = APIRouter()
 ops_router = APIRouter()
+
+logger = structlog.get_logger()
 
 
 def _make_request_id(prefix: str) -> str:
@@ -232,8 +235,8 @@ async def create_generation_request(
             created_at=req.created_at.isoformat() if req.created_at else "",
             trace_id=x_trace_id or "",
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.error("event_publish_failed", event_type="generation_request_created", request_id=str(req.request_id), error=str(exc))
 
     return EnvelopeResponse(
         request_id=request_id,
@@ -366,8 +369,8 @@ async def update_generation_request_status(
                 status="succeeded",
                 trace_id=x_trace_id or "",
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.error("event_publish_failed", event_type="generation_batch_completed", request_id=str(request_id), error=str(exc))
 
     return EnvelopeResponse(
         request_id=req_id,
