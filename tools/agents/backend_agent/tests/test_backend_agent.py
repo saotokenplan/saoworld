@@ -7,17 +7,14 @@ Backend Agent 测试用例
 """
 
 import pytest
+import sys
+import os
 from datetime import datetime
 
-import sys
-from pathlib import Path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-# 添加 tools 目录到 Python 路径
-tools_path = str(Path(__file__).parent.parent.parent.parent)
-sys.path.insert(0, tools_path)
-
-from tools.agents.backend_agent.backend_agent import BackendAgent
-from tools.agents.backend_agent.input_schemas import (
+from backend_agent import BackendAgent
+from input_schemas import (
     BackendAgentInput,
     DataStructure,
     DesignTask,
@@ -25,12 +22,12 @@ from tools.agents.backend_agent.input_schemas import (
     FieldDefinition,
     APISpec,
 )
-from tools.agents.backend_agent.output_schemas import (
+from output_schemas import (
     BackendResult,
     ImplementationOutput,
     TestResult,
 )
-from tools.agents.backend_agent.error_handler import BackendErrorHandler
+from error_handler import BackendErrorHandler
 
 
 class TestBackendAgent:

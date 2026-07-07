@@ -1,8 +1,11 @@
 import pytest
-from tools.agents.system_designer_agent.system_designer_agent import SystemDesignerAgent
-from tools.agents.system_designer_agent.input_schemas import Task, TaskInput, RuleLibrary, VersionBrief
-from tools.agents.system_designer_agent.output_schemas import DesignNote, DataStructure, InterfaceDefinition, ChangePlan, ArchitectureValidationReport
-from tools.agents.system_designer_agent.error_handler import (
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from system_designer_agent import SystemDesignerAgent
+from input_schemas import Task, TaskInput, RuleLibrary, VersionBrief
+from output_schemas import DesignNote, DataStructure, InterfaceDefinition, ChangePlan, ArchitectureValidationReport
+from error_handler import (
     RequirementAmbiguityError,
     TechnicalFeasibilityError,
     ModuleConflictError,

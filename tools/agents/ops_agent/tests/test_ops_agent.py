@@ -1,7 +1,10 @@
 import pytest
+import sys
+import os
 from datetime import datetime, timezone
-from tools.agents.ops_agent.ops_agent import OpsAgent
-from tools.agents.ops_agent.input_schemas import (
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from ops_agent import OpsAgent
+from input_schemas import (
     OpsTask, MetricsData, ExceptionData, FeedbackData, LogData,
     ServiceMetrics, SystemMetrics, GameplayMetrics,
     ExceptionItem, FeedbackItem, LogEntry

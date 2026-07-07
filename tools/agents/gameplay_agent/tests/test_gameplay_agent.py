@@ -1,10 +1,13 @@
 import pytest
-from tools.agents.gameplay_agent.gameplay_agent import GameplayAgent
-from tools.agents.gameplay_agent.input_schemas import (
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from gameplay_agent import GameplayAgent
+from input_schemas import (
     DesignTask, SceneConfig, ScriptInterface, DataConfig, GameplayTaskInput,
     SceneNode, ScriptProperty, ScriptMethod, SignalDefinition,
 )
-from tools.agents.gameplay_agent.error_handler import (
+from error_handler import (
     IncompleteDesignError, MissingDataConfigError,
 )
 
