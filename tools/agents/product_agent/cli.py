@@ -7,8 +7,6 @@ from input_schemas import (
     VoteResults,
     OnlineMetrics,
     IssueList,
-    Roadmap,
-    InputMilestone,
     VoteResult,
     TrendData,
     Issue,

@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 from ..dispatcher import AgentDispatcher, AgentExecutionResult
 from ..workflow_executor import WorkflowExecutor, TaskExecutionContext
 from ..input_schemas import TaskInput
-from ..output_schemas import ExecutionLog, FailureHandling
 
 
 def _make_task(

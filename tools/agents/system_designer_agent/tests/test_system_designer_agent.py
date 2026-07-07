@@ -3,8 +3,8 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from system_designer_agent import SystemDesignerAgent
-from input_schemas import Task, TaskInput, RuleLibrary, VersionBrief
-from output_schemas import DesignNote, DataStructure, InterfaceDefinition, ChangePlan, ArchitectureValidationReport
+from input_schemas import Task, TaskInput, RuleLibrary
+from output_schemas import DesignNote, DataStructure, ChangePlan, ArchitectureValidationReport
 from error_handler import (
     RequirementAmbiguityError,
     TechnicalFeasibilityError,

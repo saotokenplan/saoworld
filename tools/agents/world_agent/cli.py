@@ -7,7 +7,6 @@ from .input_schemas import (
     FactionInfo,
     VoteResult,
     ContentTemplate,
-    TemplateField,
     SkeletonSnapshot,
     DesignNote,
     WorldTaskInput,

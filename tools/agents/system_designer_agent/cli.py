@@ -1,6 +1,5 @@
 import click
 import json
-from typing import Optional
 from .system_designer_agent import SystemDesignerAgent
 from .input_schemas import Task, TaskInput, RuleLibrary
 
