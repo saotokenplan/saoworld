@@ -5,6 +5,37 @@
 
 ## 进度记录
 
+### auto-20260709-0000 - 后端服务 README 文档统一完善
+
+**执行时间**：2026-07-09 00:00
+**状态**：已完成
+**任务描述**：统一完善除 vote-service 外的 7 个后端服务 README 文档，修复文档漂移问题，使文档状态与项目实际进展对齐。
+
+**完成内容**：
+- world-service README：补充骨架快照 API、状态机、metrics 等功能说明，修正 Next Steps 中 Alembic 已完成项
+- content-service README：补充玩家接口、灰度发布、状态机、事件发布等功能说明，修正 Next Steps
+- generation-service README：补充骨架校验、状态机、事件发布等功能说明，修正 Next Steps
+- review-service README：从简略版本重构为完整 README，含目录结构、API 表格（7个端点）、功能清单、Next Steps
+- player-service README：从简略版本重构为完整 README，含玩家 API + 运营 API 共 8 个端点、功能清单、Next Steps
+- ops-service README：从简略版本重构为完整 README，含 5 个运营 API 端点、功能清单、Next Steps
+- gateway-service README：补充 player/ops 代理路由、Alembic 迁移说明、审计日志、目录结构、Next Steps
+- 所有 8 个后端服务测试全部通过（共 375 个测试用例），无回归
+- 更新 project-status.md 追加本轮记录
+
+**产出文件**：
+- `services/world/README.md`
+- `services/content/README.md`
+- `services/generation/README.md`
+- `services/review/README.md`
+- `services/player/README.md`
+- `services/ops/README.md`
+- `services/gateway/README.md`
+- `docs/00-governance/project-status.md`（追加本轮记录）
+- `docs/40-dev-loop/auto-plan-20260709-0000.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260709-0000.md`（执行摘要）
+
+---
+
 ### auto-20260708-2301 - 灰度发布就绪持续验证
 
 **执行时间**：2026-07-08 23:01
