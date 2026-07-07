@@ -80,6 +80,7 @@
 - **项目灰度发布就绪状态持续验证通过**：2026-07-08 19:00 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；playtest 15 个端到端测试通过；agents 77 个测试通过（product_agent 23 + orchestrator 54）；vote-service ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
 - **项目灰度发布就绪状态持续验证通过**：2026-07-08 20:00 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；vote-service ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
 - **事件发布异常处理修复完成**：2026-07-08 21:00 修复了 vote、content、generation、review 四个服务共 7 处事件发布失败时的静默异常处理（`except Exception: pass`），替换为 structlog 错误日志记录（`logger.error("event_publish_failed", event_type=..., error=str(exc))`），提升系统可观测性。确认 `CANDIDATE_NOT_ACTIVE` 错误码在 vote-service 中正确使用，确认 world、player、ops 服务无类似问题。所有 375 个后端测试通过，ruff 和 mypy 检查通过。
+- **gateway-service Alembic 迁移环境已补全**：为 gateway-service 添加了完整的 Alembic 迁移环境（alembic.ini、env.py、script.py.mako），创建了 audit_logs 表的首次迁移脚本（2026_07_08_2200_init_gateway_tables.py），添加了 database_url 配置和数据模型定义（AuditLog），37 个测试用例全部通过。至此，所有 8 个后端服务的迁移环境均已完整初始化。
 - **项目灰度发布就绪状态持续验证通过**：2026-07-07 14:00 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
 - **项目灰度发布就绪状态持续验证通过**：2026-07-07 07:01 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；agents 77 个测试通过（product_agent 23 + orchestrator 54）；vote-service ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
 - **P2 多代理协同真实调度能力已实现**：Orchestrator 的 `execute_tasks` 方法从模拟执行升级为真实 Agent 调度。新增 `AgentDispatcher` 模块（支持动态导入 8 个 Agent 并调用其核心方法）、`WorkflowExecutor` 模块（基于 Kahn 算法实现拓扑排序、按依赖关系顺序执行任务、上游输出自动传递给下游）。Orchestrator 通过 `use_real_dispatch` 参数支持模拟/真实两种模式切换，向后兼容。54 个 Orchestrator 测试通过（含 11 个 dispatcher 测试、15 个 workflow_executor 测试、10 个多代理协同集成测试），全部 213 个 agents 测试通过，vote-service 54 个测试通过，content-service 62 个测试通过。
@@ -217,7 +218,7 @@
   - 审计日志持久化（`audit_logs` 表写入，覆盖投票提交、周期创建和状态迁移）
   - 模型约束补全：`votes_candidate_id_idx` 索引、`winning_candidate_id` FK
   - 测试用例 51 个全部通过（含玩家接口 + 运营接口 + 审计日志 + 鉴权 + envelope 格式）
-- **Alembic 迁移环境已初始化**（vote-service + world-service + content-service + generation-service + review-service + player-service + ops-service），迁移脚本已生成：
+- **Alembic 迁移环境已初始化**（vote-service + world-service + content-service + generation-service + review-service + player-service + ops-service + gateway-service），迁移脚本已生成：
   - vote-service：
     - 首次迁移（vote 核心三表）：`services/vote/alembic/versions/2026_07_01_1529_ba4a0034a620_init_vote_tables.py`
     - 审计日志表：`services/vote/alembic/versions/2026_07_02_0200_c8d2e5f1a730_add_audit_logs_table.py`
@@ -239,6 +240,8 @@
   - ops-service：
     - 首次迁移（ops_dashboards、ops_actions 表）：`services/ops/alembic/versions/2026_07_04_0211_e1f2a3b4c5d6_init_ops_tables.py`
     - 审计日志表：`services/ops/alembic/versions/2026_07_04_0212_f2a3b4c5d6e7_add_audit_logs_table.py`
+  - gateway-service：
+    - 首次迁移（audit_logs 表）：`services/gateway/alembic/versions/2026_07_08_2200_init_gateway_tables.py`
 - `world-service` 已完成骨架初始化与区域管理接口：
   - 数据模型：`Region`、`WorldSkeleton`、`AuditLog`（对应 `backend-data-spec.md`）
   - 玩家 API 路由：`GET /api/v1/health`、`GET /api/v1/world/regions`、`GET /api/v1/world/regions/{region_id}`、`GET /api/v1/world/skeleton`（获取当前世界骨架快照）
