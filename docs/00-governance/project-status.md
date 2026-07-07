@@ -23,7 +23,7 @@
 ## 当前阶段
 
 - 当前阶段：**灰度发布就绪**（首期内容包灰度发布准备全部完成，项目已具备完整端到端玩法闭环能力）
-- 当前形态：八大核心后端服务（vote、world、content、generation、review、player、ops、gateway）+ workers Celery + CI/CD + Godot 客户端完整，投票链路、内容链路、审核链路、API 网关、运营后台、客户端框架就绪，客户端与后端 API 联调封装完善，首期内容实例化完成（世界观、区域、阵营、NPC、任务、章节），内容包打包与发布流程已实现，端到端集成验证已完成，首期内容包初始化脚本已验证，发布验证脚本已完善，门禁 Runbook 文档已补全（16个），遥测基础设施已初始化（metrics、logs、alerts、dashboards），三层 Loop 基础设施已实现
+- 当前形态：八大核心后端服务（vote、world、content、generation、review、player、ops、gateway）+ workers Celery + CI/CD + Godot 客户端完整，投票链路、内容链路、审核链路、API 网关、运营后台、客户端框架就绪，客户端与后端 API 联调封装完善，首期内容实例化完成（世界观、区域、阵营、NPC、任务、章节），内容包打包与发布流程已实现，端到端集成验证已完成，首期内容包初始化脚本已验证，发布验证脚本已完善，门禁 Runbook 文档已补全（16个），遥测基础设施已初始化（metrics、logs、alerts、dashboards），三层 Loop 基础设施已实现，P2 多代理协同真实调度能力已实现（AgentDispatcher + WorkflowExecutor + 54个Orchestrator测试通过）
 - 当前目标：完成首期内容包灰度发布，验证端到端玩法流程，进入内容生成与投票驱动世界更新的闭环
 
 ## 当前结论
@@ -73,6 +73,7 @@
 - **项目灰度发布就绪状态持续验证通过**：2026-07-08 11:00 进行的全面验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）。项目持续保持灰度发布就绪状态。
 - **项目灰度发布就绪状态持续验证通过**：2026-07-08 12:00 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
 - **项目灰度发布就绪状态持续验证通过**：2026-07-08 13:00 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；vote-service ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
+- **P2 多代理协同真实调度能力已实现**：Orchestrator 的 `execute_tasks` 方法从模拟执行升级为真实 Agent 调度。新增 `AgentDispatcher` 模块（支持动态导入 8 个 Agent 并调用其核心方法）、`WorkflowExecutor` 模块（基于 Kahn 算法实现拓扑排序、按依赖关系顺序执行任务、上游输出自动传递给下游）。Orchestrator 通过 `use_real_dispatch` 参数支持模拟/真实两种模式切换，向后兼容。54 个 Orchestrator 测试通过（含 11 个 dispatcher 测试、15 个 workflow_executor 测试、10 个多代理协同集成测试），全部 213 个 agents 测试通过，vote-service 54 个测试通过，content-service 62 个测试通过。
 
 ## 已确定事项
 

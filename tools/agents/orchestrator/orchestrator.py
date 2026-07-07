@@ -14,10 +14,16 @@ from .output_schemas import (
     OrchestratorResult,
 )
 from .error_handler import OrchestratorErrorHandler
+from .dispatcher import AgentDispatcher, AgentExecutionResult
+from .workflow_executor import WorkflowExecutor
 
 
 class Orchestrator:
-    def __init__(self):
+    def __init__(
+        self,
+        dispatcher: Optional[AgentDispatcher] = None,
+        use_real_dispatch: bool = False,
+    ):
         self.version_brief: Optional[VersionBrief] = None
         self.gate_results: Optional[GateResults] = None
         self.agent_status: Optional[AgentStatus] = None
@@ -26,6 +32,15 @@ class Orchestrator:
         self.execution_logs: List[ExecutionLog] = []
         self.failures: List[FailureHandling] = []
         self.error_handler = OrchestratorErrorHandler()
+        self.use_real_dispatch = use_real_dispatch
+        self.dispatcher = dispatcher or AgentDispatcher()
+        self._workflow_executor: Optional[WorkflowExecutor] = None
+
+    @property
+    def workflow_executor(self) -> WorkflowExecutor:
+        if self._workflow_executor is None:
+            self._workflow_executor = WorkflowExecutor(self.dispatcher)
+        return self._workflow_executor
 
     def receive_version_brief(self, brief: VersionBrief) -> None:
         self.version_brief = brief
@@ -94,6 +109,12 @@ class Orchestrator:
         return assignments
 
     def execute_tasks(self) -> List[ExecutionLog]:
+        if self.use_real_dispatch:
+            return self._execute_tasks_real()
+        return self._execute_tasks_simulated()
+
+    def _execute_tasks_simulated(self) -> List[ExecutionLog]:
+        """模拟执行任务（兼容旧逻辑，用于测试和演示）"""
         logs: List[ExecutionLog] = []
         now = datetime.now(timezone.utc)
 
@@ -149,6 +170,30 @@ class Orchestrator:
 
         self.execution_logs.extend(logs)
         return logs
+
+    def _execute_tasks_real(self) -> List[ExecutionLog]:
+        """使用真实 Agent 调度执行任务"""
+        exec_logs, exec_failures = self.workflow_executor.execute_workflow(
+            tasks=self.task_definitions,
+            stop_on_failure=False,
+        )
+
+        # 同步执行结果到 assignments 和 task_definitions
+        for log in exec_logs:
+            for assignment in self.assignments:
+                if assignment.task_id == log.task_id:
+                    assignment.status = log.status
+                    break
+
+            for task in self.task_definitions:
+                if task.id == log.task_id:
+                    task.status = log.status
+                    break
+
+        self.execution_logs.extend(exec_logs)
+        self.failures.extend(exec_failures)
+
+        return exec_logs
 
     def check_gates(self) -> bool:
         if not self.gate_results:
