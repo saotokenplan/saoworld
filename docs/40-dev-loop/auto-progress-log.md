@@ -5,6 +5,26 @@
 
 ## 进度记录
 
+### auto-20260709-0100 - workers 和 tools README 文档统一完善
+
+**执行时间**：2026-07-09 01:00
+**状态**：已完成
+**任务描述**：统一完善 workers/ 和 tools/ 目录的 README 文档，修复文档漂移问题，使文档状态与项目实际进展对齐。
+
+**完成内容**：
+- workers/README.md：从"Not yet initialized"占位状态重构为完整 README，补充目录结构、异步任务（7个任务6个队列）、事件总线（Redis Pub/Sub、7个核心事件、重试+死信队列）、定时任务（3个Beat任务）、与后端服务集成关系、快速开始、配置说明、Next Steps，29个测试通过
+- tools/README.md：从仅列2个Git脚本扩充为完整 README，补充4大核心模块（agents、content_check、loop_logging、playtest）详细说明、运维脚本清单、Git工具清单、技术栈、相关文档链接，content_check 28个测试通过、loop_logging 36个测试通过
+- 更新 project-status.md 追加本轮记录
+
+**产出文件**：
+- `workers/README.md`
+- `tools/README.md`
+- `docs/00-governance/project-status.md`（追加本轮记录）
+- `docs/40-dev-loop/auto-plan-20260709-0100.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260709-0100.md`（执行摘要）
+
+---
+
 ### auto-20260709-0000 - 后端服务 README 文档统一完善
 
 **执行时间**：2026-07-09 00:00
