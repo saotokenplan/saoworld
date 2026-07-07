@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from typing import AsyncGenerator
+from unittest.mock import AsyncMock, patch
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
@@ -46,9 +47,6 @@ async def setup_db():
     yield
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-
-
-from unittest.mock import AsyncMock, patch
 
 
 @pytest_asyncio.fixture
