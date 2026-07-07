@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     debug: bool = False
     environment: str = "local"
 
+    database_url: str = "sqlite+aiosqlite:///./gateway.db"
+
     jwt_secret: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
