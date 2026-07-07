@@ -1,9 +1,8 @@
 from typing import Dict, List, Optional, Any
 from uuid import uuid4
-from .input_schemas import DesignTask, SceneConfig, ScriptInterface, DataConfig, GameplayTaskInput
+from .input_schemas import SceneConfig, ScriptInterface, DataConfig, GameplayTaskInput
 from .output_schemas import SceneOutput, ScriptOutput, TestOutput, TestCase, GameplayResult
 from .error_handler import (
-    GameplayError,
     IncompleteDesignError,
     InvalidNodeReferenceError,
     ScriptSyntaxError,

@@ -10,7 +10,7 @@ from input_schemas import (
     VisionDocument,
 )
 from output_schemas import PriorityMatrix, MilestonePlan, VersionBrief, Task, OutputMilestone
-from error_handler import ErrorHandler, InputMissingError
+from error_handler import ErrorHandler
 
 logger = structlog.get_logger()
 

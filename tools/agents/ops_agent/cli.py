@@ -2,9 +2,8 @@ import argparse
 import json
 from .ops_agent import OpsAgent
 from .input_schemas import (
-    OpsTask, MetricsData, ExceptionData, FeedbackData, LogData,
-    SystemMetrics, GameplayMetrics, ServiceMetrics,
-    ExceptionItem, FeedbackItem, LogEntry
+    OpsTask, MetricsData, ExceptionData, FeedbackData, SystemMetrics, GameplayMetrics, ServiceMetrics,
+    ExceptionItem, FeedbackItem
 )
 from datetime import datetime, timezone
 

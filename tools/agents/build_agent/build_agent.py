@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
-from typing import List, Optional, Dict
-from .input_schemas import BuildTask, VersionConfig, BuildConfig, GrayScope, ChangelogEntry
+from typing import Optional, Dict
+from .input_schemas import BuildTask, VersionConfig, BuildConfig, GrayScope
 from .output_schemas import (
     BuildOutput, BuildReport, VersionMetadata, ComponentBuildResult,
     ClientBuildResult, ServerBuildResult, ContentBuildResult,

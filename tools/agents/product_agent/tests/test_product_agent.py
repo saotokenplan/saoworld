@@ -1,5 +1,5 @@
 import pytest
-from datetime import date, timedelta
+from datetime import date
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -9,7 +9,6 @@ from input_schemas import (
     VoteResults,
     OnlineMetrics,
     IssueList,
-    Roadmap,
     InputMilestone,
     VoteResult,
     TrendData,

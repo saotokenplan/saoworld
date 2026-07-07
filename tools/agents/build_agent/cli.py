@@ -1,7 +1,7 @@
 import argparse
 import json
 from .build_agent import BuildAgent
-from .input_schemas import BuildTask, BuildConfig, VersionConfig, GrayScope, ChangelogEntry
+from .input_schemas import BuildTask, BuildConfig, VersionConfig, ChangelogEntry
 
 
 def main():

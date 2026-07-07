@@ -6,7 +6,6 @@ Backend Agent 输入数据结构定义
 
 from datetime import datetime
 from typing import Any
-from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 

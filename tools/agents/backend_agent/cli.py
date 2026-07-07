@@ -64,7 +64,7 @@ def implement_model(
     result = agent.implement_data_model(data_structure)
 
     # 输出结果
-    click.echo(f"\n✓ 数据模型实现完成")
+    click.echo("\n✓ 数据模型实现完成")
     click.echo(f"  模型名称: {result['model_name']}")
     click.echo(f"  表名: {result['table_name']}")
     click.echo(f"  字段数量: {result['fields_count']}")
@@ -119,7 +119,7 @@ def implement_route(
     result = agent.implement_routes(service, [api_spec], model_name)
 
     # 输出结果
-    click.echo(f"\n✓ API 路由实现完成")
+    click.echo("\n✓ API 路由实现完成")
     click.echo(f"  端点: {endpoint}")
     click.echo(f"  方法: {method}")
     click.echo(f"  文件路径: {result['file_path']}")
@@ -149,7 +149,7 @@ def generate_test(service: str, model_name: str, output_dir: str) -> None:
     result = agent.write_tests(model_name, service)
 
     # 输出结果
-    click.echo(f"\n✓ 测试用例生成完成")
+    click.echo("\n✓ 测试用例生成完成")
     click.echo(f"  测试文件: {result['test_file']}")
     click.echo(f"  测试数量: {result['test_count']}")
     click.echo(f"  文件路径: {result['file_path']}")
@@ -213,20 +213,20 @@ def run_workflow(input_file: str, output_dir: str, verbose: bool) -> None:
 
     # 输出结果
     click.echo(f"\n{'='*60}")
-    click.echo(f"Backend Agent 工作流执行完成")
+    click.echo("Backend Agent 工作流执行完成")
     click.echo(f"{'='*60}")
-    click.echo(f"\n任务信息:")
+    click.echo("\n任务信息:")
     click.echo(f"  设计ID: {result.implementation.design_id}")
     click.echo(f"  任务ID: {result.implementation.task_id}")
     click.echo(f"  服务: {result.implementation.service}")
     click.echo(f"  状态: {result.implementation.status}")
 
-    click.echo(f"\n文件变更:")
+    click.echo("\n文件变更:")
     for file_info in result.implementation.files:
         click.echo(f"  [{file_info.type}] {file_info.path} - {file_info.description}")
 
     if result.test_result:
-        click.echo(f"\n测试结果:")
+        click.echo("\n测试结果:")
         click.echo(f"  通过: {result.test_result.tests.passed}")
         click.echo(f"  失败: {result.test_result.tests.failed}")
         click.echo(f"  总数: {result.test_result.tests.total}")
@@ -246,7 +246,7 @@ def run_workflow(input_file: str, output_dir: str, verbose: bool) -> None:
         for warning in result.warnings:
             click.echo(f"  ⚠ {warning}")
 
-    click.echo(f"\n下一步:")
+    click.echo("\n下一步:")
     for step in result.next_steps:
         click.echo(f"  → {step}")
 
