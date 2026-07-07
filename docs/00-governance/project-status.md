@@ -78,6 +78,7 @@
 - **项目灰度发布就绪状态持续验证通过**：2026-07-07 14:00 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
 - **项目灰度发布就绪状态持续验证通过**：2026-07-07 07:01 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；agents 77 个测试通过（product_agent 23 + orchestrator 54）；vote-service ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
 - **P2 多代理协同真实调度能力已实现**：Orchestrator 的 `execute_tasks` 方法从模拟执行升级为真实 Agent 调度。新增 `AgentDispatcher` 模块（支持动态导入 8 个 Agent 并调用其核心方法）、`WorkflowExecutor` 模块（基于 Kahn 算法实现拓扑排序、按依赖关系顺序执行任务、上游输出自动传递给下游）。Orchestrator 通过 `use_real_dispatch` 参数支持模拟/真实两种模式切换，向后兼容。54 个 Orchestrator 测试通过（含 11 个 dispatcher 测试、15 个 workflow_executor 测试、10 个多代理协同集成测试），全部 213 个 agents 测试通过，vote-service 54 个测试通过，content-service 62 个测试通过。
+- **首期内容包灰度发布流程完整性验证通过**：2026-07-07 16:00 进行的灰度发布流程验证确认：首期内容包初始化脚本（seed_initial_packages.py）存在且完整，可从 game/data/ 读取区域、阵营、NPC、任务、章节配置并创建两个区域内容包（铁卫城周边 + 灰谷废墟）；内容配置文件完整（core_region.json、expansion_region.json、faction_list.json、npc_list.json、quest_list.json、chapter_list.json），均带 schema_version 字段；灰度发布脚本（gray-release.sh）和发布验证脚本（verify-release.sh）完整可执行；所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；agents orchestrator 54 个测试通过；ruff 检查通过。项目已具备完整的灰度发布执行能力。
 
 ## 已确定事项
 
