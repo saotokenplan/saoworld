@@ -1,6 +1,9 @@
 import pytest
-from tools.agents.world_agent.world_agent import WorldAgent
-from tools.agents.world_agent.input_schemas import (
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from world_agent import WorldAgent
+from input_schemas import (
     WorldRules,
     RegionInfo,
     FactionInfo,
@@ -11,7 +14,7 @@ from tools.agents.world_agent.input_schemas import (
     DesignNote,
     WorldTaskInput,
 )
-from tools.agents.world_agent.error_handler import (
+from error_handler import (
     MissingSkeletonError,
     TemplateMismatchError,
     ContentViolationError,

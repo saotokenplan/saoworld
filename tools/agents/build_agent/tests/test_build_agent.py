@@ -1,6 +1,9 @@
 import pytest
-from tools.agents.build_agent.build_agent import BuildAgent
-from tools.agents.build_agent.input_schemas import (
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from build_agent import BuildAgent
+from input_schemas import (
     BuildTask, BuildConfig, VersionConfig, GrayScope, ChangelogEntry,
     ClientBuildConfig, ServerBuildConfig, ContentBuildConfig
 )

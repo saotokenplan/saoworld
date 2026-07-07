@@ -1,6 +1,9 @@
 import pytest
-from tools.agents.qa_agent.qa_agent import QAAgent
-from tools.agents.qa_agent.input_schemas import TestTask, AcceptanceCase, CodeChanges, DesignDocument, CodeChange, AcceptanceScenario, ScenarioStep
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from qa_agent import QAAgent
+from input_schemas import TestTask, AcceptanceCase, CodeChanges, DesignDocument, CodeChange, AcceptanceScenario, ScenarioStep
 
 
 def test_analyze_requirements_and_changes():
