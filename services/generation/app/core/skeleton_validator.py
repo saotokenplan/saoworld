@@ -1,8 +1,9 @@
-from typing import Any, TypedDict
+from typing import Any, TypedDict, cast
 
 import httpx
 
 from app.core.errors import GenerationErrorCodes, raise_generation_error
+from app.schemas.generation import ErrorDetail
 
 
 class WorldSkeleton(TypedDict):
@@ -30,7 +31,9 @@ class SkeletonValidator:
                 )
                 if response.status_code == 200:
                     data = response.json()
-                    return data.get("data")
+                    skeleton_data = data.get("data")
+                    if skeleton_data is not None:
+                        return cast(WorldSkeleton, skeleton_data)
                 return None
             except Exception:
                 return None
@@ -44,12 +47,12 @@ class SkeletonValidator:
                 request_id=request_id,
                 status_code=404,
                 details=[
-                    {
-                        "location": "system",
-                        "field": "world_skeleton",
-                        "issue": "not_found",
-                        "rejected_value": None,
-                    }
+                    ErrorDetail(
+                        location="system",
+                        field="world_skeleton",
+                        issue="not_found",
+                        rejected_value=None,
+                    )
                 ],
             )
         return skeleton
@@ -65,12 +68,12 @@ class SkeletonValidator:
                 request_id=request_id,
                 status_code=400,
                 details=[
-                    {
-                        "location": "system",
-                        "field": "forbidden_tags",
-                        "issue": "empty",
-                        "rejected_value": forbidden_tags,
-                    }
+                    ErrorDetail(
+                        location="system",
+                        field="forbidden_tags",
+                        issue="empty",
+                        rejected_value=forbidden_tags,
+                    )
                 ],
             )
 
@@ -87,13 +90,13 @@ class SkeletonValidator:
             request_id=request_id,
             status_code=400,
             details=[
-                {
-                    "location": "body",
-                    "field": "chapter_id",
-                    "issue": "invalid",
-                    "rejected_value": chapter_id,
-                }
-            ],
+                    ErrorDetail(
+                        location="body",
+                        field="chapter_id",
+                        issue="invalid",
+                        rejected_value=chapter_id,
+                    )
+                ],
         )
 
     async def validate_region_exists(
@@ -107,12 +110,12 @@ class SkeletonValidator:
                 request_id=request_id,
                 status_code=400,
                 details=[
-                    {
-                        "location": "body",
-                        "field": "region_id",
-                        "issue": "invalid",
-                        "rejected_value": region_id,
-                    }
+                    ErrorDetail(
+                        location="body",
+                        field="region_id",
+                        issue="invalid",
+                        rejected_value=region_id,
+                    )
                 ],
             )
 
