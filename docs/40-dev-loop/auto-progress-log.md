@@ -5,6 +5,27 @@
 
 ## 进度记录
 
+### auto-20260708-2300 - 研发闭环规划文档与 vote-service README 文档漂移修复
+
+**执行时间**：2026-07-08 23:00
+**状态**：已完成
+**任务描述**：修复 `docs/40-dev-loop/ai-coding-game-dev-loop-plan.md` 中 P2 阶段状态的文档漂移（此前仍停留在"P1 已完成、准备进入 P2"，9 个代理标记为"待实现"），以及 `services/vote/README.md` 中过时的 Alembic TODO 占位、不完整的 API 端点表和停留在早期最小切片的功能清单。
+
+**完成内容**：
+- ai-coding-game-dev-loop-plan.md：P2 阶段标记为已完成，9 个代理（含 Orchestrator）状态更新为"✅ 已实现"，闭环架构环节 8（构建发布）更新为已实现，实施分期 P0/P1/P2 标记为已完成，执行方式小节补充 P2 多代理协同模式说明
+- services/vote/README.md：迁移 TODO 替换为 `alembic upgrade head`，API 表从 3 个端点扩展为 9 个（4 玩家 + 5 运营），Implemented Features 更新为当前完整能力清单，Next Steps 移除已完成项
+- vote-service 54 个测试通过，无回归
+- 更新 project-status.md 追加本轮记录
+
+**产出文件**：
+- `docs/40-dev-loop/ai-coding-game-dev-loop-plan.md`（P2 阶段状态对齐）
+- `services/vote/README.md`（迁移命令、API 表、功能清单更新）
+- `docs/00-governance/project-status.md`（追加本轮记录）
+- `docs/40-dev-loop/auto-plan-20260708-2300.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260708-2300.md`（执行摘要）
+
+---
+
 ### auto-20260708-2100 - 事件发布异常处理修复与错误码完善
 
 **执行时间**：2026-07-08 21:00
