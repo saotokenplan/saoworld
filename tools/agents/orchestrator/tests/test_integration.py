@@ -7,12 +7,11 @@
 Orchestrator → WorkflowExecutor → AgentDispatcher → Mock Agent
 """
 
-import pytest
 from unittest.mock import MagicMock
 from datetime import datetime, timezone
 
 from ..orchestrator import Orchestrator
-from ..dispatcher import AgentDispatcher, AgentExecutionResult
+from ..dispatcher import AgentDispatcher
 from ..workflow_executor import WorkflowExecutor
 from ..input_schemas import (
     VersionBrief,
@@ -24,7 +23,6 @@ from ..input_schemas import (
     AgentStatus,
     AgentStatusItem,
 )
-from ..output_schemas import OrchestratorResult
 
 
 def _create_mock_dispatcher() -> tuple[AgentDispatcher, dict]:
@@ -577,8 +575,8 @@ class TestMultiAgentIntegration:
         assert len(logs) == 2
         assert len(failures) == 0
         # QA 应在 Backend 之后执行
-        backend_idx = next(i for i, l in enumerate(logs) if l.task_id == "T1")
-        qa_idx = next(i for i, l in enumerate(logs) if l.task_id == "T2")
+        backend_idx = next(i for i, log in enumerate(logs) if log.task_id == "T1")
+        qa_idx = next(i for i, log in enumerate(logs) if log.task_id == "T2")
         assert backend_idx < qa_idx
 
     def test_ops_agent_independent(self):

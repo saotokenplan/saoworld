@@ -5,7 +5,6 @@ Backend Agent 输出数据结构定义
 """
 
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 

@@ -178,7 +178,7 @@ class BackendAgent:
             "constraints_count": len(data_structure.constraints),
             "indexes_count": len(data_structure.indexes),
             "model_code": model_code,
-            "file_path": f"app/domain/models.py",
+            "file_path": "app/domain/models.py",
         }
 
         # 记录文件修改

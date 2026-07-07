@@ -9,7 +9,6 @@ Backend Agent 测试用例
 import pytest
 import sys
 import os
-from datetime import datetime
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
@@ -21,11 +20,6 @@ from input_schemas import (
     ExistingCode,
     FieldDefinition,
     APISpec,
-)
-from output_schemas import (
-    BackendResult,
-    ImplementationOutput,
-    TestResult,
 )
 from error_handler import BackendErrorHandler
 
