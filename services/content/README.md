@@ -1,6 +1,6 @@
-# world-service
+# content-service
 
-World service for the open-world AI game. Manages regions, factions, world state, and quest visibility.
+Content service for the open-world AI game. Manages content packages, gray release, full release, rollback, and version archiving.
 
 ## Tech Stack
 
@@ -10,21 +10,26 @@ World service for the open-world AI game. Manages regions, factions, world state
 - Alembic (migrations)
 - Pydantic v2
 - structlog (structured logging)
+- Prometheus metrics (prometheus-fastapi-instrumentator + business metrics)
 
 ## Directory Structure
 
 ```
-world-service/
+content-service/
 ├── app/
 │   ├── api/              # Route handlers
-│   ├── core/             # Config, database, shared utilities
+│   ├── core/             # Config, database, auth, errors, metrics, event publisher
 │   ├── domain/           # SQLAlchemy ORM models
 │   ├── repositories/     # Data access layer
 │   ├── schemas/          # Pydantic request/response models
-│   ├── tasks/            # Celery async tasks (future)
+│   ├── tasks/            # Celery async tasks
 │   └── main.py           # FastAPI application entry point
+├── alembic/              # Database migrations
+│   └── versions/         # Migration scripts
+├── scripts/              # Utility scripts (seed_initial_packages.py)
 ├── tests/                # pytest tests
 ├── pyproject.toml        # Project dependencies and tool config
+├── alembic.ini           # Alembic configuration
 └── .env.example          # Environment variable template
 ```
 
@@ -38,7 +43,7 @@ docker compose -f docker-compose.dev.yml up -d
 
 2. Create virtual environment and install dependencies:
 ```bash
-cd ../services/world
+cd ../services/content
 python -m venv .venv
 source .venv/bin/activate  # Linux/macOS
 pip install -e ".[dev]"
@@ -49,48 +54,78 @@ pip install -e ".[dev]"
 cp .env.example .env
 ```
 
-4. Start the development server:
+4. Run database migrations:
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
+alembic upgrade head
 ```
 
-5. Run tests:
+5. Seed initial content packages (optional):
+```bash
+python scripts/seed_initial_packages.py
+```
+
+6. Start the development server:
+```bash
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8002
+```
+
+7. Run tests:
 ```bash
 pytest
 ```
 
+8. Code quality checks:
+```bash
+ruff check .
+mypy app
+```
+
 ## API Endpoints
+
+### Player API
 
 | Method | Path | Description | Scope |
 |--------|------|-------------|-------|
 | GET | `/api/v1/health` | Health check | Public |
-| GET | `/api/v1/world/regions` | List visible regions | `world:read` |
-| GET | `/api/v1/world/regions/{region_id}` | Get region detail | `world:read` |
-| POST | `/api/v1/ops/world/regions` | Create region | ops |
-| POST | `/api/v1/ops/world/regions/{id}/status` | Update region status | ops |
+| GET | `/api/v1/content/updates` | List visible content packages (paginated) | `content:read` |
+| GET | `/api/v1/content/packages/{package_id}` | Get content package detail | `content:read` |
 
-API documentation available at `/docs` when `WORLD_DEBUG=true`.
+### Ops API
+
+| Method | Path | Description | Scope |
+|--------|------|-------------|-------|
+| POST | `/api/v1/ops/content-packages` | Create content package | `content:release` |
+| POST | `/api/v1/ops/content-packages/{id}/release` | Release content package (gray/full) | `content:release` |
+| POST | `/api/v1/ops/content-packages/{id}/rollback` | Rollback content package | `content:rollback` |
+
+API documentation available at `/docs` when `CONTENT_DEBUG=true`.
 
 ## Implemented Features
 
 - [x] Project structure and dependency configuration
-- [x] Health check endpoint
-- [x] Data model: Region
+- [x] Health check endpoint with service info
+- [x] Data models: ContentPackage, ReleaseRecord, RollbackRecord, AuditLog
 - [x] Pydantic schemas for request/response
-- [x] World repository with async queries
-- [x] GET /world/regions (visible regions, paginated)
-- [x] GET /world/regions/{region_id} (region detail)
-- [x] POST /ops/world/regions (create region)
-- [x] POST /ops/world/regions/{id}/status (update region status)
+- [x] Content repository with async queries
+- [x] Content package state machine: packaged → gray → live → archived, gray/live → rolled_back
+- [x] Gray release visibility (player_ids, player_percent, region_ids)
+- [x] GET /content/updates (visible packages, paginated, chapter filter)
+- [x] GET /content/packages/{id} (package detail)
+- [x] POST /ops/content-packages (create package)
+- [x] POST /ops/content-packages/{id}/release (gray/full release)
+- [x] POST /ops/content-packages/{id}/rollback (rollback package)
 - [x] JWT authentication with scope validation
 - [x] Structured logging with request_id and trace_id
 - [x] Unified response envelope per API spec
-- [x] Audit log persistence
+- [x] Audit log persistence (audit_logs table)
+- [x] Prometheus metrics (HTTP + business metrics)
+- [x] Event publisher (content.package.released, content.package.rolled_back)
+- [x] Alembic database migrations
+- [x] Seed initial packages script
 
 ## Next Steps
 
-- [ ] Initialize Alembic for database migrations
-- [ ] Add quest definitions and player quest progress
-- [ ] Add faction management
-- [ ] Add world event system
-- [ ] Add cache layer for frequently accessed world data
+- [ ] Add content package version diff/comparison
+- [ ] Add content dependency management
+- [ ] Add batch release/rollback support
+- [ ] Add release schedule support
