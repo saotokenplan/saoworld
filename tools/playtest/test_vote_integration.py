@@ -95,7 +95,8 @@ class TestVoteServiceIntegration:
         try:
             from app.core.auth import create_test_token
             from app.schemas.auth import Role
-            return create_test_token(user_id="test_ops_user", role=Role.OPS)
+            token: str = create_test_token(user_id="test_ops_user", role=Role.OPS)
+            return token
         finally:
             sys.path[:] = old_path
             _clean_app_modules()
@@ -109,7 +110,8 @@ class TestVoteServiceIntegration:
         try:
             from app.core.auth import create_test_token
             from app.schemas.auth import Role
-            return create_test_token(user_id="00000000-0000-0000-0000-000000000001", role=Role.PLAYER)
+            token: str = create_test_token(user_id="00000000-0000-0000-0000-000000000001", role=Role.PLAYER)
+            return token
         finally:
             sys.path[:] = old_path
             _clean_app_modules()
