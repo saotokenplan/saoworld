@@ -104,6 +104,7 @@
 - **agents 模块历史遗留 import bug 修复完成**：2026-07-08 12:03 修复 7 个 agent 模块的相对/绝对 import 不一致问题。问题模式：测试文件使用 `sys.path.insert(0, parent_dir)` 加绝对导入（`from world_agent import WorldAgent`），但 main 模块使用相对导入（`from .input_schemas import ...`），导致测试收集失败。修复方案：将 5 个 main 模块（world_agent / system_designer_agent / gameplay_agent / qa_agent / ops_agent）改为绝对导入，与 product_agent 一致；将 7 个测试文件中的内嵌 `from tools.agents.X.Y` 改为 `from Y`（配合 sys.path.insert 模式）。修复后 agents 总测试数从 77 提升到 213（+136）：world_agent 25、system_designer_agent 18、backend_agent 24、build_agent 17、gameplay_agent 16、ops_agent 20、qa_agent 16、product_agent 23、orchestrator 54。全部 8 个后端服务 375 个测试通过；content_check 28、loop_logging 36、playtest 15 测试通过；workers 29/36 通过（7 个 Redis 环境限制）；vote-service 与 tools/agents ruff 检查通过，vote-service mypy 检查通过。
 - **P3 阶段数据采集基础设施实现完成**：2026-07-09 14:00 完成 P3 阶段第一阶段数据采集基础设施实现。包括：1）扩展事件总线支持 7 种玩家行为事件类型（进入区域、离开区域、完成任务、互动NPC、提交投票、查看内容、消耗资源）；2）在 gateway-service 实现 `POST /api/v1/events/batch` 批量事件上报接口；3）在 ops-service 创建 player_events 存储表及索引（按玩家ID+时间、区域ID+时间、事件类型+时间）；4）实现事件消费与存储逻辑（workers/events/handlers.py 和 workers/tasks/player_event_ingestion.py）。P3 规划文档已更新进度状态，数据采集基础设施除客户端 SDK 外已全部就绪。
 - **P3 阶段数据分析引擎核心实现完成**：2026-07-09 15:00 完成 P3 阶段第二阶段数据分析引擎核心实现。包括：1）在 ops-service 创建 5 个数据分析表（player_metrics_daily、region_metrics_daily、quest_metrics_daily、vote_metrics_daily、analytics_reports）及 Alembic 迁移脚本；2）实现 AnalyticsRepository 仓储层（指标查询、upsert、报告管理）；3）实现 4 个分析查询 API（玩家指标、区域指标、趋势分析、分析报告）；4）在 workers 实现数据分析管道（数据清洗、玩家指标聚合、区域指标聚合、每日报告生成）；5）Celery Beat 新增每日分析任务调度。ops-service 48 个测试通过（+9），workers 29 个测试通过（7 个 Redis 环境限制），ruff 和 mypy 检查通过。P3 第二阶段数据清洗管道、统计分析任务、分析 API 三项核心任务完成，剩余分析仪表盘待实现。
+- **P3 阶段分析仪表盘实现完成**：2026-07-09 16:00 完成 P3 阶段第三阶段分析仪表盘实现。包括：1）在 ops-service 扩展数据分析 schema（AnalyticsOverview、RegionAnalyticsItem、QuestAnalyticsItem、VoteAnalyticsItem）；2）实现 4 个仪表盘 API（综合概览、区域分析、任务分析、投票分析）；3）扩展 Grafana 仪表盘配置（新增事件上报速率、分析查询速率、事件类型分布、查询类型分布 4 个面板）；4）编写分析仪表盘测试用例（9 个测试覆盖概览、区域、任务、投票分析及权限校验）。ops-service 57 个测试通过（+9），ruff 和 mypy 检查通过。P3 前三个阶段（数据采集、数据分析、分析仪表盘）已全部实现。
 
 ## 已确定事项
 
@@ -455,7 +456,7 @@
 21. ~~扩展端到端集成测试覆盖：实现投票完整流程（创建→提交→结算）和内容包完整流程（创建→发布→回滚）的集成测试~~ 已完成，vote-service 54 个测试全部通过，content-service 58 个测试通过
 22. ~~实现世界骨架快照 API 与内容生成校验：world-service 添加骨架快照创建/获取接口，generation-service 在生成请求创建前校验骨架存在、forbidden_tags 非空、chapter_id/region_id 有效~~ 已完成，world-service 46 个测试通过，generation-service 53 个测试通过
 23. ~~tools 模块工程化配置与 CI 门禁补全：为 content_check、loop_logging、agents、playtest 添加 pyproject.toml，扩展 CI 配置，补充门禁注册表~~ 已完成，4 个 tools 模块配置齐全，CI 任务扩展，新增 4 个门禁
-24. ~~启动 P3 阶段（线上运营闭环期）规划：创建 P3 阶段规划文档，定义数据回流机制、数据分析流程、洞察提取与需求生成闭环、实施路线图~~ 已完成，P3 规划文档已创建，第一阶段（数据采集基础设施）和第二阶段核心（数据清洗管道、统计分析任务、分析 API）已实现
+24. ~~启动 P3 阶段（线上运营闭环期）规划：创建 P3 阶段规划文档，定义数据回流机制、数据分析流程、洞察提取与需求生成闭环、实施路线图~~ 已完成，P3 规划文档已创建，第一阶段（数据采集基础设施）、第二阶段核心（数据清洗管道、统计分析任务、分析 API）、第三阶段（分析仪表盘）已全部实现
 
 ## 进入实施前的建议门槛
 
