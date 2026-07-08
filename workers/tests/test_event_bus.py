@@ -2,7 +2,6 @@ import pytest
 
 from workers.events.event_bus import EventBus
 from workers.events.event_publisher import EventPublisher
-from workers.events.schemas import EventType
 
 
 @pytest.mark.asyncio

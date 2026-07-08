@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Iterable, Mapping, MutableMapping, Callable
+from typing import Any, Mapping, MutableMapping, Callable
 
 import structlog
 

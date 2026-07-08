@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import MagicMock, patch
 
 
@@ -26,7 +25,7 @@ def test_generate_content_batch_success(mock_audit_log):
     mock_client.post_sync = MagicMock(return_value=mock_response)
 
     with patch("workers.tasks.content_generation.GenerationServiceClient", return_value=mock_client):
-        with patch("workers.tasks.content_generation.write_audit_log") as mock_audit:
+        with patch("workers.tasks.content_generation.write_audit_log"):
             result = generate_content_batch.delay(
                 template_type="npc",
                 count=5,
