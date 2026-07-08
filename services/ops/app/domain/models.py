@@ -108,3 +108,134 @@ class PlayerEvent(Base):
         Index("player_events_region_idx", "region_id", "occurred_at"),
         Index("player_events_type_idx", "event_type", "occurred_at"),
     )
+
+
+class PlayerMetricsDaily(Base):
+    __tablename__ = "player_metrics_daily"
+
+    metric_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    player_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    stat_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    total_session_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    regions_visited: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    quests_completed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    votes_submitted: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    npcs_interacted: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    events_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    detail_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        Index("player_metrics_daily_player_date_idx", "player_id", "stat_date", unique=True),
+    )
+
+
+class RegionMetricsDaily(Base):
+    __tablename__ = "region_metrics_daily"
+
+    metric_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    region_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    stat_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    unique_players: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    total_visits: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    total_duration_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    quests_started: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    quests_completed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    events_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    detail_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        Index("region_metrics_daily_region_date_idx", "region_id", "stat_date", unique=True),
+    )
+
+
+class QuestMetricsDaily(Base):
+    __tablename__ = "quest_metrics_daily"
+
+    metric_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    quest_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    stat_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    started_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    completed_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    failed_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    avg_duration_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    events_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    detail_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        Index("quest_metrics_daily_quest_date_idx", "quest_id", "stat_date", unique=True),
+    )
+
+
+class VoteMetricsDaily(Base):
+    __tablename__ = "vote_metrics_daily"
+
+    metric_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    vote_cycle_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    stat_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    total_votes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    unique_voters: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    candidate_votes_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    events_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    detail_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        Index("vote_metrics_daily_cycle_date_idx", "vote_cycle_id", "stat_date", unique=True),
+    )
+
+
+class AnalyticsReport(Base):
+    __tablename__ = "analytics_reports"
+
+    report_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    report_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending", server_default="pending")
+    summary_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    detail_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    generated_by: Mapped[str] = mapped_column(String(64), nullable=False, default="system")
+    trace_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    schema_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "report_type IN ('daily_summary', 'weekly_summary', 'monthly_summary', "
+            "'player_behavior', 'region_heatmap', 'quest_performance', 'vote_analysis', 'custom')",
+            name="analytics_reports_type_check",
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'generating', 'completed', 'failed')",
+            name="analytics_reports_status_check",
+        ),
+        Index("analytics_reports_period_idx", "report_type", "period_start", "period_end"),
+    )
