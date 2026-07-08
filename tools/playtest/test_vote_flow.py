@@ -8,8 +8,8 @@ class VoteFlowTest:
     def __init__(self, verbose: bool = False):
         self.verbose = verbose
         self.base_url = "http://localhost:8000"
-        self.vote_cycle_id = None
-        self.candidate_ids = []
+        self.vote_cycle_id: str | None = None
+        self.candidate_ids: list[str] = []
         self.player_id = str(uuid.uuid4())
         self.idempotency_key = str(uuid.uuid4())
 

@@ -5,7 +5,6 @@ os.environ["CONTENT_ENVIRONMENT"] = "test"
 os.environ["CONTENT_DATABASE_URL"] = "sqlite+aiosqlite:///file:playtest_content.db?mode=memory&cache=shared&uri=true"
 
 import uuid
-from datetime import datetime, timezone, timedelta
 from typing import AsyncGenerator
 
 import pytest
@@ -95,7 +94,8 @@ class TestContentServiceIntegration:
         try:
             from app.core.auth import create_test_token
             from app.schemas.auth import Role
-            return create_test_token(user_id="test_ops_user", role=Role.OPS)
+            token: str = create_test_token(user_id="test_ops_user", role=Role.OPS)
+            return token
         finally:
             sys.path[:] = old_path
             _clean_app_modules()
@@ -109,7 +109,8 @@ class TestContentServiceIntegration:
         try:
             from app.core.auth import create_test_token
             from app.schemas.auth import Role
-            return create_test_token(user_id="00000000-0000-0000-0000-000000000001", role=Role.PLAYER)
+            token: str = create_test_token(user_id="00000000-0000-0000-0000-000000000001", role=Role.PLAYER)
+            return token
         finally:
             sys.path[:] = old_path
             _clean_app_modules()
