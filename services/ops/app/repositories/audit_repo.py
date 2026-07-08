@@ -8,10 +8,12 @@ from app.domain.models import AuditLog
 ACTION_DASHBOARD_VIEW = "dashboard_view"
 ACTION_OPS_ACTION_QUERY = "ops_action_query"
 ACTION_SYSTEM_STATUS_QUERY = "system_status_query"
+ACTION_ANALYTICS_QUERY = "analytics_query"
 
 RESOURCE_DASHBOARD = "dashboard"
 RESOURCE_OPS_ACTION = "ops_action"
 RESOURCE_SYSTEM = "system"
+RESOURCE_ANALYTICS = "analytics"
 
 
 class AuditRepository:

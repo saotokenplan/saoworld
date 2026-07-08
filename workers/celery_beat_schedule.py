@@ -16,4 +16,9 @@ beat_schedule = {
         "schedule": crontab(hour=2, minute=0),
         "kwargs": {},
     },
+    "daily-analytics-pipeline": {
+        "task": "workers.tasks.scheduled_tasks.daily_analytics_pipeline",
+        "schedule": crontab(hour=4, minute=0),
+        "kwargs": {},
+    },
 }
