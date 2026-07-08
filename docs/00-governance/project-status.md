@@ -25,7 +25,7 @@
 - 当前阶段：**灰度发布就绪**（首期内容包灰度发布准备全部完成，项目已具备完整端到端玩法闭环能力）
 - 当前形态：八大核心后端服务（vote、world、content、generation、review、player、ops、gateway）+ workers Celery + CI/CD + Godot 客户端完整，投票链路、内容链路、审核链路、API 网关、运营后台、客户端框架就绪，客户端与后端 API 联调封装完善，首期内容实例化完成（世界观、区域、阵营、NPC、任务、章节），内容包打包与发布流程已实现，端到端集成验证已完成，首期内容包初始化脚本已验证，发布验证脚本已完善，Runbook 文档体系已完善（16个门禁 + 6个运维操作），遥测基础设施已初始化（metrics、logs、alerts、dashboards），三层 Loop 基础设施已实现，P2 多代理协同真实调度能力已实现（AgentDispatcher + WorkflowExecutor + 54个Orchestrator测试通过）
 - 运维操作 Runbook 已补全：灰度发布、全量发布、内容包回滚、服务部署、数据库迁移、首期内容初始化 6 个运维操作 Runbook 全部创建完成，为灰度发布和后续运维操作提供标准化流程指导
-- 当前目标：完成首期内容包灰度发布，验证端到端玩法流程，同步启动 Sprint 1 核心玩法技术设计与预研，进入内容生成与投票驱动世界更新的闭环
+- 当前目标：完成首期内容包灰度发布，验证端到端玩法流程，同步启动 Sprint 1 核心玩法技术设计与预研，启动 P3 阶段（线上运营闭环期）规划，进入内容生成与投票驱动世界更新的闭环
 
 ## 当前结论
 
@@ -97,6 +97,7 @@
 - **项目灰度发布就绪状态持续验证通过**：2026-07-09 04:00 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；agents orchestrator 54 个测试通过；vote-service ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
 - **项目灰度发布就绪状态持续验证通过**：2026-07-09 05:00 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；agents 77 个测试通过（product_agent 23 + orchestrator 54）；vote-service ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
 - **项目灰度发布就绪状态持续验证通过**：2026-07-09 06:00 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；agents 77 个测试通过（product_agent 23 + orchestrator 54）；vote-service ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
+- **P3 阶段（线上运营闭环期）规划已启动**：创建了 `docs/40-dev-loop/p3-online-ops-plan.md` 规划文档，定义了阶段目标（数据自动回流、洞察自动提取、需求自动生成、闭环持续演进）、核心闭环架构（数据采集→存储→分析→洞察→需求→生产→审核发布→上线）、6 个关键技术组件（数据采集层、数据存储层、数据分析层、洞察提取层、需求生成层、闭环执行层）、数据回流机制（事件格式规范、数据保留策略）、数据驱动需求流程（8 个环节）、关键接口设计（事件上报、分析查询、洞察管理、需求生成）、8 周实施路线图（4 个里程碑）、关键指标与成功标准、风险与应对策略。规划文档状态为 draft，待后续迭代逐步完善。
 - **项目灰度发布就绪状态持续验证通过**：2026-07-09 07:00 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；agents 77 个测试通过（product_agent + orchestrator）；vote-service ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
 - **CI 配置补全与全量验证完成**：2026-07-09 09:00 完成 CI 流水线补全与全模块验证。GitHub Actions CI 配置已补充 agents 和 playtest 到 lint、type-check、test 三个矩阵，实现所有 8 个后端服务 + workers + 4 个 tools 模块（content_check、loop_logging、agents、playtest）的完整 CI 覆盖。agents 模块 mypy 配置优化（添加 Pydantic 插件、explicit_package_bases、ignore_missing_imports），playtest 模块修复 7 个 lint 问题和 mypy 类型注解问题。全量验证结果：6 个后端服务 299 测试通过、content_check 28、loop_logging 36、playtest 15、agents/orchestrator 54，合计 432 个测试通过。门禁注册表新增 G-UNIT-012（Agents Unit Tests）。项目持续保持灰度发布就绪状态。
 - **首期内容包灰度发布流程验证通过**：2026-07-09 11:00 完成首期内容包灰度发布流程验证。验证内容包括：content-service 62 个测试全部通过（含内容包创建、灰度发布、全量发布、回滚、灰度可见性判断）；playtest 15 个端到端测试全部通过（含投票完整流程、内容包完整流程）；所有 8 个后端服务 375 个测试全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；agents/orchestrator 54 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）。seed_initial_packages.py 脚本验证通过，可正确创建铁卫城周边和灰谷废墟两个区域内容包。项目已具备完整的首期内容包灰度发布能力。
@@ -452,6 +453,7 @@
 21. ~~扩展端到端集成测试覆盖：实现投票完整流程（创建→提交→结算）和内容包完整流程（创建→发布→回滚）的集成测试~~ 已完成，vote-service 54 个测试全部通过，content-service 58 个测试通过
 22. ~~实现世界骨架快照 API 与内容生成校验：world-service 添加骨架快照创建/获取接口，generation-service 在生成请求创建前校验骨架存在、forbidden_tags 非空、chapter_id/region_id 有效~~ 已完成，world-service 46 个测试通过，generation-service 53 个测试通过
 23. ~~tools 模块工程化配置与 CI 门禁补全：为 content_check、loop_logging、agents、playtest 添加 pyproject.toml，扩展 CI 配置，补充门禁注册表~~ 已完成，4 个 tools 模块配置齐全，CI 任务扩展，新增 4 个门禁
+24. 启动 P3 阶段（线上运营闭环期）规划：创建 P3 阶段规划文档，定义数据回流机制、数据分析流程、洞察提取与需求生成闭环、实施路线图
 
 ## 进入实施前的建议门槛
 
