@@ -91,6 +91,7 @@
 - **后端服务 README 文档统一完善完成**：2026-07-09 00:00 完成了除 vote-service 外的 7 个后端服务 README 文档的统一完善，修复文档漂移问题。包括：world-service（补充骨架快照 API、状态机、metrics 等功能说明，修正 Next Steps 中 Alembic 已完成项）、content-service（补充玩家接口、灰度发布、状态机、事件发布等功能说明，修正 Next Steps）、generation-service（补充骨架校验、状态机、事件发布等功能说明，修正 Next Steps）、review-service（从简略版本重构为完整 README，含目录结构、API 表格、功能清单、Next Steps）、player-service（从简略版本重构为完整 README，含玩家 API + 运营 API 共 8 个端点、功能清单、Next Steps）、ops-service（从简略版本重构为完整 README，含 5 个运营 API 端点、功能清单、Next Steps）、gateway-service（补充 player/ops 代理路由、Alembic 迁移说明、审计日志、目录结构、Next Steps）。所有 8 个后端服务测试全部通过（vote 54 + world 49 + content 62 + generation 56 + review 41 + player 37 + ops 39 + gateway 37 = 375 个），无回归。
 - **项目灰度发布就绪状态持续验证通过**：2026-07-09 02:00 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；vote-service ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
 - **项目灰度发布就绪状态持续验证通过**：2026-07-09 03:00 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；vote-service ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
+- **项目灰度发布就绪状态持续验证通过**：2026-07-09 04:00 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；agents orchestrator 54 个测试通过；vote-service ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
 
 ## 已确定事项
 
