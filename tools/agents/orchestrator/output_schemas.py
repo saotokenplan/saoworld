@@ -2,6 +2,44 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
 
 
+class InsightItem(BaseModel):
+    insight_id: str = Field(description="洞察ID")
+    type: str = Field(description="洞察类型：player_behavior/region_heat/quest_completion/vote_tendency/economy")
+    title: str = Field(description="洞察标题")
+    description: str = Field(description="洞察描述")
+    confidence: float = Field(description="置信度 0-1")
+    impact: float = Field(description="影响力 0-1")
+    novelty: float = Field(description="新颖度 0-1")
+    quality_score: float = Field(description="质量评分 0-1")
+    source_data: Dict[str, str] = Field(default_factory=dict, description="来源数据")
+    created_at: str = Field(description="创建时间")
+
+
+class RequirementItem(BaseModel):
+    requirement_id: str = Field(description="需求ID")
+    title: str = Field(description="需求标题")
+    description: str = Field(description="需求描述")
+    priority: str = Field(description="优先级：P0/P1/P2/P3")
+    target_scope: str = Field(description="目标范围")
+    estimated_effort: str = Field(description="预估工作量")
+    acceptance_criteria: List[str] = Field(default_factory=list, description="验收标准")
+    source_insight_ids: List[str] = Field(default_factory=list, description="来源洞察ID")
+    quality_score: float = Field(description="质量评分 0-1")
+    status: str = Field(default="draft", description="状态：draft/approved/implemented")
+    created_at: str = Field(description="创建时间")
+
+
+class ClosedLoopResult(BaseModel):
+    loop_id: str = Field(description="闭环执行ID")
+    insights_generated: int = Field(description="生成的洞察数量")
+    requirements_generated: int = Field(description="生成的需求数量")
+    content_generated: int = Field(description="生成的内容数量")
+    total_duration_ms: int = Field(description="总耗时（毫秒）")
+    status: str = Field(description="状态：completed/failed/partial")
+    insights: List[InsightItem] = Field(default_factory=list, description="洞察列表")
+    requirements: List[RequirementItem] = Field(default_factory=list, description="需求列表")
+
+
 class TaskAssignment(BaseModel):
     assignment_id: str = Field(description="分配ID")
     task_id: str = Field(description="任务ID")

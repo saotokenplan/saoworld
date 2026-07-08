@@ -108,11 +108,12 @@ class WorkflowExecutor:
             "type": task.type,
         }
 
-        # 将上游任务的输出作为当前任务的输入
+        if task.params:
+            base_input["params"] = task.params
+
         for dep_id in task.dependencies:
             if dep_id in upstream_results and upstream_results[dep_id].success:
                 dep_output = upstream_results[dep_id].output
-                # 使用依赖任务 ID 作为 key 避免冲突
                 base_input[f"input_from_{dep_id}"] = dep_output
 
         return base_input

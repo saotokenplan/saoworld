@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Any
 from uuid import uuid4
-from input_schemas import WorldTaskInput
+from input_schemas import WorldTaskInput, RequirementItem
 from output_schemas import (
     NPCConfig,
     QuestConfig,
@@ -402,6 +402,164 @@ class WorldAgent:
             return {"action": "revise_content", "status": "needs_revision", "feedback": "根据审核反馈调整内容"}
         else:
             return {"action": "unknown", "status": review_result}
+
+    def apply_requirement_to_content(self, requirement: RequirementItem) -> Dict[str, Any]:
+        """根据需求包调整生成的内容
+
+        Args:
+            requirement: 需求包
+
+        Returns:
+            应用结果
+        """
+        scope = requirement.target_scope
+        applied: Dict[str, Any] = {
+            "requirement_id": requirement.requirement_id,
+            "scope": scope,
+            "applied_to": [],
+        }
+
+        if scope in ("world", "npc") and self.generated_npcs:
+            for npc in self.generated_npcs:
+                if "探索" in requirement.title or "区域" in requirement.title:
+                    npc.skills.append("exploration")
+                    npc.dialogs["quest_offer"] = (
+                        f"听说你对探索很感兴趣？我这里有一个关于{requirement.title[:10]}的任务..."
+                    )
+                applied["applied_to"].append(f"npc:{npc.npc_id}")
+
+        if scope in ("world", "quest") and self.generated_quests:
+            for quest in self.generated_quests:
+                if "支线" in requirement.description or "完成率" in requirement.description:
+                    quest.type = "side"
+                    quest.rewards["gold"] = int(quest.rewards.get("gold", 100) * 1.2)
+                    quest.rewards["exp"] = int(quest.rewards.get("exp", 500) * 1.2)
+                applied["applied_to"].append(f"quest:{quest.quest_id}")
+
+        if scope in ("world", "region") and self.generated_regions:
+            for region in self.generated_regions:
+                if "热门" in requirement.title or "访问量" in requirement.description:
+                    region.description += (
+                        " 这里最近变得异常热闹，各地的冒险者都被吸引而来。"
+                    )
+                applied["applied_to"].append(f"region:{region.region_id}")
+
+        return applied
+
+    def generate_from_requirement(
+        self,
+        requirement: RequirementItem,
+        task_input: WorldTaskInput,
+    ) -> Dict[str, Any]:
+        """基于需求包生成内容
+
+        Args:
+            requirement: 需求包
+            task_input: 基础任务输入（含世界规则、骨架快照等）
+
+        Returns:
+            生成结果
+        """
+        scope = requirement.target_scope
+
+        content_types: List[str] = []
+        if scope == "all":
+            content_types = ["npc", "quest", "region", "event"]
+        elif scope == "npc":
+            content_types = ["npc"]
+        elif scope == "quest":
+            content_types = ["quest"]
+        elif scope == "world":
+            content_types = ["npc", "quest", "region"]
+        else:
+            content_types = [scope] if scope in ("npc", "quest", "region", "event") else ["npc"]
+
+        self.read_input_data(task_input)
+        self.validate_input(task_input)
+        self.match_template(task_input)
+
+        for ct in content_types:
+            self.generate_content(task_input, ct)
+
+        self.apply_requirement_to_content(requirement)
+        self.apply_rules(task_input)
+        self.refine_text(task_input)
+        self.package_content(task_input)
+        self.submit_for_review(task_input)
+
+        return {
+            "content_types": content_types,
+            "npc_count": len(self.generated_npcs),
+            "quest_count": len(self.generated_quests),
+            "region_count": len(self.generated_regions),
+            "event_count": len(self.generated_events),
+            "content_package_id": self.content_package.content_package_id if self.content_package else "",
+            "requirement_applied": True,
+        }
+
+    def execute_requirement_driven_generation(
+        self,
+        task_id: str = "",
+        params: Optional[Dict[str, Any]] = None,
+        input_from_requirement_task: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Orchestrator 调用入口：需求驱动的内容生成
+
+        支持从上游需求生成任务获取输入
+        """
+        from input_schemas import WorldRules, SkeletonSnapshot
+
+        if params is None:
+            params = {}
+
+        requirements = []
+        if input_from_requirement_task and "requirements" in input_from_requirement_task:
+            requirements = input_from_requirement_task["requirements"]
+
+        requirement_data = requirements[0] if requirements else {
+            "requirement_id": "req_unknown",
+            "title": "数据驱动内容生成",
+            "description": "基于数据洞察生成的内容",
+            "priority": "P2",
+            "target_scope": params.get("target_scope", "world"),
+            "quality_score": 0.7,
+        }
+
+        requirement = RequirementItem(**requirement_data)
+
+        world_rules = WorldRules(
+            world_version="1.0",
+            chapter_id=params.get("chapter_id", "chapter_01"),
+            regions=[],
+            factions=[],
+            forbidden_tags=["暴力", "色情"],
+        )
+
+        skeleton = SkeletonSnapshot(
+            skeleton_id="skel_default",
+            world_version="1.0",
+            chapter_id=world_rules.chapter_id,
+            regions=[],
+            factions=[],
+            forbidden_tags=["暴力", "色情"],
+            status="active",
+        )
+
+        task_input = WorldTaskInput(
+            world_rules=world_rules,
+            skeleton_snapshot=skeleton,
+            requirement=requirement,
+        )
+
+        result = self.generate_from_requirement(requirement, task_input)
+
+        return {
+            "task_id": task_id,
+            "requirement_id": requirement.requirement_id,
+            "content_generated": True,
+            **result,
+        }
 
     def execute_world_generation_flow(
         self,

@@ -1,6 +1,7 @@
 import uuid
+import random
 from datetime import datetime, timezone
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 from input_schemas import (
     MetricsData, LogData, ExceptionData, FeedbackData, OpsTask,
     ServiceMetrics, SystemMetrics, GameplayMetrics
@@ -428,6 +429,302 @@ class OpsAgent:
         )
 
         return HealthReport(health_report=report_data)
+
+    def extract_insights(
+        self,
+        analytics_data: Optional[Dict[str, Any]] = None,
+        insight_types: Optional[List[str]] = None,
+        min_quality_score: float = 0.6,
+        max_insights: int = 10,
+    ) -> Dict[str, Any]:
+        """从分析数据中提取洞察
+
+        Args:
+            analytics_data: 分析数据（模拟数据）
+            insight_types: 洞察类型列表
+            min_quality_score: 最小质量评分
+            max_insights: 最大洞察数量
+
+        Returns:
+            洞察提取结果
+        """
+        if insight_types is None:
+            insight_types = ["player_behavior", "region_heat", "quest_completion", "vote_tendency", "economy"]
+
+        if analytics_data is None:
+            analytics_data = {
+                "daily_active_users": 1200,
+                "vote_participation_rate": 0.65,
+                "quest_completion_rate": 0.72,
+                "region_visits": {
+                    "region_iron_guard": 850,
+                    "region_ash_valley": 620,
+                },
+                "top_quests": ["quest_rescue_01", "quest_blacksmith_01"],
+                "npc_interactions": {"npc_blacksmith_01": 320, "npc_farmer_01": 280},
+            }
+
+        insights: List[Dict[str, Any]] = []
+        now = datetime.now(timezone.utc).isoformat()
+
+        insight_templates = [
+            {
+                "type": "player_behavior",
+                "title": "玩家参与度呈上升趋势",
+                "description": "过去7天日活跃用户增长15%，投票参与率稳定在65%以上",
+                "confidence": 0.85,
+                "impact": 0.7,
+                "novelty": 0.6,
+            },
+            {
+                "type": "region_heat",
+                "title": "铁卫城周边区域访问量最高",
+                "description": "铁卫城周边区域访问量占总访问量的58%，灰谷废墟占比42%",
+                "confidence": 0.92,
+                "impact": 0.75,
+                "novelty": 0.4,
+            },
+            {
+                "type": "quest_completion",
+                "title": "主线任务完成率高于支线",
+                "description": "主线任务平均完成率85%，支线任务平均完成率62%，建议增加支线吸引力",
+                "confidence": 0.88,
+                "impact": 0.65,
+                "novelty": 0.55,
+            },
+            {
+                "type": "vote_tendency",
+                "title": "玩家偏好探索向内容",
+                "description": "近三轮投票中，探索新区域类候选平均得票率最高（45%），战斗类仅20%",
+                "confidence": 0.78,
+                "impact": 0.8,
+                "novelty": 0.7,
+            },
+            {
+                "type": "economy",
+                "title": "金币产出消耗基本平衡",
+                "description": "玩家日均金币收入约500，消耗约450，经济系统处于健康区间",
+                "confidence": 0.82,
+                "impact": 0.6,
+                "novelty": 0.5,
+            },
+        ]
+
+        for template in insight_templates:
+            if template["type"] not in insight_types:
+                continue
+
+            quality_score = (
+                template["confidence"] * 0.3
+                + template["impact"] * 0.35
+                + template["novelty"] * 0.2
+                + random.uniform(0, 0.15)
+            )
+
+            if quality_score < min_quality_score:
+                continue
+
+            insight = {
+                "insight_id": f"insight_{uuid.uuid4().hex[:8]}",
+                "type": template["type"],
+                "title": template["title"],
+                "description": template["description"],
+                "confidence": round(template["confidence"], 2),
+                "impact": round(template["impact"], 2),
+                "novelty": round(template["novelty"], 2),
+                "quality_score": round(quality_score, 3),
+                "source_data": {"analytics_report_id": "report_daily_20260709"},
+                "created_at": now,
+            }
+            insights.append(insight)
+
+            if len(insights) >= max_insights:
+                break
+
+        insights.sort(key=lambda x: x["quality_score"], reverse=True)
+
+        return {
+            "insights_count": len(insights),
+            "insights": insights,
+            "quality_distribution": {
+                "high": sum(1 for i in insights if i["quality_score"] >= 0.8),
+                "medium": sum(1 for i in insights if 0.6 <= i["quality_score"] < 0.8),
+                "low": sum(1 for i in insights if i["quality_score"] < 0.6),
+            },
+            "generated_at": now,
+        }
+
+    def generate_requirements(
+        self,
+        insights: Optional[List[Dict[str, Any]]] = None,
+        target_scope: str = "world",
+        priority_threshold: str = "P2",
+        max_requirements: int = 10,
+    ) -> Dict[str, Any]:
+        """根据洞察生成需求包
+
+        Args:
+            insights: 洞察列表
+            target_scope: 目标范围
+            priority_threshold: 优先级阈值
+            max_requirements: 最大需求数量
+
+        Returns:
+            需求生成结果
+        """
+        if insights is None:
+            extraction_result = self.extract_insights()
+            insights = extraction_result["insights"]
+
+        priority_order = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
+        threshold_level = priority_order.get(priority_threshold, 2)
+
+        requirements: List[Dict[str, Any]] = []
+        now = datetime.now(timezone.utc).isoformat()
+
+        for insight in insights:
+            quality = insight["quality_score"]
+            if quality >= 0.85:
+                priority = "P0"
+            elif quality >= 0.75:
+                priority = "P1"
+            elif quality >= 0.65:
+                priority = "P2"
+            else:
+                priority = "P3"
+
+            if priority_order.get(priority, 3) > threshold_level:
+                continue
+
+            req_type = insight["type"]
+            if req_type == "player_behavior":
+                title = f"增加{insight['title'][:10]}相关的玩家引导内容"
+                description = f"基于玩家行为洞察：{insight['description']}，建议优化新手引导和日常任务系统"
+                scope = "quest"
+                effort = "2人日"
+                acceptance = [
+                    "新手引导流程优化完成",
+                    "日常任务系统调整完成",
+                    "玩家留存率提升5%",
+                ]
+            elif req_type == "region_heat":
+                title = "为热门区域增加更多探索内容"
+                description = f"基于区域热度洞察：{insight['description']}，建议在高访问量区域增加支线任务和隐藏内容"
+                scope = "world"
+                effort = "3人日"
+                acceptance = [
+                    "新增3个支线任务",
+                    "新增2个隐藏区域",
+                    "区域停留时间提升10%",
+                ]
+            elif req_type == "quest_completion":
+                title = "优化支线任务设计提升完成率"
+                description = f"基于任务完成率洞察：{insight['description']}，建议优化支线任务的引导和奖励设计"
+                scope = "quest"
+                effort = "2人日"
+                acceptance = [
+                    "支线任务引导优化完成",
+                    "支线奖励体系调整完成",
+                    "支线完成率提升至70%",
+                ]
+            elif req_type == "vote_tendency":
+                title = "增加探索向内容生成比例"
+                description = f"基于投票倾向洞察：{insight['description']}，建议在后续内容生成中增加探索类内容占比"
+                scope = "world"
+                effort = "1人日"
+                acceptance = [
+                    "内容生成模板调整完成",
+                    "探索类内容占比提升至50%",
+                    "投票参与率保持稳定",
+                ]
+            elif req_type == "economy":
+                title = "优化经济系统增加金币消耗途径"
+                description = f"基于经济洞察：{insight['description']}，建议增加更多金币消耗途径以维持经济平衡"
+                scope = "world"
+                effort = "2人日"
+                acceptance = [
+                    "新增2个金币消耗系统",
+                    "经济系统保持平衡",
+                    "玩家满意度不下降",
+                ]
+            else:
+                continue
+
+            quality_score = quality * 0.9 + random.uniform(0, 0.1)
+
+            requirement = {
+                "requirement_id": f"req_{uuid.uuid4().hex[:8]}",
+                "title": title,
+                "description": description,
+                "priority": priority,
+                "target_scope": scope,
+                "estimated_effort": effort,
+                "acceptance_criteria": acceptance,
+                "source_insight_ids": [insight["insight_id"]],
+                "quality_score": round(quality_score, 3),
+                "status": "draft",
+                "created_at": now,
+            }
+
+            if target_scope == "all" or scope == target_scope:
+                requirements.append(requirement)
+
+        requirements.sort(key=lambda x: (priority_order.get(x["priority"], 3), -x["quality_score"]))
+
+        requirements = requirements[:max_requirements]
+
+        return {
+            "requirements_count": len(requirements),
+            "requirements": requirements,
+            "priority_distribution": {
+                "P0": sum(1 for r in requirements if r["priority"] == "P0"),
+                "P1": sum(1 for r in requirements if r["priority"] == "P1"),
+                "P2": sum(1 for r in requirements if r["priority"] == "P2"),
+                "P3": sum(1 for r in requirements if r["priority"] == "P3"),
+            },
+            "generated_at": now,
+        }
+
+    def execute_insight_extraction(
+        self,
+        task_id: str = "",
+        params: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Orchestrator 调用入口：洞察提取任务"""
+        if params is None:
+            params = {}
+
+        return self.extract_insights(
+            insight_types=params.get("insight_types"),
+            min_quality_score=params.get("min_quality_score", 0.6),
+            max_insights=params.get("max_insights", 10),
+        )
+
+    def execute_requirement_generation(
+        self,
+        task_id: str = "",
+        params: Optional[Dict[str, Any]] = None,
+        input_from_insight_task: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Orchestrator 调用入口：需求生成任务
+
+        支持从上游洞察提取任务获取输入
+        """
+        if params is None:
+            params = {}
+
+        insights = None
+        if input_from_insight_task and "insights" in input_from_insight_task:
+            insights = input_from_insight_task["insights"]
+
+        return self.generate_requirements(
+            insights=insights,
+            target_scope=params.get("target_scope", "world"),
+            priority_threshold=params.get("priority_threshold", "P2"),
+            max_requirements=params.get("max_requirements", 10),
+        )
 
     def execute_ops_workflow(
         self,

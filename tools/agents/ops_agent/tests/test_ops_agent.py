@@ -370,3 +370,88 @@ def test_error_handler_generic_error():
     from error_handler import OpsErrorHandler
     handler = OpsErrorHandler()
     handler.handle_error("unknown_type", "未知错误类型")
+
+
+def test_extract_insights_from_reports():
+    agent = OpsAgent()
+    result = agent.extract_insights(["docs/reports/analytics-2026-q2.md"])
+
+    assert "insights" in result
+    assert "insights_count" in result
+    assert len(result["insights"]) > 0
+    for insight in result["insights"]:
+        assert insight["insight_id"].startswith("insight_")
+        assert insight["title"] is not None
+        assert insight["type"] is not None
+        assert 0 <= insight["confidence"] <= 1
+        assert 0 <= insight["quality_score"] <= 1
+
+
+def test_extract_insights_empty():
+    agent = OpsAgent()
+    result = agent.extract_insights([])
+
+    assert result["insights_count"] == 5
+    assert len(result["insights"]) == 5
+
+
+def test_generate_requirements_from_insights():
+    agent = OpsAgent()
+    insight_result = agent.extract_insights([])
+    insights = insight_result["insights"]
+
+    result = agent.generate_requirements(insights)
+
+    assert "requirements" in result
+    assert len(result["requirements"]) > 0
+    for req in result["requirements"]:
+        assert req["requirement_id"].startswith("req_")
+        assert req["title"] is not None
+        assert req["priority"] in ("P0", "P1", "P2", "P3")
+        assert req["target_scope"] in ("world", "npc", "quest", "region", "event", "all")
+        assert isinstance(req["acceptance_criteria"], list)
+        assert 0 <= req["quality_score"] <= 1
+
+
+def test_generate_requirements_empty_insights():
+    agent = OpsAgent()
+    result = agent.generate_requirements([])
+
+    assert len(result["requirements"]) == 0
+
+
+def test_execute_insight_extraction():
+    agent = OpsAgent()
+    result = agent.execute_insight_extraction(
+        task_id="task_insight_001",
+        params={"chapter_id": "chapter_01"},
+    )
+
+    assert result["insights_count"] > 0
+    assert len(result["insights"]) > 0
+
+
+def test_execute_requirement_generation():
+    agent = OpsAgent()
+    insight_result = agent.extract_insights([])
+
+    result = agent.execute_requirement_generation(
+        task_id="task_req_001",
+        params={"max_requirements": 3},
+        input_from_insight_task=insight_result,
+    )
+
+    assert result["requirements_count"] > 0
+    assert result["requirements_count"] <= 3
+    assert len(result["requirements"]) > 0
+
+
+def test_execute_requirement_generation_no_upstream():
+    agent = OpsAgent()
+    result = agent.execute_requirement_generation(
+        task_id="task_req_002",
+        params={"max_requirements": 2},
+    )
+
+    assert result["requirements_count"] == 2
+

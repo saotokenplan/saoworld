@@ -13,6 +13,7 @@ from input_schemas import (
     SkeletonSnapshot,
     DesignNote,
     WorldTaskInput,
+    RequirementItem,
 )
 from error_handler import (
     MissingSkeletonError,
@@ -385,3 +386,131 @@ def test_default_template_types():
         template = agent._get_default_template(content_type)
         assert template["type"] == content_type
         assert template["template_id"].startswith("tpl_")
+
+
+def test_generate_from_requirement_world_scope():
+    task_input = _make_valid_task_input()
+    requirement = RequirementItem(
+        requirement_id="req_001",
+        title="热门区域探索需求",
+        description="玩家在该区域访问量高，需要增加支线",
+        priority="P1",
+        target_scope="world",
+        quality_score=0.85,
+    )
+    agent = WorldAgent()
+
+    result = agent.generate_from_requirement(requirement, task_input)
+
+    assert result["requirement_applied"] is True
+    assert "npc" in result["content_types"]
+    assert "quest" in result["content_types"]
+    assert "region" in result["content_types"]
+    assert result["npc_count"] == 1
+    assert result["quest_count"] == 1
+    assert result["region_count"] == 1
+    assert result["content_package_id"].startswith("pkg_")
+
+
+def test_generate_from_requirement_npc_scope():
+    task_input = _make_valid_task_input()
+    requirement = RequirementItem(
+        requirement_id="req_002",
+        title="新增NPC需求",
+        description="需要更多探索向NPC",
+        priority="P2",
+        target_scope="npc",
+        quality_score=0.7,
+    )
+    agent = WorldAgent()
+
+    result = agent.generate_from_requirement(requirement, task_input)
+
+    assert result["content_types"] == ["npc"]
+    assert result["npc_count"] == 1
+    assert result["quest_count"] == 0
+    assert result["region_count"] == 0
+
+
+def test_generate_from_requirement_quest_scope():
+    task_input = _make_valid_task_input()
+    requirement = RequirementItem(
+        requirement_id="req_003",
+        title="支线任务补充",
+        description="支线任务完成率低，需要增加奖励",
+        priority="P2",
+        target_scope="quest",
+        quality_score=0.75,
+    )
+    agent = WorldAgent()
+
+    result = agent.generate_from_requirement(requirement, task_input)
+
+    assert result["content_types"] == ["quest"]
+    assert result["quest_count"] == 1
+
+
+def test_apply_requirement_to_content_exploration():
+    task_input = _make_valid_task_input()
+    requirement = RequirementItem(
+        requirement_id="req_004",
+        title="探索区域需求",
+        description="玩家偏好探索向内容",
+        priority="P1",
+        target_scope="world",
+        quality_score=0.8,
+    )
+    agent = WorldAgent()
+    agent.validate_input(task_input)
+    agent.match_template(task_input)
+    agent.generate_content(task_input, "npc")
+    agent.generate_content(task_input, "quest")
+    agent.generate_content(task_input, "region")
+
+    result = agent.apply_requirement_to_content(requirement)
+
+    assert result["requirement_id"] == "req_004"
+    assert len(result["applied_to"]) == 3
+    assert any("npc:" in item for item in result["applied_to"])
+    assert any("quest:" in item for item in result["applied_to"])
+    assert any("region:" in item for item in result["applied_to"])
+    assert "exploration" in agent.generated_npcs[0].skills
+
+
+def test_execute_requirement_driven_generation():
+    agent = WorldAgent()
+    result = agent.execute_requirement_driven_generation(
+        task_id="task_001",
+        params={"chapter_id": "chapter_02", "target_scope": "world"},
+    )
+
+    assert result["task_id"] == "task_001"
+    assert result["content_generated"] is True
+    assert result["requirement_applied"] is True
+    assert result["npc_count"] >= 1
+    assert result["content_package_id"].startswith("pkg_")
+
+
+def test_execute_requirement_driven_generation_with_upstream_input():
+    agent = WorldAgent()
+    upstream_input = {
+        "requirements": [
+            {
+                "requirement_id": "req_upstream_001",
+                "title": "上游生成的需求",
+                "description": "来自洞察提取的需求",
+                "priority": "P0",
+                "target_scope": "npc",
+                "quality_score": 0.9,
+            }
+        ]
+    }
+
+    result = agent.execute_requirement_driven_generation(
+        task_id="task_002",
+        input_from_requirement_task=upstream_input,
+    )
+
+    assert result["requirement_id"] == "req_upstream_001"
+    assert result["content_generated"] is True
+    assert result["npc_count"] == 1
