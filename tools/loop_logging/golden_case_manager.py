@@ -56,7 +56,7 @@ class GoldenCaseManager:
                             updated_at=datetime.fromisoformat(data.get("updated_at", datetime.now().isoformat())),
                         )
                         self.cases[case.case_id] = case
-                    except (json.JSONDecodeError, KeyError) as e:
+                    except (json.JSONDecodeError, KeyError):
                         continue
 
     def add_case(self, case: GoldenCase) -> None:

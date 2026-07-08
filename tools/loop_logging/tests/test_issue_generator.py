@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ..issue_generator import GateImprovementIssueGenerator
 from ..clusterer import FailureCluster
-from ..schema import GapType, GateType, GateTrigger
+from ..schema import GapType
 
 
 class TestGateImprovementIssueGenerator:

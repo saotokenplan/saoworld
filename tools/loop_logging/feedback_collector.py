@@ -4,7 +4,7 @@ import os
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional
 
 
 @dataclass
@@ -56,7 +56,7 @@ class IssueFeedbackCollector:
                             related_prs=data.get("related_prs", []),
                         )
                         self.feedbacks[feedback.issue_id] = feedback
-                    except (json.JSONDecodeError, KeyError) as e:
+                    except (json.JSONDecodeError, KeyError):
                         continue
 
     def add_feedback(self, feedback: IssueFeedback) -> None:
