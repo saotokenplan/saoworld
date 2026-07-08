@@ -2,6 +2,17 @@ from pydantic import BaseModel, Field
 from typing import Dict, List, Optional
 
 
+class RequirementItem(BaseModel):
+    requirement_id: str = Field(default="", description="需求ID")
+    title: str = Field(default="", description="需求标题")
+    description: str = Field(default="", description="需求描述")
+    priority: str = Field(default="P2", description="优先级：P0/P1/P2/P3")
+    target_scope: str = Field(default="world", description="目标范围")
+    estimated_effort: str = Field(default="", description="预估工作量")
+    acceptance_criteria: List[str] = Field(default_factory=list, description="验收标准")
+    quality_score: float = Field(default=0.0, description="质量评分")
+
+
 class RegionInfo(BaseModel):
     region_id: str = Field(..., description="区域ID")
     name: str = Field(..., description="区域名称")
@@ -75,3 +86,4 @@ class WorldTaskInput(BaseModel):
     template: Optional[ContentTemplate] = Field(None, description="内容模板")
     skeleton_snapshot: Optional[SkeletonSnapshot] = Field(None, description="骨架快照")
     design_note: Optional[DesignNote] = Field(None, description="设计文档")
+    requirement: Optional[RequirementItem] = Field(None, description="需求包（数据驱动生成时使用）")
