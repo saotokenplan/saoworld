@@ -83,3 +83,28 @@ class AuditLog(Base):
         Index("audit_logs_resource_idx", "resource_type", "resource_id"),
         Index("audit_logs_action_idx", "action", "created_at"),
     )
+
+
+class PlayerEvent(Base):
+    __tablename__ = "player_events"
+
+    event_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    player_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    region_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    occurred_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+    )
+    payload_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    trace_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    producer: Mapped[str] = mapped_column(String(64), nullable=False, default="gateway")
+    schema_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("player_events_player_idx", "player_id", "occurred_at"),
+        Index("player_events_region_idx", "region_id", "occurred_at"),
+        Index("player_events_type_idx", "event_type", "occurred_at"),
+    )
