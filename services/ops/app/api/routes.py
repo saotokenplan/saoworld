@@ -26,6 +26,7 @@ from app.repositories.analytics_repo import AnalyticsRepository
 from app.repositories.dashboard_repo import DashboardRepository
 from app.repositories.ops_action_repo import OpsActionRepository
 from app.schemas.ops import (
+    AnalyticsOverview,
     AnalyticsReportItem,
     DashboardMetrics,
     DashboardResponse,
@@ -34,11 +35,14 @@ from app.schemas.ops import (
     OpsActionResponse,
     PaginatedMeta,
     PlayerMetricItem,
+    QuestAnalyticsItem,
+    RegionAnalyticsItem,
     RegionMetricItem,
     SystemServiceStatus,
     SystemStatusResponse,
     TrendDataPoint,
     TrendResponse,
+    VoteAnalyticsItem,
 )
 
 router = APIRouter()
@@ -543,6 +547,248 @@ async def get_analytics_reports(
             "report_type": report_type,
             "status": status,
         },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/analytics/dashboard/overview",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["analytics"],
+)
+async def get_analytics_overview(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[AnalyticsOverview]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = AnalyticsRepository(db)
+
+    player_metrics, _ = await repo.get_player_metrics(player_id="", limit=1000)
+    region_metrics, _ = await repo.get_region_metrics(limit=1000)
+    quest_metrics, _ = await repo.get_quest_metrics(limit=1000)
+    vote_metrics, _ = await repo.get_vote_metrics(limit=1000)
+    reports, report_count = await repo.get_reports(limit=1)
+
+    today = datetime.now(timezone.utc).date()
+
+    total_players = len({m.player_id for m in player_metrics})
+    active_players_today = len({m.player_id for m in player_metrics if m.stat_date.date() == today})
+    total_votes = sum(m.votes_submitted for m in player_metrics)
+    votes_today = sum(m.votes_submitted for m in player_metrics if m.stat_date.date() == today)
+    total_quests_completed = sum(m.quests_completed for m in player_metrics)
+    quests_completed_today = sum(m.quests_completed for m in player_metrics if m.stat_date.date() == today)
+    total_regions_visited = sum(m.regions_visited for m in player_metrics)
+    regions_visited_today = sum(m.regions_visited for m in player_metrics if m.stat_date.date() == today)
+
+    session_durations = [m.total_session_seconds for m in player_metrics if m.total_session_seconds > 0]
+    avg_session_duration_seconds = int(sum(session_durations) / len(session_durations)) if session_durations else 0
+
+    response_data = AnalyticsOverview(
+        total_players=total_players,
+        active_players_today=active_players_today,
+        total_votes=total_votes,
+        votes_today=votes_today,
+        total_quests_completed=total_quests_completed,
+        quests_completed_today=quests_completed_today,
+        total_regions_visited=total_regions_visited,
+        regions_visited_today=regions_visited_today,
+        avg_session_duration_seconds=avg_session_duration_seconds,
+        report_count=report_count,
+    )
+
+    record_ops_action("analytics_query")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ANALYTICS_QUERY,
+        resource_type=RESOURCE_ANALYTICS,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/analytics/dashboard/regions",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["analytics"],
+)
+async def get_region_analytics(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[RegionAnalyticsItem]]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = AnalyticsRepository(db)
+    metrics, total = await repo.get_region_metrics(limit=limit, offset=offset)
+
+    region_map: dict[str, RegionAnalyticsItem] = {}
+    for m in metrics:
+        if m.region_id not in region_map:
+            region_map[m.region_id] = RegionAnalyticsItem(region_id=m.region_id)
+        region_map[m.region_id].unique_players += m.unique_players
+        region_map[m.region_id].total_visits += m.total_visits
+        region_map[m.region_id].total_duration_seconds += m.total_duration_seconds
+        region_map[m.region_id].quests_started += m.quests_started
+        region_map[m.region_id].quests_completed += m.quests_completed
+
+    response_data = list(region_map.values())
+
+    record_ops_action("analytics_query")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ANALYTICS_QUERY,
+        resource_type=RESOURCE_ANALYTICS,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/analytics/dashboard/quests",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["analytics"],
+)
+async def get_quest_analytics(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[QuestAnalyticsItem]]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = AnalyticsRepository(db)
+    metrics, total = await repo.get_quest_metrics(limit=limit, offset=offset)
+
+    quest_map: dict[str, QuestAnalyticsItem] = {}
+    for m in metrics:
+        if m.quest_id not in quest_map:
+            quest_map[m.quest_id] = QuestAnalyticsItem(quest_id=m.quest_id)
+        quest_map[m.quest_id].started_count += m.started_count
+        quest_map[m.quest_id].completed_count += m.completed_count
+        quest_map[m.quest_id].failed_count += m.failed_count
+        quest_map[m.quest_id].avg_duration_seconds = m.avg_duration_seconds
+
+    for quest in quest_map.values():
+        total_started = quest.started_count + quest.failed_count
+        quest.completion_rate = round(quest.completed_count / total_started, 2) if total_started > 0 else 0.0
+
+    response_data = list(quest_map.values())
+
+    record_ops_action("analytics_query")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ANALYTICS_QUERY,
+        resource_type=RESOURCE_ANALYTICS,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/analytics/dashboard/votes",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["analytics"],
+)
+async def get_vote_analytics(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[VoteAnalyticsItem]]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = AnalyticsRepository(db)
+    metrics, total = await repo.get_vote_metrics(limit=limit, offset=offset)
+
+    vote_map: dict[str, VoteAnalyticsItem] = {}
+    for m in metrics:
+        if m.vote_cycle_id not in vote_map:
+            vote_map[m.vote_cycle_id] = VoteAnalyticsItem(vote_cycle_id=m.vote_cycle_id)
+        vote_map[m.vote_cycle_id].total_votes += m.total_votes
+        vote_map[m.vote_cycle_id].unique_voters += m.unique_voters
+        if m.candidate_votes_jsonb:
+            if vote_map[m.vote_cycle_id].candidate_votes is None:
+                vote_map[m.vote_cycle_id].candidate_votes = {}
+            for candidate, votes in m.candidate_votes_jsonb.items():
+                vote_map[m.vote_cycle_id].candidate_votes[candidate] = vote_map[m.vote_cycle_id].candidate_votes.get(candidate, 0) + votes
+
+    response_data = list(vote_map.values())
+
+    record_ops_action("analytics_query")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ANALYTICS_QUERY,
+        resource_type=RESOURCE_ANALYTICS,
         result_status=200,
     )
 

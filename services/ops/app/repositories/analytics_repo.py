@@ -26,10 +26,12 @@ class AnalyticsRepository:
         limit: int = 30,
         offset: int = 0,
     ) -> tuple[Sequence[PlayerMetricsDaily], int]:
-        stmt = select(PlayerMetricsDaily).where(PlayerMetricsDaily.player_id == player_id)
-        count_stmt = select(sa_func.count(PlayerMetricsDaily.metric_id)).where(
-            PlayerMetricsDaily.player_id == player_id
-        )
+        stmt = select(PlayerMetricsDaily)
+        count_stmt = select(sa_func.count(PlayerMetricsDaily.metric_id))
+
+        if player_id:
+            stmt = stmt.where(PlayerMetricsDaily.player_id == player_id)
+            count_stmt = count_stmt.where(PlayerMetricsDaily.player_id == player_id)
 
         if start_date:
             stmt = stmt.where(PlayerMetricsDaily.stat_date >= start_date)
