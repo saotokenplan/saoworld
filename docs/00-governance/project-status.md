@@ -23,7 +23,8 @@
 ## 当前阶段
 
 - 当前阶段：**灰度发布就绪**（首期内容包灰度发布准备全部完成，项目已具备完整端到端玩法闭环能力）
-- 当前形态：八大核心后端服务（vote、world、content、generation、review、player、ops、gateway）+ workers Celery + CI/CD + Godot 客户端完整，投票链路、内容链路、审核链路、API 网关、运营后台、客户端框架就绪，客户端与后端 API 联调封装完善，首期内容实例化完成（世界观、区域、阵营、NPC、任务、章节），内容包打包与发布流程已实现，端到端集成验证已完成，首期内容包初始化脚本已验证，发布验证脚本已完善，门禁 Runbook 文档已补全（16个），遥测基础设施已初始化（metrics、logs、alerts、dashboards），三层 Loop 基础设施已实现，P2 多代理协同真实调度能力已实现（AgentDispatcher + WorkflowExecutor + 54个Orchestrator测试通过）
+- 当前形态：八大核心后端服务（vote、world、content、generation、review、player、ops、gateway）+ workers Celery + CI/CD + Godot 客户端完整，投票链路、内容链路、审核链路、API 网关、运营后台、客户端框架就绪，客户端与后端 API 联调封装完善，首期内容实例化完成（世界观、区域、阵营、NPC、任务、章节），内容包打包与发布流程已实现，端到端集成验证已完成，首期内容包初始化脚本已验证，发布验证脚本已完善，Runbook 文档体系已完善（16个门禁 + 6个运维操作），遥测基础设施已初始化（metrics、logs、alerts、dashboards），三层 Loop 基础设施已实现，P2 多代理协同真实调度能力已实现（AgentDispatcher + WorkflowExecutor + 54个Orchestrator测试通过）
+- 运维操作 Runbook 已补全：灰度发布、全量发布、内容包回滚、服务部署、数据库迁移、首期内容初始化 6 个运维操作 Runbook 全部创建完成，为灰度发布和后续运维操作提供标准化流程指导
 - 当前目标：完成首期内容包灰度发布，验证端到端玩法流程，进入内容生成与投票驱动世界更新的闭环
 
 ## 当前结论
@@ -215,10 +216,14 @@
   - `logs/log-schemas.yaml`：定义请求日志、业务日志、审计日志、错误日志、任务日志、事件日志、数据库日志、安全日志、健康检查日志 9 种日志类型的标准字段
   - `alerts/alerts.yaml`：定义服务健康、HTTP 错误、延迟、数据库、业务指标、任务、事件总线、安全、资源 9 类告警规则，支持 critical/high/medium/low 四级严重程度
   - `dashboards/README.md`：仪表盘配置说明文档
-- **门禁 Runbook 文档已补全**：
-  - `docs/runbook/gates/` 目录下 16 个门禁 Runbook 文档全部创建完成
-  - 覆盖：静态检查（2个：ruff、mypy）、单元测试（9个：vote/world/content/generation/review/player/ops/gateway/workers）、内容检查（4个：世界一致性、数值边界、内容安全、重复度）、E2E测试（1个：关键路径）
-  - 每个 Runbook 包含：门禁概述、常见失败原因、解决方案、手动执行、升级路径五个章节
+- **Runbook 文档体系已完善**：
+  - **门禁 Runbook（16个）**：`docs/runbook/gates/` 目录下 16 个门禁 Runbook 文档全部创建完成
+    - 覆盖：静态检查（2个：ruff、mypy）、单元测试（9个：vote/world/content/generation/review/player/ops/gateway/workers）、内容检查（4个：世界一致性、数值边界、内容安全、重复度）、E2E测试（1个：关键路径）
+    - 每个 Runbook 包含：门禁概述、常见失败原因、解决方案、手动执行、升级路径五个章节
+  - **运维操作 Runbook（6个）**：`docs/runbook/operations/` 目录下 6 个运维操作 Runbook 文档全部创建完成
+    - 覆盖：灰度发布（OP-RELEASE-001）、全量发布（OP-RELEASE-002）、内容包回滚（OP-RELEASE-003）、服务部署（OP-DEPLOY-001）、数据库迁移（OP-DEPLOY-002）、首期内容初始化（OP-INIT-001）
+    - 每个 Runbook 包含：操作概述、操作步骤、回滚方案、常见问题与解决方案、相关链接五个章节
+  - Runbook 目录 README 已更新，包含门禁 Runbook 和运维操作 Runbook 两大类的完整索引
 - `vote-service` 已完成骨架初始化与运营写接口实现（FastAPI + SQLAlchemy + Pydantic + pytest），见 `services/vote/`。
   - 数据模型：`VoteCycle`、`VoteCandidate`、`Vote`（对应 `backend-data-spec.md`）
   - 玩家 API 路由：`GET /api/v1/health`、`GET /api/v1/votes/current`、`POST /api/v1/votes/submit`、`GET /api/v1/votes/history`
