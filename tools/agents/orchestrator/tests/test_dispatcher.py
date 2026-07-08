@@ -15,15 +15,18 @@ class TestAgentDispatcher:
 
     def test_init(self):
         dispatcher = AgentDispatcher()
-        assert len(dispatcher.AGENT_REGISTRY) == 8
+        assert len(dispatcher.AGENT_REGISTRY) == 11
         assert "product-agent" in dispatcher.AGENT_REGISTRY
         assert "system-designer-agent" in dispatcher.AGENT_REGISTRY
         assert "backend-agent" in dispatcher.AGENT_REGISTRY
         assert "gameplay-agent" in dispatcher.AGENT_REGISTRY
         assert "world-agent" in dispatcher.AGENT_REGISTRY
+        assert "world-agent-requirement" in dispatcher.AGENT_REGISTRY
         assert "qa-agent" in dispatcher.AGENT_REGISTRY
         assert "build-agent" in dispatcher.AGENT_REGISTRY
         assert "ops-agent" in dispatcher.AGENT_REGISTRY
+        assert "ops-agent-insight" in dispatcher.AGENT_REGISTRY
+        assert "ops-agent-requirement" in dispatcher.AGENT_REGISTRY
 
     def test_is_agent_registered(self):
         dispatcher = AgentDispatcher()
@@ -35,7 +38,7 @@ class TestAgentDispatcher:
         dispatcher = AgentDispatcher()
         agents = dispatcher.get_registered_agents()
         assert "product-agent" in agents
-        assert len(agents) == 8
+        assert len(agents) == 11
 
     def test_dispatch_unregistered_agent(self):
         dispatcher = AgentDispatcher()
