@@ -5,6 +5,38 @@
 
 ## 进度记录
 
+### auto-20260709-1900 - P3 阶段数据驱动闭环（洞察→需求→内容生成）端到端打通
+
+**执行时间**：2026-07-09 22:00
+**状态**：已完成
+**任务描述**：完成 P3 阶段第四阶段——闭环集成与验证，将数据驱动的需求生成流程与 Orchestrator 和 World Agent 集成，形成完整的"线上数据→洞察→需求→内容生成"闭环。
+
+**完成内容**：
+- 扩展 Orchestrator TaskInput 支持 insight_extraction 和 requirement_generation 两种新任务类型，新增 params 字段
+- 扩展 OpsAgent 实现洞察提取（extract_insights）和需求生成（generate_requirements）能力，提供 Orchestrator 调用入口
+- 扩展 WorldAgent 实现需求驱动的内容生成能力（generate_from_requirement、apply_requirement_to_content、execute_requirement_driven_generation）
+- 更新 Orchestrator Dispatcher，注册 ops-agent-insight、ops-agent-requirement、world-agent-requirement 三个新代理路由
+- 补充完整测试覆盖：World Agent 新增 6 个测试（共 31 个），Ops Agent 新增 7 个测试（共 27 个），全部通过
+- 更新 P3 规划文档：第四阶段进度更新为 75%
+- 更新项目状态文档，记录数据驱动闭环端到端打通情况
+
+**产出文件**：
+- `tools/agents/orchestrator/input_schemas.py`（扩展任务类型和 params）
+- `tools/agents/orchestrator/output_schemas.py`（新增洞察/需求输出结构）
+- `tools/agents/orchestrator/workflow_executor.py`（支持任务参数传递）
+- `tools/agents/orchestrator/dispatcher.py`（新增代理路由）
+- `tools/agents/ops_agent/ops_agent.py`（扩展洞察/需求生成能力）
+- `tools/agents/ops_agent/tests/test_ops_agent.py`（新增 7 个测试）
+- `tools/agents/world_agent/input_schemas.py`（新增需求包结构）
+- `tools/agents/world_agent/world_agent.py`（新增需求驱动生成能力）
+- `tools/agents/world_agent/tests/test_world_agent.py`（新增 6 个测试）
+- `docs/40-dev-loop/p3-online-ops-plan.md`（更新第四阶段进度）
+- `docs/00-governance/project-status.md`（更新状态记录）
+- `docs/40-dev-loop/auto-plan-20260709-1900.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260709-1900.md`（执行摘要）
+
+---
+
 ### auto-20260709-1800 - P3 阶段客户端事件采集 SDK 实现
 
 **执行时间**：2026-07-09 18:00
