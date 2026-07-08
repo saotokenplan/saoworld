@@ -57,6 +57,11 @@ class AgentDispatcher:
             "class": "WorldAgent",
             "method": "execute_world_generation_flow",
         },
+        "world-agent-requirement": {
+            "module": "tools.agents.world_agent.world_agent",
+            "class": "WorldAgent",
+            "method": "execute_requirement_driven_generation",
+        },
         "qa-agent": {
             "module": "tools.agents.qa_agent.qa_agent",
             "class": "QAAgent",
@@ -71,6 +76,16 @@ class AgentDispatcher:
             "module": "tools.agents.ops_agent.ops_agent",
             "class": "OpsAgent",
             "method": "execute_ops_workflow",
+        },
+        "ops-agent-insight": {
+            "module": "tools.agents.ops_agent.ops_agent",
+            "class": "OpsAgent",
+            "method": "execute_insight_extraction",
+        },
+        "ops-agent-requirement": {
+            "module": "tools.agents.ops_agent.ops_agent",
+            "class": "OpsAgent",
+            "method": "execute_requirement_generation",
         },
     }
 
