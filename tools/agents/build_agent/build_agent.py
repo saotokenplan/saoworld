@@ -123,7 +123,7 @@ class BuildAgent:
         self,
         build_output: BuildOutput,
     ) -> BuildReport:
-        results = {
+        results: dict[str, dict] = {
             "client_build": {
                 "status": build_output.components.client.status,
                 "platforms": build_output.components.client.platforms,

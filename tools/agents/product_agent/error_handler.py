@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 import structlog
 
 logger = structlog.get_logger()
@@ -35,7 +35,7 @@ class UrgentIssueInsertedError(Exception):
 
 class ErrorHandler:
     @staticmethod
-    def handle_input_missing(input_name: str, default_value: Optional[any] = None) -> any:
+    def handle_input_missing(input_name: str, default_value: Optional[Any] = None) -> Any:
         logger.warning("input_data_missing", input_name=input_name)
         if default_value is not None:
             logger.info("using_default_value", input_name=input_name, default=default_value)

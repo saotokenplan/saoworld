@@ -232,7 +232,7 @@ class BackendErrorHandler:
         Returns:
             错误摘要统计
         """
-        error_types = {}
+        error_types: dict[str, int] = {}
         for error in self.error_log:
             error_type = error["error_type"]
             error_types[error_type] = error_types.get(error_type, 0) + 1

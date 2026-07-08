@@ -265,6 +265,7 @@ script = ExtResource("1")
         if not self.test_output:
             self.write_test_cases(task_input)
 
+        assert self.test_output is not None
         test_result = {
             "test_file": self.test_output.test_file,
             "total_tests": self.test_output.total_tests,

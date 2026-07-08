@@ -64,7 +64,7 @@ def define_data_structure(model_name: str, table_name: str, field: tuple, output
     rules = RuleLibrary()
     task_input = TaskInput(task=task, rules=rules)
 
-    agent.analysis_requirements(task_input)
+    agent.analyze_requirements(task_input)
     data_structures = agent.define_data_structures(task_input)
 
     result = {"model_name": model_name, "table_name": table_name, "structures": [ds.dict() for ds in data_structures]}
@@ -96,7 +96,7 @@ def generate_change_plan(task_id: str, title: str, assignee: str, output: str):
     rules = RuleLibrary()
     task_input = TaskInput(task=task, rules=rules)
 
-    agent.analysis_requirements(task_input)
+    agent.analyze_requirements(task_input)
     change_plan = agent.generate_change_plan(task_input)
 
     with open(output, "w", encoding="utf-8") as f:

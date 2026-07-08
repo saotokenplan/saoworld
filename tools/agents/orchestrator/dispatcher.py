@@ -107,7 +107,7 @@ class AgentDispatcher:
             import importlib
 
             module = importlib.import_module(registry_entry["module"])
-            agent_class = getattr(module, registry_entry["class"])
+            agent_class: Type = getattr(module, registry_entry["class"])
             self._agent_classes[agent_name] = agent_class
             return agent_class
         except (ImportError, AttributeError) as e:
