@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 
 class SystemDesignerError(Exception):
@@ -8,25 +8,25 @@ class SystemDesignerError(Exception):
 
 
 class RequirementAmbiguityError(SystemDesignerError):
-    def __init__(self, message: str, missing_info: List[str] = None):
+    def __init__(self, message: str, missing_info: Optional[List[str]] = None):
         super().__init__(message, "requirement_ambiguity")
         self.missing_info = missing_info or []
 
 
 class TechnicalFeasibilityError(SystemDesignerError):
-    def __init__(self, message: str, alternatives: List[str] = None):
+    def __init__(self, message: str, alternatives: Optional[List[str]] = None):
         super().__init__(message, "technical_feasibility")
         self.alternatives = alternatives or []
 
 
 class ModuleConflictError(SystemDesignerError):
-    def __init__(self, message: str, conflicting_modules: List[str] = None):
+    def __init__(self, message: str, conflicting_modules: Optional[List[str]] = None):
         super().__init__(message, "module_conflict")
         self.conflicting_modules = conflicting_modules or []
 
 
 class PerformanceRiskError(SystemDesignerError):
-    def __init__(self, message: str, risk_level: str = "medium", recommendations: List[str] = None):
+    def __init__(self, message: str, risk_level: str = "medium", recommendations: Optional[List[str]] = None):
         super().__init__(message, "performance_risk")
         self.risk_level = risk_level
         self.recommendations = recommendations or []

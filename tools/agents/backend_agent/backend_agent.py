@@ -170,6 +170,7 @@ class BackendAgent:
 
         # 生成 SQLAlchemy 模型代码模板
         model_code = self._generate_model_code(data_structure)
+        file_path = "app/domain/models.py"
 
         result = {
             "model_name": data_structure.model_name,
@@ -178,13 +179,13 @@ class BackendAgent:
             "constraints_count": len(data_structure.constraints),
             "indexes_count": len(data_structure.indexes),
             "model_code": model_code,
-            "file_path": "app/domain/models.py",
+            "file_path": file_path,
         }
 
         # 记录文件修改
         self.files_modified.append(
             FileInfo(
-                path=result["file_path"],
+                path=file_path,
                 type="modified",
                 description=f"新增 {data_structure.model_name} 模型",
             )
@@ -303,16 +304,17 @@ class BackendAgent:
 
         repository_code = self._generate_repository_code(model_name)
 
+        file_path = f"app/repositories/{model_name.lower()}_repo.py"
         result = {
             "repository_name": f"{model_name}Repository",
             "methods": ["get_by_id", "create", "update", "delete", "list"],
             "repository_code": repository_code,
-            "file_path": f"app/repositories/{model_name.lower()}_repo.py",
+            "file_path": file_path,
         }
 
         self.files_modified.append(
             FileInfo(
-                path=result["file_path"],
+                path=file_path,
                 type="new",
                 description=f"新增 {model_name} 数据访问仓库",
             )
@@ -463,16 +465,17 @@ class BackendAgent:
 
         routes_code = self._generate_routes_code(service_name, api_specs, model_name)
 
+        file_path = "app/api/routes.py"
         result = {
             "routes_count": len(api_specs),
             "routes_code": routes_code,
-            "file_path": "app/api/routes.py",
+            "file_path": file_path,
             "endpoints": [spec.endpoint for spec in api_specs],
         }
 
         self.files_modified.append(
             FileInfo(
-                path=result["file_path"],
+                path=file_path,
                 type="modified",
                 description=f"新增 {model_name} 相关路由",
             )
@@ -563,17 +566,18 @@ class BackendAgent:
         self.current_step = 8
 
         test_code = self._generate_test_code(model_name, service_name)
+        file_path = f"tests/test_{model_name.lower()}.py"
 
         result = {
             "test_file": f"test_{model_name.lower()}.py",
-            "file_path": f"tests/test_{model_name.lower()}.py",
+            "file_path": file_path,
             "test_count": 5,
             "test_code": test_code,
         }
 
         self.files_modified.append(
             FileInfo(
-                path=result["file_path"],
+                path=file_path,
                 type="new",
                 description=f"新增 {model_name} 测试用例",
             )

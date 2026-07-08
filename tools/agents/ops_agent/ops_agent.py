@@ -2,18 +2,18 @@ import uuid
 import random
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
-from input_schemas import (
+from .input_schemas import (
     MetricsData, LogData, ExceptionData, FeedbackData, OpsTask,
     ServiceMetrics, SystemMetrics, GameplayMetrics
 )
-from output_schemas import (
+from .output_schemas import (
     ExceptionReport, ExceptionDetail, ExceptionSummary,
     ImprovementSuggestion, ImprovementSuggestions,
     AlertSummary, AlertSummaryData, AlertCounts, AlertTrends, TopAlert,
     HealthReport, HealthReportData, ServiceHealth,
     OpsResult
 )
-from error_handler import OpsErrorHandler
+from .error_handler import OpsErrorHandler
 
 
 class OpsAgent:
@@ -60,7 +60,7 @@ class OpsAgent:
         self,
         exception_data: ExceptionData,
     ) -> List[Dict]:
-        analyzed = []
+        analyzed: List[Dict[str, Any]] = []
         for exc in exception_data.exceptions:
             freq_score = min(exc.count / 100.0, 1.0)
             impact_score = min(exc.impacted_users / 500.0, 1.0)
@@ -467,7 +467,7 @@ class OpsAgent:
         insights: List[Dict[str, Any]] = []
         now = datetime.now(timezone.utc).isoformat()
 
-        insight_templates = [
+        insight_templates: List[Dict[str, Any]] = [
             {
                 "type": "player_behavior",
                 "title": "玩家参与度呈上升趋势",
@@ -514,10 +514,14 @@ class OpsAgent:
             if template["type"] not in insight_types:
                 continue
 
+            confidence = float(template["confidence"])
+            impact = float(template["impact"])
+            novelty = float(template["novelty"])
+
             quality_score = (
-                template["confidence"] * 0.3
-                + template["impact"] * 0.35
-                + template["novelty"] * 0.2
+                confidence * 0.3
+                + impact * 0.35
+                + novelty * 0.2
                 + random.uniform(0, 0.15)
             )
 
@@ -529,9 +533,9 @@ class OpsAgent:
                 "type": template["type"],
                 "title": template["title"],
                 "description": template["description"],
-                "confidence": round(template["confidence"], 2),
-                "impact": round(template["impact"], 2),
-                "novelty": round(template["novelty"], 2),
+                "confidence": round(confidence, 2),
+                "impact": round(impact, 2),
+                "novelty": round(novelty, 2),
                 "quality_score": round(quality_score, 3),
                 "source_data": {"analytics_report_id": "report_daily_20260709"},
                 "created_at": now,
