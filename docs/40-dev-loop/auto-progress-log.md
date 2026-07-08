@@ -23,6 +23,39 @@
 
 ---
 
+### auto-20260709-1400 - 实现 P3 阶段数据采集基础设施
+
+**执行时间**：2026-07-09 14:00
+**状态**：已完成
+**任务描述**：实现 P3 阶段第一阶段数据采集基础设施，包括扩展事件总线支持玩家行为事件、实现事件上报 API、创建事件存储表、实现事件消费与存储逻辑。
+
+**完成内容**：
+- 扩展事件总线支持 7 种玩家行为事件类型（enter_region、leave_region、complete_quest、interact_npc、vote_submit、view_content、spend_resource）
+- 在 gateway-service 实现 `POST /api/v1/events/batch` 批量事件上报接口
+- 在 ops-service 创建 player_events 存储表及索引（按玩家ID+时间、区域ID+时间、事件类型+时间）
+- 创建 PlayerEventRepository 数据访问层
+- 创建 store_player_event 异步任务处理事件存储
+- 更新 event_handlers.py 添加玩家事件处理逻辑
+- 更新 P3 规划文档实施路线图进度状态
+- 更新项目状态文档记录完成情况
+
+**产出文件**：
+- `workers/events/schemas.py`（扩展）
+- `workers/events/handlers.py`（扩展）
+- `workers/tasks/player_event_ingestion.py`（新增）
+- `services/gateway/app/api/routes.py`（扩展）
+- `services/gateway/app/main.py`（修改）
+- `services/gateway/pyproject.toml`（修改）
+- `services/ops/app/domain/models.py`（扩展）
+- `services/ops/app/repositories/player_event_repo.py`（新增）
+- `services/ops/alembic/versions/2026_07_09_1400_add_player_events_table.py`（新增）
+- `docs/40-dev-loop/auto-plan-20260709-1400.md`（更新）
+- `docs/40-dev-loop/auto-execution-summary-20260709-1400.md`（新增）
+- `docs/40-dev-loop/p3-online-ops-plan.md`（更新）
+- `docs/00-governance/project-status.md`（更新）
+
+---
+
 ### auto-20260709-1200 - 完善发布运维 Runbook 文档体系
 
 **执行时间**：2026-07-09 12:00
