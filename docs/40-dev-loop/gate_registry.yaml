@@ -535,6 +535,32 @@ gates:
       runbook: "docs/runbook/gates/ruff.md"
       issues: []
 
+  - id: G-UNIT-012
+    name: Tools Unit Tests (agents)
+    type: unit
+    owner: QA Agent
+    command: "cd tools/agents/orchestrator && pytest"
+    scope:
+      paths: ["tools/agents/**"]
+      trigger: "on_pr"
+    risk_coverage: ["regression", "data-integrity"]
+    cost:
+      expected_seconds: 30
+      flakiness_budget: 0.01
+    signal:
+      severity: blocker
+      precision_target: 0.95
+    lifecycle:
+      status: active
+      created_at: "2026-07-09"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/40-dev-loop/p2-agent-design/"
+      runbook: "docs/runbook/gates/agents-tests.md"
+      issues: []
+
   - id: G-E2E-002
     name: Full Integration E2E (playtest)
     type: e2e

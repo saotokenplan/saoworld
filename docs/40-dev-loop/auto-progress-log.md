@@ -5,6 +5,36 @@
 
 ## 进度记录
 
+### auto-20260709-0900 - CI 配置补全与全量验证测试
+
+**执行时间**：2026-07-09 09:00
+**状态**：已完成
+**任务描述**：补全 CI 流水线配置（添加 agents 和 playtest 到 lint/type-check/test 矩阵），优化 agents 模块 mypy 配置，修复 playtest 代码质量问题，执行全量验证测试确保项目灰度发布就绪状态。
+
+**完成内容**：
+- 更新 CI 配置，补充 agents 和 playtest 到 lint、type-check、test 三个矩阵
+- agents 模块 mypy 配置优化（Pydantic 插件、explicit_package_bases、宽松设置）
+- playtest 模块修复 7 个 lint 问题和 mypy 类型注解问题
+- 6 个后端服务 299 测试通过（vote 54 + world 49 + content 62 + generation 56 + review 41 + player 37）
+- content_check 28 个测试通过
+- loop_logging 36 个测试通过
+- playtest 15 个端到端测试通过
+- agents/orchestrator 54 个测试通过
+- 合计 432 个测试通过
+- 门禁注册表新增 G-UNIT-012（Agents Unit Tests）
+- 更新 project-status.md 追加本轮验证记录
+
+**产出文件**：
+- `.github/workflows/ci.yml`（更新）
+- `tools/agents/pyproject.toml`（更新）
+- `tools/playtest/pyproject.toml`（更新）
+- `docs/40-dev-loop/gate_registry.yaml`（更新）
+- `docs/00-governance/project-status.md`（追加本轮记录）
+- `docs/40-dev-loop/auto-plan-20260709-0900.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260709-0900.md`（执行摘要）
+
+---
+
 ### auto-20260709-0800 - 灰度发布就绪持续验证与全量代码质量检查
 
 **执行时间**：2026-07-09 08:00

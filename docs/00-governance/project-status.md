@@ -96,6 +96,7 @@
 - **项目灰度发布就绪状态持续验证通过**：2026-07-09 05:00 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；agents 77 个测试通过（product_agent 23 + orchestrator 54）；vote-service ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
 - **项目灰度发布就绪状态持续验证通过**：2026-07-09 06:00 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；agents 77 个测试通过（product_agent 23 + orchestrator 54）；vote-service ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
 - **项目灰度发布就绪状态持续验证通过**：2026-07-09 07:00 进行的持续验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；agents 77 个测试通过（product_agent + orchestrator）；vote-service ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
+- **CI 配置补全与全量验证完成**：2026-07-09 09:00 完成 CI 流水线补全与全模块验证。GitHub Actions CI 配置已补充 agents 和 playtest 到 lint、type-check、test 三个矩阵，实现所有 8 个后端服务 + workers + 4 个 tools 模块（content_check、loop_logging、agents、playtest）的完整 CI 覆盖。agents 模块 mypy 配置优化（添加 Pydantic 插件、explicit_package_bases、ignore_missing_imports），playtest 模块修复 7 个 lint 问题和 mypy 类型注解问题。全量验证结果：6 个后端服务 299 测试通过、content_check 28、loop_logging 36、playtest 15、agents/orchestrator 54，合计 432 个测试通过。门禁注册表新增 G-UNIT-012（Agents Unit Tests）。项目持续保持灰度发布就绪状态。
 
 ## 已确定事项
 
