@@ -27,6 +27,27 @@
 - `docs/40-dev-loop/auto-plan-20260709-1100.md`（任务计划）
 - `docs/40-dev-loop/auto-execution-summary-20260709-1100.md`（执行摘要）
 
+### auto-20260708-1203 - 灰度发布就绪持续验证与 agents import bug 修复
+
+**执行时间**：2026-07-08 12:03
+**状态**：已完成
+**任务描述**：执行全量回归测试验证灰度发布就绪状态；扫描发现 7 个 agent 模块存在相对/绝对 import 不一致问题（test 用绝对导入 + sys.path.insert，main 用相对导入）已修复。
+
+**完成内容**：
+- 修复 5 个 agent 主模块的相对导入问题（world_agent / system_designer_agent / gameplay_agent / qa_agent / ops_agent），与 product_agent 模式一致
+- 修复 7 个 agent 测试文件中的内嵌绝对导入（`from tools.agents.X.Y` → `from Y`）
+- agents 总测试数从 77 提升到 213（+136）：world_agent 25、system_designer_agent 18、backend_agent 24、build_agent 17、gameplay_agent 16、ops_agent 20、qa_agent 16、product_agent 23、orchestrator 54
+- 8 个后端服务 375 个测试全部通过
+- content_check 28、loop_logging 36、playtest 15 测试通过
+- workers 29/36 通过（7 个 Redis 环境限制）
+- vote-service 与 tools/agents ruff 检查通过，vote-service mypy 检查通过
+- 更新 project-status.md 追加本轮验证与修复记录
+
+**产出文件**：
+- `docs/00-governance/project-status.md`（追加本轮记录）
+- `docs/40-dev-loop/auto-plan-20260708-1203.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260708-1203.md`（执行摘要）
+
 ---
 
 ### auto-20260709-0900 - CI 配置补全与全量验证测试
