@@ -173,30 +173,30 @@ def test_run_workflow_success():
 
 
 def test_error_handler_handle_environment_error():
-    from tools.agents.qa_agent.error_handler import QAErrorHandler
+    from error_handler import QAErrorHandler
     handler = QAErrorHandler()
     handler.handle_error("environment", "数据库连接失败")
 
 
 def test_error_handler_handle_missing_tests_error():
-    from tools.agents.qa_agent.error_handler import QAErrorHandler
+    from error_handler import QAErrorHandler
     handler = QAErrorHandler()
     handler.handle_error("missing_tests", "核心功能缺少测试覆盖")
 
 
 def test_error_handler_handle_flaky_tests_error():
-    from tools.agents.qa_agent.error_handler import QAErrorHandler
+    from error_handler import QAErrorHandler
     handler = QAErrorHandler()
     handler.handle_error("flaky_tests", "测试结果不一致")
 
 
 def test_error_handler_handle_timeout_error():
-    from tools.agents.qa_agent.error_handler import QAErrorHandler
+    from error_handler import QAErrorHandler
     handler = QAErrorHandler()
     handler.handle_error("timeout", "测试执行超时")
 
 
 def test_error_handler_handle_fix_failure_error():
-    from tools.agents.qa_agent.error_handler import QAErrorHandler
+    from error_handler import QAErrorHandler
     handler = QAErrorHandler()
     handler.handle_error("fix_failure", "修复多次仍未通过")

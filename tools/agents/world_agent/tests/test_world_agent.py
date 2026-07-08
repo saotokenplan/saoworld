@@ -310,7 +310,7 @@ def test_handle_review_result_approved():
 
 
 def test_handle_review_result_rejected():
-    from tools.agents.world_agent.error_handler import ReviewFailedError
+    from error_handler import ReviewFailedError
 
     agent = WorldAgent()
     with pytest.raises(ReviewFailedError):

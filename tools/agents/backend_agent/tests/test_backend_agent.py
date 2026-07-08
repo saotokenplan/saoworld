@@ -7,13 +7,8 @@ Backend Agent 测试用例
 """
 
 import pytest
-import sys
-import os
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
-from backend_agent import BackendAgent
-from input_schemas import (
+from ..backend_agent import BackendAgent
+from ..input_schemas import (
     BackendAgentInput,
     DataStructure,
     DesignTask,
@@ -21,7 +16,7 @@ from input_schemas import (
     FieldDefinition,
     APISpec,
 )
-from error_handler import BackendErrorHandler
+from ..error_handler import BackendErrorHandler
 
 
 class TestBackendAgent:
