@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Any
 from uuid import uuid4
-from .input_schemas import WorldTaskInput
-from .output_schemas import (
+from input_schemas import WorldTaskInput
+from output_schemas import (
     NPCConfig,
     QuestConfig,
     Objective,
@@ -12,7 +12,7 @@ from .output_schemas import (
     ReviewRequest,
     WorldGenerationResult,
 )
-from .error_handler import (
+from error_handler import (
     MissingSkeletonError,
     TemplateMismatchError,
     ContentViolationError,

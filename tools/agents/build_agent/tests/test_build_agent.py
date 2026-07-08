@@ -1,8 +1,5 @@
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from build_agent import BuildAgent
-from input_schemas import (
+from ..build_agent import BuildAgent
+from ..input_schemas import (
     BuildTask, BuildConfig, VersionConfig,
     ClientBuildConfig, ServerBuildConfig,
     GrayScope, ChangelogEntry
@@ -117,7 +114,7 @@ def test_package_content_empty():
 
 
 def test_generate_rollback_package():
-    from tools.agents.build_agent.output_schemas import (
+    from output_schemas import (
         BuildOutput, ComponentBuildResult,
         ClientBuildResult, ServerBuildResult, ContentBuildResult
     )
@@ -141,7 +138,7 @@ def test_generate_rollback_package():
 
 
 def test_write_version_metadata():
-    from tools.agents.build_agent.output_schemas import (
+    from output_schemas import (
         BuildOutput, ComponentBuildResult,
         ClientBuildResult, ServerBuildResult, ContentBuildResult
     )
@@ -189,7 +186,7 @@ def test_write_version_metadata():
 
 
 def test_generate_build_report():
-    from tools.agents.build_agent.output_schemas import (
+    from output_schemas import (
         BuildOutput, ComponentBuildResult,
         ClientBuildResult, ServerBuildResult, ContentBuildResult
     )
@@ -222,7 +219,7 @@ def test_generate_build_report():
 
 
 def test_deploy_to_gray():
-    from tools.agents.build_agent.output_schemas import (
+    from output_schemas import (
         BuildOutput, ComponentBuildResult,
         ClientBuildResult, ServerBuildResult, ContentBuildResult
     )
@@ -309,36 +306,36 @@ def test_execute_build_workflow_gray_deploy():
 
 
 def test_error_handler_build_failure():
-    from tools.agents.build_agent.error_handler import BuildErrorHandler
+    from error_handler import BuildErrorHandler
     handler = BuildErrorHandler()
     handler.handle_error("build_failure", "客户端构建失败")
 
 
 def test_error_handler_image_push_failure():
-    from tools.agents.build_agent.error_handler import BuildErrorHandler
+    from error_handler import BuildErrorHandler
     handler = BuildErrorHandler()
     handler.handle_error("image_push_failure", "Docker镜像推送失败")
 
 
 def test_error_handler_missing_content():
-    from tools.agents.build_agent.error_handler import BuildErrorHandler
+    from error_handler import BuildErrorHandler
     handler = BuildErrorHandler()
     handler.handle_error("missing_content", "内容包不存在")
 
 
 def test_error_handler_rollback_failure():
-    from tools.agents.build_agent.error_handler import BuildErrorHandler
+    from error_handler import BuildErrorHandler
     handler = BuildErrorHandler()
     handler.handle_error("rollback_failure", "回滚包生成失败")
 
 
 def test_error_handler_resource_insufficient():
-    from tools.agents.build_agent.error_handler import BuildErrorHandler
+    from error_handler import BuildErrorHandler
     handler = BuildErrorHandler()
     handler.handle_error("resource_insufficient", "磁盘空间不足")
 
 
 def test_error_handler_workflow_error():
-    from tools.agents.build_agent.error_handler import BuildErrorHandler
+    from error_handler import BuildErrorHandler
     handler = BuildErrorHandler()
     handler.handle_error("workflow", "工作流执行异常")
