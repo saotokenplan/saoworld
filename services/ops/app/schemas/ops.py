@@ -182,6 +182,44 @@ class AnalyticsReportItem(BaseModel):
     updated_at: datetime
 
 
+class AnalyticsOverview(BaseModel):
+    total_players: int = 0
+    active_players_today: int = 0
+    total_votes: int = 0
+    votes_today: int = 0
+    total_quests_completed: int = 0
+    quests_completed_today: int = 0
+    total_regions_visited: int = 0
+    regions_visited_today: int = 0
+    avg_session_duration_seconds: int = 0
+    report_count: int = 0
+
+
+class RegionAnalyticsItem(BaseModel):
+    region_id: str
+    unique_players: int = 0
+    total_visits: int = 0
+    total_duration_seconds: int = 0
+    quests_started: int = 0
+    quests_completed: int = 0
+
+
+class QuestAnalyticsItem(BaseModel):
+    quest_id: str
+    started_count: int = 0
+    completed_count: int = 0
+    failed_count: int = 0
+    completion_rate: float = 0.0
+    avg_duration_seconds: int = 0
+
+
+class VoteAnalyticsItem(BaseModel):
+    vote_cycle_id: str
+    total_votes: int = 0
+    unique_voters: int = 0
+    candidate_votes: dict[str, int] | None = None
+
+
 class ReportType(str, Enum):
     DAILY_SUMMARY = "daily_summary"
     WEEKLY_SUMMARY = "weekly_summary"
