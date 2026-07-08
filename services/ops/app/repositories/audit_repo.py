@@ -9,11 +9,16 @@ ACTION_DASHBOARD_VIEW = "dashboard_view"
 ACTION_OPS_ACTION_QUERY = "ops_action_query"
 ACTION_SYSTEM_STATUS_QUERY = "system_status_query"
 ACTION_ANALYTICS_QUERY = "analytics_query"
+ACTION_INSIGHT_QUERY = "insight_query"
+ACTION_REQUIREMENT_QUERY = "requirement_query"
+ACTION_REQUIREMENT_APPROVE = "requirement_approve"
 
 RESOURCE_DASHBOARD = "dashboard"
 RESOURCE_OPS_ACTION = "ops_action"
 RESOURCE_SYSTEM = "system"
 RESOURCE_ANALYTICS = "analytics"
+RESOURCE_INSIGHT = "insight"
+RESOURCE_REQUIREMENT = "requirement"
 
 
 class AuditRepository:
