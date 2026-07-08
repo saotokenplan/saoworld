@@ -11,20 +11,29 @@ from app.core.metrics import (
     record_dashboard_view,
     record_ops_action,
 )
+from app.core.insight_extractor import calculate_quality_score, extract_insights_from_report
+from app.core.requirement_generator import generate_requirements_from_insight
 from app.repositories.audit_repo import (
     ACTION_DASHBOARD_VIEW,
     ACTION_ANALYTICS_QUERY,
     ACTION_OPS_ACTION_QUERY,
     ACTION_SYSTEM_STATUS_QUERY,
+    ACTION_INSIGHT_QUERY,
+    ACTION_REQUIREMENT_QUERY,
+    ACTION_REQUIREMENT_APPROVE,
     RESOURCE_ANALYTICS,
     RESOURCE_DASHBOARD,
     RESOURCE_OPS_ACTION,
     RESOURCE_SYSTEM,
+    RESOURCE_INSIGHT,
+    RESOURCE_REQUIREMENT,
     AuditRepository,
 )
 from app.repositories.analytics_repo import AnalyticsRepository
 from app.repositories.dashboard_repo import DashboardRepository
+from app.repositories.insight_repo import InsightRepository
 from app.repositories.ops_action_repo import OpsActionRepository
+from app.repositories.requirement_repo import RequirementRepository
 from app.schemas.ops import (
     AnalyticsOverview,
     AnalyticsReportItem,
@@ -32,12 +41,14 @@ from app.schemas.ops import (
     DashboardResponse,
     EnvelopeResponse,
     HealthResponse,
+    InsightResponse,
     OpsActionResponse,
     PaginatedMeta,
     PlayerMetricItem,
     QuestAnalyticsItem,
     RegionAnalyticsItem,
     RegionMetricItem,
+    RequirementResponse,
     SystemServiceStatus,
     SystemStatusResponse,
     TrendDataPoint,
@@ -796,5 +807,334 @@ async def get_vote_analytics(
         request_id=request_id,
         data=response_data,
         meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/insights",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["insights"],
+)
+async def get_insights(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    category: str | None = Query(default=None),
+    min_confidence: str | None = Query(default=None, pattern="^(low|medium|high)$"),
+    min_impact: str | None = Query(default=None, pattern="^(low|medium|high)$"),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[InsightResponse]]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = InsightRepository(db)
+    insights, total = await repo.get_insights(
+        category=category,
+        min_confidence=min_confidence,
+        min_impact=min_impact,
+        limit=limit,
+        offset=offset,
+    )
+
+    response_data = [InsightResponse.model_validate(i) for i in insights]
+
+    record_ops_action("insight_query")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_INSIGHT_QUERY,
+        resource_type=RESOURCE_INSIGHT,
+        request_payload_jsonb={
+            "category": category,
+            "min_confidence": min_confidence,
+            "min_impact": min_impact,
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/insights/{insight_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Insight not found"},
+    },
+    tags=["insights"],
+)
+async def get_insight_detail(
+    insight_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[InsightResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = InsightRepository(db)
+    insight = await repo.get_insight_by_id(insight_id)
+
+    if insight is None:
+        raise_ops_error(
+            OpsErrorCodes.INSIGHT_NOT_FOUND,
+            "洞察记录不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    response_data = InsightResponse.model_validate(insight)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/ops/insights/{insight_id}/generate-requirement",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Insight not found"},
+    },
+    tags=["requirements"],
+)
+async def generate_requirement_from_insight(
+    insight_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[RequirementResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    insight_repo = InsightRepository(db)
+    insight = await insight_repo.get_insight_by_id(insight_id)
+
+    if insight is None:
+        raise_ops_error(
+            OpsErrorCodes.INSIGHT_NOT_FOUND,
+            "洞察记录不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    insight_data = {
+        "category": insight.category,
+        "summary": insight.summary,
+        "confidence": insight.confidence,
+        "impact": insight.impact,
+        "novelty": insight.novelty,
+        "feasibility": insight.feasibility,
+        "source_data_jsonb": insight.source_data_jsonb,
+    }
+
+    requirements = generate_requirements_from_insight(insight_data)
+
+    req_repo = RequirementRepository(db)
+    created_req = await req_repo.create_requirement(
+        insight_id=insight_id,
+        title=requirements[0]["title"],
+        description=requirements[0]["description"],
+        priority=requirements[0]["priority"],
+        target_scope=requirements[0]["target_scope"],
+        estimated_effort=requirements[0]["estimated_effort"],
+        acceptance_criteria_jsonb=requirements[0].get("acceptance_criteria_jsonb"),
+        related_content_jsonb=requirements[0].get("related_content_jsonb"),
+        trace_id=trace_id,
+    )
+
+    response_data = RequirementResponse.model_validate(created_req)
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_REQUIREMENT_QUERY,
+        resource_type=RESOURCE_REQUIREMENT,
+        resource_id=created_req.requirement_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/requirements",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["requirements"],
+)
+async def get_requirements(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    insight_id: uuid.UUID | None = Query(default=None),
+    status: str | None = Query(default=None),
+    priority: str | None = Query(default=None),
+    target_scope: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[RequirementResponse]]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = RequirementRepository(db)
+    requirements, total = await repo.get_requirements(
+        insight_id=insight_id,
+        status=status,
+        priority=priority,
+        target_scope=target_scope,
+        limit=limit,
+        offset=offset,
+    )
+
+    response_data = [RequirementResponse.model_validate(r) for r in requirements]
+
+    record_ops_action("requirement_query")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_REQUIREMENT_QUERY,
+        resource_type=RESOURCE_REQUIREMENT,
+        request_payload_jsonb={
+            "insight_id": str(insight_id) if insight_id else None,
+            "status": status,
+            "priority": priority,
+            "target_scope": target_scope,
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/requirements/{requirement_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Requirement not found"},
+    },
+    tags=["requirements"],
+)
+async def get_requirement_detail(
+    requirement_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[RequirementResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = RequirementRepository(db)
+    requirement = await repo.get_requirement_by_id(requirement_id)
+
+    if requirement is None:
+        raise_ops_error(
+            OpsErrorCodes.REQUIREMENT_NOT_FOUND,
+            "需求包记录不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    response_data = RequirementResponse.model_validate(requirement)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/ops/requirements/{requirement_id}/approve",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Requirement not found"},
+    },
+    tags=["requirements"],
+)
+async def approve_requirement(
+    requirement_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[RequirementResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = RequirementRepository(db)
+    requirement = await repo.approve_requirement(
+        requirement_id=requirement_id,
+        approved_by=current_user.user_id,
+    )
+
+    if requirement is None:
+        raise_ops_error(
+            OpsErrorCodes.REQUIREMENT_NOT_FOUND,
+            "需求包记录不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    response_data = RequirementResponse.model_validate(requirement)
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_REQUIREMENT_APPROVE,
+        resource_type=RESOURCE_REQUIREMENT,
+        resource_id=requirement_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
         trace_id=trace_id,
     )

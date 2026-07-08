@@ -238,6 +238,84 @@ class ReportStatus(str, Enum):
     FAILED = "failed"
 
 
+class InsightCategory(str, Enum):
+    CONTENT_PREFERENCE = "content_preference"
+    REGION_HEAT = "region_heat"
+    VOTE_PREFERENCE = "vote_preference"
+    DIFFICULTY_FEEDBACK = "difficulty_feedback"
+    CONTENT_GAP = "content_gap"
+    PLAYER_BEHAVIOR = "player_behavior"
+    SYSTEM_HEALTH = "system_health"
+
+
+class QualityLevel(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class InsightResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    insight_id: uuid.UUID
+    category: str
+    summary: str
+    confidence: str
+    impact: str
+    novelty: str
+    feasibility: str
+    quality_score: float
+    source_report_id: uuid.UUID | None = None
+    source_data_jsonb: dict[str, object] | None = None
+    tags: list[str] | None = None
+    discovered_at: datetime
+    created_at: datetime
+
+
+class RequirementStatus(str, Enum):
+    PENDING_REVIEW = "pending_review"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+
+
+class RequirementPriority(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+class TargetScope(str, Enum):
+    CONTENT = "content"
+    GAMEPLAY = "gameplay"
+    SYSTEM = "system"
+    WORLD = "world"
+
+
+class RequirementResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    requirement_id: uuid.UUID
+    insight_id: uuid.UUID | None = None
+    title: str
+    description: str
+    status: str
+    priority: str
+    target_scope: str
+    estimated_effort: int
+    acceptance_criteria_jsonb: dict[str, object] | None = None
+    related_content_jsonb: dict[str, object] | None = None
+    generated_by: str
+    approved_by: str | None = None
+    approved_at: datetime | None = None
+    trace_id: str | None = None
+    schema_version: int
+    created_at: datetime
+    updated_at: datetime
+
+
 class EnvelopeResponse(BaseModel, Generic[T]):
     request_id: str
     data: T

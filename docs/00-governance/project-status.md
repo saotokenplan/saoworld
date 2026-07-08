@@ -105,6 +105,7 @@
 - **P3 阶段数据采集基础设施实现完成**：2026-07-09 14:00 完成 P3 阶段第一阶段数据采集基础设施实现。包括：1）扩展事件总线支持 7 种玩家行为事件类型（进入区域、离开区域、完成任务、互动NPC、提交投票、查看内容、消耗资源）；2）在 gateway-service 实现 `POST /api/v1/events/batch` 批量事件上报接口；3）在 ops-service 创建 player_events 存储表及索引（按玩家ID+时间、区域ID+时间、事件类型+时间）；4）实现事件消费与存储逻辑（workers/events/handlers.py 和 workers/tasks/player_event_ingestion.py）。P3 规划文档已更新进度状态，数据采集基础设施除客户端 SDK 外已全部就绪。
 - **P3 阶段数据分析引擎核心实现完成**：2026-07-09 15:00 完成 P3 阶段第二阶段数据分析引擎核心实现。包括：1）在 ops-service 创建 5 个数据分析表（player_metrics_daily、region_metrics_daily、quest_metrics_daily、vote_metrics_daily、analytics_reports）及 Alembic 迁移脚本；2）实现 AnalyticsRepository 仓储层（指标查询、upsert、报告管理）；3）实现 4 个分析查询 API（玩家指标、区域指标、趋势分析、分析报告）；4）在 workers 实现数据分析管道（数据清洗、玩家指标聚合、区域指标聚合、每日报告生成）；5）Celery Beat 新增每日分析任务调度。ops-service 48 个测试通过（+9），workers 29 个测试通过（7 个 Redis 环境限制），ruff 和 mypy 检查通过。P3 第二阶段数据清洗管道、统计分析任务、分析 API 三项核心任务完成，剩余分析仪表盘待实现。
 - **P3 阶段分析仪表盘实现完成**：2026-07-09 16:00 完成 P3 阶段第三阶段分析仪表盘实现。包括：1）在 ops-service 扩展数据分析 schema（AnalyticsOverview、RegionAnalyticsItem、QuestAnalyticsItem、VoteAnalyticsItem）；2）实现 4 个仪表盘 API（综合概览、区域分析、任务分析、投票分析）；3）扩展 Grafana 仪表盘配置（新增事件上报速率、分析查询速率、事件类型分布、查询类型分布 4 个面板）；4）编写分析仪表盘测试用例（9 个测试覆盖概览、区域、任务、投票分析及权限校验）。ops-service 57 个测试通过（+9），ruff 和 mypy 检查通过。P3 前三个阶段（数据采集、数据分析、分析仪表盘）已全部实现。
+- **P3 阶段洞察提取与需求生成引擎实现完成**：2026-07-09 17:00 完成 P3 阶段第四阶段洞察提取与需求生成引擎实现。包括：1）在 ops-service 创建 insights 和 requirements 数据模型及 Alembic 迁移脚本；2）实现 InsightRepository 和 RequirementRepository 仓储层（CRUD、质量评分计算、状态更新）；3）实现洞察提取算法（从分析报告中提取玩家行为、区域热度、任务完成率、投票倾向、经济消费 5 类洞察，基于置信度/影响/新颖度/可行性计算质量评分）；4）实现需求生成引擎（根据洞察类别和质量指标生成对应的需求包，包含标题、描述、优先级、目标范围、预估工作量、验收标准）；5）实现 7 个 API 接口（洞察列表查询、洞察详情、从洞察生成需求、需求列表查询、需求详情、需求批准）；6）编写测试用例（10 个测试覆盖鉴权、查询、过滤、404 错误、envelope 格式）。ops-service 67 个测试通过（+10），ruff 和 mypy 检查通过。P3 四个阶段（数据采集、数据分析、分析仪表盘、洞察提取与需求生成）已全部实现。
 
 ## 已确定事项
 
@@ -456,7 +457,7 @@
 21. ~~扩展端到端集成测试覆盖：实现投票完整流程（创建→提交→结算）和内容包完整流程（创建→发布→回滚）的集成测试~~ 已完成，vote-service 54 个测试全部通过，content-service 58 个测试通过
 22. ~~实现世界骨架快照 API 与内容生成校验：world-service 添加骨架快照创建/获取接口，generation-service 在生成请求创建前校验骨架存在、forbidden_tags 非空、chapter_id/region_id 有效~~ 已完成，world-service 46 个测试通过，generation-service 53 个测试通过
 23. ~~tools 模块工程化配置与 CI 门禁补全：为 content_check、loop_logging、agents、playtest 添加 pyproject.toml，扩展 CI 配置，补充门禁注册表~~ 已完成，4 个 tools 模块配置齐全，CI 任务扩展，新增 4 个门禁
-24. ~~启动 P3 阶段（线上运营闭环期）规划：创建 P3 阶段规划文档，定义数据回流机制、数据分析流程、洞察提取与需求生成闭环、实施路线图~~ 已完成，P3 规划文档已创建，第一阶段（数据采集基础设施）、第二阶段核心（数据清洗管道、统计分析任务、分析 API）、第三阶段（分析仪表盘）已全部实现
+24. ~~启动 P3 阶段（线上运营闭环期）规划：创建 P3 阶段规划文档，定义数据回流机制、数据分析流程、洞察提取与需求生成闭环、实施路线图~~ 已完成，P3 规划文档已创建，第一阶段（数据采集基础设施）、第二阶段核心（数据清洗管道、统计分析任务、分析 API）、第三阶段（分析仪表盘）、第四阶段（洞察提取与需求生成）已全部实现
 
 ## 进入实施前的建议门槛
 
