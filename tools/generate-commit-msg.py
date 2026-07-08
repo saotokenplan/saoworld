@@ -304,20 +304,77 @@ def generate_suggestion() -> dict:
     if len(files) > 15:
         file_list += f"\n  ... 等共 {len(files)} 个文件"
 
-    hint = f"""
-# === 暂存改动分析 ===
-# 检测到 {len(files)} 个文件待提交
-# 推断 type: {commit_type}
-# 推断 scope: {scope or '(未识别，请手动补充)'}
-# 建议消息: {suggested}
-#
-# 改动文件:
-{file_list}
-#
-# 请根据实际改动编写准确的提交信息，而不是复制会话总结！
-# 格式: <type>(<scope>): <summary>
-# 示例: feat(vote): 增加投票提交接口
-"""
+    size_warnings = []
+    added = 0
+    deleted = 0
+    for line in diff_stat.splitlines():
+        m = re.search(r"(\d+) insertions?\(\+\)", line)
+        if m:
+            added += int(m.group(1))
+        m = re.search(r"(\d+) deletions?\(-\)", line)
+        if m:
+            deleted += int(m.group(1))
+
+    if len(files) >= 50:
+        size_warnings.append(
+            f"⚠️  文件数较多（{len(files)} 个），建议按模块/主题拆分为多次提交"
+        )
+    if added >= 2000:
+        size_warnings.append(
+            f"⚠️  新增行数较多（{added} 行），建议按功能点拆分为多次提交"
+        )
+    if added + deleted >= 3000:
+        size_warnings.append(
+            f"⚠️  总变更行数较多（{added + deleted} 行），建议拆分为更小的提交"
+        )
+
+    new_service_warnings = []
+    new_services: set[str] = set()
+    for f in files:
+        if f["status"] == "A" and f["path"].startswith("services/"):
+            parts = f["path"].split("/")
+            if len(parts) >= 3 and parts[1]:
+                new_services.add(parts[1])
+    for service in new_services:
+        has_app = any(
+            f["status"] == "A" and f["path"].startswith(f"services/{service}/app/")
+            for f in files
+        )
+        has_tests = any(
+            f["status"] == "A" and f["path"].startswith(f"services/{service}/tests/")
+            for f in files
+        )
+        if has_app and not has_tests:
+            new_service_warnings.append(
+                f"⚠️  新服务 '{service}' 新增了 app/ 代码但未包含 tests/ 测试文件，请补充基础测试"
+            )
+
+    warning_lines = []
+    if size_warnings:
+        warning_lines.extend(size_warnings)
+    if new_service_warnings:
+        warning_lines.extend(new_service_warnings)
+
+    hint_parts = []
+    hint_parts.append("# === 暂存改动分析 ===")
+    hint_parts.append(f"# 检测到 {len(files)} 个文件待提交")
+    hint_parts.append(f"# 新增 {added} 行，删除 {deleted} 行，总变更 {added + deleted} 行")
+    hint_parts.append(f"# 推断 type: {commit_type}")
+    hint_parts.append(f"# 推断 scope: {scope or '(未识别，请手动补充)'}")
+    hint_parts.append(f"# 建议消息: {suggested}")
+    hint_parts.append("#")
+    if warning_lines:
+        hint_parts.append("# === 提交提醒 ===")
+        for w in warning_lines:
+            hint_parts.append(f"# {w}")
+        hint_parts.append("#")
+    hint_parts.append("# 改动文件:")
+    hint_parts.append(file_list)
+    hint_parts.append("#")
+    hint_parts.append("# 请根据实际改动编写准确的提交信息，而不是复制会话总结！")
+    hint_parts.append("# 格式: <type>(<scope>): <summary>")
+    hint_parts.append("# 示例: feat(vote): 增加投票提交接口")
+    hint = "\n".join(hint_parts) + "\n"
 
     return {
         "empty": False,
@@ -327,6 +384,9 @@ def generate_suggestion() -> dict:
         "scope": scope,
         "summary": summary,
         "files": files,
+        "warnings": size_warnings + new_service_warnings,
+        "added_lines": added,
+        "deleted_lines": deleted,
     }
 
 
@@ -360,6 +420,28 @@ def check_message_matches_changes(message: str) -> list[str]:
             f"你指定的 scope 是 '{msg_scope}'，但根据改动文件推断应为 '{inferred_scope}'。\n"
             f"请确认 scope 是否准确反映实际改动模块。"
         )
+
+    msg_type = match.group("type")
+    files = result["files"]
+    total = len(files)
+    code_count = sum(
+        1 for f in files
+        if Path(f["path"]).suffix.lower() in {
+            ".py", ".ts", ".js", ".tsx", ".jsx", ".go", ".rs",
+            ".c", ".cpp", ".java", ".rb", ".php", ".gd", ".swift", ".kt",
+        }
+    )
+    code_ratio = code_count / total if total > 0 else 0
+
+    if msg_type == "docs" and code_ratio > 0.3:
+        errors.append(
+            f"type 为 'docs' 但代码文件占比达 {code_ratio:.0%}（{code_count}/{total} 个文件），\n"
+            f"提交 type 与实际变更性质严重不符。\n"
+            f"若主要为代码变更，请使用 'feat'/'fix'/'refactor' 等 type。"
+        )
+
+    if "warnings" in result and result["warnings"]:
+        errors.extend(result["warnings"])
 
     return errors
 

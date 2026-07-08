@@ -89,6 +89,19 @@
 - 内容包发布与回滚
 - 权限和异常分支
 
+### 新服务强制要求
+
+**新建服务时必须同步创建测试目录和基础测试，不得先提交代码后补测试。**
+
+新服务最低测试清单（同一次提交中必须包含）：
+- `tests/conftest.py` — 测试客户端与数据库 fixture
+- `tests/test_health.py` — 健康检查接口
+- `tests/test_auth.py` — 鉴权与权限场景
+- 至少 1 个核心接口的成功路径测试
+- 至少 2 个异常/错误码场景测试
+
+缺少测试的新服务提交将被 commit-msg hook 警告。
+
 ## 不该做的事
 
 - 不在一个服务里承载所有领域逻辑
@@ -96,7 +109,7 @@
 
 ## 提交规范
 
-所有代码和文档提交必须遵守 `docs/20-specs/engineering-conventions.md#git-提交规范` 和 `docs/20-specs/agent-loop-spec.md#ai-提交前自检清单强制执行`。
+所有代码和文档提交必须遵守 `.trae/rules/40-git-workflow.md` 和 `.trae/rules/02-agent-loop-constraints.md`。
 
 ### 提交格式
 
@@ -105,18 +118,39 @@
 - type: docs / feat / fix / refactor / test / chore
 - summary: 使用祈使句（新增/补充/调整/修复/重构），具体描述改动，不超过100字符，不以句号结尾
 
+### 提交规模限制
+
+单次提交不得超过以下规模，超过时必须拆分：
+- 文件数 ≤ 50 个（超过 100 个将被 hook 拦截）
+- 新增行数 ≤ 2000 行（超过 5000 行将被 hook 拦截）
+- 总变更行数 ≤ 3000 行（超过 8000 行将被 hook 拦截）
+
+拆分原则（按优先级）：
+1. 按服务拆分：不同微服务分别提交
+2. 按层次拆分：领域模型 → 仓储层 → API 层 → 测试
+3. 按主题拆分：独立功能点各自成提交
+4. 规范先行：规范文档先提交，再提交实现
+
+### type 与内容一致性
+
+- `docs` type 下代码文件占比不得超过 30%（否则 hook 拦截）
+- `feat` 用于新增功能，`fix` 用于修复缺陷，不得混用
+- 主要为代码变更时禁止使用 `docs` type
+
 ### 提交前必须
 
-1. 执行 `python tools/validate-commit-msg.py --message "type(scope): 摘要"` 预验证提交信息格式
+1. 执行 `python tools/validate-commit-msg.py --message "type(scope): 摘要"` 预验证
 2. 确认一次提交只包含一个主题，多个改动拆分多次提交
 3. 确认无调试残留（pdb/breakpoint/debug print）、无冲突标记、无无关文件
-4. 提交后立即 `git push`（远程不可用时明确记录阻塞原因）
+4. 新服务必须附带测试文件，否则提交不完整
+5. 提交后立即 `git push`（远程不可用时明确记录阻塞原因）
 
 ### 禁止的提交信息
 
 - "update"、"fix bug"、"wip"、"一些修改"、"临时提交" 等模糊表述
 - 照抄整段会话总结而非描述实际改动
 - 一个提交混入多个不相关主题
+- type 与实际变更性质严重不符
 
 ### 推荐 scope
 
