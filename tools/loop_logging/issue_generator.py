@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import List, Dict, Any, Optional
 
 from .schema import (
@@ -8,7 +7,6 @@ from .schema import (
     GapType,
     GateType,
     GateTrigger,
-    GateSeverity,
 )
 from .clusterer import FailureCluster
 
@@ -142,7 +140,7 @@ class GateImprovementIssueGenerator:
         elif gate_type == GateType.UNIT:
             return f"cd <service> && pytest -k '{cluster.signature[:20]}'"
         elif gate_type == GateType.CONTENT:
-            return f"python tools/content_check/<rule>.py --input <content_dir>"
+            return "python tools/content_check/<rule>.py --input <content_dir>"
         else:
             return f"bash tools/playtest/run_{cluster.signature[:20]}.sh"
 
@@ -162,11 +160,11 @@ class GateImprovementIssueGenerator:
             )
         elif gap_type == GapType.COVERAGE_GAP:
             acceptance.append(
-                f"补充测试用例后，同类失败复发率应下降 50% 以上"
+                "补充测试用例后，同类失败复发率应下降 50% 以上"
             )
         else:
             acceptance.append(
-                f"优化后门禁误报率应低于 5%"
+                "优化后门禁误报率应低于 5%"
             )
 
         acceptance.append("30 天内同类失败次数 ≤ 2")

@@ -7,8 +7,8 @@ _tools_path = Path(__file__).parent.parent.parent
 if str(_tools_path) not in sys.path:
     sys.path.insert(0, str(_tools_path))
 
-from content_check.reward_boundary import RewardBoundaryChecker
-from content_check.base import CheckStatus
+from content_check.reward_boundary import RewardBoundaryChecker  # noqa: E402
+from content_check.base import CheckStatus  # noqa: E402
 
 
 @pytest.fixture

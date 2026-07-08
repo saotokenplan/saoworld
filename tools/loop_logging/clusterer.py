@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from collections import Counter, defaultdict
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional
 
 from .signature_extractor import FailureSignatureExtractor
 

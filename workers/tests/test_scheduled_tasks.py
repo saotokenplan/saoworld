@@ -1,4 +1,3 @@
-import pytest
 
 from workers.tasks.scheduled_tasks import daily_gate_scan, sync_metrics_gauge, daily_content_review
 

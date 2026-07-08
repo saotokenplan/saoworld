@@ -36,12 +36,12 @@ app.conf.update(
     },
 )
 
-import workers.tasks.content_generation  # noqa: F401
-import workers.tasks.content_review  # noqa: F401
-import workers.tasks.content_packaging  # noqa: F401
-import workers.tasks.content_release  # noqa: F401
-import workers.tasks.gate_scan  # noqa: F401
-import workers.tasks.scheduled_tasks  # noqa: F401
+import workers.tasks.content_generation  # noqa: E402, F401
+import workers.tasks.content_review  # noqa: E402, F401
+import workers.tasks.content_packaging  # noqa: E402, F401
+import workers.tasks.content_release  # noqa: E402, F401
+import workers.tasks.gate_scan  # noqa: E402, F401
+import workers.tasks.scheduled_tasks  # noqa: E402, F401
 
 app.autodiscover_tasks([
     "workers.tasks.content_generation",

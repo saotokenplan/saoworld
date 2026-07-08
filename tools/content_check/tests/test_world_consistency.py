@@ -7,8 +7,8 @@ _tools_path = Path(__file__).parent.parent.parent
 if str(_tools_path) not in sys.path:
     sys.path.insert(0, str(_tools_path))
 
-from content_check.world_consistency import WorldConsistencyChecker
-from content_check.base import CheckStatus, IssueSeverity
+from content_check.world_consistency import WorldConsistencyChecker  # noqa: E402
+from content_check.base import CheckStatus, IssueSeverity  # noqa: E402
 
 
 @pytest.fixture

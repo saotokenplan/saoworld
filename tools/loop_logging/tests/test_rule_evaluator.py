@@ -4,9 +4,9 @@ import os
 import tempfile
 import pytest
 
-from ..rule_evaluator import RuleEvaluator, RuleEvaluationResult
-from ..feedback_collector import IssueFeedbackCollector, IssueFeedback
-from ..golden_case_manager import GoldenCaseManager, GoldenCase
+from ..rule_evaluator import RuleEvaluator
+from ..feedback_collector import IssueFeedbackCollector
+from ..golden_case_manager import GoldenCaseManager
 
 
 def test_rule_evaluator_basic_evaluation():

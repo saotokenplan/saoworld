@@ -3,14 +3,11 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from datetime import datetime
 
-import pytest
 
 from ..agent_session_logger import AgentSessionLogger
 from ..ci_failure_logger import CIFailureLogger
 from ..prod_incident_logger import ProdIncidentLogger
-from ..schema import AgentSessionStage, AgentSessionEvent, CIStatus, CITriggerType, IncidentEnvironment, IncidentSeverity
 
 
 class TestAgentSessionLogger:

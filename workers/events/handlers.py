@@ -2,9 +2,8 @@ import logging
 
 from workers.events.schemas import Event, EventType
 from workers.tasks.content_generation import generate_content_batch
-from workers.tasks.content_review import run_world_consistency_review, run_full_content_review
+from workers.tasks.content_review import run_full_content_review
 from workers.tasks.content_packaging import package_content_batch
-from workers.tasks.content_release import release_content_package
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +40,6 @@ async def handle_generation_batch_completed(event: Event) -> None:
 async def handle_review_batch_completed(event: Event) -> None:
     logger.info(f"Handling review batch completed event: {event.event_id}")
     payload = event.payload
-    request_id = payload.get("request_id")
     content_package_id = payload.get("content_package_id")
     approved_count = payload.get("approved_count", 0)
 

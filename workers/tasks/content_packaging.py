@@ -35,7 +35,7 @@ def validate_package_payload(payload: dict[str, Any]) -> list[str]:
         npcs = payload["npcs"]
         for npc in npcs:
             if "npc_id" not in npc:
-                errors.append(f"npc missing npc_id")
+                errors.append("npc missing npc_id")
             if "name" not in npc:
                 errors.append(f"npc {npc.get('npc_id', 'unknown')} missing name")
 
@@ -124,7 +124,6 @@ def package_content_batch(
         for req_id in request_ids:
             response = generation_client.get_sync(f"/api/v1/generation/requests/{req_id}")
             response.raise_for_status()
-            request_data = response.json()["data"]
 
             response = generation_client.get_sync(f"/api/v1/generation/requests/{req_id}/objects")
             response.raise_for_status()
