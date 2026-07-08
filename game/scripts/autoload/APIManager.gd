@@ -4,6 +4,8 @@ signal request_started(request_id: String)
 signal request_completed(request_id: String, response: Dictionary)
 signal request_failed(request_id: String, error: Dictionary)
 signal auth_error(request_id: String, message: String)
+signal event_batch_submitted(event_count: int, success: bool)
+signal event_submit_failed(error: Dictionary)
 
 var base_url: String = "http://localhost:8000/api/v1"
 var auth_token: String = ""
@@ -12,6 +14,22 @@ var request_timeout: float = 30.0
 var schema_version: int = 1
 var max_retries: int = 2
 var retry_delay: float = 2.0
+
+var event_batch_interval: float = 30.0
+var max_batch_size: int = 50
+var event_queue: Array[Dictionary] = []
+var event_flush_timer: Timer = null
+var _event_id_counter: int = 0
+
+const EVENT_TYPES: Dictionary = {
+	"enter_region": {"name": "玩家进入区域", "realtime": false},
+	"leave_region": {"name": "玩家离开区域", "realtime": false},
+	"complete_quest": {"name": "玩家完成任务", "realtime": true},
+	"interact_npc": {"name": "玩家与NPC交互", "realtime": false},
+	"vote_submit": {"name": "玩家提交投票", "realtime": true},
+	"view_content": {"name": "玩家查看内容", "realtime": false},
+	"spend_resource": {"name": "玩家消耗资源", "realtime": false}
+}
 
 const ERROR_CODES: Dictionary = {
 	"NO_OPEN_VOTE_CYCLE": {"message": "当前没有开放的投票周期", "status": 404},
@@ -62,6 +80,7 @@ const ERROR_CODES: Dictionary = {
 
 func _ready() -> void:
 	_load_config()
+	_init_event_system()
 
 func set_base_url(url: String) -> void:
 	base_url = url
@@ -261,3 +280,148 @@ func _load_config() -> void:
 		var config := load(config_path)
 		if config and config.has("api_base_url"):
 			base_url = config.api_base_url
+		if config and config.has("event_batch_interval"):
+			event_batch_interval = config.event_batch_interval
+
+func _init_event_system() -> void:
+	event_flush_timer = Timer.new()
+	event_flush_timer.wait_time = event_batch_interval
+	event_flush_timer.autostart = true
+	event_flush_timer.one_shot = false
+	event_flush_timer.timeout.connect(_on_event_flush_timer_timeout)
+	add_child(event_flush_timer)
+
+func _generate_event_id() -> String:
+	_event_id_counter += 1
+	return "evt_%s_%s" % [str(Time.get_unix_time_from_system()), str(_event_id_counter)]
+
+func _on_event_flush_timer_timeout() -> void:
+	if event_queue.size() > 0:
+		flush_events()
+
+func submit_event(event_type: String, player_id: String, region_id: String = "", payload: Dictionary = {}, trace_id: String = "") -> void:
+	if not EVENT_TYPES.has(event_type):
+		print("Unknown event type: %s" % event_type)
+		return
+
+	if player_id == "":
+		player_id = GameState.player_id
+
+	var event: Dictionary = {
+		"event_id": _generate_event_id(),
+		"event_type": event_type,
+		"player_id": player_id,
+		"region_id": region_id,
+		"timestamp": _get_current_timestamp(),
+		"payload": payload,
+		"trace_id": trace_id if trace_id != "" else self.trace_id,
+		"schema_version": schema_version
+	}
+
+	if EVENT_TYPES[event_type]["realtime"]:
+		_submit_event_realtime(event)
+	else:
+		event_queue.append(event)
+		if event_queue.size() >= max_batch_size:
+			flush_events()
+
+func _get_current_timestamp() -> String:
+	var now: DateTime = DateTime.now()
+	return now.format("%Y-%m-%dT%H:%M:%SZ")
+
+func _submit_event_realtime(event: Dictionary) -> void:
+	var events: Array[Dictionary] = [event]
+	_submit_events_batch(events)
+
+func flush_events() -> void:
+	if event_queue.size() == 0:
+		return
+
+	var events_to_send: Array[Dictionary] = event_queue.duplicate()
+	event_queue.clear()
+	_submit_events_batch(events_to_send)
+
+func _submit_events_batch(events: Array[Dictionary]) -> void:
+	var endpoint: String = "/events/batch"
+	var body: Dictionary = {"events": events}
+	
+	var headers: Dictionary = {}
+	if auth_token != "":
+		headers["Authorization"] = "Bearer %s" % auth_token
+	if trace_id != "":
+		headers["X-Trace-Id"] = trace_id
+	
+	var response: Dictionary = _make_request_async("POST", endpoint, body, headers)
+
+func _make_request_async(method: String, endpoint: String, body: Dictionary, extra_headers: Dictionary) -> void:
+	var request_id: String = generate_request_id()
+	request_started.emit(request_id)
+	
+	var url: String = base_url + endpoint
+	var http_request := HTTPRequest.new()
+	add_child(http_request)
+	
+	var headers: PackedStringArray = PackedStringArray()
+	headers.append("Content-Type: application/json")
+	
+	if auth_token != "":
+		headers.append("Authorization: Bearer %s" % auth_token)
+	
+	if trace_id != "":
+		headers.append("X-Trace-Id: %s" % trace_id)
+	
+	headers.append("X-Request-Id: %s" % request_id)
+	
+	if GameState.player_id != "":
+		headers.append("X-Player-Id: %s" % GameState.player_id)
+	
+	for key in extra_headers.keys():
+		headers.append("%s: %s" % [key, extra_headers[key]])
+	
+	var error_code: Error = OK
+	var request_body: String = ""
+	
+	if method == "POST":
+		request_body = JSON.stringify(body)
+		error_code = http_request.request(url, headers, HTTPClient.METHOD_POST, request_body)
+	elif method == "PUT":
+		request_body = JSON.stringify(body)
+		error_code = http_request.request(url, headers, HTTPClient.METHOD_PUT, request_body)
+	elif method == "DELETE":
+		error_code = http_request.request(url, headers, HTTPClient.METHOD_DELETE)
+	else:
+		error_code = http_request.request(url, headers, HTTPClient.METHOD_GET)
+	
+	if error_code != OK:
+		var err: Dictionary = _build_error("NETWORK_ERROR", "Failed to send event batch: %s" % str(error_code), request_id)
+		event_submit_failed.emit(err)
+		_remove_request(http_request)
+		return
+	
+	http_request.request_completed.connect(
+		func _on_event_batch_completed(_result: int, response_code: int, _headers: PackedStringArray, _body: PackedByteArray) -> void:
+			var response_text: String = _body.get_string_from_utf8()
+			var parsed: Variant = JSON.parse_string(response_text)
+			
+			var success: bool = false
+			if typeof(parsed) == TYPE_DICTIONARY and response_code >= 200 and response_code < 300:
+				success = true
+				event_batch_submitted.emit(body["events"].size(), success)
+			else:
+				var err_code: String = "EVENT_SUBMIT_FAILED"
+				var err_message: String = "Event batch submission failed"
+				if typeof(parsed) == TYPE_DICTIONARY:
+					err_code = parsed.get("code", err_code)
+					err_message = parsed.get("message", err_message)
+				
+				var err: Dictionary = {
+					"success": false,
+					"status_code": response_code,
+					"request_id": request_id,
+					"code": err_code,
+					"message": err_message
+				}
+				event_submit_failed.emit(err)
+			
+			_remove_request(http_request)
+	)
