@@ -13,24 +13,32 @@ from app.core.metrics import (
 )
 from app.repositories.audit_repo import (
     ACTION_DASHBOARD_VIEW,
+    ACTION_ANALYTICS_QUERY,
     ACTION_OPS_ACTION_QUERY,
     ACTION_SYSTEM_STATUS_QUERY,
+    RESOURCE_ANALYTICS,
     RESOURCE_DASHBOARD,
     RESOURCE_OPS_ACTION,
     RESOURCE_SYSTEM,
     AuditRepository,
 )
+from app.repositories.analytics_repo import AnalyticsRepository
 from app.repositories.dashboard_repo import DashboardRepository
 from app.repositories.ops_action_repo import OpsActionRepository
 from app.schemas.ops import (
+    AnalyticsReportItem,
     DashboardMetrics,
     DashboardResponse,
     EnvelopeResponse,
     HealthResponse,
     OpsActionResponse,
     PaginatedMeta,
+    PlayerMetricItem,
+    RegionMetricItem,
     SystemServiceStatus,
     SystemStatusResponse,
+    TrendDataPoint,
+    TrendResponse,
 )
 
 router = APIRouter()
@@ -299,5 +307,248 @@ async def get_system_status(
     return EnvelopeResponse(
         request_id=request_id,
         data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/analytics/player-metrics",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["analytics"],
+)
+async def get_player_metrics(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    player_id: str = Query(...),
+    start_date: datetime | None = Query(default=None),
+    end_date: datetime | None = Query(default=None),
+    limit: int = Query(default=30, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[PlayerMetricItem]]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = AnalyticsRepository(db)
+    metrics, total = await repo.get_player_metrics(
+        player_id=player_id,
+        start_date=start_date,
+        end_date=end_date,
+        limit=limit,
+        offset=offset,
+    )
+
+    response_data = [PlayerMetricItem.model_validate(m) for m in metrics]
+
+    record_ops_action("analytics_query")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ANALYTICS_QUERY,
+        resource_type=RESOURCE_ANALYTICS,
+        request_payload_jsonb={
+            "metric_type": "player",
+            "player_id": player_id,
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/analytics/region-metrics",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["analytics"],
+)
+async def get_region_metrics(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    region_id: str | None = Query(default=None),
+    start_date: datetime | None = Query(default=None),
+    end_date: datetime | None = Query(default=None),
+    limit: int = Query(default=30, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[RegionMetricItem]]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = AnalyticsRepository(db)
+    metrics, total = await repo.get_region_metrics(
+        region_id=region_id,
+        start_date=start_date,
+        end_date=end_date,
+        limit=limit,
+        offset=offset,
+    )
+
+    response_data = [RegionMetricItem.model_validate(m) for m in metrics]
+
+    record_ops_action("analytics_query")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ANALYTICS_QUERY,
+        resource_type=RESOURCE_ANALYTICS,
+        request_payload_jsonb={
+            "metric_type": "region",
+            "region_id": region_id,
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/analytics/trends",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["analytics"],
+)
+async def get_trends(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    metric_type: str = Query(..., pattern="^(region_visits|quest_completion|vote_preference|player_activity)$"),
+    time_range: str = Query(default="7d", pattern="^(7d|30d|90d)$"),
+    region_id: str | None = Query(default=None),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[TrendResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = AnalyticsRepository(db)
+    days = int(time_range.replace("d", ""))
+    trend_points: list[TrendDataPoint] = []
+
+    if metric_type == "region_visits":
+        metrics, _ = await repo.get_region_metrics(
+            region_id=region_id,
+            limit=days,
+        )
+        for m in metrics:
+            trend_points.append(TrendDataPoint(
+                date=m.stat_date.strftime("%Y-%m-%d"),
+                value=float(m.total_visits),
+            ))
+
+    trend_points.reverse()
+
+    response_data = TrendResponse(
+        metric_type=metric_type,
+        time_range=time_range,
+        trends=trend_points,
+    )
+
+    record_ops_action("analytics_query")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ANALYTICS_QUERY,
+        resource_type=RESOURCE_ANALYTICS,
+        request_payload_jsonb={
+            "metric_type": metric_type,
+            "time_range": time_range,
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/analytics/reports",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["analytics"],
+)
+async def get_analytics_reports(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    report_type: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    start_date: datetime | None = Query(default=None),
+    end_date: datetime | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[AnalyticsReportItem]]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = AnalyticsRepository(db)
+    reports, total = await repo.get_reports(
+        report_type=report_type,
+        status=status,
+        start_date=start_date,
+        end_date=end_date,
+        limit=limit,
+        offset=offset,
+    )
+
+    response_data = [AnalyticsReportItem.model_validate(r) for r in reports]
+
+    record_ops_action("analytics_query")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ANALYTICS_QUERY,
+        resource_type=RESOURCE_ANALYTICS,
+        request_payload_jsonb={
+            "report_type": report_type,
+            "status": status,
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
         trace_id=trace_id,
     )

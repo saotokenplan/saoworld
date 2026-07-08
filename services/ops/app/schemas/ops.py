@@ -97,6 +97,109 @@ class PaginatedMeta(BaseModel):
     offset: int
 
 
+class PlayerMetricItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    metric_id: uuid.UUID
+    player_id: str
+    stat_date: datetime
+    total_session_seconds: int = 0
+    regions_visited: int = 0
+    quests_completed: int = 0
+    votes_submitted: int = 0
+    npcs_interacted: int = 0
+    events_count: int = 0
+    detail_jsonb: dict[str, object] | None = None
+
+
+class RegionMetricItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    metric_id: uuid.UUID
+    region_id: str
+    stat_date: datetime
+    unique_players: int = 0
+    total_visits: int = 0
+    total_duration_seconds: int = 0
+    quests_started: int = 0
+    quests_completed: int = 0
+    events_count: int = 0
+    detail_jsonb: dict[str, object] | None = None
+
+
+class QuestMetricItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    metric_id: uuid.UUID
+    quest_id: str
+    stat_date: datetime
+    started_count: int = 0
+    completed_count: int = 0
+    failed_count: int = 0
+    avg_duration_seconds: int = 0
+    events_count: int = 0
+    detail_jsonb: dict[str, object] | None = None
+
+
+class VoteMetricItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    metric_id: uuid.UUID
+    vote_cycle_id: str
+    stat_date: datetime
+    total_votes: int = 0
+    unique_voters: int = 0
+    candidate_votes_jsonb: dict[str, object] | None = None
+    events_count: int = 0
+    detail_jsonb: dict[str, object] | None = None
+
+
+class TrendDataPoint(BaseModel):
+    date: str
+    value: float
+
+
+class TrendResponse(BaseModel):
+    metric_type: str
+    time_range: str
+    trends: list[TrendDataPoint]
+
+
+class AnalyticsReportItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    report_id: uuid.UUID
+    report_type: str
+    period_start: datetime
+    period_end: datetime
+    status: str
+    summary_jsonb: dict[str, object] | None = None
+    detail_jsonb: dict[str, object] | None = None
+    generated_by: str
+    trace_id: str | None = None
+    schema_version: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class ReportType(str, Enum):
+    DAILY_SUMMARY = "daily_summary"
+    WEEKLY_SUMMARY = "weekly_summary"
+    MONTHLY_SUMMARY = "monthly_summary"
+    PLAYER_BEHAVIOR = "player_behavior"
+    REGION_HEATMAP = "region_heatmap"
+    QUEST_PERFORMANCE = "quest_performance"
+    VOTE_ANALYSIS = "vote_analysis"
+    CUSTOM = "custom"
+
+
+class ReportStatus(str, Enum):
+    PENDING = "pending"
+    GENERATING = "generating"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
 class EnvelopeResponse(BaseModel, Generic[T]):
     request_id: str
     data: T
