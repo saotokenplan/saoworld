@@ -129,7 +129,11 @@ async def add_request_id_and_logging(request: Request, call_next):
 
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
-    if request.url.path.startswith("/api/v1/health") or request.url.path == "/metrics":
+    if (
+        request.url.path.startswith("/api/v1/health")
+        or request.url.path == "/metrics"
+        or request.url.path.startswith("/api/v1/events")
+    ):
         return await call_next(request)
 
     from app.core.auth import authenticate_request

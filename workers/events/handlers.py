@@ -1,9 +1,11 @@
+import json
 import logging
 
-from workers.events.schemas import Event, EventType
+from workers.events.schemas import Event, EventType, PlayerBehaviorEventType
 from workers.tasks.content_generation import generate_content_batch
 from workers.tasks.content_review import run_full_content_review
 from workers.tasks.content_packaging import package_content_batch
+from workers.tasks.player_event_ingestion import store_player_event
 
 logger = logging.getLogger(__name__)
 
@@ -70,10 +72,39 @@ async def handle_content_package_rolled_back(event: Event) -> None:
     logger.info(f"Content package {content_package_id} rolled back: {rollback_reason}")
 
 
+async def handle_player_event(event_data: dict) -> None:
+    logger.info(f"Handling player event: {event_data.get('event_type')}")
+
+    try:
+        await store_player_event(event_data)
+        logger.info(
+            "Player event stored successfully",
+            event_type=event_data.get("event_type"),
+            player_id=event_data.get("player_id"),
+        )
+    except Exception as exc:
+        logger.error(
+            "Failed to store player event",
+            error=str(exc),
+            event_type=event_data.get("event_type"),
+        )
+        raise
+
+
 event_handlers = {
     EventType.VOTE_RESULT_FINALIZED: handle_vote_result_finalized,
     EventType.GENERATION_BATCH_COMPLETED: handle_generation_batch_completed,
     EventType.REVIEW_BATCH_COMPLETED: handle_review_batch_completed,
     EventType.CONTENT_PACKAGE_RELEASED: handle_content_package_released,
     EventType.CONTENT_PACKAGE_ROLLED_BACK: handle_content_package_rolled_back,
+}
+
+player_behavior_event_types = {
+    PlayerBehaviorEventType.PLAYER_ENTER_REGION.value,
+    PlayerBehaviorEventType.PLAYER_LEAVE_REGION.value,
+    PlayerBehaviorEventType.PLAYER_COMPLETE_QUEST.value,
+    PlayerBehaviorEventType.PLAYER_INTERACT_NPC.value,
+    PlayerBehaviorEventType.PLAYER_VOTE_SUBMIT.value,
+    PlayerBehaviorEventType.PLAYER_VIEW_CONTENT.value,
+    PlayerBehaviorEventType.PLAYER_SPEND_RESOURCE.value,
 }

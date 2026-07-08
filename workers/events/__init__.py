@@ -3,6 +3,8 @@ from workers.events.event_publisher import EventPublisher
 from workers.events.event_subscriber import EventSubscriber
 from workers.events.schemas import (
     Event,
+    EventType,
+    PlayerBehaviorEventType,
     VoteCycleClosedEvent,
     VoteResultFinalizedEvent,
     GenerationRequestCreatedEvent,
@@ -10,6 +12,14 @@ from workers.events.schemas import (
     ReviewBatchCompletedEvent,
     ContentPackageReleasedEvent,
     ContentPackageRolledBackEvent,
+    PlayerBehaviorEvent,
+    PlayerEnterRegionEvent,
+    PlayerLeaveRegionEvent,
+    PlayerCompleteQuestEvent,
+    PlayerInteractNpcEvent,
+    PlayerVoteSubmitEvent,
+    PlayerViewContentEvent,
+    PlayerSpendResourceEvent,
 )
 
 __all__ = [
@@ -17,6 +27,8 @@ __all__ = [
     "EventPublisher",
     "EventSubscriber",
     "Event",
+    "EventType",
+    "PlayerBehaviorEventType",
     "VoteCycleClosedEvent",
     "VoteResultFinalizedEvent",
     "GenerationRequestCreatedEvent",
@@ -24,4 +36,12 @@ __all__ = [
     "ReviewBatchCompletedEvent",
     "ContentPackageReleasedEvent",
     "ContentPackageRolledBackEvent",
+    "PlayerBehaviorEvent",
+    "PlayerEnterRegionEvent",
+    "PlayerLeaveRegionEvent",
+    "PlayerCompleteQuestEvent",
+    "PlayerInteractNpcEvent",
+    "PlayerVoteSubmitEvent",
+    "PlayerViewContentEvent",
+    "PlayerSpendResourceEvent",
 ]
