@@ -5,6 +5,45 @@
 
 ## 进度记录
 
+### auto-20260710-0200 - NPC 与任务数据接口（Sprint 1 P0）
+
+**执行时间**：2026-07-10 02:00 ~ 04:15
+**状态**：已完成（已合并到 feature-prd，merge commit `aa3a90f`，push `aa3a90f..167e9ce`）
+**任务描述**：实现 Sprint 1 P0 项 S1-11「NPC 与任务数据接口」，在 world-service 提供 NPC 与任务详情接口，为后续 NPC 对话系统（S1-03）和玩家存档系统（S1-10）提供后端数据基础。
+
+**完成内容**：
+- 新增 `npcs` 与 `quest_definitions` 两张数据库表（UUID 主键、JSONB 字段、CHECK 约束、唯一索引、复合索引）
+- Alembic 迁移脚本 `services/world/alembic/versions/2026_07_10_0200_add_npc_and_quest_tables.py`
+- `NpcRepository` 与 `QuestDefinitionRepository` 仓储层（列表/详情/按 key 详情/创建）
+- 8 个新 API 端点（玩家侧 6 个 + 运营侧 2 个），统一 envelope 响应、JWT 鉴权、Scope 校验、TraceId 透传
+- 4 个新错误码（NPC_NOT_FOUND、QUEST_NOT_FOUND、NPC_KEY_EXISTS、QUEST_KEY_EXISTS）
+- 2 类 Prometheus 指标（NPC/Quest 操作计数与按章节/按类型 Gauge）+ 4 个辅助函数
+- 2 个审计动作常量（npc_create、quest_create）
+- 28 个新测试用例（NPC 12 + Quest 16），world-service 总测试从 49 增加到 77
+
+**产出文件**：
+- `services/world/alembic/versions/2026_07_10_0200_add_npc_and_quest_tables.py`
+- `services/world/app/domain/models.py`（新增 NPC、QuestDefinition 模型）
+- `services/world/app/repositories/world_repo.py`（新增 NpcRepository、QuestDefinitionRepository）
+- `services/world/app/repositories/audit_repo.py`（新增 2 个动作/资源常量）
+- `services/world/app/core/metrics.py`（新增 2 类 Prometheus 指标）
+- `services/world/app/core/errors.py`（新增 4 个错误码）
+- `services/world/app/schemas/world.py`（新增 11 个 Pydantic 模型）
+- `services/world/app/api/routes.py`（新增 8 个 API 端点）
+- `services/world/tests/test_world_npcs.py`
+- `services/world/tests/test_world_quests.py`
+- `docs/00-governance/project-status.md`
+- `docs/10-requirements/需求迭代计划.md`
+- `docs/40-dev-loop/auto-plan-20260710-0200.md`
+- `docs/40-dev-loop/auto-execution-summary-20260710-0200.md`
+
+**遗留问题**：
+- 现有 `game/data/npcs/npc_list.json` 与 `game/data/quests/quest_list.json` 仍以 JSON 形式存于客户端，与 world-service 数据库存在数据源不一致
+- 建议后续 sprint 编写 seed 脚本将 JSON 灌入数据库
+- ops 端 NPC/Quest 后续需要补充更新、删除、批量导入接口
+
+---
+
 ### auto-20260710-0100 - 玩家移动与场景切换（Sprint 1 P0）
 
 **执行时间**：2026-07-10 01:00
