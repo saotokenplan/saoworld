@@ -5,6 +5,9 @@ extends Node
 signal player_info_changed
 signal chapter_changed
 signal region_unlocked(region_id: String)
+signal health_changed(current_health: int, max_health: int)
+signal player_died
+signal player_revived
 
 var player_id: String = ""
 var player_name: String = ""
@@ -15,7 +18,14 @@ var unlocked_regions: Array[String] = []
 var reputation_snapshot: Dictionary = {}
 var vote_participation: Array[String] = []
 var last_vote_cycle_id: String = ""
-var schema_version: int = 1
+var schema_version: int = 2
+
+# 战斗属性
+var player_health: int = 100
+var player_max_health: int = 100
+var player_attack: int = 10
+var player_defense: int = 5
+var is_alive: bool = true
 
 func _ready() -> void:
 	_load_local_state()
@@ -63,6 +73,58 @@ func add_exp(amount: int) -> void:
 	_save_local_state()
 	player_info_changed.emit()
 
+# 战斗相关方法
+func take_damage(amount: int) -> int:
+	if not is_alive:
+		return 0
+	
+	var actual_damage: int = maxi(amount - player_defense, 1)
+	player_health = maxi(player_health - actual_damage, 0)
+	
+	if player_health <= 0:
+		is_alive = false
+		player_died.emit()
+	
+	health_changed.emit(player_health, player_max_health)
+	_save_local_state()
+	return actual_damage
+
+func heal(amount: int) -> void:
+	if not is_alive:
+		return
+	
+	player_health = mini(player_health + amount, player_max_health)
+	health_changed.emit(player_health, player_max_health)
+	_save_local_state()
+
+func reset_health() -> void:
+	player_health = player_max_health
+	is_alive = true
+	health_changed.emit(player_health, player_max_health)
+	player_revived.emit()
+	_save_local_state()
+
+func get_health_percent() -> float:
+	if player_max_health <= 0:
+		return 0.0
+	return float(player_health) / float(player_max_health)
+
+func calculate_damage(target_defense: int) -> int:
+	return maxi(player_attack - target_defense, 1)
+
+func update_combat_stats() -> void:
+	# 根据等级更新战斗属性
+	player_max_health = 100 + (player_level - 1) * 20
+	player_attack = 10 + (player_level - 1) * 2
+	player_defense = 5 + (player_level - 1) * 1
+	
+	# 如果当前血量超过最大值，调整到最大值
+	if player_health > player_max_health:
+		player_health = player_max_health
+	
+	health_changed.emit(player_health, player_max_health)
+	_save_local_state()
+
 func _save_local_state() -> void:
 	var save_data: Dictionary = {
 		"schema_version": schema_version,
@@ -74,7 +136,12 @@ func _save_local_state() -> void:
 		"unlocked_regions": unlocked_regions,
 		"reputation_snapshot": reputation_snapshot,
 		"vote_participation": vote_participation,
-		"last_vote_cycle_id": last_vote_cycle_id
+		"last_vote_cycle_id": last_vote_cycle_id,
+		"player_health": player_health,
+		"player_max_health": player_max_health,
+		"player_attack": player_attack,
+		"player_defense": player_defense,
+		"is_alive": is_alive
 	}
 	var file := FileAccess.open("user://game_state.json", FileAccess.WRITE)
 	if file:
@@ -111,6 +178,16 @@ func _load_local_state() -> void:
 				vote_participation = data["vote_participation"]
 			if data.has("last_vote_cycle_id"):
 				last_vote_cycle_id = data["last_vote_cycle_id"]
+			if data.has("player_health"):
+				player_health = data["player_health"]
+			if data.has("player_max_health"):
+				player_max_health = data["player_max_health"]
+			if data.has("player_attack"):
+				player_attack = data["player_attack"]
+			if data.has("player_defense"):
+				player_defense = data["player_defense"]
+			if data.has("is_alive"):
+				is_alive = data["is_alive"]
 
 func reset_state() -> void:
 	player_id = ""
@@ -122,6 +199,12 @@ func reset_state() -> void:
 	reputation_snapshot.clear()
 	vote_participation.clear()
 	last_vote_cycle_id = ""
+	player_health = 100
+	player_max_health = 100
+	player_attack = 10
+	player_defense = 5
+	is_alive = true
 	_save_local_state()
 	player_info_changed.emit()
 	chapter_changed.emit()
+	health_changed.emit(player_health, player_max_health)
