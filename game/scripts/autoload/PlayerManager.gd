@@ -194,3 +194,25 @@ func reset() -> void:
 	player_regions.clear()
 	is_loading = false
 	last_error.clear()
+
+func accept_quest(quest_id: String) -> void:
+	var existing: Dictionary = get_player_quest_by_id(quest_id)
+	if existing.size() > 0:
+		return
+	
+	_set_loading(true)
+	var result: Dictionary = APIManager.post("/player/quests", {"quest_id": quest_id})
+	
+	if result.get("success", false):
+		var new_quest: Dictionary = {
+			"quest_id": quest_id,
+			"status": "active",
+			"progress": 0
+		}
+		player_quests.append(new_quest)
+		last_error.clear()
+		player_quests_loaded.emit()
+	else:
+		_handle_player_error(result)
+	
+	_set_loading(false)
