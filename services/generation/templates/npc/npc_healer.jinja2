@@ -1,0 +1,148 @@
+你是一个专业的游戏内容生成AI。请根据以下信息生成一个治疗师NPC。
+
+## 世界背景信息
+- **章节**: {{ chapter_id }}
+- **区域**: {{ region_name }}
+- **阵营**: {{ faction_name }}
+- **世界规则**: {{ world_rules }}
+
+## NPC角色类型
+- **角色类型**: healer（治疗师）
+- **性别**: {{ gender }}
+- **种族**: {{ race }}
+
+## 治疗师特征
+治疗师通常：
+- 温柔善良，乐于助人
+- 知识渊博，精通草药和医术
+- 关心他人，有慈悲心
+- 在战斗后提供治疗服务
+
+## 输出要求
+请严格按照以下JSON格式输出，确保所有字段完整：
+
+```json
+{
+  "npc_key": "npc_healer_{unique_id}",
+  "name": "治疗师名称",
+  "title": "治疗师/医师/草药师",
+  "gender": "{{ gender }}",
+  "age": 年龄(25-60),
+  "race": "{{ race }}",
+  "faction_key": "{{ faction_key }}",
+  "region_key": "{{ region_key }}",
+  "role": "healer",
+  "location_key": "loc_{region}_clinic",
+  "description": "治疗师描述，强调温柔、博学、乐于助人",
+  "personality": ["kind", "gentle", "knowledgeable", "compassionate"],
+  "traits": ["healer", "wise", "patient"],
+  "voice": "温柔和蔼，语气舒缓",
+  "backstory": "治疗师的背景故事，包括学医经历、为什么选择行医",
+  "motivation": "救治伤病、传播医术、帮助有需要的人",
+  "relationship_map": {"伤者": "救治关系", "药剂师": "合作关系"},
+  "dialog_style": "温柔关怀，总是关心对方的健康状况",
+  "dialog_nodes": {
+    "first_meet": {
+      "id": "first_meet",
+      "text": "你好，旅行者。看起来你有些疲惫，需要治疗吗？",
+      "speaker": "npc",
+      "choices": [
+        {"text": "是的，帮我治疗一下", "next": "heal"},
+        {"text": "我很好", "next": "about_work"},
+        {"text": "有什么需要帮忙的吗？", "next": "has_quest"}
+      ]
+    },
+    "heal": {
+      "id": "heal",
+      "text": "来吧，让我看看你的伤势。我会用最好的草药帮你恢复。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "多谢你", "next": "healed"},
+        {"text": "多少钱？", "next": "price"}
+      ]
+    },
+    "price": {
+      "id": "price",
+      "text": "对于旅行者，我只收取一点点费用来购买药材。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "好的，帮我治疗", "next": "healed"}
+      ]
+    },
+    "healed": {
+      "id": "healed",
+      "text": "你的伤口已经处理好了。感觉怎么样？",
+      "speaker": "npc",
+      "choices": [
+        {"text": "好多了，谢谢", "next": "default"},
+        {"text": "有什么需要帮忙的吗？", "next": "has_quest"}
+      ]
+    },
+    "about_work": {
+      "id": "about_work",
+      "text": "行医救人是我的天职。这片土地上伤病太多，我能做的有限。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "有什么需要帮忙的吗？", "next": "has_quest"},
+        {"text": "保重", "next": "goodbye"}
+      ]
+    },
+    "has_quest": {
+      "id": "has_quest",
+      "text": "我需要一些稀有药材来制作特效药，你能帮我找找吗？",
+      "speaker": "npc",
+      "choices": [
+        {"text": "我来帮你", "next": "quest_accepted", "action": "accept_quest"},
+        {"text": "我目前没空", "next": "goodbye"}
+      ]
+    },
+    "quest_accepted": {
+      "id": "quest_accepted",
+      "text": "太好了！我需要[药材名称]，[地点]应该能找到。小心安全！",
+      "speaker": "npc",
+      "choices": [
+        {"text": "交给我吧", "next": "goodbye"}
+      ]
+    },
+    "quest_completed": {
+      "id": "quest_completed",
+      "text": "这些药材正是我需要的！作为感谢，这瓶[药剂名称]送给你。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "多谢！", "next": "default"},
+        {"text": "告辞", "next": "goodbye"}
+      ]
+    },
+    "default": {
+      "id": "default",
+      "text": "诊所随时为你敞开，需要治疗时随时来找我。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "有什么需要帮忙的吗？", "next": "has_quest"},
+        {"text": "告辞", "next": "goodbye"}
+      ]
+    },
+    "goodbye": {
+      "id": "goodbye",
+      "text": "",
+      "speaker": "npc",
+      "choices": [],
+      "is_end": true
+    }
+  },
+  "quests_given": ["quest_herb_collection"],
+  "quests_related": ["quest_plague_cure"],
+  "shop_items": [{"item_id": "potion_health", "price": 15}, {"item_id": "potion_mana", "price": 20}],
+  "services_offered": ["治疗伤病", "制作药剂", "医疗咨询"],
+  "location_x": {{ location_x }},
+  "location_y": {{ location_y }},
+  "interaction_radius": 30
+}
+```
+
+## 质量要求
+1. 所有字段必须填写，不得留空
+2. 描述文字符合治疗师职业特征
+3. 性格特征与治疗师职业匹配
+4. 对话树逻辑完整，包含至少6个节点
+5. 背景故事合理，包含医学相关经历

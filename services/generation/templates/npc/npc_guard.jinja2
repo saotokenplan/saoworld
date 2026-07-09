@@ -1,0 +1,129 @@
+你是一个专业的游戏内容生成AI。请根据以下信息生成一个守卫NPC。
+
+## 世界背景信息
+- **章节**: {{ chapter_id }}
+- **区域**: {{ region_name }}
+- **阵营**: {{ faction_name }}
+- **世界规则**: {{ world_rules }}
+
+## NPC角色类型
+- **角色类型**: guard（守卫）
+- **性别**: {{ gender }}
+- **种族**: {{ race }}
+
+## 守卫特征
+守卫通常：
+- 忠诚勇敢，严守职责
+- 警惕性高，善于观察
+- 持有武器，穿着护甲
+- 关心区域安全
+
+## 输出要求
+请严格按照以下JSON格式输出，确保所有字段完整：
+
+```json
+{
+  "npc_key": "npc_guard_{unique_id}",
+  "name": "守卫名称",
+  "title": "守卫队长/城门守卫/巡逻队长",
+  "gender": "{{ gender }}",
+  "age": 年龄(25-45),
+  "race": "{{ race }}",
+  "faction_key": "{{ faction_key }}",
+  "region_key": "{{ region_key }}",
+  "role": "guard",
+  "location_key": "loc_{region}_gate",
+  "description": "守卫描述，强调威严、忠诚",
+  "personality": ["loyal", "vigilant", "disciplined", "honorable"],
+  "traits": ["brave", "observant", "duty-bound"],
+  "voice": "洪亮有力，语气坚定",
+  "backstory": "守卫的背景故事，包括从军经历、忠于谁",
+  "motivation": "保护区域安全、履行职责、维护秩序",
+  "relationship_map": {"指挥官": "上下级关系", "商人": "放行关系"},
+  "dialog_style": "正式严肃，注重秩序，必要时放松",
+  "dialog_nodes": {
+    "first_meet": {
+      "id": "first_meet",
+      "text": "站住！这里是[区域名称]，请出示通行证或说明来意。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "我是旅行者", "next": "verify_identity"},
+        {"text": "我有通行证", "next": "has_pass"},
+        {"text": "有什么需要帮忙的吗？", "next": "has_quest"}
+      ]
+    },
+    "verify_identity": {
+      "id": "verify_identity",
+      "text": "旅行者？最近周边不太安全，你最好小心行事。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "有什么需要帮忙的吗？", "next": "has_quest"},
+        {"text": "我会注意的", "next": "goodbye"}
+      ]
+    },
+    "has_pass": {
+      "id": "has_pass",
+      "text": "通行证有效，欢迎来到[区域名称]。如有异常情况，请及时报告。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "谢谢", "next": "goodbye"}
+      ]
+    },
+    "has_quest": {
+      "id": "has_quest",
+      "text": "我们最近遇到了一些麻烦，[描述问题]。如果你愿意帮忙，我会给予奖励。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "我来帮忙", "next": "quest_accepted", "action": "accept_quest"},
+        {"text": "我需要准备一下", "next": "goodbye"}
+      ]
+    },
+    "quest_accepted": {
+      "id": "quest_accepted",
+      "text": "太好了！[任务详情]。祝你好运！",
+      "speaker": "npc",
+      "choices": [
+        {"text": "放心吧", "next": "goodbye"}
+      ]
+    },
+    "quest_completed": {
+      "id": "quest_completed",
+      "text": "任务完成！你为[区域名称]做出了贡献。这是你的奖励。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "还有其他事吗？", "next": "default"},
+        {"text": "告辞", "next": "goodbye"}
+      ]
+    },
+    "default": {
+      "id": "default",
+      "text": "一切安好，旅行者。如有需要，随时来找我。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "告辞", "next": "goodbye"}
+      ]
+    },
+    "goodbye": {
+      "id": "goodbye",
+      "text": "",
+      "speaker": "npc",
+      "choices": [],
+      "is_end": true
+    }
+  },
+  "quests_given": ["quest_patrol_route"],
+  "quests_related": ["quest_gate_defense"],
+  "shop_items": [],
+  "services_offered": ["提供情报", "指引方向"],
+  "location_x": {{ location_x }},
+  "location_y": {{ location_y }},
+  "interaction_radius": 25
+}
+```
+
+## 质量要求
+1. 所有字段必须填写，不得留空
+2. 描述文字符合守卫职业特征
+3. 性格特征与守卫职业匹配
+4. 对话树逻辑完整，包含至少6个节点
+5. 背景故事合理，包含军事相关经历

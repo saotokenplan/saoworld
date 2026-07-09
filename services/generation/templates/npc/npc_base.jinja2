@@ -1,0 +1,115 @@
+你是一个专业的游戏内容生成AI。请根据以下信息生成一个完整的NPC数据。
+
+## 世界背景信息
+- **章节**: {{ chapter_id }}
+- **区域**: {{ region_name }}
+- **阵营**: {{ faction_name }}
+- **世界规则**: {{ world_rules }}
+
+## NPC角色类型
+- **角色类型**: {{ npc_role }}
+- **性别**: {{ gender }}
+- **种族**: {{ race }}
+
+## 输出要求
+请严格按照以下JSON格式输出，确保所有字段完整：
+
+```json
+{
+  "npc_key": "npc_{role}_{unique_id}",
+  "name": "NPC名称",
+  "title": "NPC头衔",
+  "gender": "{{ gender }}",
+  "age": 年龄(数字),
+  "race": "{{ race }}",
+  "faction_key": "{{ faction_key }}",
+  "region_key": "{{ region_key }}",
+  "role": "{{ npc_role }}",
+  "location_key": "loc_{region}_{role}",
+  "description": "NPC描述(100-200字)",
+  "personality": ["性格特征1", "性格特征2", "性格特征3"],
+  "traits": ["特征1", "特征2"],
+  "voice": "说话风格描述",
+  "backstory": "背景故事(200-300字)",
+  "motivation": "动机和目标",
+  "relationship_map": {"关联NPC1": "关系描述", "关联NPC2": "关系描述"},
+  "dialog_style": "对话风格描述",
+  "dialog_nodes": {
+    "first_meet": {
+      "id": "first_meet",
+      "text": "初次见面的对话内容",
+      "speaker": "npc",
+      "choices": [
+        {"text": "选项1", "next": "about_self"},
+        {"text": "选项2", "next": "has_quest"},
+        {"text": "告辞", "next": "goodbye"}
+      ]
+    },
+    "about_self": {
+      "id": "about_self",
+      "text": "介绍自己的对话",
+      "speaker": "npc",
+      "choices": [
+        {"text": "有什么需要帮忙的？", "next": "has_quest"},
+        {"text": "告辞", "next": "goodbye"}
+      ]
+    },
+    "has_quest": {
+      "id": "has_quest",
+      "text": "任务相关对话",
+      "speaker": "npc",
+      "choices": [
+        {"text": "我接受任务", "next": "quest_accepted", "action": "accept_quest"},
+        {"text": "我考虑一下", "next": "goodbye"}
+      ]
+    },
+    "quest_accepted": {
+      "id": "quest_accepted",
+      "text": "任务接受后的回复",
+      "speaker": "npc",
+      "choices": [
+        {"text": "我会尽力", "next": "goodbye"}
+      ]
+    },
+    "quest_completed": {
+      "id": "quest_completed",
+      "text": "任务完成后的对话",
+      "speaker": "npc",
+      "choices": [
+        {"text": "还有其他事吗？", "next": "default"},
+        {"text": "告辞", "next": "goodbye"}
+      ]
+    },
+    "default": {
+      "id": "default",
+      "text": "默认对话",
+      "speaker": "npc",
+      "choices": [
+        {"text": "有什么需要帮忙的？", "next": "has_quest"},
+        {"text": "告辞", "next": "goodbye"}
+      ]
+    },
+    "goodbye": {
+      "id": "goodbye",
+      "text": "",
+      "speaker": "npc",
+      "choices": [],
+      "is_end": true
+    }
+  },
+  "quests_given": ["任务ID1", "任务ID2"],
+  "quests_related": ["相关任务ID1"],
+  "shop_items": [],
+  "services_offered": ["服务1", "服务2"],
+  "location_x": 坐标X(数字),
+  "location_y": 坐标Y(数字),
+  "interaction_radius": 交互半径(数字)
+}
+```
+
+## 质量要求
+1. 所有字段必须填写，不得留空
+2. 描述文字符合世界观设定
+3. 性格特征与角色类型匹配
+4. 对话树逻辑完整，包含至少6个节点
+5. 背景故事合理，与阵营和区域背景相符

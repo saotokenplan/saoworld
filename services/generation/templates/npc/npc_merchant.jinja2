@@ -1,0 +1,131 @@
+你是一个专业的游戏内容生成AI。请根据以下信息生成一个商人NPC。
+
+## 世界背景信息
+- **章节**: {{ chapter_id }}
+- **区域**: {{ region_name }}
+- **阵营**: {{ faction_name }}
+- **世界规则**: {{ world_rules }}
+
+## NPC角色类型
+- **角色类型**: merchant（商人）
+- **性别**: {{ gender }}
+- **种族**: {{ race }}
+
+## 商人特征
+商人通常：
+- 精明圆滑，善于谈判
+- 消息灵通，知道各种传闻
+- 手头有各种货物
+- 关心利润，但也重视长期合作
+
+## 输出要求
+请严格按照以下JSON格式输出，确保所有字段完整：
+
+```json
+{
+  "npc_key": "npc_merchant_{unique_id}",
+  "name": "商人名称",
+  "title": "商会代表/行商/贸易商",
+  "gender": "{{ gender }}",
+  "age": 年龄(25-55),
+  "race": "{{ race }}",
+  "faction_key": "{{ faction_key }}",
+  "region_key": "{{ region_key }}",
+  "role": "merchant",
+  "location_key": "loc_{region}_market",
+  "description": "商人描述，强调精明、消息灵通",
+  "personality": ["friendly", "shrewd", "talkative", "observant"],
+  "traits": ["charismatic", "opportunistic", "trustworthy"],
+  "voice": "圆滑流畅，语速适中，带有商业气息",
+  "backstory": "商人的背景故事，包括经商经历、人脉关系",
+  "motivation": "赚取利润、扩展商业网络、寻找稀有商品",
+  "relationship_map": {"行会会长": "隶属关系", "走私者": "秘密合作"},
+  "dialog_style": "热情友好，善于引导话题，总是在寻找商机",
+  "dialog_nodes": {
+    "first_meet": {
+      "id": "first_meet",
+      "text": "欢迎光临！看看有什么需要的？我这里应有尽有。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "谈谈贸易", "next": "about_trade"},
+        {"text": "有什么消息？", "next": "info"},
+        {"text": "下次再来", "next": "goodbye"}
+      ]
+    },
+    "about_trade": {
+      "id": "about_trade",
+      "text": "贸易是繁荣的基石，没有交易就没有进步。我这里有各种稀有商品。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "有什么消息？", "next": "info"},
+        {"text": "下次再来", "next": "goodbye"}
+      ]
+    },
+    "info": {
+      "id": "info",
+      "text": "我听说[地点]最近有一些新发现，也许你会感兴趣？",
+      "speaker": "npc",
+      "choices": [
+        {"text": "告诉我更多", "next": "has_quest"},
+        {"text": "不感兴趣", "next": "default"}
+      ]
+    },
+    "has_quest": {
+      "id": "has_quest",
+      "text": "[地点]发现了一些[物品类型]，我愿意出高价收购。你愿意去探索吗？",
+      "speaker": "npc",
+      "choices": [
+        {"text": "成交", "next": "quest_accepted", "action": "accept_quest"},
+        {"text": "太危险了", "next": "default"}
+      ]
+    },
+    "quest_accepted": {
+      "id": "quest_accepted",
+      "text": "明智的选择！找到[物品]后直接带给我，我不会亏待你的。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "一言为定", "next": "goodbye"}
+      ]
+    },
+    "quest_completed": {
+      "id": "quest_completed",
+      "text": "这些[物品]品质上乘！这是你的报酬，合作愉快！",
+      "speaker": "npc",
+      "choices": [
+        {"text": "继续合作", "next": "default"},
+        {"text": "告辞", "next": "goodbye"}
+      ]
+    },
+    "default": {
+      "id": "default",
+      "text": "生意还好吗？有需要随时来找我，我这里总有你需要的东西。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "有什么消息？", "next": "info"},
+        {"text": "告辞", "next": "goodbye"}
+      ]
+    },
+    "goodbye": {
+      "id": "goodbye",
+      "text": "",
+      "speaker": "npc",
+      "choices": [],
+      "is_end": true
+    }
+  },
+  "quests_given": ["quest_relic_hunt"],
+  "quests_related": ["quest_trade_route"],
+  "shop_items": [{"item_id": "potion_health", "price": 10}, {"item_id": "scroll_fireball", "price": 50}],
+  "services_offered": ["买卖商品", "信息交易", "任务中介"],
+  "location_x": {{ location_x }},
+  "location_y": {{ location_y }},
+  "interaction_radius": 30
+}
+```
+
+## 质量要求
+1. 所有字段必须填写，不得留空
+2. 描述文字符合商人职业特征
+3. 性格特征与商人职业匹配
+4. 对话树逻辑完整，包含至少6个节点
+5. 背景故事合理，包含商业相关经历

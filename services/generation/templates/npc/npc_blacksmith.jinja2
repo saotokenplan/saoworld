@@ -1,0 +1,122 @@
+你是一个专业的游戏内容生成AI。请根据以下信息生成一个铁匠NPC。
+
+## 世界背景信息
+- **章节**: {{ chapter_id }}
+- **区域**: {{ region_name }}
+- **阵营**: {{ faction_name }}
+- **世界规则**: {{ world_rules }}
+
+## NPC角色类型
+- **角色类型**: blacksmith（铁匠）
+- **性别**: {{ gender }}
+- **种族**: {{ race }}
+
+## 铁匠特征
+铁匠通常：
+- 身材魁梧，手臂肌肉发达
+- 性格粗犷但诚实
+- 擅长锻造武器和护甲
+- 关心材料品质
+
+## 输出要求
+请严格按照以下JSON格式输出，确保所有字段完整：
+
+```json
+{
+  "npc_key": "npc_blacksmith_{unique_id}",
+  "name": "铁匠名称",
+  "title": "铁匠/首席铁匠/武器大师",
+  "gender": "{{ gender }}",
+  "age": 年龄(30-60),
+  "race": "{{ race }}",
+  "faction_key": "{{ faction_key }}",
+  "region_key": "{{ region_key }}",
+  "role": "blacksmith",
+  "location_key": "loc_{region}_blacksmith",
+  "description": "铁匠描述，强调身材魁梧、技艺精湛",
+  "personality": ["gruff", "skilled", "honest", "proud"],
+  "traits": ["strong", "meticulous", "traditional"],
+  "voice": "粗犷低沉，带有金属敲击的节奏感",
+  "backstory": "铁匠的背景故事，包括学艺经历、成名原因",
+  "motivation": "打造最好的武器，保护族人/赚取财富/传承技艺",
+  "relationship_map": {"武器商": "合作关系", "守卫队长": "供应关系"},
+  "dialog_style": "直截了当，喜欢用锻造比喻说话",
+  "dialog_nodes": {
+    "first_meet": {
+      "id": "first_meet",
+      "text": "需要武器还是护甲？我的手艺在这一带是最好的。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "说说你的手艺", "next": "about_work"},
+        {"text": "有什么需要帮忙的吗？", "next": "has_quest"},
+        {"text": "下次再来", "next": "goodbye"}
+      ]
+    },
+    "about_work": {
+      "id": "about_work",
+      "text": "好钢要用在刀刃上，这是我师傅教我的。每一件作品都是我的心血。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "有什么需要帮忙的吗？", "next": "has_quest"},
+        {"text": "下次再来", "next": "goodbye"}
+      ]
+    },
+    "has_quest": {
+      "id": "has_quest",
+      "text": "我需要一些特殊的材料来打造一把新武器，你能帮我找找吗？",
+      "speaker": "npc",
+      "choices": [
+        {"text": "我来帮你", "next": "quest_accepted", "action": "accept_quest"},
+        {"text": "我目前没空", "next": "goodbye"}
+      ]
+    },
+    "quest_accepted": {
+      "id": "quest_accepted",
+      "text": "太好了！我需要[具体材料]，[地点]应该能找到。注意安全！",
+      "speaker": "npc",
+      "choices": [
+        {"text": "交给我吧", "next": "goodbye"}
+      ]
+    },
+    "quest_completed": {
+      "id": "quest_completed",
+      "text": "这些材料的品质非常好！作为回报，这把新打造的[武器名称]归你了。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "多谢！", "next": "default"},
+        {"text": "告辞", "next": "goodbye"}
+      ]
+    },
+    "default": {
+      "id": "default",
+      "text": "铁匠铺随时为你敞开，需要什么尽管说。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "有什么需要帮忙的吗？", "next": "has_quest"},
+        {"text": "下次再来", "next": "goodbye"}
+      ]
+    },
+    "goodbye": {
+      "id": "goodbye",
+      "text": "",
+      "speaker": "npc",
+      "choices": [],
+      "is_end": true
+    }
+  },
+  "quests_given": ["quest_blacksmith_materials"],
+  "quests_related": ["quest_weapon_upgrade"],
+  "shop_items": [{"item_id": "weapon_iron_sword", "price": 100}, {"item_id": "armor_iron_chest", "price": 150}],
+  "services_offered": ["武器锻造", "护甲修理", "武器升级"],
+  "location_x": {{ location_x }},
+  "location_y": {{ location_y }},
+  "interaction_radius": 30
+}
+```
+
+## 质量要求
+1. 所有字段必须填写，不得留空
+2. 描述文字符合铁匠职业特征
+3. 性格特征与铁匠职业匹配
+4. 对话树逻辑完整，包含至少6个节点
+5. 背景故事合理，包含锻造相关经历
