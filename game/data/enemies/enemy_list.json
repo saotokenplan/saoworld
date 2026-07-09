@@ -1,0 +1,27 @@
+{
+	"schema_version": 1,
+	"enemies": [
+		{
+			"enemy_type": "wolf",
+			"name": "野狼",
+			"description": "荒野中游荡的饥饿野狼",
+			"level": 1,
+			"health": 30,
+			"attack": 8,
+			"defense": 3,
+			"exp_reward": 10,
+			"color": "#8B4513"
+		},
+		{
+			"enemy_type": "bandit",
+			"name": "强盗",
+			"description": "盘踞在道路上的凶恶强盗",
+			"level": 3,
+			"health": 60,
+			"attack": 12,
+			"defense": 5,
+			"exp_reward": 25,
+			"color": "#2F4F4F"
+		}
+	]
+}
