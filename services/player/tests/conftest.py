@@ -93,7 +93,22 @@ async def test_player_quest(test_player: Player) -> PlayerQuest:
         player_id=test_player.player_id,
         quest_id="quest_rescue_01",
         status="active",
-        objectives_jsonb={"obj1": "寻找失踪的村民"},
+        objectives_jsonb={"objectives": [{"id": "obj1", "text": "寻找失踪的村民", "completed": True}]},
+        rewards_jsonb={"gold": 100, "experience": 50, "reputation": {"iron_guard": 10}},
+    )
+    async with TestSessionLocal() as session:
+        session.add(player_quest)
+        await session.commit()
+    return player_quest
+
+@pytest_asyncio.fixture
+async def test_player_quest_incomplete(test_player: Player) -> PlayerQuest:
+    player_quest = PlayerQuest(
+        player_quest_id=uuid.uuid4(),
+        player_id=test_player.player_id,
+        quest_id="quest_incomplete_01",
+        status="active",
+        objectives_jsonb={"objectives": [{"id": "obj1", "text": "寻找失踪的村民", "completed": False}]},
         rewards_jsonb={"gold": 100},
     )
     async with TestSessionLocal() as session:

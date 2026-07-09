@@ -339,3 +339,44 @@ async def test_fail_quest_not_active(client: AsyncClient, player_token: str, tes
     assert response.status_code == 409
     data = response.json()
     assert data["code"] == PlayerErrorCodes.QUEST_INVALID_STATE_TRANSITION
+
+
+@pytest.mark.asyncio
+async def test_complete_quest_objectives_incomplete(client: AsyncClient, player_token: str, test_player, test_player_quest_incomplete):
+    response = await client.post(
+        f"{settings.api_v1_prefix}/player/quests/quest_incomplete_01/complete",
+        headers={"Authorization": f"Bearer {player_token}"},
+        json={},
+    )
+    assert response.status_code == 409
+    data = response.json()
+    assert data["code"] == PlayerErrorCodes.QUEST_OBJECTIVES_INCOMPLETE
+
+
+@pytest.mark.asyncio
+async def test_complete_quest_with_rewards(client: AsyncClient, player_token: str, test_player, test_player_quest):
+    response = await client.post(
+        f"{settings.api_v1_prefix}/player/quests/quest_rescue_01/complete",
+        headers={"Authorization": f"Bearer {player_token}"},
+        json={},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["data"]["quest_id"] == "quest_rescue_01"
+    assert data["data"]["status"] == "completed"
+
+    async with TestSessionLocal() as session:
+        from app.domain.models import Player
+        from sqlalchemy import select
+        stmt = select(Player.progress_jsonb, Player.reputation_snapshot).where(
+            Player.player_id == test_player.player_id
+        )
+        result = await session.execute(stmt)
+        row = result.first()
+        assert row is not None
+        progress = row[0]
+        reputation = row[1]
+        assert progress is not None
+        assert progress["resources"]["gold"] == 100
+        assert progress["stats"]["experience"] == 50
+        assert reputation["iron_guard"] == 10

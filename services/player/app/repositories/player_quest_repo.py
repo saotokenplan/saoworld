@@ -112,8 +112,19 @@ class PlayerQuestRepository:
         await self.db.flush()
         return player_quest
 
+    def all_objectives_completed(self, objectives_jsonb: dict[str, Any] | None) -> bool:
+        if objectives_jsonb is None:
+            return True
+        objectives = objectives_jsonb.get("objectives", [])
+        if not isinstance(objectives, list):
+            return True
+        for obj in objectives:
+            if isinstance(obj, dict) and obj.get("completed") is not True:
+                return False
+        return True
+
     async def complete_quest(
-        self, player_id: uuid.UUID, quest_id: str
+        self, player_id: uuid.UUID, quest_id: str, check_objectives: bool = True
     ) -> PlayerQuest | None:
         player_quest = await self.get_player_quest(player_id, quest_id)
         if player_quest is None:
@@ -121,6 +132,9 @@ class PlayerQuestRepository:
 
         if player_quest.status != "active":
             return player_quest
+
+        if check_objectives and not self.all_objectives_completed(player_quest.objectives_jsonb):
+            return None
 
         player_quest.status = "completed"
         player_quest.updated_at = datetime.now(timezone.utc)

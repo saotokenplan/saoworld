@@ -63,3 +63,45 @@ class PlayerRepository:
         result = await self.db.execute(stmt)
         rows = result.scalars().all()
         return rows, total
+
+    async def grant_rewards(
+        self,
+        player_id: uuid.UUID,
+        rewards_jsonb: dict | None,
+    ) -> Player | None:
+        from datetime import datetime, timezone
+
+        stmt: Select[tuple[Player]] = select(Player).where(Player.player_id == player_id)
+        result = await self.db.execute(stmt)
+        player = result.scalar_one_or_none()
+        if player is None:
+            return None
+
+        if rewards_jsonb is None:
+            return player
+
+        progress = player.progress_jsonb or {}
+        resources = progress.get("resources", {})
+        stats = progress.get("stats", {})
+
+        gold = rewards_jsonb.get("gold", 0)
+        experience = rewards_jsonb.get("experience", 0)
+        reputation = rewards_jsonb.get("reputation", {})
+
+        if gold > 0:
+            resources["gold"] = resources.get("gold", 0) + gold
+        if experience > 0:
+            stats["experience"] = stats.get("experience", 0) + experience
+        if isinstance(reputation, dict):
+            current_rep = progress.get("reputation_snapshot", {})
+            for faction, amount in reputation.items():
+                current_rep[faction] = current_rep.get(faction, 0) + amount
+            player.reputation_snapshot = current_rep
+
+        progress["resources"] = resources
+        progress["stats"] = stats
+        player.progress_jsonb = progress
+        player.updated_at = datetime.now(timezone.utc)
+
+        await self.db.flush()
+        return player
