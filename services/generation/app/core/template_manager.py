@@ -135,5 +135,14 @@ class TemplateManager:
         }
         return role_map.get(role) or "npc/npc_base.jinja2"
 
+    def get_quest_template_by_type(self, quest_type: str) -> str | None:
+        type_map = {
+            "main": "quest/quest_main.jinja2",
+            "side": "quest/quest_side.jinja2",
+            "event": "quest/quest_event.jinja2",
+            "daily": "quest/quest_daily.jinja2",
+        }
+        return type_map.get(quest_type) or "quest/quest_base.jinja2"
+
 
 template_manager = TemplateManager()
