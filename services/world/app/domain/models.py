@@ -71,6 +71,69 @@ class WorldSkeleton(Base):
     )
 
 
+class NPC(Base):
+    __tablename__ = "npcs"
+
+    npc_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    npc_key: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True)
+    chapter_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    title: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    faction_key: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    role: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    location_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    personality: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    dialogues: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, nullable=True)
+    related_quests: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    rewards: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        Index("npcs_chapter_id_idx", "chapter_id"),
+        Index("npcs_faction_key_idx", "faction_key"),
+    )
+
+
+class QuestDefinition(Base):
+    __tablename__ = "quest_definitions"
+
+    quest_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    quest_key: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True)
+    chapter_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(256), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    quest_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    region_key: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    start_npc_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    end_npc_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    prerequisites: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    objectives: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
+    rewards: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    failure_condition: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "quest_type IN ('main', 'side', 'event', 'daily')",
+            name="quest_definitions_quest_type_check",
+        ),
+        Index("quest_definitions_chapter_id_idx", "chapter_id"),
+        Index("quest_definitions_quest_type_idx", "quest_type"),
+        Index("quest_definitions_region_key_idx", "region_key"),
+    )
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 

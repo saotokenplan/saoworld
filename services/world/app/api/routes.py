@@ -7,17 +7,27 @@ from app.core.db import get_db
 from app.core.deps import RequireOpsRole, RequireWorldReadScope, UserPayload
 from app.core.errors import WorldErrorCodes, raise_world_error
 from app.core.metrics import (
+    record_npc_create,
+    record_quest_create,
     record_region_create,
     record_region_status_transition,
 )
 from app.repositories.audit_repo import (
+    ACTION_NPC_CREATE,
+    ACTION_QUEST_CREATE,
     ACTION_REGION_CREATE,
     ACTION_REGION_STATUS_UPDATE,
+    RESOURCE_NPC,
+    RESOURCE_QUEST,
     RESOURCE_REGION,
     AuditRepository,
 )
-from app.repositories.world_repo import WorldRepository
+from app.repositories.world_repo import NpcRepository, QuestDefinitionRepository, WorldRepository
 from app.schemas.world import (
+    CreateNpcRequest,
+    CreateNpcResponse,
+    CreateQuestRequest,
+    CreateQuestResponse,
     CreateRegionRequest,
     CreateRegionResponse,
     CreateWorldSkeletonRequest,
@@ -25,7 +35,12 @@ from app.schemas.world import (
     EnvelopeResponse,
     ErrorDetail,
     HealthResponse,
+    NpcListResponse,
+    NpcResponse,
     PaginatedMeta,
+    QuestListResponse,
+    QuestResponse,
+    QuestType,
     RegionListResponse,
     RegionResponse,
     RegionStatus,
@@ -437,6 +452,577 @@ async def create_world_skeleton(
             world_version=skeleton.world_version,
             chapter_id=skeleton.chapter_id,
             is_active=skeleton.is_active,
+            request_id=request_id,
+            trace_id=x_trace_id,
+        ),
+        trace_id=x_trace_id,
+    )
+
+
+# ============================================================
+# NPC 接口
+# ============================================================
+
+
+@router.get(
+    "/world/npcs",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["world"],
+)
+async def list_npcs(
+    request: Request,
+    chapter_id: str | None = Query(default=None, max_length=64),
+    faction_key: str | None = Query(default=None, max_length=128),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireWorldReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[NpcListResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_world_npcs")
+
+    repo = NpcRepository(db)
+    npcs, total = await repo.list_npcs(
+        chapter_id=chapter_id,
+        faction_key=faction_key,
+        limit=limit,
+        offset=offset,
+    )
+
+    npc_responses = [
+        NpcResponse(
+            npc_id=n.npc_id,
+            npc_key=n.npc_key,
+            chapter_id=n.chapter_id,
+            name=n.name,
+            title=n.title,
+            faction_key=n.faction_key,
+            role=n.role,
+            location_key=n.location_key,
+            description=n.description,
+            personality=n.personality,
+            dialogues=n.dialogues,
+            related_quests=n.related_quests,
+            rewards=n.rewards,
+            created_at=n.created_at,
+            updated_at=n.updated_at,
+        )
+        for n in npcs
+    ]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=NpcListResponse(npcs=npc_responses, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/world/npcs/{npc_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "NPC not found"},
+    },
+    tags=["world"],
+)
+async def get_npc_detail(
+    npc_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireWorldReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[NpcResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_world_npc_detail")
+
+    repo = NpcRepository(db)
+    npc = await repo.get_npc_by_id(npc_id)
+
+    if npc is None:
+        raise_world_error(
+            WorldErrorCodes.NPC_NOT_FOUND,
+            "NPC 不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="npc_id",
+                    issue="not_found",
+                    rejected_value=str(npc_id),
+                )
+            ],
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=NpcResponse(
+            npc_id=npc.npc_id,
+            npc_key=npc.npc_key,
+            chapter_id=npc.chapter_id,
+            name=npc.name,
+            title=npc.title,
+            faction_key=npc.faction_key,
+            role=npc.role,
+            location_key=npc.location_key,
+            description=npc.description,
+            personality=npc.personality,
+            dialogues=npc.dialogues,
+            related_quests=npc.related_quests,
+            rewards=npc.rewards,
+            created_at=npc.created_at,
+            updated_at=npc.updated_at,
+        ),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/world/npcs/by-key/{npc_key}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "NPC not found"},
+    },
+    tags=["world"],
+)
+async def get_npc_by_key(
+    npc_key: str,
+    request: Request,
+    chapter_id: str | None = Query(default=None, max_length=64),
+    current_user: UserPayload = RequireWorldReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[NpcResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_world_npc_by_key")
+
+    if not npc_key or len(npc_key) > 128:
+        raise_world_error(
+            WorldErrorCodes.INVALID_NPC_KEY,
+            "npc_key 长度必须在 1-128 之间",
+            request_id=request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="npc_key",
+                    issue="invalid_length",
+                    rejected_value=npc_key,
+                )
+            ],
+        )
+
+    repo = NpcRepository(db)
+    if chapter_id:
+        npc = await repo.get_npc_by_key_for_chapter(npc_key, chapter_id)
+    else:
+        npc = await repo.get_npc_by_key(npc_key)
+
+    if npc is None:
+        raise_world_error(
+            WorldErrorCodes.NPC_NOT_FOUND,
+            "NPC 不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="npc_key",
+                    issue="not_found",
+                    rejected_value=npc_key,
+                )
+            ],
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=NpcResponse(
+            npc_id=npc.npc_id,
+            npc_key=npc.npc_key,
+            chapter_id=npc.chapter_id,
+            name=npc.name,
+            title=npc.title,
+            faction_key=npc.faction_key,
+            role=npc.role,
+            location_key=npc.location_key,
+            description=npc.description,
+            personality=npc.personality,
+            dialogues=npc.dialogues,
+            related_quests=npc.related_quests,
+            rewards=npc.rewards,
+            created_at=npc.created_at,
+            updated_at=npc.updated_at,
+        ),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.post(
+    "/world/npcs",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"description": "Invalid request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        409: {"description": "npc_key already exists"},
+    },
+    tags=["ops"],
+)
+async def create_npc(
+    body: CreateNpcRequest,
+    request: Request,
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[CreateNpcResponse]:
+    request_id = _make_request_id("req_ops_npc")
+
+    repo = NpcRepository(db)
+    existing = await repo.get_npc_by_key(body.npc_key)
+    if existing is not None:
+        raise_world_error(
+            WorldErrorCodes.NPC_KEY_EXISTS,
+            f"npc_key {body.npc_key} 已存在",
+            request_id=request_id,
+            status_code=status.HTTP_409_CONFLICT,
+            details=[
+                ErrorDetail(
+                    location="body",
+                    field="npc_key",
+                    issue="already_exists",
+                    rejected_value=body.npc_key,
+                )
+            ],
+        )
+
+    npc = await repo.create_npc(
+        npc_key=body.npc_key,
+        chapter_id=body.chapter_id,
+        name=body.name,
+        title=body.title,
+        faction_key=body.faction_key,
+        role=body.role,
+        location_key=body.location_key,
+        description=body.description,
+        personality=body.personality,
+        dialogues=body.dialogues,
+        related_quests=body.related_quests,
+        rewards=body.rewards,
+    )
+
+    record_npc_create()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_NPC_CREATE,
+        resource_type=RESOURCE_NPC,
+        resource_id=npc.npc_id,
+        request_payload_jsonb=body.model_dump(mode="json"),
+        result_status=201,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=CreateNpcResponse(
+            npc_id=npc.npc_id,
+            npc_key=npc.npc_key,
+            chapter_id=npc.chapter_id,
+            name=npc.name,
+            request_id=request_id,
+            trace_id=x_trace_id,
+        ),
+        trace_id=x_trace_id,
+    )
+
+
+# ============================================================
+# Quest 接口
+# ============================================================
+
+
+@router.get(
+    "/world/quests",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["world"],
+)
+async def list_quests(
+    request: Request,
+    chapter_id: str | None = Query(default=None, max_length=64),
+    quest_type: QuestType | None = Query(default=None),
+    region_key: str | None = Query(default=None, max_length=128),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireWorldReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[QuestListResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_world_quests")
+
+    repo = QuestDefinitionRepository(db)
+    quests, total = await repo.list_quests(
+        chapter_id=chapter_id,
+        quest_type=quest_type.value if quest_type else None,
+        region_key=region_key,
+        limit=limit,
+        offset=offset,
+    )
+
+    quest_responses = [
+        QuestResponse(
+            quest_id=q.quest_id,
+            quest_key=q.quest_key,
+            chapter_id=q.chapter_id,
+            title=q.title,
+            description=q.description,
+            quest_type=QuestType(q.quest_type),
+            region_key=q.region_key,
+            start_npc_key=q.start_npc_key,
+            end_npc_key=q.end_npc_key,
+            prerequisites=q.prerequisites,
+            objectives=q.objectives,
+            rewards=q.rewards,
+            failure_condition=q.failure_condition,
+            created_at=q.created_at,
+            updated_at=q.updated_at,
+        )
+        for q in quests
+    ]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=QuestListResponse(quests=quest_responses, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/world/quests/{quest_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Quest not found"},
+    },
+    tags=["world"],
+)
+async def get_quest_detail(
+    quest_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireWorldReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[QuestResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_world_quest_detail")
+
+    repo = QuestDefinitionRepository(db)
+    quest = await repo.get_quest_by_id(quest_id)
+
+    if quest is None:
+        raise_world_error(
+            WorldErrorCodes.QUEST_NOT_FOUND,
+            "任务不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="quest_id",
+                    issue="not_found",
+                    rejected_value=str(quest_id),
+                )
+            ],
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=QuestResponse(
+            quest_id=quest.quest_id,
+            quest_key=quest.quest_key,
+            chapter_id=quest.chapter_id,
+            title=quest.title,
+            description=quest.description,
+            quest_type=QuestType(quest.quest_type),
+            region_key=quest.region_key,
+            start_npc_key=quest.start_npc_key,
+            end_npc_key=quest.end_npc_key,
+            prerequisites=quest.prerequisites,
+            objectives=quest.objectives,
+            rewards=quest.rewards,
+            failure_condition=quest.failure_condition,
+            created_at=quest.created_at,
+            updated_at=quest.updated_at,
+        ),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/world/quests/by-key/{quest_key}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Quest not found"},
+    },
+    tags=["world"],
+)
+async def get_quest_by_key(
+    quest_key: str,
+    request: Request,
+    chapter_id: str | None = Query(default=None, max_length=64),
+    current_user: UserPayload = RequireWorldReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[QuestResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_world_quest_by_key")
+
+    if not quest_key or len(quest_key) > 128:
+        raise_world_error(
+            WorldErrorCodes.INVALID_QUEST_KEY,
+            "quest_key 长度必须在 1-128 之间",
+            request_id=request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="quest_key",
+                    issue="invalid_length",
+                    rejected_value=quest_key,
+                )
+            ],
+        )
+
+    repo = QuestDefinitionRepository(db)
+    if chapter_id:
+        quest = await repo.get_quest_by_key_for_chapter(quest_key, chapter_id)
+    else:
+        quest = await repo.get_quest_by_key(quest_key)
+
+    if quest is None:
+        raise_world_error(
+            WorldErrorCodes.QUEST_NOT_FOUND,
+            "任务不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="quest_key",
+                    issue="not_found",
+                    rejected_value=quest_key,
+                )
+            ],
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=QuestResponse(
+            quest_id=quest.quest_id,
+            quest_key=quest.quest_key,
+            chapter_id=quest.chapter_id,
+            title=quest.title,
+            description=quest.description,
+            quest_type=QuestType(quest.quest_type),
+            region_key=quest.region_key,
+            start_npc_key=quest.start_npc_key,
+            end_npc_key=quest.end_npc_key,
+            prerequisites=quest.prerequisites,
+            objectives=quest.objectives,
+            rewards=quest.rewards,
+            failure_condition=quest.failure_condition,
+            created_at=quest.created_at,
+            updated_at=quest.updated_at,
+        ),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.post(
+    "/world/quests",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"description": "Invalid request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        409: {"description": "quest_key already exists"},
+    },
+    tags=["ops"],
+)
+async def create_quest(
+    body: CreateQuestRequest,
+    request: Request,
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[CreateQuestResponse]:
+    request_id = _make_request_id("req_ops_quest")
+
+    repo = QuestDefinitionRepository(db)
+    existing = await repo.get_quest_by_key(body.quest_key)
+    if existing is not None:
+        raise_world_error(
+            WorldErrorCodes.QUEST_KEY_EXISTS,
+            f"quest_key {body.quest_key} 已存在",
+            request_id=request_id,
+            status_code=status.HTTP_409_CONFLICT,
+            details=[
+                ErrorDetail(
+                    location="body",
+                    field="quest_key",
+                    issue="already_exists",
+                    rejected_value=body.quest_key,
+                )
+            ],
+        )
+
+    quest = await repo.create_quest(
+        quest_key=body.quest_key,
+        chapter_id=body.chapter_id,
+        title=body.title,
+        description=body.description,
+        quest_type=body.quest_type.value,
+        region_key=body.region_key,
+        start_npc_key=body.start_npc_key,
+        end_npc_key=body.end_npc_key,
+        prerequisites=body.prerequisites,
+        objectives=body.objectives,
+        rewards=body.rewards,
+        failure_condition=body.failure_condition,
+    )
+
+    record_quest_create()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_QUEST_CREATE,
+        resource_type=RESOURCE_QUEST,
+        resource_id=quest.quest_id,
+        request_payload_jsonb=body.model_dump(mode="json"),
+        result_status=201,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=CreateQuestResponse(
+            quest_id=quest.quest_id,
+            quest_key=quest.quest_key,
+            chapter_id=quest.chapter_id,
+            title=quest.title,
+            quest_type=QuestType(quest.quest_type),
             request_id=request_id,
             trace_id=x_trace_id,
         ),
