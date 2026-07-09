@@ -71,3 +71,37 @@ class PlayerRegionRepository:
         player_region.reputation = reputation
         await self.db.flush()
         return player_region
+
+    async def add_reputation(
+        self, player_id: uuid.UUID, region_id: str, amount: int
+    ) -> PlayerRegion:
+        stmt: Select[tuple[PlayerRegion]] = select(PlayerRegion).where(
+            PlayerRegion.player_id == player_id,
+            PlayerRegion.region_id == region_id,
+        )
+        result = await self.db.execute(stmt)
+        player_region = result.scalar_one_or_none()
+
+        if player_region is None:
+            player_region = PlayerRegion(
+                player_region_id=uuid.uuid4(),
+                player_id=player_id,
+                region_id=region_id,
+                reputation=amount,
+            )
+            self.db.add(player_region)
+        else:
+            player_region.reputation = player_region.reputation + amount
+
+        await self.db.flush()
+        return player_region
+
+    async def get_region_reputation(
+        self, player_id: uuid.UUID, region_id: str
+    ) -> PlayerRegion | None:
+        stmt: Select[tuple[PlayerRegion]] = select(PlayerRegion).where(
+            PlayerRegion.player_id == player_id,
+            PlayerRegion.region_id == region_id,
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()

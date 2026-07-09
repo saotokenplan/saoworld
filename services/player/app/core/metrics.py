@@ -76,6 +76,16 @@ def record_inventory_use() -> None:
     PLAYER_OPERATIONS_TOTAL.labels(action="inventory_use").inc()
 
 
+def record_reputation_add() -> None:
+    """记录一次声望增加。"""
+    PLAYER_OPERATIONS_TOTAL.labels(action="reputation_add").inc()
+
+
+def record_reputation_remove() -> None:
+    """记录一次声望减少。"""
+    PLAYER_OPERATIONS_TOTAL.labels(action="reputation_remove").inc()
+
+
 def set_players_total(count: int) -> None:
     """设置玩家总数。"""
     PLAYERS_TOTAL.set(count)

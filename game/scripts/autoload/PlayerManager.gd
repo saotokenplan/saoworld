@@ -3,6 +3,7 @@ extends Node
 signal player_info_loaded
 signal player_quests_loaded
 signal player_regions_loaded
+signal player_reputation_loaded
 signal player_error(error_code: String, message: String)
 signal auth_error(message: String)
 signal loading_changed(is_loading: bool)
@@ -11,13 +12,25 @@ signal quest_completed(quest_id: String)
 signal quest_progress_updated(quest_id: String)
 signal quest_failed(quest_id: String)
 signal quest_detail_loaded(quest_id: String)
+signal reputation_updated(region_id: String, new_reputation: int)
 
 var player_info: Dictionary = {}
 var player_quests: Array[Dictionary] = []
 var player_regions: Array[Dictionary] = []
+var reputation_cache: Dictionary = {}
+var reputation_list: Array[Dictionary] = []
 var is_loading: bool = false
 var last_error: Dictionary = {}
 var schema_version: int = 1
+
+const REPUTATION_LEVELS: Dictionary = {
+	"hostile": {"name": "敌对", "color": "#F44336", "threshold": -3000, "icon": "💀"},
+	"neutral": {"name": "中立", "color": "#9E9E9E", "threshold": 0, "icon": "😐"},
+	"friendly": {"name": "友好", "color": "#4CAF50", "threshold": 3000, "icon": "😊"},
+	"honored": {"name": "尊敬", "color": "#2196F3", "threshold": 9000, "icon": "🙂"},
+	"revered": {"name": "崇敬", "color": "#9C27B0", "threshold": 21000, "icon": "😍"},
+	"exalted": {"name": "崇拜", "color": "#FFD700", "threshold": 42000, "icon": "✨"}
+}
 
 const QUEST_STATUS: Dictionary = {
 	"available": {"name": "可接取", "color": "#2196F3"},
@@ -181,6 +194,137 @@ func refresh_all() -> void:
 	fetch_player_info()
 	fetch_player_quests()
 	fetch_player_regions()
+	fetch_all_reputation()
+
+func fetch_all_reputation(limit: int = 20, offset: int = 0) -> void:
+	_set_loading(true)
+	var endpoint: String = "/player/reputation?limit=%d&offset=%d" % [limit, offset]
+	var result: Dictionary = APIManager.get(endpoint)
+	
+	if result.get("success", false):
+		_handle_reputation_list_success(result)
+	else:
+		_handle_player_error(result)
+	
+	_set_loading(false)
+
+func fetch_region_reputation(region_id: String) -> Dictionary:
+	if reputation_cache.has(region_id):
+		return reputation_cache[region_id]
+	
+	_set_loading(true)
+	var endpoint: String = "/player/reputation/%s" % region_id
+	var result: Dictionary = APIManager.get(endpoint)
+	
+	_set_loading(false)
+	
+	if result.get("success", false):
+		var data: Dictionary = result.get("data", {})
+		_upsert_reputation(data)
+		last_error.clear()
+		return data
+	else:
+		_handle_player_error(result)
+		return {}
+
+func _handle_reputation_list_success(result: Dictionary) -> void:
+	var data: Array[Dictionary] = result.get("data", [])
+	reputation_list = data
+	for rep in data:
+		var region_id: String = rep.get("region_id", "")
+		if region_id != "":
+			reputation_cache[region_id] = rep
+	last_error.clear()
+	player_reputation_loaded.emit()
+
+func _upsert_reputation(rep_data: Dictionary) -> void:
+	var region_id: String = rep_data.get("region_id", "")
+	if region_id == "":
+		return
+	
+	reputation_cache[region_id] = rep_data
+	
+	for i in range(reputation_list.size()):
+		if reputation_list[i].get("region_id", "") == region_id:
+			reputation_list[i] = rep_data
+			return
+	
+	reputation_list.append(rep_data)
+
+func get_region_reputation(region_id: String) -> int:
+	if reputation_cache.has(region_id):
+		return reputation_cache[region_id].get("reputation", 0)
+	var player_region: Dictionary = get_player_region_by_id(region_id)
+	return player_region.get("reputation", 0)
+
+func get_reputation_level(region_id: String) -> String:
+	var rep: int = get_region_reputation(region_id)
+	return calculate_reputation_level(rep)
+
+func calculate_reputation_level(reputation: int) -> String:
+	var levels: Array = REPUTATION_LEVELS.keys()
+	var sorted_levels: Array = []
+	for level_key in levels:
+		var level_data: Dictionary = REPUTATION_LEVELS[level_key]
+		sorted_levels.append({"key": level_key, "threshold": level_data["threshold"]})
+	
+	sorted_levels.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return a["threshold"] > b["threshold"]
+	)
+	
+	for level_info in sorted_levels:
+		if reputation >= level_info["threshold"]:
+			return level_info["key"]
+	
+	return "hostile"
+
+func get_reputation_level_info(level_key: String) -> Dictionary:
+	if REPUTATION_LEVELS.has(level_key):
+		return REPUTATION_LEVELS[level_key]
+	return {"name": level_key, "color": "#FFFFFF", "threshold": 0, "icon": "❓"}
+
+func get_reputation_progress(region_id: String) -> Dictionary:
+	var rep: Dictionary = {}
+	if reputation_cache.has(region_id):
+		rep = reputation_cache[region_id]
+	else:
+		var reputation: int = get_region_reputation(region_id)
+		rep = {"region_id": region_id, "reputation": reputation, "reputation_level": calculate_reputation_level(reputation)}
+	
+	var current_level: String = rep.get("reputation_level", "neutral")
+	var current_rep: int = rep.get("reputation", 0)
+	var next_threshold: int = rep.get("next_level_threshold", 0)
+	var progress: float = rep.get("current_level_progress", 0.0)
+	
+	if next_threshold == 0 and progress == 0.0:
+		var levels: Array = ["hostile", "neutral", "friendly", "honored", "revered", "exalted"]
+		var current_idx: int = levels.find(current_level)
+		
+		if current_idx < levels.size() - 1:
+			var next_level_key: String = levels[current_idx + 1]
+			next_threshold = REPUTATION_LEVELS[next_level_key]["threshold"]
+			var current_threshold: int = REPUTATION_LEVELS[current_level]["threshold"]
+			var range_val: int = next_threshold - current_threshold
+			var current_progress: int = current_rep - current_threshold
+			if range_val > 0:
+				progress = float(current_progress) / float(range_val)
+				progress = clamp(progress, 0.0, 1.0)
+			else:
+				progress = 1.0
+		else:
+			next_threshold = REPUTATION_LEVELS["exalted"]["threshold"]
+			progress = 1.0
+	
+	return {
+		"current_level": current_level,
+		"current_reputation": current_rep,
+		"next_level_threshold": next_threshold,
+		"progress": progress,
+		"level_info": get_reputation_level_info(current_level)
+	}
+
+func get_reputation_count() -> int:
+	return reputation_list.size()
 
 func _set_loading(loading: bool) -> void:
 	if is_loading != loading:

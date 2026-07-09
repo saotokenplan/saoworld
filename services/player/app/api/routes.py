@@ -23,6 +23,8 @@ from app.core.metrics import (
     record_quest_complete,
     record_quest_fail,
     record_quest_progress_update,
+    record_reputation_add,
+    record_reputation_remove,
 )
 from app.repositories.audit_repo import (
     ACTION_INVENTORY_ADD,
@@ -37,10 +39,14 @@ from app.repositories.audit_repo import (
     ACTION_QUEST_PROGRESS_UPDATE,
     ACTION_QUEST_STATUS_UPDATE,
     ACTION_REGION_UNLOCK,
+    ACTION_REPUTATION_ADD,
+    ACTION_REPUTATION_REMOVE,
+    ACTION_REPUTATION_ADJUST,
     RESOURCE_INVENTORY,
     RESOURCE_PLAYER,
     RESOURCE_QUEST,
     RESOURCE_REGION,
+    RESOURCE_REPUTATION,
     AuditRepository,
 )
 from app.repositories.inventory_repo import InventoryRepository
@@ -50,6 +56,7 @@ from app.repositories.player_repo import PlayerRepository
 from app.schemas.player import (
     AcceptQuestRequest,
     AddItemRequest,
+    AdjustReputationRequest,
     CompleteQuestRequest,
     CreatePlayerQuestRequest,
     CreatePlayerRequest,
@@ -63,11 +70,14 @@ from app.schemas.player import (
     PlayerRegionResponse,
     PlayerResponse,
     QuestStatus,
+    RegionReputationResponse,
     RemoveItemRequest,
     UpdatePlayerRequest,
     UpdateQuestProgressRequest,
     UpdateQuestStatusRequest,
     UseItemRequest,
+    get_reputation_level,
+    REPUTATION_LEVEL_THRESHOLDS,
 )
 
 router = APIRouter()
@@ -460,6 +470,18 @@ async def complete_quest(
 
     player_repo = PlayerRepository(db)
     await player_repo.grant_rewards(player_uuid, player_quest.rewards_jsonb)
+
+    if player_quest.rewards_jsonb and isinstance(player_quest.rewards_jsonb, dict):
+        rep_rewards = player_quest.rewards_jsonb.get("reputation", {})
+        if isinstance(rep_rewards, dict):
+            region_repo = PlayerRegionRepository(db)
+            for region_id, rep_amount in rep_rewards.items():
+                if isinstance(rep_amount, int) and rep_amount != 0:
+                    await region_repo.add_reputation(player_uuid, region_id, rep_amount)
+                    if rep_amount > 0:
+                        record_reputation_add()
+                    else:
+                        record_reputation_remove()
 
     record_quest_complete()
 
@@ -1225,5 +1247,180 @@ async def ops_remove_inventory_item(
     return EnvelopeResponse(
         request_id=request_id,
         data=InventoryItemResponse.model_validate(item),
+        trace_id=x_trace_id,
+    )
+
+
+# --- Reputation API ---
+
+
+def _build_region_reputation_response(region_id: str, reputation: int) -> RegionReputationResponse:
+    level = get_reputation_level(reputation)
+    thresholds = list(REPUTATION_LEVEL_THRESHOLDS.values())
+    level_names = list(REPUTATION_LEVEL_THRESHOLDS.keys())
+    current_idx = level_names.index(level.value)
+
+    if current_idx < len(thresholds) - 1:
+        next_threshold = thresholds[current_idx + 1]
+        current_threshold = thresholds[current_idx]
+        progress_range = next_threshold - current_threshold
+        current_progress = reputation - current_threshold
+        progress = min(1.0, max(0.0, current_progress / progress_range)) if progress_range > 0 else 1.0
+    else:
+        next_threshold = thresholds[-1]
+        progress = 1.0
+
+    return RegionReputationResponse(
+        region_id=region_id,
+        reputation=reputation,
+        reputation_level=level,
+        next_level_threshold=next_threshold,
+        current_level_progress=round(progress, 4),
+    )
+
+
+@router.get(
+    "/player/reputation/{region_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        400: {"description": "Invalid player ID"},
+    },
+    tags=["player"],
+)
+async def get_region_reputation(
+    region_id: str,
+    request: Request,
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[RegionReputationResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_reputation_get")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    repo = PlayerRegionRepository(db)
+    player_region = await repo.get_region_reputation(player_uuid, region_id)
+    reputation = player_region.reputation if player_region else 0
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=_build_region_reputation_response(region_id, reputation),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/reputation",
+    responses={
+        401: {"description": "Unauthorized"},
+        400: {"description": "Invalid player ID"},
+    },
+    tags=["player"],
+)
+async def get_all_reputation(
+    request: Request,
+    current_user: UserPayload = RequirePlayerRole,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[RegionReputationResponse]]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_reputation_list")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    repo = PlayerRegionRepository(db)
+    regions, total = await repo.get_player_regions(player_uuid, limit=limit, offset=offset)
+
+    reputation_responses = [
+        _build_region_reputation_response(r.region_id, r.reputation)
+        for r in regions
+    ]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=reputation_responses,
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.post(
+    "/players/{player_id}/reputation/{region_id}/adjust",
+    responses={
+        400: {"description": "Invalid request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Player not found"},
+    },
+    tags=["ops"],
+)
+async def adjust_region_reputation(
+    player_id: uuid.UUID,
+    region_id: str,
+    body: AdjustReputationRequest,
+    request: Request,
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[RegionReputationResponse]:
+    request_id = _make_request_id("req_ops_reputation_adjust")
+
+    player_repo = PlayerRepository(db)
+    player = await player_repo.get_player_by_id(player_id)
+    if player is None:
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_NOT_FOUND,
+            "玩家不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    repo = PlayerRegionRepository(db)
+    player_region = await repo.add_reputation(player_id, region_id, body.amount)
+
+    if body.amount > 0:
+        record_reputation_add()
+    elif body.amount < 0:
+        record_reputation_remove()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_REPUTATION_ADJUST,
+        resource_type=RESOURCE_REPUTATION,
+        resource_id=player_region.player_region_id,
+        reason=body.reason,
+        request_payload_jsonb={
+            "player_id": str(player_id),
+            "region_id": region_id,
+            "amount": body.amount,
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=_build_region_reputation_response(region_id, player_region.reputation),
         trace_id=x_trace_id,
     )
