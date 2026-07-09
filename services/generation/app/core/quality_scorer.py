@@ -97,43 +97,122 @@ class QualityScorer:
         reasons: list[str] = []
         score = 1.0
 
-        title = payload.get("title", "")
-        description = payload.get("description", "")
-        objectives = payload.get("objectives", [])
-        rewards = payload.get("rewards", {})
+        required_fields = [
+            "quest_key", "title", "description", "quest_type",
+            "chapter_id", "region_key", "objectives",
+        ]
 
-        if not title or len(title) < 5:
-            score -= 0.2
-            reasons.append("Quest title is too short or missing")
-        elif len(title) > 100:
+        for field in required_fields:
+            value = payload.get(field)
+            if value is None:
+                score -= 0.05
+                reasons.append(f"Missing field: {field}")
+            elif isinstance(value, str) and not value.strip():
+                score -= 0.03
+                reasons.append(f"Empty field: {field}")
+            elif isinstance(value, list) and len(value) == 0:
+                score -= 0.05
+                reasons.append(f"Empty list: {field}")
+
+        title = payload.get("title", "")
+        if len(title) < 5:
             score -= 0.1
+            reasons.append("Quest title is too short")
+        elif len(title) > 100:
+            score -= 0.05
             reasons.append("Quest title is too long")
 
-        if not description or len(description) < 30:
-            score -= 0.25
-            reasons.append("Quest description is too short or missing")
-
-        if not isinstance(objectives, list) or len(objectives) == 0:
-            score -= 0.3
-            reasons.append("Quest objectives are missing or invalid")
-        elif len(objectives) > 10:
-            score -= 0.1
-            reasons.append("Too many objectives")
-
-        if not isinstance(rewards, dict):
+        description = payload.get("description", "")
+        if len(description) < 50:
             score -= 0.15
-            reasons.append("Quest rewards are invalid")
+            reasons.append("Quest description is too short")
+        elif len(description) > 500:
+            score -= 0.05
+            reasons.append("Quest description is too long")
 
-        reward_values = []
-        for key in ["experience", "gold", "items"]:
-            if key in rewards:
-                reward_values.append(rewards[key])
+        quest_type = payload.get("quest_type", "")
+        valid_types = {"main", "side", "event", "daily"}
+        if quest_type and quest_type not in valid_types:
+            score -= 0.05
+            reasons.append(f"Invalid quest type: {quest_type}")
 
-        for val in reward_values:
-            if isinstance(val, (int, float)) and val < 0:
+        objectives = payload.get("objectives", [])
+        if isinstance(objectives, list):
+            if len(objectives) < 2:
                 score -= 0.15
-                reasons.append("Negative reward values")
-                break
+                reasons.append(f"Quest needs at least 2 objectives (has {len(objectives)})")
+            elif len(objectives) > 10:
+                score -= 0.05
+                reasons.append("Too many objectives")
+
+            for idx, obj in enumerate(objectives):
+                if not isinstance(obj, dict):
+                    score -= 0.03
+                    reasons.append(f"Objective {idx} is not a dictionary")
+                    continue
+                obj_id = obj.get("id")
+                obj_desc = obj.get("description", "")
+                obj_type = obj.get("type", "")
+                if not obj_id:
+                    score -= 0.02
+                    reasons.append(f"Objective {idx} missing id")
+                if len(obj_desc) < 10:
+                    score -= 0.02
+                    reasons.append(f"Objective {idx} description is too short")
+                if obj_type and obj_type not in {"story", "location", "npc", "combat", "explore", "collect", "rescue", "travel", "quest"}:
+                    score -= 0.02
+                    reasons.append(f"Objective {idx} has invalid type: {obj_type}")
+        else:
+            score -= 0.3
+            reasons.append("Quest objectives must be a list")
+
+        rewards = payload.get("rewards", {})
+        if isinstance(rewards, dict):
+            experience = rewards.get("experience", 0)
+            gold = rewards.get("gold", 0)
+
+            if isinstance(experience, (int, float)) and experience < 0:
+                score -= 0.1
+                reasons.append("Negative experience reward")
+            if isinstance(gold, (int, float)) and gold < 0:
+                score -= 0.1
+                reasons.append("Negative gold reward")
+
+            quest_type = payload.get("quest_type", "side")
+            exp_limits = {"main": (300, 2000), "side": (50, 500), "event": (100, 800), "daily": (20, 200)}
+            gold_limits = {"main": (50, 500), "side": (10, 150), "event": (30, 250), "daily": (5, 50)}
+
+            if quest_type in exp_limits:
+                min_exp, max_exp = exp_limits[quest_type]
+                if isinstance(experience, (int, float)):
+                    if experience < min_exp:
+                        score -= 0.05
+                        reasons.append(f"Experience below {quest_type} minimum ({min_exp})")
+                    elif experience > max_exp:
+                        score -= 0.05
+                        reasons.append(f"Experience above {quest_type} maximum ({max_exp})")
+
+                min_gold, max_gold = gold_limits[quest_type]
+                if isinstance(gold, (int, float)):
+                    if gold < min_gold:
+                        score -= 0.03
+                        reasons.append(f"Gold below {quest_type} minimum ({min_gold})")
+                    elif gold > max_gold:
+                        score -= 0.03
+                        reasons.append(f"Gold above {quest_type} maximum ({max_gold})")
+        else:
+            score -= 0.15
+            reasons.append("Quest rewards must be a dictionary")
+
+        quest_key = payload.get("quest_key", "")
+        if quest_key and not quest_key.startswith("quest_"):
+            score -= 0.03
+            reasons.append("Quest key should start with 'quest_'")
+
+        region_key = payload.get("region_key", "")
+        if region_key and not region_key.startswith("region_"):
+            score -= 0.02
+            reasons.append("Region key should start with 'region_'")
 
         return QualityScoreResult(max(0.0, min(1.0, score)), reasons)
 

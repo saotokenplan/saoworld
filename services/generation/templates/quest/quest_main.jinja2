@@ -1,0 +1,81 @@
+你是一个专业的游戏内容生成AI。请根据以下信息生成一个主线任务。
+
+## 世界背景信息
+- **章节**: {{ chapter_id }}
+- **区域**: {{ region_name }}
+- **阵营**: {{ faction_name }}
+- **世界规则**: {{ world_rules }}
+
+## 任务类型
+- **任务类型**: main（主线任务）
+
+## 主线任务特征
+主线任务通常：
+- 推动主要剧情发展
+- 与章节主题紧密相关
+- 涉及重要NPC和关键决策点
+- 奖励丰厚，影响声望和剧情走向
+- 有多个阶段的目标
+
+## 输出要求
+请严格按照以下JSON格式输出，确保所有字段完整：
+
+```json
+{
+  "quest_key": "quest_main_{chapter}_{unique_id}",
+  "title": "主线任务标题",
+  "description": "任务描述(150-250字，描述主线剧情的关键转折点)",
+  "quest_type": "main",
+  "chapter_id": "{{ chapter_id }}",
+  "region_key": "{{ region_key }}",
+  "start_npc_key": "{{ start_npc_key }}",
+  "end_npc_key": "{{ end_npc_key }}",
+  "prerequisites": ["前置主线任务ID"],
+  "objectives": [
+    {
+      "id": "obj_story_start",
+      "description": "与关键NPC交谈了解情况",
+      "type": "npc",
+      "target": "{{ start_npc_key }}",
+      "completed": false
+    },
+    {
+      "id": "obj_main_goal",
+      "description": "完成主线核心目标",
+      "type": "story|combat|explore",
+      "target": "核心目标描述",
+      "completed": false
+    },
+    {
+      "id": "obj_confrontation",
+      "description": "面对关键挑战或敌人",
+      "type": "combat|npc",
+      "target": "挑战对象",
+      "completed": false
+    },
+    {
+      "id": "obj_report_completion",
+      "description": "向任务发布者报告任务完成",
+      "type": "npc",
+      "target": "{{ end_npc_key }}",
+      "completed": false
+    }
+  ],
+  "rewards": {
+    "experience": 500-1000,
+    "gold": 100-300,
+    "reputation": {"{{ faction_key }}": 100-200},
+    "items": ["关键物品ID"]
+  },
+  "failure_condition": null,
+  "aligns_with_faction": "{{ faction_key }}",
+  "impact": "任务对主线剧情的重大影响描述"
+}
+```
+
+## 质量要求
+1. 所有字段必须填写，不得留空
+2. 描述文字推动章节主线剧情
+3. 目标设计体现剧情推进
+4. 奖励数值为章节最高级别
+5. 前置条件为前一章节主线任务
