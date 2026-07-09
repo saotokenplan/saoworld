@@ -109,6 +109,7 @@ def generate_content_batch(
     count: int = 1,
     region_id: str | None = None,
     chapter_id: str | None = None,
+    generated_params: dict[str, Any] | None = None,
     trace_id: str | None = None,
 ) -> dict[str, str]:
     if trace_id is None:
@@ -122,21 +123,42 @@ def generate_content_batch(
         template_type=template_type,
         count=count,
         region_id=region_id,
+        generated_params=generated_params,
     )
 
     try:
         client = GenerationServiceClient(settings.generation_service_url)
 
+        resolved_template_type = template_type
+        resolved_count = count
+        resolved_region_id = region_id
+        resolved_chapter_id = chapter_id
+        resolved_template_id = f"tpl_{template_type}_v1"
+        extra_input_params: dict[str, Any] = {}
+
+        if generated_params:
+            resolved_template_type = generated_params.get("template_type", template_type)
+            resolved_count = generated_params.get("count", count)
+            resolved_region_id = generated_params.get("region_id", region_id)
+            resolved_chapter_id = generated_params.get("chapter_id", chapter_id)
+            resolved_template_id = generated_params.get("template_id", f"tpl_{resolved_template_type}_v1")
+            for key, value in generated_params.items():
+                if key not in {"template_type", "count", "region_id", "chapter_id", "template_id"}:
+                    extra_input_params[key] = value
+
+        input_payload: dict[str, Any] = {
+            "template_type": resolved_template_type,
+            "count": resolved_count,
+            "region_id": resolved_region_id,
+            "chapter_id": resolved_chapter_id,
+        }
+        input_payload.update(extra_input_params)
+
         payload = {
             "vote_cycle_id": vote_cycle_id,
             "source_candidate_id": winning_candidate_id,
-            "template_id": f"tpl_{template_type}_v1",
-            "input_payload": {
-                "template_type": template_type,
-                "count": count,
-                "region_id": region_id,
-                "chapter_id": chapter_id,
-            },
+            "template_id": resolved_template_id,
+            "input_payload": input_payload,
             "trace_id": trace_id,
         }
 
@@ -149,6 +171,7 @@ def generate_content_batch(
             "generation_request_created",
             request_id=request_id,
             vote_cycle_id=vote_cycle_id,
+            template_id=resolved_template_id,
         )
 
         import asyncio

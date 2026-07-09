@@ -772,20 +772,27 @@ async def finalize_vote_cycle(
     try:
         winning_candidate_name = ""
         total_votes = 0
+        generated_params = None
+        region_scope = None
         if updated_cycle.winning_candidate_id is not None:
             candidates = await repo.get_candidates_for_cycle(vote_cycle_id)
             for c in candidates:
                 if c.candidate_id == updated_cycle.winning_candidate_id:
                     winning_candidate_name = c.title
+                    generated_params = c.generated_params
+                    region_scope = c.region_scope
                     break
             tally_result = await repo.tally_votes(vote_cycle_id)
             total_votes = tally_result.get("total_votes", 0)
         await event_publisher.publish_vote_result_finalized(
             vote_cycle_id=str(vote_cycle_id),
+            chapter_id=cycle.chapter_id,
             winning_candidate_id=str(updated_cycle.winning_candidate_id) if updated_cycle.winning_candidate_id else "",
             winning_candidate_name=winning_candidate_name,
             total_votes=total_votes,
             finalized_at=updated_cycle.finalized_at.isoformat() if updated_cycle.finalized_at else datetime.now(timezone.utc).isoformat(),
+            generated_params=generated_params,
+            region_scope=region_scope,
             trace_id=x_trace_id or "",
         )
     except Exception as exc:
