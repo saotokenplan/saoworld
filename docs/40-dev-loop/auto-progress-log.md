@@ -5,6 +5,23 @@
 
 ## 进度记录
 
+### auto-20260709-2300 - agents 模块根目录 pytest 模块命名冲突修复
+
+**执行时间**：2026-07-09 23:00
+**状态**：已完成
+**任务描述**：修复 agents 模块从根目录运行 pytest 时的模块命名冲突问题，确保 `cd tools/agents && pytest` 能正确收集并运行全部 226 个测试用例。
+
+**完成内容**：
+- 重命名 27 个文件（9 agents × 3：input_schemas、output_schemas、error_handler），添加 agent 前缀避免同名冲突
+- 更新约 40+ 处导入引用（主模块、CLI、__init__.py、错误处理器、测试文件）
+- 从根目录运行 pytest 226 passed，ruff 和 mypy 检查通过
+- 同步更新 P3 规划文档状态（客户端 SDK 标记为已完成，第一阶段进度 100%）
+
+**产出文件**：
+- 27 个文件重命名 + 约 40 处导入更新
+- `docs/40-dev-loop/p3-online-ops-plan.md`（P3 规划进度更新）
+- `docs/00-governance/project-status.md`（项目状态更新）
+
 ### auto-20260709-2000 - agents 模块质量全面提升与 mypy 类型检查收紧
 
 **执行时间**：2026-07-09 20:00

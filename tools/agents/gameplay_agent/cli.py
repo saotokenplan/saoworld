@@ -1,7 +1,7 @@
 import click
 import json
 from .gameplay_agent import GameplayAgent
-from .input_schemas import DesignTask, SceneConfig, ScriptInterface, DataConfig, GameplayTaskInput, SceneNode, ScriptProperty, ScriptMethod, SignalDefinition
+from .gameplay_input_schemas import DesignTask, SceneConfig, ScriptInterface, DataConfig, GameplayTaskInput, SceneNode, ScriptProperty, ScriptMethod, SignalDefinition
 
 
 @click.group()

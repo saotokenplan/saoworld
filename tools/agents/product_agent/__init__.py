@@ -1,5 +1,5 @@
 from .product_agent import ProductAgent
-from .input_schemas import (
+from .product_input_schemas import (
     VersionStatus,
     VoteResults,
     OnlineMetrics,
@@ -10,7 +10,7 @@ from .input_schemas import (
     TrendData,
     Issue,
 )
-from .output_schemas import (
+from .product_output_schemas import (
     PriorityMatrix,
     MilestonePlan,
     VersionBrief,

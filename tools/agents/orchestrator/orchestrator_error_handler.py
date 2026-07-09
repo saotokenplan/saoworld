@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import List
 
-from .output_schemas import FailureHandling, FailureError
+from .orchestrator_output_schemas import FailureHandling, FailureError
 
 
 class OrchestratorErrorHandler:

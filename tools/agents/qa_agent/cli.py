@@ -1,7 +1,7 @@
 import argparse
 import json
 from .qa_agent import QAAgent
-from .input_schemas import TestTask, CodeChange
+from .qa_input_schemas import TestTask, CodeChange
 
 
 def main():

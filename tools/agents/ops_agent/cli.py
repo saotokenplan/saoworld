@@ -1,7 +1,7 @@
 import argparse
 import json
 from .ops_agent import OpsAgent
-from .input_schemas import (
+from .ops_input_schemas import (
     OpsTask, MetricsData, ExceptionData, FeedbackData, SystemMetrics, GameplayMetrics, ServiceMetrics,
     ExceptionItem, FeedbackItem
 )

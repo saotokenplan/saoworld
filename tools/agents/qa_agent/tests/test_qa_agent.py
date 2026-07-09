@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from qa_agent import QAAgent
-from input_schemas import TestTask, AcceptanceCase, CodeChange, AcceptanceScenario, ScenarioStep
+from qa_input_schemas import TestTask, AcceptanceCase, CodeChange, AcceptanceScenario, ScenarioStep
 
 
 def test_analyze_requirements_and_changes():
@@ -173,30 +173,30 @@ def test_run_workflow_success():
 
 
 def test_error_handler_handle_environment_error():
-    from error_handler import QAErrorHandler
+    from qa_error_handler import QAErrorHandler
     handler = QAErrorHandler()
     handler.handle_error("environment", "数据库连接失败")
 
 
 def test_error_handler_handle_missing_tests_error():
-    from error_handler import QAErrorHandler
+    from qa_error_handler import QAErrorHandler
     handler = QAErrorHandler()
     handler.handle_error("missing_tests", "核心功能缺少测试覆盖")
 
 
 def test_error_handler_handle_flaky_tests_error():
-    from error_handler import QAErrorHandler
+    from qa_error_handler import QAErrorHandler
     handler = QAErrorHandler()
     handler.handle_error("flaky_tests", "测试结果不一致")
 
 
 def test_error_handler_handle_timeout_error():
-    from error_handler import QAErrorHandler
+    from qa_error_handler import QAErrorHandler
     handler = QAErrorHandler()
     handler.handle_error("timeout", "测试执行超时")
 
 
 def test_error_handler_handle_fix_failure_error():
-    from error_handler import QAErrorHandler
+    from qa_error_handler import QAErrorHandler
     handler = QAErrorHandler()
     handler.handle_error("fix_failure", "修复多次仍未通过")

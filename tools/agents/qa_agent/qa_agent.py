@@ -1,9 +1,9 @@
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional, Dict
-from input_schemas import TestTask, AcceptanceCase, CodeChanges, DesignDocument
-from output_schemas import TestOutput, TestReport, FailureSummary, TestReportSummary, QAResult
-from error_handler import QAErrorHandler
+from qa_input_schemas import TestTask, AcceptanceCase, CodeChanges, DesignDocument
+from qa_output_schemas import TestOutput, TestReport, FailureSummary, TestReportSummary, QAResult
+from qa_error_handler import QAErrorHandler
 
 
 class QAAgent:

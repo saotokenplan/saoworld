@@ -2,18 +2,18 @@ import uuid
 import random
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
-from .input_schemas import (
+from .ops_input_schemas import (
     MetricsData, LogData, ExceptionData, FeedbackData, OpsTask,
     ServiceMetrics, SystemMetrics, GameplayMetrics
 )
-from .output_schemas import (
+from .ops_output_schemas import (
     ExceptionReport, ExceptionDetail, ExceptionSummary,
     ImprovementSuggestion, ImprovementSuggestions,
     AlertSummary, AlertSummaryData, AlertCounts, AlertTrends, TopAlert,
     HealthReport, HealthReportData, ServiceHealth,
     OpsResult
 )
-from .error_handler import OpsErrorHandler
+from .ops_error_handler import OpsErrorHandler
 
 
 class OpsAgent:

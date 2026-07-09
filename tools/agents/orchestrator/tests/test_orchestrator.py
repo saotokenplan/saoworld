@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from ..input_schemas import (
+from ..orchestrator_input_schemas import (
     VersionBrief,
     Milestone,
     TaskInput,

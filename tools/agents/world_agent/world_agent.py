@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Any
 from uuid import uuid4
-from input_schemas import WorldTaskInput, RequirementItem
-from output_schemas import (
+from world_input_schemas import WorldTaskInput, RequirementItem
+from world_output_schemas import (
     NPCConfig,
     QuestConfig,
     Objective,
@@ -12,7 +12,7 @@ from output_schemas import (
     ReviewRequest,
     WorldGenerationResult,
 )
-from error_handler import (
+from world_error_handler import (
     MissingSkeletonError,
     TemplateMismatchError,
     ContentViolationError,
@@ -508,7 +508,7 @@ class WorldAgent:
 
         支持从上游需求生成任务获取输入
         """
-        from input_schemas import WorldRules, SkeletonSnapshot
+        from world_input_schemas import WorldRules, SkeletonSnapshot
 
         if params is None:
             params = {}

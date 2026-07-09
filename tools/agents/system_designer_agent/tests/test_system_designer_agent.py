@@ -3,9 +3,9 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from system_designer_agent import SystemDesignerAgent
-from input_schemas import Task, TaskInput, RuleLibrary
-from output_schemas import DesignNote, DataStructure, ChangePlan, ArchitectureValidationReport
-from error_handler import (
+from designer_input_schemas import Task, TaskInput, RuleLibrary
+from designer_output_schemas import DesignNote, DataStructure, ChangePlan, ArchitectureValidationReport
+from designer_error_handler import (
     RequirementAmbiguityError,
     TechnicalFeasibilityError,
     ModuleConflictError,

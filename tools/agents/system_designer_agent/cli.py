@@ -1,7 +1,7 @@
 import click
 import json
 from .system_designer_agent import SystemDesignerAgent
-from .input_schemas import Task, TaskInput, RuleLibrary
+from .designer_input_schemas import Task, TaskInput, RuleLibrary
 
 
 @click.group()

@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timezone
 
 from .orchestrator import Orchestrator
-from .input_schemas import VersionBrief, GateResults, AgentStatus, Milestone, TaskInput, GateResult, ServiceGateResults, AgentStatusItem
+from .orchestrator_input_schemas import VersionBrief, GateResults, AgentStatus, Milestone, TaskInput, GateResult, ServiceGateResults, AgentStatusItem
 
 
 def _create_sample_version_brief() -> VersionBrief:
