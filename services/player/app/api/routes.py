@@ -43,6 +43,7 @@ from app.schemas.player import (
     AcceptQuestRequest,
     CompleteQuestRequest,
     CreatePlayerQuestRequest,
+    CreatePlayerRequest,
     EnvelopeResponse,
     FailQuestRequest,
     HealthResponse,
@@ -383,7 +384,7 @@ async def update_quest_progress(
     responses={
         401: {"description": "Unauthorized"},
         404: {"description": "Quest not found"},
-        409: {"description": "Quest not active or already completed"},
+        409: {"description": "Quest not active or already completed or objectives incomplete"},
     },
     tags=["player"],
 )
@@ -436,6 +437,17 @@ async def complete_quest(
         )
 
     player_quest = await repo.complete_quest(player_uuid, quest_id)
+    if player_quest is None:
+        raise_player_error(
+            PlayerErrorCodes.QUEST_OBJECTIVES_INCOMPLETE,
+            "任务目标未全部完成，无法提交",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    player_repo = PlayerRepository(db)
+    await player_repo.grant_rewards(player_uuid, player_quest.rewards_jsonb)
+
     record_quest_complete()
 
     audit_repo = AuditRepository(db)
@@ -447,7 +459,7 @@ async def complete_quest(
         action=ACTION_QUEST_COMPLETE,
         resource_type=RESOURCE_QUEST,
         resource_id=player_quest.player_quest_id,
-        request_payload_jsonb={"quest_id": quest_id},
+        request_payload_jsonb={"quest_id": quest_id, "rewards": player_quest.rewards_jsonb},
         result_status=200,
     )
 
