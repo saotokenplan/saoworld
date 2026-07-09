@@ -5,6 +5,32 @@
 
 ---
 
+### auto-20260710-0800 - 玩家存档系统剩余步骤（Sprint 1 P0）
+
+**执行时间**：2026-07-10 08:00
+**状态**：已完成
+**任务描述**：完成 Sprint 1 P0 项 S1-10「玩家存档系统」剩余步骤，实现完整的存档系统闭环（启动检查、继续/新游戏选择、手动保存/加载）。
+
+**完成内容**：
+- Main.gd 启动流程集成存档检查（`_check_for_existing_save`）
+- 根据存档存在情况显示「继续游戏」或「新游戏」按钮
+- MainMenu 场景新增「继续游戏」「新游戏」「保存」「加载」按钮
+- main_menu.gd 实现 `set_save_state` 方法控制按钮可见性
+- 连接所有存档相关信号（continue_game_pressed、new_game_pressed、save_pressed、load_pressed）
+- 更新项目状态与需求迭代计划文档
+
+**修改文件**：
+- `game/scripts/Main.gd`：新增存档检查逻辑与信号处理
+- `game/scripts/ui/main_menu.gd`：新增存档相关信号、按钮、状态控制
+- `game/scenes/ui/main_menu/MainMenu.tscn`：新增按钮节点
+- `docs/00-governance/project-status.md`：标记 S1-10 完成
+- `docs/10-requirements/需求迭代计划.md`：标记 S1-10 已完成
+- `docs/40-dev-loop/auto-plan-20260710-0700.md`：更新状态为已完成
+
+**Sprint 1 状态**：Sprint 1 P0 项全部完成（S1-01/S1-02/S1-03/S1-04/S1-05/S1-09/S1-10/S1-11），核心玩法链路完整闭环（探索 + 对话 + 任务 + 战斗 + 存档）
+
+---
+
 ### auto-20260710-0700 - 玩家存档系统（Sprint 1 P0）
 
 **执行时间**：2026-07-10 07:00 ~ 07:30

@@ -15,7 +15,7 @@ func _ready() -> void:
 	_initialize_managers()
 	_setup_global_signals()
 	_setup_save_triggers()
-	_show_main_menu()
+	_check_for_existing_save()
 
 func _initialize_managers() -> void:
 	pass
@@ -55,6 +55,14 @@ func _switch_scene(new_scene: PackedScene, connect_signals: bool = false) -> Nod
 func _connect_scene_signals(scene_node: Node) -> void:
 	if scene_node.has_signal("start_game_pressed"):
 		scene_node.start_game_pressed.connect(_on_start_game_pressed)
+	if scene_node.has_signal("continue_game_pressed"):
+		scene_node.continue_game_pressed.connect(_on_continue_game_pressed)
+	if scene_node.has_signal("new_game_pressed"):
+		scene_node.new_game_pressed.connect(_on_new_game_pressed)
+	if scene_node.has_signal("save_pressed"):
+		scene_node.save_pressed.connect(_on_save_pressed)
+	if scene_node.has_signal("load_pressed"):
+		scene_node.load_pressed.connect(_on_load_pressed)
 	if scene_node.has_signal("vote_pressed"):
 		scene_node.vote_pressed.connect(_on_vote_pressed)
 	if scene_node.has_signal("world_map_pressed"):
@@ -127,6 +135,41 @@ func quit_game() -> void:
 	# 退出前自动保存
 	SaveManager.save_game("exit_backup")
 	get_tree().quit()
+
+func _check_for_existing_save() -> void:
+	if SaveManager.has_save_file("main"):
+		print("[Main] 检测到存档文件，显示继续游戏选项")
+		_show_main_menu(true)
+	else:
+		print("[Main] 未检测到存档文件，显示新游戏选项")
+		_show_main_menu(false)
+
+func _show_main_menu(has_save: bool = false) -> void:
+	var scene_node: Node = _switch_scene(MAIN_MENU_SCENE, true)
+	if scene_node and scene_node.has_method("set_save_state"):
+		scene_node.set_save_state(has_save)
+
+func _on_continue_game_pressed() -> void:
+	var result: Dictionary = SaveManager.load_game("main")
+	if result.get("success", false):
+		print("[Main] 存档加载成功，进入世界地图")
+		_switch_scene(WORLD_MAP_SCENE)
+	else:
+		print("[Main] 存档加载失败: %s" % result.get("error", ""))
+
+func _on_new_game_pressed() -> void:
+	if SaveManager.has_save_file("main"):
+		SaveManager.delete_save("main")
+		print("[Main] 已删除旧存档")
+	_switch_scene(WORLD_MAP_SCENE)
+
+func _on_save_pressed() -> void:
+	SaveManager.save_game("main")
+
+func _on_load_pressed() -> void:
+	var result: Dictionary = SaveManager.load_game("main")
+	if not result.get("success", false):
+		print("[Main] 加载失败: %s" % result.get("error", ""))
 
 # 存档系统回调
 func _on_quest_updated(_quest_id: String) -> void:
