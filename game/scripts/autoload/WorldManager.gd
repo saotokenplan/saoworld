@@ -19,6 +19,11 @@ const REGION_STATUS: Dictionary = {
 	"archived": {"name": "已归档", "color": "#9E9E9E"}
 }
 
+const REGION_TYPE: Dictionary = {
+	"core": {"name": "核心区域", "icon": "🏰"},
+	"expansion": {"name": "扩展区域", "icon": "🌍"}
+}
+
 func _ready() -> void:
 	APIManager.auth_error.connect(_on_auth_error)
 
@@ -145,3 +150,112 @@ func reset() -> void:
 	region_cache.clear()
 	is_loading = false
 	last_error.clear()
+
+func fetch_regions_with_chapter(chapter_id: String = "", limit: int = 20, offset: int = 0) -> void:
+	_set_loading(true)
+	var params: Array[String] = []
+	params.append("limit=%d" % limit)
+	params.append("offset=%d" % offset)
+	if chapter_id != "":
+		params.append("chapter_id=%s" % chapter_id)
+	
+	var endpoint: String = "/world/regions?%s" % "&".join(params)
+	var result: Dictionary = APIManager.get(endpoint)
+	
+	if result.get("success", false):
+		_handle_regions_success(result)
+	else:
+		_handle_world_error(result)
+	
+	_set_loading(false)
+
+func get_regions_by_chapter(chapter_id: String) -> Array[Dictionary]:
+	var filtered: Array[Dictionary] = []
+	for region in regions:
+		if region.get("chapter_id", "") == chapter_id:
+			filtered.append(region)
+	return filtered
+
+func get_regions_by_type(region_type: String) -> Array[Dictionary]:
+	var filtered: Array[Dictionary] = []
+	for region in regions:
+		if region.get("type", "") == region_type:
+			filtered.append(region)
+	return filtered
+
+func get_region_type_info(region_type: String) -> Dictionary:
+	if REGION_TYPE.has(region_type):
+		return REGION_TYPE[region_type]
+	return {"name": region_type, "icon": "📍"}
+
+func is_region_unlocked(region_id: String) -> bool:
+	var region: Dictionary = get_region_by_id(region_id)
+	if region == {}:
+		return false
+	
+	if region.get("status", "") == "active":
+		return true
+	
+	var player_region: Dictionary = PlayerManager.get_player_region_by_id(region_id)
+	return player_region.get("unlocked", false)
+
+func get_unlocked_region_count() -> int:
+	var count: int = 0
+	for region in regions:
+		if is_region_unlocked(region.get("region_id", "")):
+			count += 1
+	return count
+
+func get_region_progression(region_id: String) -> Dictionary:
+	var region: Dictionary = get_region_by_id(region_id)
+	if region == {}:
+		return {"completed_quests": 0, "total_quests": 0, "progress": 0}
+	
+	var player_region: Dictionary = PlayerManager.get_player_region_by_id(region_id)
+	var completed: int = player_region.get("completed_quests", 0)
+	var total: int = region.get("quest_count", 0)
+	
+	if total == 0:
+		return {"completed_quests": completed, "total_quests": total, "progress": 0}
+	
+	return {
+		"completed_quests": completed,
+		"total_quests": total,
+		"progress": float(completed) / float(total)
+	}
+
+func get_region_reputation(region_id: String) -> int:
+	var player_region: Dictionary = PlayerManager.get_player_region_by_id(region_id)
+	return player_region.get("reputation", 0)
+
+func search_regions(query: String) -> Array[Dictionary]:
+	var results: Array[Dictionary] = []
+	var lower_query: String = query.to_lower()
+	
+	for region in regions:
+		var name: String = region.get("name", "").to_lower()
+		var desc: String = region.get("description", "").to_lower()
+		
+		if lower_query in name or lower_query in desc:
+			results.append(region)
+	
+	return results
+
+func sort_regions(sort_by: String = "name", ascending: bool = true) -> Array[Dictionary]:
+	var sorted_regions: Array[Dictionary] = regions.duplicate()
+	
+	sorted_regions.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var value_a: Variant = a.get(sort_by, "")
+		var value_b: Variant = b.get(sort_by, "")
+		
+		if typeof(value_a) == TYPE_STRING:
+			value_a = value_a.to_lower()
+			value_b = value_b.to_lower()
+		
+		if ascending:
+			return value_a < value_b
+		else:
+			return value_a > value_b
+	)
+	
+	return sorted_regions
