@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "description": "玩家存档数据结构定义",
+  "fields": {
+    "schema_version": {
+      "type": "integer",
+      "description": "存档数据结构版本",
+      "required": true
+    },
+    "save_id": {
+      "type": "string",
+      "description": "存档唯一标识（UUID格式）",
+      "required": true
+    },
+    "created_at": {
+      "type": "string",
+      "description": "存档创建时间（ISO 8601格式）",
+      "required": true
+    },
+    "updated_at": {
+      "type": "string",
+      "description": "存档最后更新时间（ISO 8601格式）",
+      "required": true
+    },
+    "player_profile": {
+      "type": "object",
+      "description": "玩家档案信息",
+      "fields": {
+        "player_id": { "type": "string", "description": "玩家ID" },
+        "display_name": { "type": "string", "description": "玩家显示名称" },
+        "created_at": { "type": "string", "description": "玩家创建时间" },
+        "last_played_at": { "type": "string", "description": "最后游戏时间" }
+      }
+    },
+    "player_position": {
+      "type": "object",
+      "description": "玩家位置信息",
+      "fields": {
+        "current_scene": { "type": "string", "description": "当前场景路径" },
+        "position_x": { "type": "float", "description": "玩家X坐标" },
+        "position_y": { "type": "float", "description": "玩家Y坐标" },
+        "current_region_id": { "type": "string", "description": "当前区域ID" }
+      }
+    },
+    "player_attributes": {
+      "type": "object",
+      "description": "玩家基础属性",
+      "fields": {
+        "level": { "type": "integer", "description": "玩家等级" },
+        "experience": { "type": "integer", "description": "当前经验值" },
+        "health": { "type": "integer", "description": "当前血量" },
+        "max_health": { "type": "integer", "description": "最大血量" },
+        "attack": { "type": "integer", "description": "攻击力" },
+        "defense": { "type": "integer", "description": "防御力" },
+        "is_alive": { "type": "boolean", "description": "是否存活" }
+      }
+    },
+    "player_progress": {
+      "type": "object",
+      "description": "玩家进度信息",
+      "fields": {
+        "chapter_id": { "type": "string", "description": "当前章节ID" },
+        "unlocked_regions": { "type": "array", "description": "已解锁区域列表", "items": "string" },
+        "vote_participation": { "type": "array", "description": "参与过的投票周期", "items": "string" }
+      }
+    },
+    "quest_progress": {
+      "type": "object",
+      "description": "任务进度",
+      "fields": {
+        "quests_active": { "type": "array", "description": "进行中的任务列表" },
+        "quests_completed": { "type": "array", "description": "已完成的任务列表" }
+      }
+    },
+    "play_stats": {
+      "type": "object",
+      "description": "游戏统计",
+      "fields": {
+        "total_play_time_seconds": { "type": "integer", "description": "总游戏时间（秒）" },
+        "regions_visited": { "type": "array", "description": "访问过的区域", "items": "string" },
+        "npcs_met": { "type": "array", "description": "遇到过的NPC", "items": "string" },
+        "enemies_defeated": { "type": "integer", "description": "击败的敌人数量" }
+      }
+    }
+  }
+}

@@ -353,3 +353,47 @@ func _build_quest_result(success: bool, code: String, message: String, data: Dic
 		"message": message,
 		"data": data
 	}
+
+# 存档系统支持方法
+func get_quest_save_data() -> Dictionary:
+	var active_quests: Array[Dictionary] = get_active_quests()
+	var completed_quests: Array[Dictionary] = get_completed_quests()
+	
+	var active_list: Array = []
+	for quest in active_quests:
+		active_list.append({
+			"quest_id": quest.get("quest_id", ""),
+			"progress": quest.get("progress", 0)
+		})
+	
+	var completed_list: Array = []
+	for quest in completed_quests:
+		completed_list.append(quest.get("quest_id", ""))
+	
+	return {
+		"quests_active": active_list,
+		"quests_completed": completed_list
+	}
+
+func restore_quest_from_save_data(data: Dictionary) -> void:
+	player_quests.clear()
+	
+	var active_quests: Array = data.get("quests_active", [])
+	for quest in active_quests:
+		if quest is Dictionary:
+			player_quests.append({
+				"quest_id": quest.get("quest_id", ""),
+				"status": "active",
+				"progress": quest.get("progress", 0)
+			})
+	
+	var completed_quests: Array = data.get("quests_completed", [])
+	for quest_id in completed_quests:
+		if quest_id is String:
+			player_quests.append({
+				"quest_id": quest_id,
+				"status": "completed",
+				"progress": 100
+			})
+	
+	player_quests_loaded.emit()

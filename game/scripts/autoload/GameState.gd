@@ -208,3 +208,56 @@ func reset_state() -> void:
 	player_info_changed.emit()
 	chapter_changed.emit()
 	health_changed.emit(player_health, player_max_health)
+
+# 存档系统支持方法
+func get_save_data() -> Dictionary:
+	return {
+		"player_id": player_id,
+		"player_name": player_name,
+		"player_level": player_level,
+		"player_exp": player_exp,
+		"chapter_id": chapter_id,
+		"unlocked_regions": unlocked_regions,
+		"reputation_snapshot": reputation_snapshot,
+		"vote_participation": vote_participation,
+		"last_vote_cycle_id": last_vote_cycle_id,
+		"player_health": player_health,
+		"player_max_health": player_max_health,
+		"player_attack": player_attack,
+		"player_defense": player_defense,
+		"is_alive": is_alive
+	}
+
+func restore_from_save_data(data: Dictionary) -> void:
+	if data.has("player_id"):
+		player_id = data["player_id"]
+	if data.has("player_name"):
+		player_name = data["player_name"]
+	if data.has("player_level"):
+		player_level = data["player_level"]
+	if data.has("player_exp"):
+		player_exp = data["player_exp"]
+	if data.has("chapter_id"):
+		chapter_id = data["chapter_id"]
+	if data.has("unlocked_regions"):
+		unlocked_regions = data["unlocked_regions"]
+	if data.has("reputation_snapshot"):
+		reputation_snapshot = data["reputation_snapshot"]
+	if data.has("vote_participation"):
+		vote_participation = data["vote_participation"]
+	if data.has("last_vote_cycle_id"):
+		last_vote_cycle_id = data["last_vote_cycle_id"]
+	if data.has("player_health"):
+		player_health = data["player_health"]
+	if data.has("player_max_health"):
+		player_max_health = data["player_max_health"]
+	if data.has("player_attack"):
+		player_attack = data["player_attack"]
+	if data.has("player_defense"):
+		player_defense = data["player_defense"]
+	if data.has("is_alive"):
+		is_alive = data["is_alive"]
+	
+	_save_local_state()
+	player_info_changed.emit()
+	health_changed.emit(player_health, player_max_health)

@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "autosave": {
+    "enabled": true,
+    "interval_seconds": 300,
+    "on_scene_change": true,
+    "on_quest_update": true,
+    "on_region_change": true,
+    "on_exit": true
+  },
+  "save_slots": {
+    "max_slots": 3,
+    "auto_slot_name": "自动存档"
+  },
+  "file": {
+    "save_path": "user://saves/",
+    "filename_pattern": "save_{slot}.json",
+    "backup_enabled": true,
+    "max_backup_count": 2
+  },
+  "compression": {
+    "enabled": false,
+    "level": 6
+  }
+}
