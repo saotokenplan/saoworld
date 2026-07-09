@@ -34,5 +34,13 @@ class Settings(BaseSettings):
     llm_temperature: float = 0.7
     llm_timeout: int = 60  # 秒
 
+    # 成本控制配置
+    cost_daily_budget_tokens: int = 1000000  # 每日 Token 预算
+    cost_monthly_budget_tokens: int = 30000000  # 每月 Token 预算
+    cost_alert_threshold_ratio: float = 0.8  # 告警阈值比例（预算的百分比）
+    cost_pause_threshold_ratio: float = 0.95  # 暂停生成阈值比例
+    cost_model_price_per_1k_prompt_tokens: float = 0.00015  # 每1000个提示词Token的价格（美元）
+    cost_model_price_per_1k_completion_tokens: float = 0.0006  # 每1000个完成Token的价格（美元）
+
 
 settings = Settings()
