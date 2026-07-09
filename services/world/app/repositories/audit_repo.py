@@ -6,8 +6,12 @@ from app.domain.models import AuditLog
 
 ACTION_REGION_CREATE = "region_create"
 ACTION_REGION_STATUS_UPDATE = "region_status_update"
+ACTION_NPC_CREATE = "npc_create"
+ACTION_QUEST_CREATE = "quest_create"
 
 RESOURCE_REGION = "region"
+RESOURCE_NPC = "npc"
+RESOURCE_QUEST = "quest"
 
 
 class AuditRepository:

@@ -16,11 +16,39 @@ WORLD_REGION_TRANSITIONS_TOTAL = Counter(
     labelnames=["from_status", "to_status"],
 )
 
-# 当前区域数（按状态分组的 Gauge）
+# 区域数（按状态分组的 Gauge）
 WORLD_REGIONS_BY_STATUS = Gauge(
     "world_regions_by_status",
     "区域数（按状态）",
     labelnames=["status"],
+)
+
+# NPC 操作次数（按动作类型分组）
+WORLD_NPC_OPERATIONS_TOTAL = Counter(
+    "world_npc_operations_total",
+    "NPC 操作次数（按动作类型）",
+    labelnames=["action"],
+)
+
+# 当前 NPC 数（按章节分组的 Gauge）
+WORLD_NPCS_BY_CHAPTER = Gauge(
+    "world_npcs_by_chapter",
+    "NPC 数（按章节）",
+    labelnames=["chapter_id"],
+)
+
+# Quest 操作次数（按动作类型分组）
+WORLD_QUEST_OPERATIONS_TOTAL = Counter(
+    "world_quest_operations_total",
+    "Quest 操作次数（按动作类型）",
+    labelnames=["action"],
+)
+
+# 当前 Quest 数（按类型分组的 Gauge）
+WORLD_QUESTS_BY_TYPE = Gauge(
+    "world_quests_by_type",
+    "Quest 数（按任务类型）",
+    labelnames=["quest_type"],
 )
 
 
@@ -41,3 +69,25 @@ def set_regions_by_status(status_counts: dict[str, int]) -> None:
         WORLD_REGIONS_BY_STATUS.labels(status=status_label).set(
             status_counts.get(status_label, 0)
         )
+
+
+def record_npc_create() -> None:
+    """记录一次 NPC 创建。"""
+    WORLD_NPC_OPERATIONS_TOTAL.labels(action="create").inc()
+
+
+def set_npcs_by_chapter(chapter_counts: dict[str, int]) -> None:
+    """设置按章节分组的 NPC 数。"""
+    for chapter_id, count in chapter_counts.items():
+        WORLD_NPCS_BY_CHAPTER.labels(chapter_id=chapter_id).set(count)
+
+
+def record_quest_create() -> None:
+    """记录一次 Quest 创建。"""
+    WORLD_QUEST_OPERATIONS_TOTAL.labels(action="create").inc()
+
+
+def set_quests_by_type(type_counts: dict[str, int]) -> None:
+    """设置按类型分组的 Quest 数。"""
+    for quest_type, count in type_counts.items():
+        WORLD_QUESTS_BY_TYPE.labels(quest_type=quest_type).set(count)

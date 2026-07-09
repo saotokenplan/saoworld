@@ -132,3 +132,117 @@ class CreateWorldSkeletonResponse(BaseModel):
     is_active: bool
     request_id: str
     trace_id: str | None = None
+
+
+class NpcDialogueEntry(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    trigger: str | None = None
+    text: str
+    conditions: dict[str, object] | None = None
+
+
+class NpcResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    npc_id: uuid.UUID
+    npc_key: str
+    chapter_id: str
+    name: str
+    title: str | None = None
+    faction_key: str | None = None
+    role: str | None = None
+    location_key: str | None = None
+    description: str | None = None
+    personality: list[str] | None = None
+    dialogues: list[dict[str, object]] | None = None
+    related_quests: list[str] | None = None
+    rewards: dict[str, object] | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class NpcListResponse(BaseModel):
+    npcs: list[NpcResponse]
+    total: int
+
+
+class CreateNpcRequest(BaseModel):
+    npc_key: str = Field(min_length=1, max_length=128, pattern=r"^[a-zA-Z0-9_\-]+$")
+    chapter_id: str = Field(min_length=1, max_length=64)
+    name: str = Field(min_length=1, max_length=128)
+    title: str | None = Field(default=None, max_length=128)
+    faction_key: str | None = Field(default=None, max_length=128)
+    role: str | None = Field(default=None, max_length=64)
+    location_key: str | None = Field(default=None, max_length=128)
+    description: str | None = None
+    personality: list[str] | None = None
+    dialogues: list[dict[str, object]] | None = None
+    related_quests: list[str] | None = None
+    rewards: dict[str, object] | None = None
+
+
+class CreateNpcResponse(BaseModel):
+    npc_id: uuid.UUID
+    npc_key: str
+    chapter_id: str
+    name: str
+    request_id: str
+    trace_id: str | None = None
+
+
+class QuestType(str, Enum):
+    MAIN = "main"
+    SIDE = "side"
+    EVENT = "event"
+    DAILY = "daily"
+
+
+class QuestResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    quest_id: uuid.UUID
+    quest_key: str
+    chapter_id: str
+    title: str
+    description: str | None = None
+    quest_type: QuestType
+    region_key: str | None = None
+    start_npc_key: str | None = None
+    end_npc_key: str | None = None
+    prerequisites: list[str] | None = None
+    objectives: list[dict[str, object]]
+    rewards: dict[str, object] | None = None
+    failure_condition: dict[str, object] | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class QuestListResponse(BaseModel):
+    quests: list[QuestResponse]
+    total: int
+
+
+class CreateQuestRequest(BaseModel):
+    quest_key: str = Field(min_length=1, max_length=128, pattern=r"^[a-zA-Z0-9_\-]+$")
+    chapter_id: str = Field(min_length=1, max_length=64)
+    title: str = Field(min_length=1, max_length=256)
+    description: str | None = None
+    quest_type: QuestType
+    region_key: str | None = Field(default=None, max_length=128)
+    start_npc_key: str | None = Field(default=None, max_length=128)
+    end_npc_key: str | None = Field(default=None, max_length=128)
+    prerequisites: list[str] | None = None
+    objectives: list[dict[str, object]] = Field(min_length=1)
+    rewards: dict[str, object] | None = None
+    failure_condition: dict[str, object] | None = None
+
+
+class CreateQuestResponse(BaseModel):
+    quest_id: uuid.UUID
+    quest_key: str
+    chapter_id: str
+    title: str
+    quest_type: QuestType
+    request_id: str
+    trace_id: str | None = None
