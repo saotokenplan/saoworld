@@ -1,0 +1,13 @@
+{
+  "template_id": "tpl_settlement_v1",
+  "template_type": "settlement",
+  "version": "1.0",
+  "name": "聚落生成模板",
+  "description": "用于生成游戏世界中的聚落描述",
+  "region_ids": ["region_core", "region_expansion"],
+  "chapter_ids": ["chapter_01", "chapter_02", "chapter_03"],
+  "schema_version": 1,
+  "prompt_template": "生成一个{region_name}区域的{settlement_type}类型聚落。名称：{name}，描述：{description}，资源：{main_resources}。",
+  "required_fields": ["name", "settlement_type", "region_key", "chapter_id"],
+  "optional_fields": ["description", "population", "main_resources", "economy_type", "status", "faction_key", "notable_locations", "key_npcs", "faction_influence", "relationships", "history", "culture", "defenses", "services", "special_features", "location_x", "location_y"]
+}

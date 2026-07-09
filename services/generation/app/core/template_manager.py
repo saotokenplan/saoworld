@@ -40,6 +40,9 @@ class TemplateManager:
             region_dir = os.path.join(self.template_dir, "region")
             if os.path.exists(region_dir):
                 template_paths.append(region_dir)
+            settlement_dir = os.path.join(self.template_dir, "settlement")
+            if os.path.exists(settlement_dir):
+                template_paths.append(settlement_dir)
             self._jinja_env = Environment(
                 loader=FileSystemLoader(template_paths),
                 trim_blocks=True,
@@ -143,6 +146,18 @@ class TemplateManager:
             "daily": "quest/quest_daily.jinja2",
         }
         return type_map.get(quest_type) or "quest/quest_base.jinja2"
+
+    def get_settlement_template_by_type(self, settlement_type: str) -> str | None:
+        type_map = {
+            "village": "settlement/settlement_base.jinja2",
+            "town": "settlement/settlement_base.jinja2",
+            "city": "settlement/settlement_base.jinja2",
+            "camp": "settlement/settlement_base.jinja2",
+            "fortress": "settlement/settlement_base.jinja2",
+            "market": "settlement/settlement_base.jinja2",
+            "outpost": "settlement/settlement_base.jinja2",
+        }
+        return type_map.get(settlement_type) or "settlement/settlement_base.jinja2"
 
 
 template_manager = TemplateManager()

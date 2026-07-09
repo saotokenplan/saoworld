@@ -217,6 +217,81 @@ class TestQualityScorer:
         result = scorer.score_generic(small_payload)
         assert not result.is_acceptable()
 
+    def test_score_settlement_valid(self):
+        scorer = QualityScorer()
+        payload = {
+            "settlement_key": "settlement_village_test",
+            "name": "晨光村",
+            "settlement_type": "village",
+            "region_key": "region_core",
+            "chapter_id": "chapter_01",
+            "description": "一座宁静的小村庄，以农业为主，村民们和睦相处，过着自给自足的生活。",
+            "population": 200,
+            "main_resources": ["谷物", "木材"],
+            "economy_type": "agriculture",
+            "status": "peaceful",
+            "notable_locations": [
+                {"location_key": "loc_center", "name": "广场", "description": "村庄中心广场"},
+            ],
+            "key_npcs": ["npc_leader_01"],
+            "faction_influence": {"faction_iron_guard": "主导"},
+            "relationships": {},
+            "history": "晨光村建于数百年前，由一群逃难的农民建立。",
+            "culture": "民风淳朴，重视传统和家庭。",
+            "defenses": ["木墙"],
+            "services": ["旅馆", "商店"],
+            "special_features": ["每周市集"],
+            "location_x": 100,
+            "location_y": 200,
+        }
+        result = scorer.score_settlement(payload)
+        assert result.is_acceptable()
+        assert result.score >= 0.75
+
+    def test_score_settlement_missing_required_fields(self):
+        scorer = QualityScorer()
+        payload = {
+            "settlement_key": "settlement_test",
+            "name": "测试村",
+        }
+        result = scorer.score_settlement(payload)
+        assert not result.is_acceptable()
+        assert len(result.reasons) > 0
+
+    def test_score_settlement_invalid_type(self):
+        scorer = QualityScorer()
+        payload = {
+            "settlement_key": "settlement_test",
+            "name": "测试村",
+            "settlement_type": "invalid_type",
+            "region_key": "region_core",
+            "chapter_id": "chapter_01",
+            "description": "测试描述。",
+            "population": 100,
+            "main_resources": ["资源1"],
+            "economy_type": "agriculture",
+            "status": "peaceful",
+        }
+        result = scorer.score_settlement(payload)
+        assert any("Invalid settlement type" in r for r in result.reasons)
+
+    def test_score_settlement_population_out_of_range(self):
+        scorer = QualityScorer()
+        payload = {
+            "settlement_key": "settlement_test",
+            "name": "测试村",
+            "settlement_type": "village",
+            "region_key": "region_core",
+            "chapter_id": "chapter_01",
+            "description": "测试描述。",
+            "population": 10000,
+            "main_resources": ["资源1"],
+            "economy_type": "agriculture",
+            "status": "peaceful",
+        }
+        result = scorer.score_settlement(payload)
+        assert any("Population above village maximum" in r for r in result.reasons)
+
     def test_score_method_dispatch(self):
         scorer = QualityScorer()
 
@@ -228,6 +303,9 @@ class TestQualityScorer:
 
         region_result = scorer.score("region", {"name": "Test", "description": "Test", "difficulty": "normal", "features": ["Test"]})
         assert isinstance(region_result, QualityScoreResult)
+
+        settlement_result = scorer.score("settlement", {"settlement_key": "settlement_test", "name": "Test", "settlement_type": "village", "region_key": "region_core", "chapter_id": "chapter_01", "description": "Test", "population": 100, "main_resources": ["Test"], "economy_type": "agriculture", "status": "peaceful"})
+        assert isinstance(settlement_result, QualityScoreResult)
 
         generic_result = scorer.score("unknown", {"key": "value"})
         assert isinstance(generic_result, QualityScoreResult)

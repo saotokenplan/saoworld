@@ -5,6 +5,35 @@
 
 ---
 
+### auto-20260710-1500 - Sprint 2 S2-04「聚落描述生成」
+
+**执行时间**：2026-07-10 15:00
+**状态**：已完成（待合并到 feature-prd）
+**任务描述**：实现聚落描述生成能力，包括聚落生成模板、数据适配器、模板管理扩展、内容生成器集成、质量评分扩展、Celery 任务集成，确保生成的聚落字段完整度>90%，符合 world-service 数据结构要求。
+
+**完成内容**：
+- 创建聚落生成模板（settlement_base.jinja2 + settlement_template.json）
+- 实现 SettlementDataAdapter（字段完整度验证、默认值填充、world-service 格式适配）
+- 更新 TemplateManager（get_settlement_template_by_type 方法、settlement 目录支持）
+- 更新 ContentGenerator（generate_settlement 方法、_build_settlement_prompt、settlement 系统提示）
+- 更新 QualityScorer（score_settlement 方法、人口区间校验、类型合法性校验）
+- 更新 Celery 任务（_generate_settlement_payload 函数、settlement 类型支持）
+- 新增 16 个测试用例（数据适配器 9 + 内容生成器 2 + 质量评分 5）
+
+**修改文件**：
+- 新增 3 个文件（settlement_base.jinja2、settlement_template.json、settlement_data_adapter.py）
+- 修改 4 个代码文件（template_manager.py、content_generator.py、quality_scorer.py、content_generation.py）
+- 修改 3 个测试文件（test_settlement_data_adapter.py、test_content_generator.py、test_quality_scorer.py）
+- 更新 3 个文档（project-status.md、auto-plan-20260710-1500.md、auto-execution-summary-20260710-1500.md）
+
+**统计信息**：
+- generation-service 测试从 130 个增加到 146 个（+16）
+- ruff 和 mypy 检查全部通过
+
+**Sprint 2 状态**：S2-01、S2-02、S2-03、S2-04、S2-05、S2-06、S2-07 已完成，仅剩 S2-08 生成成本控制
+
+---
+
 ### auto-20260710-1400 - Sprint 2 S2-07「端到端闭环验证」
 
 **执行时间**：2026-07-10 14:00

@@ -169,6 +169,88 @@ class TestContentGenerator:
         assert isinstance(region, dict)
         assert "name" in region
 
+    @pytest.mark.asyncio
+    async def test_generate_settlement(self, generator):
+        """测试聚落生成。"""
+        generator.llm_adapter.mock_response = {
+            "settlement_key": "settlement_village_test",
+            "name": "晨光村",
+            "settlement_type": "village",
+            "region_key": "region_core",
+            "chapter_id": "chapter_01",
+            "faction_key": "faction_iron_guard",
+            "description": "一座宁静的小村庄，以农业为主，村民们和睦相处，过着自给自足的生活。",
+            "population": 200,
+            "main_resources": ["谷物", "木材"],
+            "economy_type": "agriculture",
+            "status": "peaceful",
+            "notable_locations": [
+                {"location_key": "loc_center", "name": "广场", "description": "村庄中心广场"},
+                {"location_key": "loc_inn", "name": "旅人旅馆", "description": "供旅行者休息的地方"},
+            ],
+            "key_npcs": ["npc_leader_01", "npc_trader_01"],
+            "faction_influence": {"faction_iron_guard": "主导"},
+            "relationships": {},
+            "history": "晨光村建于数百年前，由一群逃难的农民建立。",
+            "culture": "民风淳朴，重视传统和家庭。",
+            "defenses": ["木墙", "守卫塔"],
+            "services": ["旅馆", "商店", "铁匠"],
+            "special_features": ["每周市集", "丰收节"],
+            "location_x": 100,
+            "location_y": 200,
+        }
+        settlement = await generator.generate_settlement(
+            region_id="region_core",
+            chapter_id="chapter_01",
+            settlement_type="village",
+        )
+
+        assert isinstance(settlement, dict)
+        assert "name" in settlement
+        assert "settlement_type" in settlement
+        assert "description" in settlement
+        assert "population" in settlement
+
+    @pytest.mark.asyncio
+    async def test_generate_settlement_with_context(self, generator):
+        """测试带上下文的聚落生成。"""
+        generator.llm_adapter.mock_response = {
+            "settlement_key": "settlement_town_test",
+            "name": "铁砧镇",
+            "settlement_type": "town",
+            "region_key": "region_core",
+            "chapter_id": "chapter_01",
+            "faction_key": "faction_iron_guard",
+            "description": "一座繁华的城镇，以锻造和贸易闻名。",
+            "population": 800,
+            "main_resources": ["矿石", "皮革"],
+            "economy_type": "commerce",
+            "status": "thriving",
+            "notable_locations": [
+                {"location_key": "loc_forge", "name": "铁砧工坊", "description": "著名的铁匠铺"},
+            ],
+            "key_npcs": ["npc_blacksmith_01"],
+            "faction_influence": {"faction_iron_guard": "主导"},
+            "relationships": {},
+            "history": "铁砧镇因优质铁矿而发展起来。",
+            "culture": "重视技艺和商业。",
+            "defenses": ["石墙"],
+            "services": ["铁匠", "商人", "银行"],
+            "special_features": ["铁匠行会", "贸易市场"],
+            "location_x": 150,
+            "location_y": 250,
+        }
+        settlement = await generator.generate_settlement(
+            region_id="region_core",
+            chapter_id="chapter_01",
+            settlement_type="town",
+            context={"theme": "工业", "faction": "铁卫公会"},
+        )
+
+        assert isinstance(settlement, dict)
+        assert "name" in settlement
+        assert settlement["settlement_type"] == "town"
+
 
 class TestContentGenerationError:
     """内容生成错误测试。"""
