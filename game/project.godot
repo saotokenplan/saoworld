@@ -30,6 +30,7 @@ AudioManager="*res://scripts/autoload/AudioManager.gd"
 PlayerManager="*res://scripts/autoload/PlayerManager.gd"
 WorldManager="*res://scripts/autoload/WorldManager.gd"
 CombatManager="*res://scripts/autoload/CombatManager.gd"
+SaveManager="*res://scripts/autoload/SaveManager.gd"
 
 [display]
 
