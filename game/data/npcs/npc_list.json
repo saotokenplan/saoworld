@@ -1,107 +1,554 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "npcs": [
     {
       "npc_id": "npc_ironward_leader",
+      "npc_key": "npc_blacksmith_01",
       "name": "艾瑞尔·铁盾",
       "title": "铁卫联盟统帅",
       "faction": "faction_ironward",
       "role": "leader",
       "location": "loc_ironward_city",
+      "chapter": "chapter_01",
       "description": "铁卫联盟的最高统帅，严肃而坚定的中年女性，致力于重建统一的政权",
       "personality": ["serious", "honorable", "determined"],
+      "related_quests": ["quest_main_ch02_recruit", "quest_north_outpost_defense"],
+      "rewards": {"reputation": {"faction_ironward": 100}, "experience": 500},
+      "dialog_tree": {
+        "start": "first_meet",
+        "nodes": {
+          "first_meet": {
+            "id": "first_meet",
+            "text": "欢迎来到铁卫城，旅行者。重建纪元需要每一个人的力量。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "告诉我关于铁卫联盟的事", "next": "about_faction"},
+              {"text": "有什么我可以帮忙的？", "next": "has_quest"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "about_faction": {
+            "id": "about_faction",
+            "text": "只有统一的秩序才能带来真正的和平。自由派的混乱只会让我们再次陷入黑暗。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "我理解你的立场", "next": "acknowledge"},
+              {"text": "有什么我可以帮忙的？", "next": "has_quest"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "has_quest": {
+            "id": "has_quest",
+            "text": "我们的北方前哨最近遇到了一些麻烦，如果你愿意帮忙，我会给予你应有的奖励。",
+            "speaker": "npc",
+            "quest_trigger": "quest_north_outpost_defense",
+            "choices": [
+              {"text": "我接受这个任务", "next": "quest_accepted", "action": "accept_quest"},
+              {"text": "让我再想想", "next": "goodbye"}
+            ]
+          },
+          "quest_accepted": {
+            "id": "quest_accepted",
+            "text": "很好，旅行者。我会在北方前哨等你。愿铁卫的光辉照耀你的前路。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "我会尽力的", "next": "goodbye"}
+            ]
+          },
+          "quest_completed": {
+            "id": "quest_completed",
+            "text": "你完成了任务！铁卫联盟感谢你的贡献。你是我们最可靠的盟友之一。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "还有其他事需要帮忙吗？", "next": "default"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "acknowledge": {
+            "id": "acknowledge",
+            "text": "你的理解让我感到欣慰。如果你愿意为铁卫联盟效力，随时来找我。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "有什么我可以帮忙的？", "next": "has_quest"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "default": {
+            "id": "default",
+            "text": "旅行者，铁卫城随时欢迎你。如果需要什么，尽管开口。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "告诉我关于铁卫联盟的事", "next": "about_faction"},
+              {"text": "有什么我可以帮忙的？", "next": "has_quest"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "goodbye": {
+            "id": "goodbye",
+            "text": "",
+            "speaker": "npc",
+            "choices": [],
+            "is_end": true
+          }
+        }
+      },
       "dialogues": [
         {"id": "dia_intro", "text": "欢迎来到铁卫城，旅行者。重建纪元需要每一个人的力量。", "condition": "first_meet"},
         {"id": "dia_order", "text": "只有统一的秩序才能带来真正的和平。自由派的混乱只会让我们再次陷入黑暗。", "condition": "talk_about_faction"},
         {"id": "dia_quest", "text": "我们的北方前哨最近遇到了一些麻烦，如果你愿意帮忙，我会给予你应有的奖励。", "condition": "has_quest"}
-      ],
-      "related_quests": ["quest_main_ch02_recruit", "quest_north_outpost_defense"],
-      "rewards": {"reputation": {"faction_ironward": 100}, "experience": 500}
+      ]
     },
     {
       "npc_id": "npc_blacksmith",
+      "npc_key": "npc_blacksmith_01",
       "name": "格尔·铁锤",
       "title": "首席铁匠",
       "faction": "faction_ironward",
       "role": "craftsman",
       "location": "loc_ironward_city",
+      "chapter": "chapter_01",
       "description": "铁卫城最出色的铁匠，魁梧的身材和精湛的技艺让人印象深刻",
       "personality": ["gruff", "skilled", "honest"],
+      "related_quests": ["quest_blacksmith_materials"],
+      "rewards": {"reputation": {"faction_ironward": 20}, "experience": 100},
+      "dialog_tree": {
+        "start": "first_meet",
+        "nodes": {
+          "first_meet": {
+            "id": "first_meet",
+            "text": "需要武器还是护甲？我的手艺在这一带是最好的。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "说说你的手艺", "next": "about_work"},
+              {"text": "有什么需要帮忙的吗？", "next": "has_quest"},
+              {"text": "下次再来", "next": "goodbye"}
+            ]
+          },
+          "about_work": {
+            "id": "about_work",
+            "text": "好钢要用在刀刃上，这是我师傅教我的。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "有什么需要帮忙的吗？", "next": "has_quest"},
+              {"text": "下次再来", "next": "goodbye"}
+            ]
+          },
+          "has_quest": {
+            "id": "has_quest",
+            "text": "我需要一些特殊的材料来打造一把新武器，你能帮我找找吗？",
+            "speaker": "npc",
+            "quest_trigger": "quest_blacksmith_materials",
+            "choices": [
+              {"text": "我来帮你", "next": "quest_accepted", "action": "accept_quest"},
+              {"text": "我目前没空", "next": "goodbye"}
+            ]
+          },
+          "quest_accepted": {
+            "id": "quest_accepted",
+            "text": "太好了！我需要三种矿石，废墟里应该能找到。注意安全！",
+            "speaker": "npc",
+            "choices": [
+              {"text": "交给我吧", "next": "goodbye"}
+            ]
+          },
+          "quest_completed": {
+            "id": "quest_completed",
+            "text": "这些矿石的品质非常好！作为回报，这把新打造的剑归你了。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "多谢！", "next": "default"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "default": {
+            "id": "default",
+            "text": "铁匠铺随时为你敞开，需要什么尽管说。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "有什么需要帮忙的吗？", "next": "has_quest"},
+              {"text": "下次再来", "next": "goodbye"}
+            ]
+          },
+          "goodbye": {
+            "id": "goodbye",
+            "text": "",
+            "speaker": "npc",
+            "choices": [],
+            "is_end": true
+          }
+        }
+      },
       "dialogues": [
         {"id": "dia_intro", "text": "需要武器还是护甲？我的手艺在这一带是最好的。", "condition": "first_meet"},
         {"id": "dia_work", "text": "好钢要用在刀刃上，这是我师傅教我的。", "condition": "talk_about_work"},
         {"id": "dia_quest", "text": "我需要一些特殊的材料来打造一把新武器，你能帮我找找吗？", "condition": "has_quest"}
-      ],
-      "related_quests": ["quest_blacksmith_materials"],
-      "rewards": {"reputation": {"faction_ironward": 20}, "experience": 100}
+      ]
     },
     {
       "npc_id": "npc_farmer",
+      "npc_key": "npc_farmer_01",
       "name": "玛莎·耕地",
       "title": "农田管理者",
       "faction": "faction_ironward",
       "role": "farmer",
       "location": "loc_west_farmlands",
+      "chapter": "chapter_01",
       "description": "西部农田的管理者，勤劳善良的中年妇女，关心每一株庄稼",
       "personality": ["kind", "hardworking", "worried"],
+      "related_quests": ["quest_farm_protection"],
+      "rewards": {"reputation": {"faction_ironward": 30}, "experience": 150},
+      "dialog_tree": {
+        "start": "first_meet",
+        "nodes": {
+          "first_meet": {
+            "id": "first_meet",
+            "text": "欢迎来到西部农田！今年的收成看起来不错。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "最近怎么样？", "next": "trouble"},
+              {"text": "需要帮助吗？", "next": "has_quest"},
+              {"text": "再见", "next": "goodbye"}
+            ]
+          },
+          "trouble": {
+            "id": "trouble",
+            "text": "最近有一些野兽在夜里来偷吃庄稼，我们需要有人来保护农田。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "我可以帮忙", "next": "has_quest"},
+              {"text": "保重", "next": "goodbye"}
+            ]
+          },
+          "has_quest": {
+            "id": "has_quest",
+            "text": "如果你能解决这个问题，我会给你一些新鲜的粮食作为感谢。",
+            "speaker": "npc",
+            "quest_trigger": "quest_farm_protection",
+            "choices": [
+              {"text": "交给我吧", "next": "quest_accepted", "action": "accept_quest"},
+              {"text": "我考虑一下", "next": "goodbye"}
+            ]
+          },
+          "quest_accepted": {
+            "id": "quest_accepted",
+            "text": "太感谢了！那些野兽通常在夜间出没，请小心行事。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "放心吧", "next": "goodbye"}
+            ]
+          },
+          "quest_completed": {
+            "id": "quest_completed",
+            "text": "农田终于安全了！这是答应给你的粮食，辛苦了！",
+            "speaker": "npc",
+            "choices": [
+              {"text": "不客气", "next": "default"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "default": {
+            "id": "default",
+            "text": "农田的作物长势很好，多亏了你。有什么需要随时来找我。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "再见", "next": "goodbye"}
+            ]
+          },
+          "goodbye": {
+            "id": "goodbye",
+            "text": "",
+            "speaker": "npc",
+            "choices": [],
+            "is_end": true
+          }
+        }
+      },
       "dialogues": [
         {"id": "dia_intro", "text": "欢迎来到西部农田！今年的收成看起来不错。", "condition": "first_meet"},
         {"id": "dia_trouble", "text": "最近有一些野兽在夜里来偷吃庄稼，我们需要有人来保护农田。", "condition": "talk_about_trouble"},
         {"id": "dia_reward", "text": "如果你能解决这个问题，我会给你一些新鲜的粮食作为感谢。", "condition": "offer_reward"}
-      ],
-      "related_quests": ["quest_farm_protection"],
-      "rewards": {"reputation": {"faction_ironward": 30}, "experience": 150}
+      ]
     },
     {
       "npc_id": "npc_merchant",
+      "npc_key": "npc_merchant_01",
       "name": "雷克斯·金币",
       "title": "商会代表",
       "faction": "faction_harvest",
       "role": "merchant",
       "location": "loc_trade_market",
+      "chapter": "chapter_01",
       "description": "丰收商会在铁卫城的代表，精明的商人，总是面带微笑",
       "personality": ["friendly", "shrewd", "talkative"],
+      "related_quests": ["quest_relic_hunt"],
+      "rewards": {"reputation": {"faction_harvest": 25}, "experience": 120},
+      "dialog_tree": {
+        "start": "first_meet",
+        "nodes": {
+          "first_meet": {
+            "id": "first_meet",
+            "text": "欢迎光临！看看有什么需要的？我这里应有尽有。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "谈谈贸易", "next": "about_trade"},
+              {"text": "有什么消息？", "next": "info"},
+              {"text": "下次再来", "next": "goodbye"}
+            ]
+          },
+          "about_trade": {
+            "id": "about_trade",
+            "text": "贸易是繁荣的基石，没有交易就没有进步。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "有什么消息？", "next": "info"},
+              {"text": "下次再来", "next": "goodbye"}
+            ]
+          },
+          "info": {
+            "id": "info",
+            "text": "我听说灰谷废墟最近有一些新发现，也许你会感兴趣？",
+            "speaker": "npc",
+            "quest_trigger": "quest_relic_hunt",
+            "choices": [
+              {"text": "告诉我更多", "next": "has_quest"},
+              {"text": "不感兴趣", "next": "default"}
+            ]
+          },
+          "has_quest": {
+            "id": "has_quest",
+            "text": "灰谷废墟深处发现了一些古代遗物，商会愿意出高价收购。你愿意去探索吗？",
+            "speaker": "npc",
+            "quest_trigger": "quest_relic_hunt",
+            "choices": [
+              {"text": "成交", "next": "quest_accepted", "action": "accept_quest"},
+              {"text": "太危险了", "next": "default"}
+            ]
+          },
+          "quest_accepted": {
+            "id": "quest_accepted",
+            "text": "明智的选择！找到遗物后直接带给我，商会不会亏待你的。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "一言为定", "next": "goodbye"}
+            ]
+          },
+          "quest_completed": {
+            "id": "quest_completed",
+            "text": "这些遗物品质上乘！这是你的报酬，合作愉快！",
+            "speaker": "npc",
+            "choices": [
+              {"text": "继续合作", "next": "default"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "default": {
+            "id": "default",
+            "text": "生意还好吗？有需要随时来找我。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "有什么消息？", "next": "info"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "goodbye": {
+            "id": "goodbye",
+            "text": "",
+            "speaker": "npc",
+            "choices": [],
+            "is_end": true
+          }
+        }
+      },
       "dialogues": [
         {"id": "dia_intro", "text": "欢迎光临！看看有什么需要的？我这里应有尽有。", "condition": "first_meet"},
         {"id": "dia_trade", "text": "贸易是繁荣的基石，没有交易就没有进步。", "condition": "talk_about_trade"},
         {"id": "dia_info", "text": "我听说灰谷废墟最近有一些新发现，也许你会感兴趣？", "condition": "offer_info"}
-      ],
-      "related_quests": ["quest_relic_hunt"],
-      "rewards": {"reputation": {"faction_harvest": 25}, "experience": 120}
+      ]
     },
     {
       "npc_id": "npc_shadowveil_researcher",
+      "npc_key": "npc_researcher_01",
       "name": "露娜·暗星",
       "title": "遗迹研究员",
       "faction": "faction_shadowveil",
       "role": "researcher",
       "location": "loc_grayvalley_center",
+      "chapter": "chapter_02",
       "description": "暗影面纱的年轻研究员，对天裂遗迹充满好奇，知识渊博",
       "personality": ["curious", "intelligent", "mysterious"],
+      "related_quests": ["quest_shadowveil_exploration", "quest_underground_bunker"],
+      "rewards": {"reputation": {"faction_shadowveil": 50}, "experience": 250},
+      "dialog_tree": {
+        "start": "first_meet",
+        "nodes": {
+          "first_meet": {
+            "id": "first_meet",
+            "text": "你好，旅行者。这里隐藏着许多秘密，你愿意和我一起探索吗？",
+            "speaker": "npc",
+            "choices": [
+              {"text": "什么秘密？", "next": "about_research"},
+              {"text": "需要帮忙吗？", "next": "has_quest"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "about_research": {
+            "id": "about_research",
+            "text": "天裂不仅仅是一场灾难，它可能是一扇通往新世界的大门。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "需要帮忙吗？", "next": "has_quest"},
+              {"text": "这太疯狂了", "next": "default"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "has_quest": {
+            "id": "has_quest",
+            "text": "我需要进入地下掩体，但那里太危险了。你能帮我吗？",
+            "speaker": "npc",
+            "quest_trigger": "quest_underground_bunker",
+            "choices": [
+              {"text": "我来帮你", "next": "quest_accepted", "action": "accept_quest"},
+              {"text": "我需要准备一下", "next": "default"}
+            ]
+          },
+          "quest_accepted": {
+            "id": "quest_accepted",
+            "text": "太好了！掩体入口在废墟东侧，里面有可能是天裂前的数据档案。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "我会小心的", "next": "goodbye"}
+            ]
+          },
+          "quest_completed": {
+            "id": "quest_completed",
+            "text": "这些数据太珍贵了！你为人类的未来做出了巨大贡献！",
+            "speaker": "npc",
+            "choices": [
+              {"text": "还有什么需要的吗？", "next": "default"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "default": {
+            "id": "default",
+            "text": "研究还在进行中，有什么新发现我会告诉你的。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "需要帮忙吗？", "next": "has_quest"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "goodbye": {
+            "id": "goodbye",
+            "text": "",
+            "speaker": "npc",
+            "choices": [],
+            "is_end": true
+          }
+        }
+      },
       "dialogues": [
         {"id": "dia_intro", "text": "你好，旅行者。这里隐藏着许多秘密，你愿意和我一起探索吗？", "condition": "first_meet"},
         {"id": "dia_research", "text": "天裂不仅仅是一场灾难，它可能是一扇通往新世界的大门。", "condition": "talk_about_research"},
         {"id": "dia_help", "text": "我需要进入地下掩体，但那里太危险了。你能帮我吗？", "condition": "ask_help"}
-      ],
-      "related_quests": ["quest_shadowveil_exploration", "quest_underground_bunker"],
-      "rewards": {"reputation": {"faction_shadowveil": 50}, "experience": 250}
+      ]
     },
     {
       "npc_id": "npc_scavenger_leader",
+      "npc_key": "npc_scavenger_01",
       "name": "杰克·流浪者",
       "title": "拾荒者首领",
       "faction": null,
       "role": "leader",
       "location": "loc_scavenger_camp",
+      "chapter": "chapter_02",
       "description": "灰谷废墟拾荒者的首领，经验丰富的流浪者，懂得如何在危险中生存",
       "personality": ["tough", "cunning", "loyal"],
+      "related_quests": ["quest_scavenger_rescue"],
+      "rewards": {"experience": 200},
+      "dialog_tree": {
+        "start": "first_meet",
+        "nodes": {
+          "first_meet": {
+            "id": "first_meet",
+            "text": "嘿，新来的！这里可不是游乐场，小心你的小命。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "你是谁？", "next": "about_self"},
+              {"text": "这里很危险吗？", "next": "warn_danger"},
+              {"text": "我能帮什么忙？", "next": "has_quest"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "about_self": {
+            "id": "about_self",
+            "text": "我是这里拾荒者的头，在这片废墟活下来靠的就是经验。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "这里很危险吗？", "next": "warn_danger"},
+              {"text": "我能帮什么忙？", "next": "has_quest"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "warn_danger": {
+            "id": "warn_danger",
+            "text": "废墟深处有一些不该惹的东西，我劝你别去。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "我能帮什么忙？", "next": "has_quest"},
+              {"text": "我会小心的", "next": "default"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "has_quest": {
+            "id": "has_quest",
+            "text": "我的一个手下被困在东墙废墟了，如果你能救他出来，我会给你一份不错的报酬。",
+            "speaker": "npc",
+            "quest_trigger": "quest_scavenger_rescue",
+            "choices": [
+              {"text": "我去救他", "next": "quest_accepted", "action": "accept_quest"},
+              {"text": "太危险了", "next": "default"}
+            ]
+          },
+          "quest_accepted": {
+            "id": "quest_accepted",
+            "text": "好样的！东墙废墟入口在东北方向，带着武器去，那里有变异兽。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "出发", "next": "goodbye"}
+            ]
+          },
+          "quest_completed": {
+            "id": "quest_completed",
+            "text": "你把我的兄弟救出来了，你这个人靠得住！以后在废墟遇到麻烦，来找我就行。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "谢了", "next": "default"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "default": {
+            "id": "default",
+            "text": "在这片废墟里，活着就是胜利。小心脚下。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "我能帮什么忙？", "next": "has_quest"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "goodbye": {
+            "id": "goodbye",
+            "text": "",
+            "speaker": "npc",
+            "choices": [],
+            "is_end": true
+          }
+        }
+      },
       "dialogues": [
         {"id": "dia_intro", "text": "嘿，新来的！这里可不是游乐场，小心你的小命。", "condition": "first_meet"},
         {"id": "dia_warning", "text": "废墟深处有一些不该惹的东西，我劝你别去。", "condition": "warn_danger"},
         {"id": "dia_rescue", "text": "我的一个手下被困在东墙废墟了，如果你能救他出来，我会给你一份不错的报酬。", "condition": "ask_rescue"}
-      ],
-      "related_quests": ["quest_scavenger_rescue"],
-      "rewards": {"experience": 200}
+      ]
     }
   ]
 }

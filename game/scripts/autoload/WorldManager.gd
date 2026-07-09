@@ -5,9 +5,13 @@ signal region_detail_loaded(region_id: String)
 signal world_error(error_code: String, message: String)
 signal auth_error(message: String)
 signal loading_changed(is_loading: bool)
+signal npcs_loaded
+signal npc_detail_loaded(npc_id: String)
 
 var regions: Array[Dictionary] = []
 var region_cache: Dictionary = {}
+var npc_cache: Dictionary = {}
+var npc_list: Array[Dictionary] = []
 var is_loading: bool = false
 var last_error: Dictionary = {}
 var schema_version: int = 1
@@ -259,3 +263,91 @@ func sort_regions(sort_by: String = "name", ascending: bool = true) -> Array[Dic
 	)
 	
 	return sorted_regions
+
+func fetch_npcs(region_id: String = "", limit: int = 50, offset: int = 0) -> void:
+	_set_loading(true)
+	var params: Array[String] = []
+	params.append("limit=%d" % limit)
+	params.append("offset=%d" % offset)
+	if region_id != "":
+		params.append("region_id=%s" % region_id)
+	
+	var endpoint: String = "/world/npcs?%s" % "&".join(params)
+	var result: Dictionary = APIManager.get(endpoint)
+	
+	if result.get("success", false):
+		var data: Dictionary = result.get("data", {})
+		npc_list = data.get("items", [])
+		for npc in npc_list:
+			var npc_id: String = npc.get("npc_id", "")
+			if npc_id != "":
+				npc_cache[npc_id] = npc
+		last_error.clear()
+		npcs_loaded.emit()
+	else:
+		_handle_world_error(result)
+	
+	_set_loading(false)
+
+func fetch_npc_detail(npc_id: String) -> Dictionary:
+	if npc_cache.has(npc_id):
+		return npc_cache[npc_id]
+	
+	_set_loading(true)
+	var result: Dictionary = APIManager.get("/world/npcs/%s" % npc_id)
+	
+	if result.get("success", false):
+		var data: Dictionary = result.get("data", {})
+		npc_cache[npc_id] = data
+		last_error.clear()
+		npc_detail_loaded.emit(npc_id)
+		_set_loading(false)
+		return data
+	else:
+		_handle_world_error(result)
+		_set_loading(false)
+		return {}
+
+func get_npc_by_id(npc_id: String) -> Dictionary:
+	if npc_cache.has(npc_id):
+		return npc_cache[npc_id]
+	return {}
+
+func get_npcs_by_region(region_id: String) -> Array[Dictionary]:
+	var filtered: Array[Dictionary] = []
+	for npc in npc_list:
+		if npc.get("location", "") == region_id:
+			filtered.append(npc)
+	return filtered
+
+func get_npcs_by_faction(faction: String) -> Array[Dictionary]:
+	var filtered: Array[Dictionary] = []
+	for npc in npc_list:
+		if npc.get("faction", "") == faction:
+			filtered.append(npc)
+	return filtered
+
+func get_npc_count() -> int:
+	return npc_list.size()
+
+func load_npcs_from_local() -> void:
+	var file: FileAccess = FileAccess.open("res://data/npcs/npc_list.json", FileAccess.READ)
+	if not file:
+		return
+	
+	var content: String = file.get_as_text()
+	file.close()
+	
+	var data: Dictionary = JSON.parse_string(content)
+	if not data is Dictionary:
+		return
+	
+	npc_list = data.get("npcs", [])
+	for npc in npc_list:
+		var npc_id: String = npc.get("npc_id", "")
+		if npc_id != "":
+			npc_cache[npc_id] = npc
+
+func clear_npc_cache() -> void:
+	npc_cache.clear()
+	npc_list.clear()

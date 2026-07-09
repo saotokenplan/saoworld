@@ -197,3 +197,56 @@ func test_sort_regions_descending() -> void:
 	]
 	var sorted_regions: Array[Dictionary] = world.sort_regions("name", false)
 	assert_eq(sorted_regions[0]["name"], "B区域", "应按名称降序排序")
+
+func test_npc_cache_initial_state() -> void:
+	var world := WorldManager
+	assert_eq(world.npc_cache.size(), 0, "初始 NPC 缓存应为空")
+	assert_eq(world.npc_list.size(), 0, "初始 NPC 列表应为空")
+
+func test_get_npc_by_id_from_cache() -> void:
+	var world := WorldManager
+	world.npc_cache["npc_test_01"] = {"npc_id": "npc_test_01", "name": "测试NPC"}
+	var npc: Dictionary = world.get_npc_by_id("npc_test_01")
+	assert_eq(npc["npc_id"], "npc_test_01", "应从缓存获取 NPC")
+
+func test_get_npc_by_id_not_found() -> void:
+	var world := WorldManager
+	var npc: Dictionary = world.get_npc_by_id("nonexistent")
+	assert_eq(npc.size(), 0, "不存在的 NPC 应返回空字典")
+
+func test_get_npcs_by_region() -> void:
+	var world := WorldManager
+	world.npc_list = [
+		{"npc_id": "npc_01", "location": "loc_ironward_city"},
+		{"npc_id": "npc_02", "location": "loc_ironward_city"},
+		{"npc_id": "npc_03", "location": "loc_grayvalley_center"}
+	]
+	var npcs: Array[Dictionary] = world.get_npcs_by_region("loc_ironward_city")
+	assert_eq(npcs.size(), 2, "应返回 2 个铁卫城 NPC")
+
+func test_get_npcs_by_faction() -> void:
+	var world := WorldManager
+	world.npc_list = [
+		{"npc_id": "npc_01", "faction": "faction_ironward"},
+		{"npc_id": "npc_02", "faction": "faction_ironward"},
+		{"npc_id": "npc_03", "faction": "faction_harvest"}
+	]
+	var npcs: Array[Dictionary] = world.get_npcs_by_faction("faction_ironward")
+	assert_eq(npcs.size(), 2, "应返回 2 个铁卫联盟 NPC")
+
+func test_get_npc_count() -> void:
+	var world := WorldManager
+	world.npc_list = [
+		{"npc_id": "npc_01"},
+		{"npc_id": "npc_02"},
+		{"npc_id": "npc_03"}
+	]
+	assert_eq(world.get_npc_count(), 3, "应返回 3 个 NPC")
+
+func test_clear_npc_cache() -> void:
+	var world := WorldManager
+	world.npc_cache["npc_01"] = {"npc_id": "npc_01"}
+	world.npc_list = [{"npc_id": "npc_01"}]
+	world.clear_npc_cache()
+	assert_eq(world.npc_cache.size(), 0, "NPC 缓存应被清除")
+	assert_eq(world.npc_list.size(), 0, "NPC 列表应被清除")

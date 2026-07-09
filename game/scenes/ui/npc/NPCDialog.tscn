@@ -1,0 +1,92 @@
+[gd_scene load_steps=2 format=3 uid="uid://bnpcdialog001"]
+
+[ext_resource type="Script" path="res://scripts/ui/npc_dialog.gd" id="1_dialog"]
+
+[node name="NPCDialog" type="PanelContainer"]
+anchors_preset = 8
+anchor_left = 0.1
+anchor_top = 0.5
+anchor_right = 0.9
+anchor_bottom = 0.95
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("1_dialog")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.08, 0.12, 0.95)
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="NPCName" type="Label" parent="MarginContainer/VBoxContainer/Header"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "NPC 名称"
+
+[node name="NPCTitle" type="Label" parent="MarginContainer/VBoxContainer/Header"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "NPC 头衔"
+
+[node name="Spacer" type="Control" parent="MarginContainer/VBoxContainer/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CloseButton" type="Button" parent="MarginContainer/VBoxContainer/Header"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 0)
+text = "关闭"
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="DialogText" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 80)
+theme_override_font_sizes/font_size = 18
+text = "对话文本"
+autowrap_mode = 2
+
+[node name="ChoicesContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="QuestInfo" type="Panel" parent="MarginContainer/VBoxContainer"]
+visible = false
+layout_mode = 2
+custom_minimum_size = Vector2(0, 80)
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/QuestInfo"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 5
+
+[node name="QuestTitle" type="Label" parent="MarginContainer/VBoxContainer/QuestInfo/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "任务标题"
+
+[node name="QuestDescription" type="Label" parent="MarginContainer/VBoxContainer/QuestInfo/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "任务描述"
+autowrap_mode = 2

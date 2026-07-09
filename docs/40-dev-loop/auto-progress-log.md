@@ -5,6 +5,40 @@
 
 ## 进度记录
 
+### auto-20260710-0400 - NPC 对话系统（Sprint 1 P0）
+
+**执行时间**：2026-07-10 04:00
+**状态**：已完成（工作分支 auto/auto-20260710-0400，待合并到 feature-prd）
+**任务描述**：实现 Sprint 1 P0 项 S1-03「NPC 对话系统」，完成客户端 NPC 对话交互核心能力，支持与 NPC 多轮对话、对话树分支、条件触发、任务接取，以及与 world-service NPC 数据 API 的集成。
+
+**完成内容**：
+- 扩展 npc_list.json 对话树数据（schema_version 2，6 个 NPC 完整对话树）
+- 重构 NPCDialog 脚本支持对话树遍历（节点跳转、条件分支、任务触发、线性模式降级）
+- 创建 NPCDialog 独立场景文件
+- 扩展 WorldManager 支持 NPC 数据（8 个新方法）
+- 扩展 CoreRegion 区域场景添加 NPC 交互点（Area2D + 按 E 对话）
+- 集成任务系统（accept_quest 信号 + PlayerManager.accept_quest 方法）
+- 新增 interact 输入动作（E 键）+ PlayerManager/WorldManager Autoload
+- 新增 10 个 NPCDialog 测试 + 7 个 WorldManager NPC 测试
+- 后端测试通过（vote 54 + world 77）
+
+**产出文件**：
+- `game/data/npcs/npc_list.json`（升级 schema_version 2）
+- `game/scripts/ui/npc_dialog.gd`（重写对话树）
+- `game/scenes/ui/npc/NPCDialog.tscn`（新增场景）
+- `game/scripts/autoload/WorldManager.gd`（新增 NPC 方法）
+- `game/scripts/world/core_region.gd`（重写 NPC 交互）
+- `game/scripts/autoload/PlayerManager.gd`（新增 accept_quest）
+- `game/scenes/world/CoreRegion.tscn`（新增 NPCs 节点）
+- `game/project.godot`（interact 输入 + Autoload）
+- `game/tests/test_npc_dialog.gd`（10 个测试）
+- `game/tests/test_world_manager.gd`（7 个新测试）
+- `docs/00-governance/project-status.md`（状态更新）
+- `docs/40-dev-loop/auto-plan-20260710-0400.md`（任务计划）
+- `docs/40-dev-loop/auto-execution-summary-20260710-0400.md`（执行摘要）
+
+---
+
 ### auto-20260710-0300 - 世界地图系统（Sprint 1 P0）
 
 **执行时间**：2026-07-10 03:00

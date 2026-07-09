@@ -6,65 +6,215 @@ signal accept_quest(quest_id: String)
 var current_npc: Dictionary = {}
 var current_dialog_index: int = 0
 var current_quest_id: String = ""
+var current_node_id: String = ""
+var dialog_tree: Dictionary = {}
+var dialog_nodes: Dictionary = {}
+var met_npcs: Dictionary = {}
 
 @onready var npc_name: Label = $NPCName
+@onready var npc_title: Label = $NPCTitle
 @onready var dialog_text: Label = $DialogText
-@onready var next_button: Button = $NextButton
-@onready var accept_quest_button: Button = $AcceptQuestButton
+@onready var choices_container: VBoxContainer = $ChoicesContainer
 @onready var close_button: Button = $CloseButton
 @onready var quest_info: Panel = $QuestInfo
 @onready var quest_title: Label = $QuestInfo/QuestTitle
 @onready var quest_desc: Label = $QuestInfo/QuestDescription
 
 func _ready() -> void:
-	next_button.pressed.connect(_on_next_button_pressed)
-	accept_quest_button.pressed.connect(_on_accept_quest_button_pressed)
 	close_button.pressed.connect(_on_close_button_pressed)
 
 func open_dialog(npc_data: Dictionary) -> void:
 	current_npc = npc_data
 	current_dialog_index = 0
 	current_quest_id = ""
+	dialog_tree = npc_data.get("dialog_tree", {})
+	dialog_nodes = dialog_tree.get("nodes", {})
 	
 	npc_name.text = npc_data.get("name", "")
+	npc_title.text = npc_data.get("title", "")
 	quest_info.visible = false
-	accept_quest_button.visible = false
 	
-	_show_current_dialog()
+	if dialog_nodes.size() > 0:
+		var start_node: String = _determine_start_node()
+		current_node_id = start_node
+		_show_tree_node(start_node)
+	else:
+		_fallback_linear_dialog()
+	
 	visible = true
 
-func _show_current_dialog() -> void:
-	var dialogs: Array = current_npc.get("dialogs", [])
-	if current_dialog_index < dialogs.size():
-		var dialog: Dictionary = dialogs[current_dialog_index]
-		dialog_text.text = dialog.get("text", "")
-		
-		var has_quest: bool = dialog.has("quest_id")
-		var is_last: bool = (current_dialog_index == dialogs.size() - 1)
-		
-		next_button.visible = not has_quest and not is_last
-		
-		if has_quest:
-			_show_quest_offer(dialog.get("quest_id", ""))
-		elif is_last:
-			next_button.text = "关闭"
-		else:
-			next_button.text = "继续"
-	else:
+func _determine_start_node() -> String:
+	var npc_id: String = current_npc.get("npc_id", "")
+	var related_quests: Array = current_npc.get("related_quests", [])
+	
+	for quest_id in related_quests:
+		if PlayerManager.is_quest_completed(quest_id):
+			if dialog_nodes.has("quest_completed"):
+				return "quest_completed"
+	
+	for quest_id in related_quests:
+		if PlayerManager.is_quest_active(quest_id):
+			if dialog_nodes.has("default"):
+				return "default"
+	
+	if not _has_met_npc(npc_id):
+		_mark_npc_met(npc_id)
+		if dialog_nodes.has("first_meet"):
+			return "first_meet"
+	
+	if dialog_nodes.has("default"):
+		return "default"
+	
+	return dialog_tree.get("start", "first_meet")
+
+func _has_met_npc(npc_id: String) -> bool:
+	return met_npcs.get(npc_id, false)
+
+func _mark_npc_met(npc_id: String) -> void:
+	met_npcs[npc_id] = true
+
+func _show_tree_node(node_id: String) -> void:
+	_clear_choices()
+	quest_info.visible = false
+	
+	if not dialog_nodes.has(node_id):
 		_dialog_complete()
+		return
+	
+	var node: Dictionary = dialog_nodes[node_id]
+	var text: String = node.get("text", "")
+	dialog_text.text = text
+	
+	var quest_trigger: String = node.get("quest_trigger", "")
+	if quest_trigger != "":
+		current_quest_id = quest_trigger
+	
+	var choices: Array = node.get("choices", [])
+	var is_end: bool = node.get("is_end", false)
+	
+	if is_end or (choices.size() == 0 and text == ""):
+		_dialog_complete()
+		return
+	
+	for i in range(choices.size()):
+		var choice: Dictionary = choices[i]
+		var choice_button: Button = Button.new()
+		choice_button.text = choice.get("text", "继续")
+		choice_button.custom_minimum_size = Vector2(500, 40)
+		
+		var style_box: StyleBoxFlat = StyleBoxFlat.new()
+		style_box.bg_color = Color(0.2, 0.4, 0.6)
+		choice_button.add_theme_stylebox_override("normal", style_box)
+		
+		var hover_style: StyleBoxFlat = StyleBoxFlat.new()
+		hover_style.bg_color = Color(0.3, 0.5, 0.7)
+		choice_button.add_theme_stylebox_override("hover", hover_style)
+		
+		choice_button.set_meta("choice_index", i)
+		choice_button.pressed.connect(_on_choice_selected.bind(i))
+		choices_container.add_child(choice_button)
+	
+	close_button.visible = true
+
+func _on_choice_selected(index: int) -> void:
+	var node: Dictionary = dialog_nodes.get(current_node_id, {})
+	var choices: Array = node.get("choices", [])
+	
+	if index >= choices.size():
+		return
+	
+	var choice: Dictionary = choices[index]
+	var action: String = choice.get("action", "")
+	
+	if action == "accept_quest" and current_quest_id != "":
+		accept_quest.emit(current_quest_id)
+		_show_quest_accepted_info(current_quest_id)
+	
+	var next_id: String = choice.get("next", "")
+	if next_id == "" or next_id == "goodbye":
+		var goodbye_node: Dictionary = dialog_nodes.get("goodbye", {})
+		if goodbye_node.get("is_end", false):
+			_dialog_complete()
+		else:
+			_dialog_complete()
+		return
+	
+	current_node_id = next_id
+	_show_tree_node(next_id)
+
+func _show_quest_accepted_info(quest_id: String) -> void:
+	var quests: Array = _load_quests()
+	for quest in quests:
+		if quest.get("quest_id") == quest_id:
+			quest_title.text = "已接取: " + quest.get("title", "")
+			quest_desc.text = quest.get("description", "")
+			quest_info.visible = true
+			break
+
+func _clear_choices() -> void:
+	for child in choices_container.get_children():
+		child.queue_free()
+
+func _fallback_linear_dialog() -> void:
+	var dialogs: Array = current_npc.get("dialogs", [])
+	if dialogs.size() == 0:
+		_dialog_complete()
+		return
+	
+	dialog_text.text = dialogs[0].get("text", "")
+	
+	var next_button: Button = Button.new()
+	next_button.text = "继续" if dialogs.size() > 1 else "关闭"
+	next_button.custom_minimum_size = Vector2(500, 40)
+	next_button.pressed.connect(_on_linear_next)
+	choices_container.add_child(next_button)
+
+func _on_linear_next() -> void:
+	var dialogs: Array = current_npc.get("dialogs", [])
+	current_dialog_index += 1
+	
+	if current_dialog_index >= dialogs.size():
+		_dialog_complete()
+		return
+	
+	_clear_choices()
+	dialog_text.text = dialogs[current_dialog_index].get("text", "")
+	
+	var has_quest: bool = dialogs[current_dialog_index].has("quest_id")
+	if has_quest:
+		current_quest_id = dialogs[current_dialog_index].get("quest_id", "")
+		_show_quest_offer(current_quest_id)
+	
+	var is_last: bool = (current_dialog_index == dialogs.size() - 1)
+	var next_button: Button = Button.new()
+	next_button.text = "关闭" if is_last else "继续"
+	next_button.custom_minimum_size = Vector2(500, 40)
+	next_button.pressed.connect(_on_linear_next)
+	choices_container.add_child(next_button)
 
 func _show_quest_offer(quest_id: String) -> void:
 	current_quest_id = quest_id
-	
 	var quests: Array = _load_quests()
 	for quest in quests:
 		if quest.get("quest_id") == quest_id:
 			quest_title.text = quest.get("title", "")
 			quest_desc.text = quest.get("description", "")
 			quest_info.visible = true
-			accept_quest_button.visible = true
-			next_button.visible = false
+			
+			var accept_button: Button = Button.new()
+			accept_button.text = "接受任务"
+			accept_button.custom_minimum_size = Vector2(500, 40)
+			var style_box: StyleBoxFlat = StyleBoxFlat.new()
+			style_box.bg_color = Color(0.2, 0.6, 0.3)
+			accept_button.add_theme_stylebox_override("normal", style_box)
+			accept_button.pressed.connect(_on_accept_quest_button_pressed)
+			choices_container.add_child(accept_button)
 			break
+
+func _on_accept_quest_button_pressed() -> void:
+	if current_quest_id:
+		accept_quest.emit(current_quest_id)
+		_dialog_complete()
 
 func _load_quests() -> Array:
 	var file: FileAccess = FileAccess.open("res://data/quests/quest_list.json", FileAccess.READ)
@@ -75,22 +225,23 @@ func _load_quests() -> Array:
 		return data.get("quests", [])
 	return []
 
-func _on_next_button_pressed() -> void:
-	var dialogs: Array = current_npc.get("dialogs", [])
-	if current_dialog_index < dialogs.size() - 1:
-		current_dialog_index += 1
-		_show_current_dialog()
-	else:
-		_dialog_complete()
-
-func _on_accept_quest_button_pressed() -> void:
-	if current_quest_id:
-		accept_quest.emit(current_quest_id)
-		_dialog_complete()
-
 func _dialog_complete() -> void:
+	_clear_choices()
 	visible = false
 	dialog_closed.emit()
 
 func _on_close_button_pressed() -> void:
 	_dialog_complete()
+
+func get_current_node_id() -> String:
+	return current_node_id
+
+func get_current_quest_trigger() -> String:
+	var node: Dictionary = dialog_nodes.get(current_node_id, {})
+	return node.get("quest_trigger", "")
+
+func set_met_npcs(data: Dictionary) -> void:
+	met_npcs = data
+
+func get_met_npcs() -> Dictionary:
+	return met_npcs

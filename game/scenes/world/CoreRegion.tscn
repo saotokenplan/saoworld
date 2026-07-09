@@ -72,6 +72,8 @@ offset_right = 1260.0
 offset_bottom = 60.0
 text = "返回地图"
 
+[node name="NPCs" type="Node2D" parent="."]
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_obstacle1"]
 size = Vector2(80, 80)
 
