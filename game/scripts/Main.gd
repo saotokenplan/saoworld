@@ -14,6 +14,7 @@ var current_scene: Node = null
 func _ready() -> void:
 	_initialize_managers()
 	_setup_global_signals()
+	_setup_save_triggers()
 	_show_main_menu()
 
 func _initialize_managers() -> void:
@@ -21,6 +22,19 @@ func _initialize_managers() -> void:
 
 func _setup_global_signals() -> void:
 	pass
+
+func _setup_save_triggers() -> void:
+	# 连接自动保存触发信号
+	PlayerManager.quest_accepted.connect(_on_quest_updated)
+	PlayerManager.quest_completed.connect(_on_quest_updated)
+	PlayerManager.quest_failed.connect(_on_quest_updated)
+	PlayerManager.quest_progress_updated.connect(_on_quest_updated)
+	
+	# 连接 SaveManager 信号
+	SaveManager.save_completed.connect(_on_save_completed)
+	SaveManager.load_completed.connect(_on_load_completed)
+	SaveManager.save_failed.connect(_on_save_failed)
+	SaveManager.load_failed.connect(_on_load_failed)
 
 func _show_main_menu() -> void:
 	_switch_scene(MAIN_MENU_SCENE, true)
@@ -105,7 +119,28 @@ func _on_back_pressed() -> void:
 	_show_main_menu()
 
 func _on_back_to_menu() -> void:
+	# 返回主菜单前自动保存
+	SaveManager.save_game("auto")
 	_show_main_menu()
 
 func quit_game() -> void:
+	# 退出前自动保存
+	SaveManager.save_game("exit_backup")
 	get_tree().quit()
+
+# 存档系统回调
+func _on_quest_updated(_quest_id: String) -> void:
+	# 任务状态更新时自动保存
+	SaveManager.save_game("auto")
+
+func _on_save_completed(save_id: String) -> void:
+	print("[Main] 存档完成: %s" % save_id)
+
+func _on_load_completed(save_id: String) -> void:
+	print("[Main] 存档加载完成: %s" % save_id)
+
+func _on_save_failed(error_message: String) -> void:
+	push_error("[Main] 存档失败: %s" % error_message)
+
+func _on_load_failed(error_message: String) -> void:
+	push_error("[Main] 加载失败: %s" % error_message)
