@@ -69,6 +69,33 @@ class PlayerQuestResponse(BaseModel):
     updated_at: datetime
 
 
+class AcceptQuestRequest(BaseModel):
+    pass
+
+
+class UpdateQuestProgressRequest(BaseModel):
+    objectives: dict[str, object] = Field(default_factory=dict)
+
+
+class CompleteQuestRequest(BaseModel):
+    pass
+
+
+class FailQuestRequest(BaseModel):
+    pass
+
+
+class CreatePlayerQuestRequest(BaseModel):
+    quest_id: str = Field(min_length=1, max_length=128)
+    status: QuestStatus = QuestStatus.AVAILABLE
+    objectives_jsonb: dict | None = None
+    rewards_jsonb: dict | None = None
+
+
+class UpdateQuestStatusRequest(BaseModel):
+    status: QuestStatus
+
+
 class PlayerRegionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

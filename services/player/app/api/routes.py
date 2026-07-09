@@ -8,6 +8,7 @@ from app.core.deps import (
     RequireOpsRole,
     RequirePlayerRole,
     RequireQuestsReadScope,
+    RequireQuestsWriteScope,
     UserPayload,
 )
 from app.core.errors import PlayerErrorCodes, raise_player_error
@@ -15,12 +16,23 @@ from app.core.metrics import (
     record_player_create,
     record_player_region_unlock,
     record_player_update,
+    record_quest_accept,
+    record_quest_complete,
+    record_quest_fail,
+    record_quest_progress_update,
 )
 from app.repositories.audit_repo import (
     ACTION_PLAYER_CREATE,
     ACTION_PLAYER_UPDATE,
+    ACTION_QUEST_ACCEPT,
+    ACTION_QUEST_COMPLETE,
+    ACTION_QUEST_CREATE,
+    ACTION_QUEST_FAIL,
+    ACTION_QUEST_PROGRESS_UPDATE,
+    ACTION_QUEST_STATUS_UPDATE,
     ACTION_REGION_UNLOCK,
     RESOURCE_PLAYER,
+    RESOURCE_QUEST,
     RESOURCE_REGION,
     AuditRepository,
 )
@@ -28,8 +40,11 @@ from app.repositories.player_quest_repo import PlayerQuestRepository
 from app.repositories.player_region_repo import PlayerRegionRepository
 from app.repositories.player_repo import PlayerRepository
 from app.schemas.player import (
-    CreatePlayerRequest,
+    AcceptQuestRequest,
+    CompleteQuestRequest,
+    CreatePlayerQuestRequest,
     EnvelopeResponse,
+    FailQuestRequest,
     HealthResponse,
     PaginatedMeta,
     PlayerQuestResponse,
@@ -37,6 +52,8 @@ from app.schemas.player import (
     PlayerResponse,
     QuestStatus,
     UpdatePlayerRequest,
+    UpdateQuestProgressRequest,
+    UpdateQuestStatusRequest,
 )
 
 router = APIRouter()
@@ -156,6 +173,360 @@ async def get_player_quests(
         request_id=request_id,
         data=quest_responses,
         meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/quests/{quest_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Quest not found"},
+    },
+    tags=["player"],
+)
+async def get_player_quest_detail(
+    quest_id: str,
+    request: Request,
+    current_user: UserPayload = RequireQuestsReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[PlayerQuestResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_player_quest_detail")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    repo = PlayerQuestRepository(db)
+    player_quest = await repo.get_player_quest(player_uuid, quest_id)
+
+    if player_quest is None:
+        raise_player_error(
+            PlayerErrorCodes.QUEST_NOT_FOUND,
+            "任务不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=PlayerQuestResponse.model_validate(player_quest),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/quests/{quest_id}/accept",
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Quest not found"},
+        409: {"description": "Quest already accepted or invalid state"},
+    },
+    tags=["player"],
+)
+async def accept_quest(
+    quest_id: str,
+    body: AcceptQuestRequest,
+    request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    current_user: UserPayload = RequireQuestsWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[PlayerQuestResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_quest_accept")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    repo = PlayerQuestRepository(db)
+    player_quest = await repo.get_player_quest(player_uuid, quest_id)
+
+    if player_quest is None:
+        raise_player_error(
+            PlayerErrorCodes.QUEST_NOT_FOUND,
+            "任务不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if player_quest.status == QuestStatus.ACTIVE.value:
+        raise_player_error(
+            PlayerErrorCodes.QUEST_ALREADY_ACCEPTED,
+            "任务已接取",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    if player_quest.status != QuestStatus.AVAILABLE.value:
+        raise_player_error(
+            PlayerErrorCodes.QUEST_INVALID_STATE_TRANSITION,
+            f"当前任务状态 {player_quest.status} 不允许接取",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    player_quest = await repo.accept_quest(player_uuid, quest_id)
+    record_quest_accept()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_QUEST_ACCEPT,
+        resource_type=RESOURCE_QUEST,
+        resource_id=player_quest.player_quest_id,
+        request_payload_jsonb={"quest_id": quest_id},
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=PlayerQuestResponse.model_validate(player_quest),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/quests/{quest_id}/progress",
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Quest not found"},
+        409: {"description": "Quest not active"},
+    },
+    tags=["player"],
+)
+async def update_quest_progress(
+    quest_id: str,
+    body: UpdateQuestProgressRequest,
+    request: Request,
+    current_user: UserPayload = RequireQuestsWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[PlayerQuestResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_quest_progress_update")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    repo = PlayerQuestRepository(db)
+    player_quest = await repo.get_player_quest(player_uuid, quest_id)
+
+    if player_quest is None:
+        raise_player_error(
+            PlayerErrorCodes.QUEST_NOT_FOUND,
+            "任务不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if player_quest.status != QuestStatus.ACTIVE.value:
+        raise_player_error(
+            PlayerErrorCodes.QUEST_NOT_ACTIVE,
+            "任务未处于活跃状态，无法更新进度",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    player_quest = await repo.update_objectives(
+        player_uuid, quest_id, body.objectives
+    )
+    record_quest_progress_update()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_QUEST_PROGRESS_UPDATE,
+        resource_type=RESOURCE_QUEST,
+        resource_id=player_quest.player_quest_id,
+        request_payload_jsonb={"quest_id": quest_id, "objectives": body.objectives},
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=PlayerQuestResponse.model_validate(player_quest),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/quests/{quest_id}/complete",
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Quest not found"},
+        409: {"description": "Quest not active or already completed"},
+    },
+    tags=["player"],
+)
+async def complete_quest(
+    quest_id: str,
+    body: CompleteQuestRequest,
+    request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    current_user: UserPayload = RequireQuestsWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[PlayerQuestResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_quest_complete")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    repo = PlayerQuestRepository(db)
+    player_quest = await repo.get_player_quest(player_uuid, quest_id)
+
+    if player_quest is None:
+        raise_player_error(
+            PlayerErrorCodes.QUEST_NOT_FOUND,
+            "任务不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if player_quest.status == QuestStatus.COMPLETED.value:
+        raise_player_error(
+            PlayerErrorCodes.QUEST_ALREADY_COMPLETED,
+            "任务已完成",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    if player_quest.status != QuestStatus.ACTIVE.value:
+        raise_player_error(
+            PlayerErrorCodes.QUEST_INVALID_STATE_TRANSITION,
+            f"当前任务状态 {player_quest.status} 不允许完成",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    player_quest = await repo.complete_quest(player_uuid, quest_id)
+    record_quest_complete()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_QUEST_COMPLETE,
+        resource_type=RESOURCE_QUEST,
+        resource_id=player_quest.player_quest_id,
+        request_payload_jsonb={"quest_id": quest_id},
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=PlayerQuestResponse.model_validate(player_quest),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/quests/{quest_id}/fail",
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Quest not found"},
+        409: {"description": "Quest not active"},
+    },
+    tags=["player"],
+)
+async def fail_quest(
+    quest_id: str,
+    body: FailQuestRequest,
+    request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    current_user: UserPayload = RequireQuestsWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[PlayerQuestResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_quest_fail")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    repo = PlayerQuestRepository(db)
+    player_quest = await repo.get_player_quest(player_uuid, quest_id)
+
+    if player_quest is None:
+        raise_player_error(
+            PlayerErrorCodes.QUEST_NOT_FOUND,
+            "任务不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if player_quest.status != QuestStatus.ACTIVE.value:
+        raise_player_error(
+            PlayerErrorCodes.QUEST_INVALID_STATE_TRANSITION,
+            f"当前任务状态 {player_quest.status} 不允许标记为失败",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    player_quest = await repo.fail_quest(player_uuid, quest_id)
+    record_quest_fail()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_QUEST_FAIL,
+        resource_type=RESOURCE_QUEST,
+        resource_id=player_quest.player_quest_id,
+        request_payload_jsonb={"quest_id": quest_id},
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=PlayerQuestResponse.model_validate(player_quest),
         trace_id=trace_id,
     )
 
@@ -416,5 +787,193 @@ async def unlock_player_region(
     return EnvelopeResponse(
         request_id=request_id,
         data=PlayerRegionResponse.model_validate(player_region),
+        trace_id=x_trace_id,
+    )
+
+
+@ops_router.get(
+    "/players/{player_id}/quests",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Player not found"},
+    },
+    tags=["ops"],
+)
+async def ops_get_player_quests(
+    player_id: uuid.UUID,
+    request: Request,
+    status_filter: QuestStatus | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[list[PlayerQuestResponse]]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_ops_player_quests")
+
+    player_repo = PlayerRepository(db)
+    player = await player_repo.get_player_by_id(player_id)
+    if player is None:
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_NOT_FOUND,
+            "玩家不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    repo = PlayerQuestRepository(db)
+    quests, total = await repo.get_player_quests(
+        player_id,
+        status=status_filter.value if status_filter else None,
+        limit=limit,
+        offset=offset,
+    )
+
+    quest_responses = [PlayerQuestResponse.model_validate(q) for q in quests]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=quest_responses,
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.post(
+    "/players/{player_id}/quests",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"description": "Invalid request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Player not found"},
+        409: {"description": "Quest already exists"},
+    },
+    tags=["ops"],
+)
+async def create_player_quest(
+    player_id: uuid.UUID,
+    body: CreatePlayerQuestRequest,
+    request: Request,
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[PlayerQuestResponse]:
+    request_id = _make_request_id("req_ops_player_quest_create")
+
+    player_repo = PlayerRepository(db)
+    player = await player_repo.get_player_by_id(player_id)
+    if player is None:
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_NOT_FOUND,
+            "玩家不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    repo = PlayerQuestRepository(db)
+    existing = await repo.get_player_quest(player_id, body.quest_id)
+    if existing is not None:
+        raise_player_error(
+            PlayerErrorCodes.QUEST_ALREADY_ACCEPTED,
+            "该任务已存在于玩家任务列表中",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    player_quest = await repo.create_player_quest(
+        player_id=player_id,
+        quest_id=body.quest_id,
+        status=body.status.value,
+        objectives_jsonb=body.objectives_jsonb,
+        rewards_jsonb=body.rewards_jsonb,
+    )
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_QUEST_CREATE,
+        resource_type=RESOURCE_QUEST,
+        resource_id=player_quest.player_quest_id,
+        request_payload_jsonb={"player_id": str(player_id), **body.model_dump(mode="json")},
+        result_status=201,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=PlayerQuestResponse.model_validate(player_quest),
+        trace_id=x_trace_id,
+    )
+
+
+@ops_router.patch(
+    "/players/{player_id}/quests/{quest_id}/status",
+    responses={
+        400: {"description": "Invalid request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Quest not found"},
+        409: {"description": "Invalid state transition"},
+    },
+    tags=["ops"],
+)
+async def update_player_quest_status(
+    player_id: uuid.UUID,
+    quest_id: str,
+    body: UpdateQuestStatusRequest,
+    request: Request,
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[PlayerQuestResponse]:
+    request_id = _make_request_id("req_ops_quest_status_update")
+
+    repo = PlayerQuestRepository(db)
+    player_quest = await repo.get_player_quest(player_id, quest_id)
+
+    if player_quest is None:
+        raise_player_error(
+            PlayerErrorCodes.QUEST_NOT_FOUND,
+            "任务不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    player_quest = await repo.update_status(
+        player_id, quest_id, body.status.value
+    )
+
+    if player_quest is None:
+        raise_player_error(
+            PlayerErrorCodes.QUEST_INVALID_STATE_TRANSITION,
+            "无效的任务状态转换",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_QUEST_STATUS_UPDATE,
+        resource_type=RESOURCE_QUEST,
+        resource_id=player_quest.player_quest_id,
+        request_payload_jsonb={
+            "player_id": str(player_id),
+            "quest_id": quest_id,
+            "status": body.status.value,
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=PlayerQuestResponse.model_validate(player_quest),
         trace_id=x_trace_id,
     )

@@ -1,10 +1,18 @@
 import uuid
+from datetime import datetime, timezone
 from typing import Any, Sequence
 
 from sqlalchemy import Select, func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.models import PlayerQuest
+
+VALID_TRANSITIONS: dict[str, set[str]] = {
+    "available": {"active"},
+    "active": {"completed", "failed"},
+    "completed": set(),
+    "failed": set(),
+}
 
 
 class PlayerQuestRepository:
@@ -41,6 +49,13 @@ class PlayerQuestRepository:
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_player_quest_by_id(self, player_quest_id: uuid.UUID) -> PlayerQuest | None:
+        stmt: Select[tuple[PlayerQuest]] = select(PlayerQuest).where(
+            PlayerQuest.player_quest_id == player_quest_id
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def create_player_quest(
         self,
         player_id: uuid.UUID,
@@ -61,6 +76,87 @@ class PlayerQuestRepository:
         await self.db.flush()
         return player_quest
 
+    def is_valid_transition(self, current_status: str, new_status: str) -> bool:
+        allowed = VALID_TRANSITIONS.get(current_status, set())
+        return new_status in allowed
+
+    async def accept_quest(
+        self, player_id: uuid.UUID, quest_id: str
+    ) -> PlayerQuest | None:
+        player_quest = await self.get_player_quest(player_id, quest_id)
+        if player_quest is None:
+            return None
+
+        if player_quest.status != "available":
+            return player_quest
+
+        player_quest.status = "active"
+        player_quest.updated_at = datetime.now(timezone.utc)
+        await self.db.flush()
+        return player_quest
+
+    async def update_objectives(
+        self,
+        player_id: uuid.UUID,
+        quest_id: str,
+        objectives_update: dict[str, Any],
+    ) -> PlayerQuest | None:
+        player_quest = await self.get_player_quest(player_id, quest_id)
+        if player_quest is None:
+            return None
+
+        current_objectives = player_quest.objectives_jsonb or {}
+        current_objectives.update(objectives_update)
+        player_quest.objectives_jsonb = current_objectives
+        player_quest.updated_at = datetime.now(timezone.utc)
+        await self.db.flush()
+        return player_quest
+
+    async def complete_quest(
+        self, player_id: uuid.UUID, quest_id: str
+    ) -> PlayerQuest | None:
+        player_quest = await self.get_player_quest(player_id, quest_id)
+        if player_quest is None:
+            return None
+
+        if player_quest.status != "active":
+            return player_quest
+
+        player_quest.status = "completed"
+        player_quest.updated_at = datetime.now(timezone.utc)
+        await self.db.flush()
+        return player_quest
+
+    async def fail_quest(
+        self, player_id: uuid.UUID, quest_id: str
+    ) -> PlayerQuest | None:
+        player_quest = await self.get_player_quest(player_id, quest_id)
+        if player_quest is None:
+            return None
+
+        if player_quest.status != "active":
+            return player_quest
+
+        player_quest.status = "failed"
+        player_quest.updated_at = datetime.now(timezone.utc)
+        await self.db.flush()
+        return player_quest
+
+    async def update_status(
+        self, player_id: uuid.UUID, quest_id: str, new_status: str
+    ) -> PlayerQuest | None:
+        player_quest = await self.get_player_quest(player_id, quest_id)
+        if player_quest is None:
+            return None
+
+        if not self.is_valid_transition(player_quest.status, new_status):
+            return None
+
+        player_quest.status = new_status
+        player_quest.updated_at = datetime.now(timezone.utc)
+        await self.db.flush()
+        return player_quest
+
     async def update_player_quest_status(
         self, player_quest_id: uuid.UUID, status: str
     ) -> PlayerQuest | None:
@@ -73,5 +169,6 @@ class PlayerQuestRepository:
             return None
 
         player_quest.status = status
+        player_quest.updated_at = datetime.now(timezone.utc)
         await self.db.flush()
         return player_quest

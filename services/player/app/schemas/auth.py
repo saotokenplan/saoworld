@@ -13,12 +13,14 @@ class Role(str, Enum):
 class Scope(str, Enum):
     WORLD_READ = "world:read"
     QUESTS_READ = "quests:read"
+    QUESTS_WRITE = "quests:write"
     VOTES_READ = "votes:read"
     VOTES_SUBMIT = "votes:submit"
     VOTES_HISTORY_READ = "votes:history:read"
     CONTENT_READ = "content:read"
 
     OPS_VOTE_CYCLES_WRITE = "ops:vote-cycles:write"
+    OPS_PLAYERS_WRITE = "ops:players:write"
     CONTENT_RELEASE = "content:release"
     CONTENT_ROLLBACK = "content:rollback"
 
@@ -29,6 +31,7 @@ ROLE_SCOPES: dict[Role, list[Scope]] = {
     Role.PLAYER: [
         Scope.WORLD_READ,
         Scope.QUESTS_READ,
+        Scope.QUESTS_WRITE,
         Scope.VOTES_READ,
         Scope.VOTES_SUBMIT,
         Scope.VOTES_HISTORY_READ,
@@ -38,6 +41,7 @@ ROLE_SCOPES: dict[Role, list[Scope]] = {
         Scope.VOTES_HISTORY_READ,
         Scope.CONTENT_READ,
         Scope.OPS_VOTE_CYCLES_WRITE,
+        Scope.OPS_PLAYERS_WRITE,
         Scope.CONTENT_RELEASE,
         Scope.CONTENT_ROLLBACK,
     ],
@@ -48,10 +52,12 @@ ROLE_SCOPES: dict[Role, list[Scope]] = {
     Role.SYSTEM: [
         Scope.WORLD_READ,
         Scope.QUESTS_READ,
+        Scope.QUESTS_WRITE,
         Scope.VOTES_READ,
         Scope.VOTES_HISTORY_READ,
         Scope.CONTENT_READ,
         Scope.OPS_VOTE_CYCLES_WRITE,
+        Scope.OPS_PLAYERS_WRITE,
         Scope.CONTENT_RELEASE,
         Scope.CONTENT_ROLLBACK,
         Scope.REVIEW_APPROVE,
