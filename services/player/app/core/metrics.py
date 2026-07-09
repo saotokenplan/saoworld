@@ -61,6 +61,21 @@ def record_quest_progress_update() -> None:
     PLAYER_OPERATIONS_TOTAL.labels(action="quest_progress_update").inc()
 
 
+def record_inventory_add() -> None:
+    """记录一次背包添加物品。"""
+    PLAYER_OPERATIONS_TOTAL.labels(action="inventory_add").inc()
+
+
+def record_inventory_remove() -> None:
+    """记录一次背包移除物品。"""
+    PLAYER_OPERATIONS_TOTAL.labels(action="inventory_remove").inc()
+
+
+def record_inventory_use() -> None:
+    """记录一次背包使用物品。"""
+    PLAYER_OPERATIONS_TOTAL.labels(action="inventory_use").inc()
+
+
 def set_players_total(count: int) -> None:
     """设置玩家总数。"""
     PLAYERS_TOTAL.set(count)

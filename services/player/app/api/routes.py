@@ -13,6 +13,9 @@ from app.core.deps import (
 )
 from app.core.errors import PlayerErrorCodes, raise_player_error
 from app.core.metrics import (
+    record_inventory_add,
+    record_inventory_remove,
+    record_inventory_use,
     record_player_create,
     record_player_region_unlock,
     record_player_update,
@@ -22,6 +25,9 @@ from app.core.metrics import (
     record_quest_progress_update,
 )
 from app.repositories.audit_repo import (
+    ACTION_INVENTORY_ADD,
+    ACTION_INVENTORY_REMOVE,
+    ACTION_INVENTORY_USE,
     ACTION_PLAYER_CREATE,
     ACTION_PLAYER_UPDATE,
     ACTION_QUEST_ACCEPT,
@@ -31,30 +37,37 @@ from app.repositories.audit_repo import (
     ACTION_QUEST_PROGRESS_UPDATE,
     ACTION_QUEST_STATUS_UPDATE,
     ACTION_REGION_UNLOCK,
+    RESOURCE_INVENTORY,
     RESOURCE_PLAYER,
     RESOURCE_QUEST,
     RESOURCE_REGION,
     AuditRepository,
 )
+from app.repositories.inventory_repo import InventoryRepository
 from app.repositories.player_quest_repo import PlayerQuestRepository
 from app.repositories.player_region_repo import PlayerRegionRepository
 from app.repositories.player_repo import PlayerRepository
 from app.schemas.player import (
     AcceptQuestRequest,
+    AddItemRequest,
     CompleteQuestRequest,
     CreatePlayerQuestRequest,
     CreatePlayerRequest,
     EnvelopeResponse,
     FailQuestRequest,
     HealthResponse,
+    InventoryItemResponse,
+    ItemType,
     PaginatedMeta,
     PlayerQuestResponse,
     PlayerRegionResponse,
     PlayerResponse,
     QuestStatus,
+    RemoveItemRequest,
     UpdatePlayerRequest,
     UpdateQuestProgressRequest,
     UpdateQuestStatusRequest,
+    UseItemRequest,
 )
 
 router = APIRouter()
@@ -987,5 +1000,230 @@ async def update_player_quest_status(
     return EnvelopeResponse(
         request_id=request_id,
         data=PlayerQuestResponse.model_validate(player_quest),
+        trace_id=x_trace_id,
+    )
+
+
+# --- Inventory API ---
+
+
+@router.get(
+    "/player/inventory",
+    responses={
+        401: {"description": "Unauthorized"},
+        400: {"description": "Invalid player ID"},
+    },
+    tags=["player"],
+)
+async def get_player_inventory(
+    request: Request,
+    current_user: UserPayload = RequirePlayerRole,
+    item_type: str | None = Query(default=None, alias="type"),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[InventoryItemResponse]]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_player_inventory")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if item_type is not None and item_type not in [t.value for t in ItemType]:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_ITEM_TYPE,
+            f"无效的物品类型: {item_type}",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    repo = InventoryRepository(db)
+    items, total = await repo.get_inventory(player_uuid, limit=limit, offset=offset)
+
+    if item_type is not None:
+        items = [i for i in items if i.item_type == item_type]
+
+    item_responses = [InventoryItemResponse.model_validate(i) for i in items]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=item_responses,
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/inventory/use",
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Item not found"},
+        409: {"description": "Insufficient quantity or invalid item type"},
+    },
+    tags=["player"],
+)
+async def use_inventory_item(
+    body: UseItemRequest,
+    request: Request,
+    item_key: str = Query(..., alias="item_key"),
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[InventoryItemResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_inventory_use")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    repo = InventoryRepository(db)
+    item = await repo.use_item(player_uuid, item_key, body.quantity)
+
+    record_inventory_use()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_INVENTORY_USE,
+        resource_type=RESOURCE_INVENTORY,
+        resource_id=item.inventory_id,
+        request_payload_jsonb={"item_key": item_key, "quantity": body.quantity},
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=InventoryItemResponse.model_validate(item),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.post(
+    "/players/{player_id}/inventory",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"description": "Invalid request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Player not found"},
+    },
+    tags=["ops"],
+)
+async def ops_add_inventory_item(
+    player_id: uuid.UUID,
+    body: AddItemRequest,
+    request: Request,
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[InventoryItemResponse]:
+    request_id = _make_request_id("req_ops_inventory_add")
+
+    player_repo = PlayerRepository(db)
+    player = await player_repo.get_player_by_id(player_id)
+    if player is None:
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_NOT_FOUND,
+            "玩家不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    repo = InventoryRepository(db)
+    item = await repo.add_item(
+        player_id=player_id,
+        item_key=body.item_key,
+        item_type=body.item_type.value,
+        quantity=body.quantity,
+        metadata_jsonb=body.metadata_jsonb,
+    )
+
+    record_inventory_add()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_INVENTORY_ADD,
+        resource_type=RESOURCE_INVENTORY,
+        resource_id=item.inventory_id,
+        request_payload_jsonb={"player_id": str(player_id), **body.model_dump(mode="json")},
+        result_status=201,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=InventoryItemResponse.model_validate(item),
+        trace_id=x_trace_id,
+    )
+
+
+@ops_router.delete(
+    "/players/{player_id}/inventory/{item_key}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Item not found"},
+        409: {"description": "Insufficient quantity"},
+    },
+    tags=["ops"],
+)
+async def ops_remove_inventory_item(
+    player_id: uuid.UUID,
+    item_key: str,
+    body: RemoveItemRequest,
+    request: Request,
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[InventoryItemResponse]:
+    request_id = _make_request_id("req_ops_inventory_remove")
+
+    repo = InventoryRepository(db)
+    item = await repo.remove_item(player_id, item_key, body.quantity)
+
+    record_inventory_remove()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_INVENTORY_REMOVE,
+        resource_type=RESOURCE_INVENTORY,
+        resource_id=item.inventory_id,
+        request_payload_jsonb={
+            "player_id": str(player_id),
+            "item_key": item_key,
+            "quantity": body.quantity,
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=InventoryItemResponse.model_validate(item),
         trace_id=x_trace_id,
     )
