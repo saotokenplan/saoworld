@@ -22,5 +22,8 @@ class Settings(BaseSettings):
 
     api_v1_prefix: str = "/api/v1"
 
+    template_dir: str = "templates"
+    quality_threshold: float = 0.75
+
 
 settings = Settings()

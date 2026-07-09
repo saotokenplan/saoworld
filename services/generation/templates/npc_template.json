@@ -1,0 +1,13 @@
+{
+  "template_id": "tpl_npc_v1",
+  "template_type": "npc",
+  "version": "1.0",
+  "name": "NPC 生成模板",
+  "description": "用于生成游戏世界中的 NPC 角色",
+  "region_ids": ["region_core", "region_expansion"],
+  "chapter_ids": ["chapter_01", "chapter_02", "chapter_03"],
+  "schema_version": 1,
+  "prompt_template": "生成一个{region_name}区域的{role}角色。名字：{name}，性格：{personality}，背景故事：{backstory}。",
+  "required_fields": ["name", "role", "region_id"],
+  "optional_fields": ["personality", "backstory", "faction_id"]
+}
