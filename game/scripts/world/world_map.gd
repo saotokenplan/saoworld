@@ -1,6 +1,7 @@
 extends Node2D
 
 signal region_selected(region_id: String)
+signal enter_region_requested(region_id: String)
 signal back_to_menu()
 
 var regions: Array[Dictionary] = []
@@ -13,9 +14,15 @@ var selected_region_id: String = ""
 @onready var detail_status: Label = $RegionDetail/Status
 @onready var detail_level: Label = $RegionDetail/LevelRange
 @onready var back_button: Button = $BackButton
+@onready var enter_button: Button = $EnterRegionButton
 
 func _ready() -> void:
 	back_button.pressed.connect(_on_back_button_pressed)
+	
+	if is_instance_valid(enter_button):
+		enter_button.pressed.connect(_on_enter_region_button_pressed)
+		enter_button.visible = false
+	
 	load_regions_from_data()
 
 func load_regions_from_data() -> void:
@@ -44,7 +51,8 @@ func _render_regions() -> void:
 		var status: String = region.get("status", "locked")
 		_update_region_card_style(region_card, status)
 		
-		region_card.pressed.connect(_on_region_card_pressed)
+		var region_id: String = region.get("region_id", "")
+		region_card.pressed.connect(_on_region_card_pressed.bind(region_id))
 		region_container.add_child(region_card)
 
 func _update_region_card_style(card: Button, status: String) -> void:
@@ -65,11 +73,13 @@ func _update_region_card_style(card: Button, status: String) -> void:
 	
 	card.add_theme_stylebox_override("normal", style_box)
 
-func _on_region_card_pressed() -> void:
-	var card: Button = get_parent().get_parent() if not is_instance_valid(self) else get_last_signal_receiver()
-	var region_id: String = card.get_meta("region_id", "")
+func _on_region_card_pressed(region_id: String) -> void:
 	if region_id:
 		select_region(region_id)
+
+func _on_enter_region_button_pressed() -> void:
+	if selected_region_id:
+		enter_region_requested.emit(selected_region_id)
 
 func select_region(region_id: String) -> void:
 	selected_region_id = region_id
@@ -96,10 +106,18 @@ func _show_region_detail(region: Dictionary) -> void:
 	detail_level.text = "等级范围: " + str(level_range[0]) + " - " + str(level_range[1])
 	
 	region_detail.visible = true
+	
+	if is_instance_valid(enter_button):
+		var can_enter: bool = region.get("status", "locked") != "locked" and region.get("status", "locked") != "archived"
+		enter_button.visible = can_enter
+		enter_button.disabled = not can_enter
 
 func hide_region_detail() -> void:
 	region_detail.visible = false
 	selected_region_id = ""
+	
+	if is_instance_valid(enter_button):
+		enter_button.visible = false
 
 func _on_back_button_pressed() -> void:
 	back_to_menu.emit()

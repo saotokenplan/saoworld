@@ -37,6 +37,9 @@
 | test_world_map.gd | WorldMap 世界地图组件 | 6 |
 | test_quest_panel.gd | QuestPanel 任务面板组件 | 6 |
 | test_npc_dialog.gd | NPCDialog 对话交互组件 | 5 |
+| test_player.gd | Player 玩家移动与状态 | 5 |
+| test_region_scene.gd | CoreRegion 区域探索场景 | 5 |
+| test_world_map_navigation.gd | WorldMap 区域导航与进入 | 5 |
 
 ## 测试覆盖范围
 
@@ -48,9 +51,14 @@
 - **PlayerManager**：玩家信息、任务列表、区域状态
 
 ### UI 组件测试
-- **WorldMap**：区域渲染、状态标识、点击选择、详情展示
+- **WorldMap**：区域渲染、状态标识、点击选择、详情展示、区域导航
 - **QuestPanel**：任务列表、详情展示、目标进度、奖励展示、任务接取
 - **NPCDialog**：对话加载、多轮对话、选项选择、任务接取、信号发射
+
+### 场景与角色测试
+- **Player**：初始状态、重置状态、移动状态信号、输入方向、配置加载
+- **CoreRegion**：场景结构、玩家实例化、进入信号、返回信号、区域数据设置
+- **WorldMapNavigation**：进入区域信号、按钮显隐逻辑、区域选择进入流程
 
 ## 测试约定
 

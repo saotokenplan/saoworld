@@ -5,6 +5,44 @@
 
 ## 进度记录
 
+### auto-20260710-0100 - 玩家移动与场景切换（Sprint 1 P0）
+
+**执行时间**：2026-07-10 01:00
+**状态**：已完成
+**任务描述**：实现 Sprint 1 核心玩法 P0 项 S1-01「玩家移动与场景切换」，新增 Godot 客户端玩家角色与首期区域探索场景，支持从世界地图进入区域并返回。
+
+**完成内容**：
+- 新增输入配置 `game/data/config/input_config.json`，更新 `game/project.godot` 输入映射
+- 新增玩家角色场景 `game/scenes/player/Player.tscn` 与脚本 `game/scripts/player/player.gd`
+- 新增首期区域场景 `game/scenes/world/CoreRegion.tscn` 与脚本 `game/scripts/world/core_region.gd`
+- 修复 `game/scripts/world/world_map.gd` 信号绑定，新增「进入区域」按钮与 `enter_region_requested` 信号
+- 扩展 `game/scripts/Main.gd` 支持从世界地图进入区域并返回
+- 更新 `game/data/regions/region_list.json` 补充 `scene_path` 字段
+- 新增 15 个 GUT 测试用例（Player 5 个、CoreRegion 5 个、WorldMapNavigation 5 个）
+- 更新 `docs/00-governance/project-status.md` 和 `docs/10-requirements/需求迭代计划.md` 记录 S1-01 完成
+
+**产出文件**：
+- `game/data/config/input_config.json`
+- `game/scenes/player/Player.tscn`
+- `game/scripts/player/player.gd`
+- `game/scenes/world/CoreRegion.tscn`
+- `game/scripts/world/core_region.gd`
+- `game/tests/test_player.gd`
+- `game/tests/test_region_scene.gd`
+- `game/tests/test_world_map_navigation.gd`
+- `game/scripts/world/world_map.gd`
+- `game/scenes/world/WorldMap.tscn`
+- `game/scripts/Main.gd`
+- `game/data/regions/region_list.json`
+- `game/project.godot`
+- `game/tests/README.md`
+- `docs/00-governance/project-status.md`
+- `docs/10-requirements/需求迭代计划.md`
+- `docs/40-dev-loop/auto-plan-20260710-0100.md`
+- `docs/40-dev-loop/auto-execution-summary-20260710-0100.md`
+
+---
+
 ### auto-20260710-0000 - 任务系统 API 完善（Sprint 1 提前启动）
 
 **执行时间**：2026-07-10 00:00
