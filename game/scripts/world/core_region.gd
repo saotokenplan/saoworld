@@ -15,6 +15,8 @@ var npc_interactables: Array[Area2D] = []
 var nearby_npc: Area2D = null
 var interact_prompt: Label = null
 var npc_dialog: PanelContainer = null
+var quest_tracker: PanelContainer = null
+var quest_panel: Control = null
 
 @onready var ground: ColorRect = $Ground
 @onready var obstacles: Node2D = $Obstacles
@@ -28,6 +30,7 @@ func _ready() -> void:
 	_spawn_player()
 	_setup_interact_prompt()
 	_load_region_npcs()
+	_setup_quest_tracker()
 	region_entered.emit(region_id)
 
 func _setup_ui() -> void:
@@ -154,6 +157,36 @@ func _on_quest_accepted(quest_id: String) -> void:
 
 func _on_dialog_closed() -> void:
 	npc_dialog = null
+
+func _setup_quest_tracker() -> void:
+	var tracker_scene: PackedScene = load("res://scenes/ui/quests/QuestTracker.tscn")
+	if tracker_scene:
+		quest_tracker = tracker_scene.instantiate()
+		add_child(quest_tracker)
+		quest_tracker.quest_clicked.connect(_on_quest_tracker_quest_clicked)
+		quest_tracker.open_quest_panel.connect(_on_open_quest_panel)
+
+func _on_quest_tracker_quest_clicked(quest_id: String) -> void:
+	_open_quest_panel()
+	if quest_panel:
+		var quest_script: Script = quest_panel.get_script()
+		if quest_script and quest_panel.has_method("select_quest"):
+			quest_panel.select_quest(quest_id)
+
+func _on_open_quest_panel() -> void:
+	if quest_panel != null and is_instance_valid(quest_panel):
+		quest_panel.queue_free()
+	
+	var panel_scene: PackedScene = load("res://scenes/ui/quests/QuestPanel.tscn")
+	if panel_scene:
+		quest_panel = panel_scene.instantiate()
+		add_child(quest_panel)
+		quest_panel.back_to_menu.connect(_on_quest_panel_closed)
+
+func _on_quest_panel_closed() -> void:
+	if quest_panel != null and is_instance_valid(quest_panel):
+		quest_panel.queue_free()
+		quest_panel = null
 
 func _process(_delta: float) -> void:
 	if is_instance_valid(nearby_npc) and is_instance_valid(interact_prompt):

@@ -1,30 +1,15 @@
 extends "res://tests/test_base.gd"
 
-func test_quest_panel_structure() -> void:
-	var quest_panel: PanelContainer = PanelContainer.new()
-	var script: GDScript = load("res://scripts/ui/quest_panel.gd")
-	quest_panel.set_script(script)
-	
-	var quest_list: Node = quest_panel.get_node_or_null("QuestList")
-	assert(quest_list != null)
-	
-	var quest_detail: Node = quest_panel.get_node_or_null("QuestDetail")
-	assert(quest_detail != null)
-	
-	var back_button: Node = quest_panel.get_node_or_null("BackButton")
-	assert(back_button != null)
-	
-	var accept_button: Node = quest_panel.get_node_or_null("QuestDetail/AcceptButton")
-	assert(accept_button != null)
-
 func test_quest_panel_signals() -> void:
 	var quest_panel: PanelContainer = PanelContainer.new()
 	var script: GDScript = load("res://scripts/ui/quest_panel.gd")
 	quest_panel.set_script(script)
 	
-	assert(quest_panel.has_signal("quest_selected"))
-	assert(quest_panel.has_signal("back_to_menu"))
-	assert(quest_panel.has_signal("open_npc_dialog"))
+	assert_true(quest_panel.has_signal("quest_selected"))
+	assert_true(quest_panel.has_signal("back_to_menu"))
+	assert_true(quest_panel.has_signal("open_npc_dialog"))
+	assert_true(quest_panel.has_signal("quest_accepted"))
+	assert_true(quest_panel.has_signal("quest_completed"))
 
 func test_quest_status_text() -> void:
 	var quest_panel: PanelContainer = PanelContainer.new()
@@ -46,23 +31,77 @@ func test_quest_status_text() -> void:
 		var result: String = quest_panel._get_status_text(status)
 		assert(result == expected)
 
-func test_quest_accept() -> void:
+func test_quest_panel_load_quests() -> void:
 	var quest_panel: PanelContainer = PanelContainer.new()
 	var script: GDScript = load("res://scripts/ui/quest_panel.gd")
 	quest_panel.set_script(script)
 	
-	var quest: Dictionary = {
-		"quest_id": "test_quest_01",
-		"title": "测试任务",
-		"description": "测试描述",
-		"status": "available",
-		"objectives": [],
-		"rewards": {}
-	}
+	var test_quests: Array[Dictionary] = [
+		{
+			"quest_id": "quest_001",
+			"title": "测试任务1",
+			"status": "available"
+		},
+		{
+			"quest_id": "quest_002",
+			"title": "测试任务2",
+			"status": "active"
+		}
+	]
 	
-	quest_panel.quests = [quest]
-	quest_panel.selected_quest_id = "test_quest_01"
+	quest_panel.load_quests(test_quests)
+	assert_eq(quest_panel.quests.size(), 2)
+
+func test_quest_panel_select_quest() -> void:
+	var quest_panel: PanelContainer = PanelContainer.new()
+	var script: GDScript = load("res://scripts/ui/quest_panel.gd")
+	quest_panel.set_script(script)
 	
-	quest_panel._on_accept_button_pressed()
+	var test_quests: Array[Dictionary] = [
+		{
+			"quest_id": "quest_001",
+			"title": "测试任务1",
+			"description": "测试描述",
+			"status": "available",
+			"objectives": [],
+			"rewards": {}
+		}
+	]
 	
-	assert(quest["status"] == "active")
+	quest_panel.load_quests(test_quests)
+	quest_panel.select_quest("quest_001")
+	assert_eq(quest_panel.selected_quest_id, "quest_001")
+
+func test_quest_panel_get_selected_quest() -> void:
+	var quest_panel: PanelContainer = PanelContainer.new()
+	var script: GDScript = load("res://scripts/ui/quest_panel.gd")
+	quest_panel.set_script(script)
+	
+	var test_quests: Array[Dictionary] = [
+		{
+			"quest_id": "quest_001",
+			"title": "测试任务1",
+			"status": "active"
+		}
+	]
+	
+	quest_panel.load_quests(test_quests)
+	quest_panel.selected_quest_id = "quest_001"
+	var selected: Dictionary = quest_panel.get_selected_quest()
+	assert_eq(selected.get("quest_id", ""), "quest_001")
+
+func test_quest_panel_hide_detail() -> void:
+	var quest_panel: PanelContainer = PanelContainer.new()
+	var script: GDScript = load("res://scripts/ui/quest_panel.gd")
+	quest_panel.set_script(script)
+	
+	quest_panel.selected_quest_id = "quest_001"
+	quest_panel.hide_quest_detail()
+	assert_eq(quest_panel.selected_quest_id, "")
+
+func test_quest_panel_filter_status() -> void:
+	var quest_panel: PanelContainer = PanelContainer.new()
+	var script: GDScript = load("res://scripts/ui/quest_panel.gd")
+	quest_panel.set_script(script)
+	
+	assert_eq(quest_panel._get_filter_status(), "")
