@@ -29,6 +29,7 @@
 
 ## 当前结论
 
+- **Sprint 1 P0 项 S1-01「玩家移动与场景切换」客户端实现完成**：2026-07-10 01:00 完成 Godot 客户端玩家移动与场景切换能力。新增玩家角色场景（Player.tscn + player.gd）支持 WASD/方向键移动、加速/摩擦力配置、idle/move 动画状态与信号；新增首期区域探索场景（CoreRegion.tscn + core_region.gd）包含地面、障碍物、边界与返回地图按钮；修复世界地图区域卡片信号绑定并新增「进入区域」按钮；扩展 Main.gd 支持从世界地图进入区域并返回；新增输入配置文件与 15 个 GUT 测试用例（Player 5 个、CoreRegion 5 个、WorldMapNavigation 5 个）。JSON 配置验证通过，vote-service ruff 检查通过，为 Sprint 1 后续核心玩法落地奠定基础。
 - **任务系统 API 完善完成（Sprint 1 提前启动）**：2026-07-10 00:00 完成 player-service 任务系统核心 API 扩展。新增 5 个玩家 API（任务详情、接取、进度更新、完成提交、标记失败）和 3 个运营 API（玩家任务列表、创建任务、更新任务状态）。实现完整任务状态机（available → active → completed/failed），状态迁移合法性校验，审计日志记录，业务指标埋点（任务接取/完成/失败/进度更新）。player-service 测试从 37 个增加到 49 个（+12），任务系统核心玩法后端能力就绪，为 Sprint 1 S1-04 任务系统基础奠定基础。
 - **产品管理每日进展更新（2026-07-09）**：Sprint 0 技术准备工作已 100% 完成，整体完成度约 88%（剩余实际部署验证工作）。迭代方向评估为"需关注"——进度大幅提前，但面临灰度发布决策阻塞。已生成每日进展报告，建议：1）推动灰度发布决策；2）提前启动 Sprint 1 技术设计与预研；3）完善 agents 模块 CI 覆盖；4）启动 P3 阶段规划。后续任务规划已确定，短期目标为灰度发布与 Sprint 1 启动并行推进。
 - **项目灰度发布就绪状态持续验证通过**：2026-07-09 08:00 进行的全面验证测试确认所有 8 个后端服务（vote 54、world 49、content 62、generation 56、review 41、player 37、ops 39、gateway 37）共 375 个测试用例全部通过；content_check 28 个测试通过；loop_logging 36 个测试通过；workers 29 个测试通过（7 个 Redis 环境限制）；playtest 15 个端到端测试通过；product_agent 23 个测试通过；orchestrator 54 个测试通过。全量代码质量检查完成，修复 61 个代码质量问题（gateway-service mypy 1 个 + workers ruff 23 个 + content_check ruff 8 个 + loop_logging ruff 29 个），所有服务 ruff 和 mypy 检查通过。项目持续保持灰度发布就绪状态。
@@ -357,10 +358,11 @@
   - 5 个核心 Autoload 单例：GameState、APIManager、VoteManager、ContentManager、AudioManager
   - 完整场景实现：Main（主入口）、MainMenu（主菜单）、VotingPanel（投票面板）、VoteResultPanel（投票结果）、VoteHistoryPanel（投票历史）、WorldMap（世界地图）、NPCPanel（NPC列表）、QuestPanel（任务面板）；所有场景文件与脚本匹配，支持场景切换和信号通信
   - 数据配置：game_config.json、region_list.json、npc_list.json、quest_list.json（均带 schema_version）
-  - GUT 测试框架与完整测试覆盖：8 个测试文件共 57 个测试用例，覆盖 GameState、APIManager、VoteManager、WorldManager、PlayerManager、WorldMap、QuestPanel、NPCDialog；测试文档 `game/tests/README.md` 包含完整测试清单和覆盖说明
+  - GUT 测试框架与完整测试覆盖：11 个测试文件共 72 个测试用例，覆盖 GameState、APIManager、VoteManager、WorldManager、PlayerManager、WorldMap、QuestPanel、NPCDialog、Player、CoreRegion、WorldMapNavigation；测试文档 `game/tests/README.md` 包含完整测试清单和覆盖说明
   - 投票系统端到端功能完善：VoteManager 增强（loading 状态、错误处理、辅助方法）、VotingPanel 完整交互（加载/选择/提交/反馈）、VoteResultPanel 结果展示（进度条、获胜者高亮、影响信息）、VoteHistoryPanel 历史记录（列表、分页）、主菜单投票入口、场景流转逻辑
   - 世界探索与任务系统完善：WorldMap 增强（区域渲染、状态标识、点击选择、详情展示）、QuestPanel 任务面板（任务列表、详情、目标进度、奖励展示、任务接取）、NPCPanel 和 NPCDialog（NPC 列表、对话交互、任务接取）、数据配置完善（区域列表、任务实例、NPC 实例）、测试用例补充（WorldMap、QuestPanel）
   - 客户端与后端 API 联调完善：APIManager 错误码对齐（NO_OPEN_VOTE_CYCLE、ALREADY_VOTED、TOKEN_EXPIRED 等）、重试机制（幂等请求）、HTTP 方法支持（GET/POST/PUT/DELETE）；VoteManager 错误处理与状态同步（auth_error 信号、can_vote 判断）；ContentManager 版本同步与更新检查（自动检查、手动检查、安装/卸载）；新增 WorldManager（区域列表、详情、缓存）和 PlayerManager（玩家信息、任务列表、区域状态）；测试用例补充（APIManager 错误处理、WorldManager、PlayerManager）
+  - **Sprint 1 核心玩法客户端实现**：玩家角色场景（Player.tscn + player.gd）使用 CharacterBody2D 实现，支持 WASD/方向键移动、配置化速度/加速度/摩擦力、idle/move 状态切换与信号；首期区域探索场景（CoreRegion.tscn + core_region.gd）包含地面、障碍物、边界、返回地图按钮与玩家自动实例化；世界地图新增「进入区域」按钮与 enter_region_requested 信号；Main.gd 扩展区域切换逻辑；新增输入配置 input_config.json；新增 15 个 GUT 测试用例
   - **首期内容实例化**：世界观根设定（`docs/20-specs/world-lore-spec.md`）、2个首期区域（铁卫城周边、灰谷废墟）、4个势力阵营（铁卫联盟、自由领地、暗影面纱、丰收商会）、6个核心NPC（艾瑞尔·铁盾、格尔·铁锤、玛莎·耕地、雷克斯·金币、露娜·暗星、杰克·流浪者）、7个任务实例（2条主线+5条支线）、3个章节定义（觉醒之路、铁卫的召唤、自由之声）；所有数据配置均带 schema_version 字段，包含完整的阵营关系矩阵、声望系统规则、区域详情、NPC 对话和任务目标
 - **内容包打包与发布流程**：
   - 首期内容包初始化脚本（`services/content/scripts/seed_initial_packages.py`），支持从 game/data/ 读取内容并创建区域内容包（铁卫城周边 + 灰谷废墟），脚本代码已验证正确，测试用例（4个）全部通过，等待部署环境执行
@@ -462,7 +464,8 @@
 21. ~~扩展端到端集成测试覆盖：实现投票完整流程（创建→提交→结算）和内容包完整流程（创建→发布→回滚）的集成测试~~ 已完成，vote-service 54 个测试全部通过，content-service 58 个测试通过
 22. ~~实现世界骨架快照 API 与内容生成校验：world-service 添加骨架快照创建/获取接口，generation-service 在生成请求创建前校验骨架存在、forbidden_tags 非空、chapter_id/region_id 有效~~ 已完成，world-service 46 个测试通过，generation-service 53 个测试通过
 23. ~~tools 模块工程化配置与 CI 门禁补全：为 content_check、loop_logging、agents、playtest 添加 pyproject.toml，扩展 CI 配置，补充门禁注册表~~ 已完成，4 个 tools 模块配置齐全，CI 任务扩展，新增 4 个门禁
-24. ~~启动 P3 阶段（线上运营闭环期）规划：创建 P3 阶段规划文档，定义数据回流机制、数据分析流程、洞察提取与需求生成闭环、实施路线图~~ 已完成，P3 规划文档已创建并更新为 active 状态，四个阶段（数据采集基础设施、数据分析引擎、分析仪表盘、洞察提取与需求生成）已全部实现，客户端事件采集 SDK 已实现，第一阶段进度达 90%
+24. ~~P3 阶段（线上运营闭环期）规划：创建 P3 阶段规划文档，定义数据回流机制、数据分析流程、洞察提取与需求生成闭环、实施路线图~~ 已完成，P3 规划文档已创建并更新为 active 状态，四个阶段（数据采集基础设施、数据分析引擎、分析仪表盘、洞察提取与需求生成）已全部实现，客户端事件采集 SDK 已实现，第一阶段进度达 90%
+25. ~~Sprint 1 P0 项 S1-01「玩家移动与场景切换」：实现 Godot 客户端玩家角色移动、首期区域探索场景、世界地图进入区域、主入口场景切换、输入配置与 GUT 测试~~ 已完成，新增 Player/CoreRegion 场景与脚本，世界地图新增「进入区域」按钮，Main.gd 扩展区域切换，新增 15 个客户端测试用例
 
 ## 进入实施前的建议门槛
 
