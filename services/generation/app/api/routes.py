@@ -24,6 +24,8 @@ from app.repositories.audit_repo import (
     AuditRepository,
 )
 from app.repositories.generation_repo import GenerationRepository
+from datetime import datetime
+
 from app.schemas.generation import (
     CreateGenerationRequestRequest,
     CreateGenerationRequestResponse,
@@ -34,6 +36,8 @@ from app.schemas.generation import (
     GeneratedObjectListResponse,
     GeneratedObjectResponse,
     GeneratedObjectStatus,
+    GenerationCostResponse,
+    GenerationCostSummary,
     GenerationRequestListResponse,
     GenerationRequestResponse,
     GenerationRequestStatus,
@@ -682,4 +686,81 @@ async def create_generated_object(
             trace_id=x_trace_id,
         ),
         trace_id=x_trace_id,
+    )
+
+
+@ops_router.get(
+    "/generation/cost",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["ops"],
+)
+async def get_generation_cost(
+    request: Request,
+    period: str = Query(default="daily", pattern="^(daily|monthly|custom)$"),
+    start_date: datetime | None = Query(default=None),
+    end_date: datetime | None = Query(default=None),
+    current_user: UserPayload = RequireOpsRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GenerationCostResponse]:
+    from datetime import timezone, timedelta
+
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_gen_cost")
+
+    repo = GenerationRepository(db)
+
+    now = datetime.now(timezone.utc)
+
+    if period == "daily":
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+        daily_usage = await repo.get_daily_token_usage(now)
+        monthly_usage = await repo.get_monthly_token_usage(now)
+        total_usage = daily_usage
+    elif period == "monthly":
+        start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if now.month == 12:
+            end_date = now.replace(month=12, day=31, hour=23, minute=59, second=59, microsecond=999999)
+        else:
+            end_date = now.replace(month=now.month + 1, day=1, hour=0, minute=0, second=0, microsecond=0) - timedelta(microseconds=1)
+        daily_usage = await repo.get_daily_token_usage(now)
+        monthly_usage = await repo.get_monthly_token_usage(now)
+        total_usage = monthly_usage
+    else:
+        daily_usage = await repo.get_daily_token_usage(now)
+        monthly_usage = await repo.get_monthly_token_usage(now)
+        total_usage = await repo.get_total_token_usage(start_date, end_date)
+
+    from app.core.config import settings
+
+    daily_ratio = min(1.0, daily_usage["total_tokens"] / settings.cost_daily_budget_tokens) if settings.cost_daily_budget_tokens > 0 else 0.0
+    monthly_ratio = min(1.0, monthly_usage["total_tokens"] / settings.cost_monthly_budget_tokens) if settings.cost_monthly_budget_tokens > 0 else 0.0
+
+    cost_summary = GenerationCostSummary(
+        total_prompt_tokens=total_usage["prompt_tokens"],
+        total_completion_tokens=total_usage["completion_tokens"],
+        total_tokens=total_usage["total_tokens"],
+        total_cost_usd=total_usage["total_cost"],
+        daily_used_tokens=daily_usage["total_tokens"],
+        monthly_used_tokens=monthly_usage["total_tokens"],
+        daily_budget_tokens=settings.cost_daily_budget_tokens,
+        monthly_budget_tokens=settings.cost_monthly_budget_tokens,
+        daily_usage_ratio=daily_ratio,
+        monthly_usage_ratio=monthly_ratio,
+        should_alert=daily_ratio >= settings.cost_alert_threshold_ratio or monthly_ratio >= settings.cost_alert_threshold_ratio,
+        should_pause=daily_ratio >= settings.cost_pause_threshold_ratio or monthly_ratio >= settings.cost_pause_threshold_ratio,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GenerationCostResponse(
+            cost_summary=cost_summary,
+            period=period,
+            start_date=start_date,
+            end_date=end_date,
+        ),
+        trace_id=trace_id,
     )
