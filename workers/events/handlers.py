@@ -15,12 +15,27 @@ async def handle_vote_result_finalized(event: Event) -> None:
     payload = event.payload
     vote_cycle_id = payload.get("vote_cycle_id")
     winning_candidate_id = payload.get("winning_candidate_id")
+    generated_params = payload.get("generated_params", {}) or {}
+    region_scope = payload.get("region_scope", []) or []
+    chapter_id = payload.get("chapter_id")
 
     if vote_cycle_id:
-        logger.info(f"Triggering content generation for vote cycle: {vote_cycle_id}")
+        logger.info(
+            f"Triggering content generation for vote cycle: {vote_cycle_id}",
+            generated_params=generated_params,
+            region_scope=region_scope,
+        )
+        region_id = region_scope[0] if region_scope else None
+        template_type = generated_params.get("template_type", "npc")
+        count = generated_params.get("count", 1)
         generate_content_batch.delay(
             vote_cycle_id=vote_cycle_id,
             winning_candidate_id=winning_candidate_id,
+            template_type=template_type,
+            count=count,
+            region_id=region_id,
+            chapter_id=chapter_id,
+            generated_params=generated_params,
             trace_id=event.trace_id,
         )
 
