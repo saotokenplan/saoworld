@@ -52,6 +52,37 @@ class PlayerQuest(Base):
     )
 
 
+class PlayerInventory(Base):
+    __tablename__ = "player_inventories"
+
+    inventory_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    item_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    item_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, server_default="material"
+    )
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    metadata_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "item_type IN ('consumable', 'equipment', 'material', 'quest_item')",
+            name="player_inventories_item_type_check",
+        ),
+        CheckConstraint(
+            "quantity > 0",
+            name="player_inventories_quantity_check",
+        ),
+        Index("player_inventories_player_item_idx", "player_id", "item_key", unique=True),
+    )
+
+
 class PlayerRegion(Base):
     __tablename__ = "player_regions"
 

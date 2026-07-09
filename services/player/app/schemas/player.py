@@ -106,6 +106,40 @@ class PlayerRegionResponse(BaseModel):
     created_at: datetime
 
 
+class ItemType(str, Enum):
+    CONSUMABLE = "consumable"
+    EQUIPMENT = "equipment"
+    MATERIAL = "material"
+    QUEST_ITEM = "quest_item"
+
+
+class InventoryItemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    inventory_id: uuid.UUID
+    item_key: str
+    item_type: str
+    quantity: int
+    metadata_jsonb: dict | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class AddItemRequest(BaseModel):
+    item_key: str = Field(min_length=1, max_length=128)
+    item_type: ItemType = ItemType.MATERIAL
+    quantity: int = Field(default=1, ge=1)
+    metadata_jsonb: dict | None = None
+
+
+class RemoveItemRequest(BaseModel):
+    quantity: int = Field(default=1, ge=1)
+
+
+class UseItemRequest(BaseModel):
+    quantity: int = Field(default=1, ge=1)
+
+
 class PaginatedMeta(BaseModel):
     total: int
     limit: int

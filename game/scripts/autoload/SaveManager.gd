@@ -99,6 +99,7 @@ func _build_save_data() -> Dictionary:
 		"player_attributes": _get_player_attributes(),
 		"player_progress": _get_player_progress(),
 		"quest_progress": _get_quest_progress(),
+		"inventory_data": _get_inventory_data(),
 		"play_stats": _get_play_stats(play_time_seconds)
 	}
 	
@@ -176,6 +177,12 @@ func _get_quest_progress() -> Dictionary:
 		"quests_active": active_list,
 		"quests_completed": completed_list
 	}
+
+func _get_inventory_data() -> Array:
+	var inv_manager: Node = get_node_or_null("/root/InventoryManager")
+	if inv_manager == null:
+		return []
+	return inv_manager.serialize()
 
 func _get_play_stats(play_time_seconds: int) -> Dictionary:
 	return {
@@ -287,6 +294,9 @@ func _restore_game_state(save_data: Dictionary) -> void:
 	# 恢复任务进度
 	_restore_quest_progress(save_data.get("quest_progress", {}))
 	
+	# 恢复背包数据
+	_restore_inventory(save_data.get("inventory_data", []))
+	
 	# 触发状态更新信号
 	GameState.player_info_changed.emit()
 	GameState.health_changed.emit(GameState.player_health, GameState.player_max_health)
@@ -316,6 +326,12 @@ func _restore_quest_progress(quest_data: Dictionary) -> void:
 			})
 	
 	PlayerManager.player_quests_loaded.emit()
+
+func _restore_inventory(inventory_data: Array) -> void:
+	var inv_manager: Node = get_node_or_null("/root/InventoryManager")
+	if inv_manager == null:
+		return
+	inv_manager.load_from_cache(inventory_data)
 
 func has_save_file(slot: String = "main") -> bool:
 	var save_path: String = _get_save_path(slot)

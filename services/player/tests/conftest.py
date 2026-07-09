@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.core.auth import create_test_token
 from app.core.db import Base, get_db
-from app.domain.models import Player, PlayerQuest, PlayerRegion
+from app.domain.models import Player, PlayerQuest, PlayerRegion, PlayerInventory
 from app.main import app
 from app.schemas.auth import Role
 
@@ -130,3 +130,19 @@ async def test_player_region(test_player: Player) -> PlayerRegion:
         session.add(player_region)
         await session.commit()
     return player_region
+
+
+@pytest_asyncio.fixture
+async def test_inventory_item(test_player: Player) -> PlayerInventory:
+    item = PlayerInventory(
+        inventory_id=uuid.uuid4(),
+        player_id=test_player.player_id,
+        item_key="item_health_potion_01",
+        item_type="consumable",
+        quantity=5,
+        metadata_jsonb={"name": "治疗药水", "description": "恢复50点生命值", "heal_amount": 50},
+    )
+    async with TestSessionLocal() as session:
+        session.add(item)
+        await session.commit()
+    return item

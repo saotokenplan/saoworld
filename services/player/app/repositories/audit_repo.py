@@ -15,10 +15,14 @@ ACTION_QUEST_FAIL = "quest_fail"
 ACTION_QUEST_PROGRESS_UPDATE = "quest_progress_update"
 ACTION_QUEST_CREATE = "quest_create"
 ACTION_QUEST_STATUS_UPDATE = "quest_status_update"
+ACTION_INVENTORY_ADD = "inventory_add"
+ACTION_INVENTORY_REMOVE = "inventory_remove"
+ACTION_INVENTORY_USE = "inventory_use"
 
 RESOURCE_PLAYER = "player"
 RESOURCE_REGION = "region"
 RESOURCE_QUEST = "quest"
+RESOURCE_INVENTORY = "inventory"
 
 
 class AuditRepository:
