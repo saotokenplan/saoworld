@@ -11,6 +11,7 @@ from app.core.llm_adapter import (
     LLMTimeoutError,
     get_llm_adapter,
 )
+from app.core.npc_data_adapter import NPCDataAdapter
 from app.core.quality_scorer import QualityScorer
 from app.core.template_manager import TemplateManager
 
@@ -34,17 +35,20 @@ class ContentGenerator:
         template_manager: TemplateManager | None = None,
         quality_scorer: QualityScorer | None = None,
         quality_threshold: float | None = None,
+        npc_adapter: NPCDataAdapter | None = None,
     ):
         self.llm_adapter = llm_adapter or get_llm_adapter()
         self.template_manager = template_manager or TemplateManager(settings.template_dir)
         self.template_manager.load_templates()
         self.quality_scorer = quality_scorer or QualityScorer()
         self.quality_threshold = quality_threshold or settings.quality_threshold
+        self.npc_adapter = npc_adapter or NPCDataAdapter()
 
     async def generate_npc(
         self,
         region_id: str | None = None,
         chapter_id: str | None = None,
+        npc_role: str = "commoner",
         context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """生成 NPC 内容。
@@ -52,19 +56,20 @@ class ContentGenerator:
         Args:
             region_id: 区域 ID
             chapter_id: 章节 ID
+            npc_role: NPC 角色类型（blacksmith/merchant/guard/healer/quest_giver）
             context: 额外上下文信息
 
         Returns:
-            生成的 NPC 数据
+            生成的 NPC 数据（已转换为 world-service 兼容格式）
 
         Raises:
             ContentGenerationError: 生成失败或质量不达标
         """
-        template = self.template_manager.match_template("npc", region_id, chapter_id)
-        if not template:
-            raise ContentGenerationError("No matching NPC template found")
+        template_name = self.template_manager.get_npc_template_by_role(npc_role)
+        if not template_name:
+            template_name = "npc/npc_base.jinja2"
 
-        prompt = self._build_npc_prompt(region_id, chapter_id, context)
+        prompt = self._build_npc_prompt(region_id, chapter_id, npc_role, context)
         system_prompt = self._build_system_prompt("npc")
 
         try:
@@ -77,7 +82,12 @@ class ContentGenerator:
             logger.error(f"LLM generation failed: {e}")
             raise ContentGenerationError(f"LLM generation failed: {e}")
 
-        # 质量评分
+        try:
+            response = self.npc_adapter.ensure_minimum_completeness(response, min_completeness=0.95)
+        except ValueError as e:
+            logger.warning(f"NPC data completeness check failed: {e}")
+            raise ContentGenerationError(str(e))
+
         score_result = self.quality_scorer.score_npc(response)
         if not score_result.is_acceptable():
             logger.warning(
@@ -88,7 +98,8 @@ class ContentGenerator:
                 quality_score=score_result.score,
             )
 
-        return response
+        adapted = self.npc_adapter.adapt(response)
+        return adapted
 
     async def generate_quest(
         self,
@@ -128,7 +139,6 @@ class ContentGenerator:
             logger.error(f"LLM generation failed: {e}")
             raise ContentGenerationError(f"LLM generation failed: {e}")
 
-        # 质量评分
         score_result = self.quality_scorer.score_quest(response)
         if not score_result.is_acceptable():
             logger.warning(
@@ -175,7 +185,6 @@ class ContentGenerator:
             logger.error(f"LLM generation failed: {e}")
             raise ContentGenerationError(f"LLM generation failed: {e}")
 
-        # 质量评分
         score_result = self.quality_scorer.score_region(response)
         if not score_result.is_acceptable():
             logger.warning(
@@ -191,7 +200,7 @@ class ContentGenerator:
     def _build_system_prompt(self, content_type: str) -> str:
         """构建系统提示。"""
         prompts = {
-            "npc": "你是一个游戏世界中的NPC设计专家。你需要根据世界观和区域设定，设计出符合背景的NPC角色。返回的JSON必须包含：name（名字）、role（职业）、personality（性格）、faction_id（阵营ID）、region_id（区域ID）、description（描述）、dialogue（对话）。",
+            "npc": "你是一个游戏世界中的NPC设计专家。你需要根据世界观和区域设定，设计出符合背景的完整NPC角色。返回的JSON必须包含所有必需字段：npc_key、name、title、gender、age、race、faction_key、region_key、role、location_key、description、personality、traits、voice、backstory、motivation、relationship_map、dialog_style、dialog_nodes、quests_given、quests_related、shop_items、services_offered、location_x、location_y、interaction_radius。确保所有字段填写完整。",
             "quest": "你是一个游戏任务设计专家。你需要根据世界观和区域设定，设计出有趣的任务。返回的JSON必须包含：title（标题）、type（类型main/side）、region_id（区域ID）、chapter_id（章节ID）、description（描述）、objectives（目标列表）、rewards（奖励对象）。",
             "region": "你是一个游戏区域设计专家。你需要根据世界观和章节进度，设计出有特色的区域。返回的JSON必须包含：name（名字）、difficulty（难度easy/normal/hard/extreme）、region_id（区域ID）、chapter_id（章节ID）、description（描述）、features（特色列表）。",
         }
@@ -201,29 +210,53 @@ class ContentGenerator:
         self,
         region_id: str | None,
         chapter_id: str | None,
+        npc_role: str,
         context: dict[str, Any] | None,
     ) -> str:
         """构建 NPC 生成提示。"""
-        prompt_parts = ["请设计一个NPC角色。"]
+        prompt_parts = [f"请设计一个{npc_role}类型的NPC角色。"]
 
-        if region_id:
-            prompt_parts.append(f"区域：{region_id}")
         if chapter_id:
             prompt_parts.append(f"章节：{chapter_id}")
+        if region_id:
+            prompt_parts.append(f"区域：{region_id}")
         if context:
             if "faction" in context:
                 prompt_parts.append(f"阵营倾向：{context['faction']}")
-            if "role" in context:
-                prompt_parts.append(f"职业倾向：{context['role']}")
+            if "faction_key" in context:
+                prompt_parts.append(f"阵营ID：{context['faction_key']}")
+            if "region_key" in context:
+                prompt_parts.append(f"区域ID：{context['region_key']}")
+            if "world_rules" in context:
+                prompt_parts.append(f"世界规则：{context['world_rules']}")
 
-        prompt_parts.append("\n请返回包含以下字段的JSON：")
+        prompt_parts.append("\n请返回包含以下所有字段的完整JSON：")
+        prompt_parts.append("- npc_key: NPC唯一标识（格式：npc_xxx）")
         prompt_parts.append("- name: NPC名字")
-        prompt_parts.append("- role: 职业（如铁匠、商人、守卫等）")
-        prompt_parts.append("- personality: 性格特点")
-        prompt_parts.append("- faction_id: 阵营ID")
-        prompt_parts.append("- region_id: 所在区域ID")
-        prompt_parts.append("- description: 详细描述（50-200字）")
-        prompt_parts.append("- dialogue: 开场对话（20-50字）")
+        prompt_parts.append("- title: NPC头衔")
+        prompt_parts.append("- gender: 性别（male/female/other/unknown）")
+        prompt_parts.append("- age: 年龄（数字）")
+        prompt_parts.append("- race: 种族（human/elf/dwarf/orc等）")
+        prompt_parts.append("- faction_key: 阵营ID（格式：faction_xxx，可为空）")
+        prompt_parts.append("- region_key: 区域ID（格式：region_xxx）")
+        prompt_parts.append("- role: 职业（blacksmith/merchant/guard/healer/quest_giver）")
+        prompt_parts.append("- location_key: 位置标识")
+        prompt_parts.append("- description: 详细描述（100-200字）")
+        prompt_parts.append("- personality: 性格特点列表（至少2个）")
+        prompt_parts.append("- traits: 特征列表")
+        prompt_parts.append("- voice: 说话风格描述")
+        prompt_parts.append("- backstory: 背景故事（200-300字）")
+        prompt_parts.append("- motivation: 动机和目标")
+        prompt_parts.append("- relationship_map: 关联NPC关系字典")
+        prompt_parts.append("- dialog_style: 对话风格描述")
+        prompt_parts.append("- dialog_nodes: 对话树节点（至少6个节点）")
+        prompt_parts.append("- quests_given: 发布的任务ID列表")
+        prompt_parts.append("- quests_related: 相关任务ID列表")
+        prompt_parts.append("- shop_items: 出售物品列表")
+        prompt_parts.append("- services_offered: 提供服务列表")
+        prompt_parts.append("- location_x: 位置X坐标")
+        prompt_parts.append("- location_y: 位置Y坐标")
+        prompt_parts.append("- interaction_radius: 交互半径")
 
         return "\n".join(prompt_parts)
 
@@ -285,7 +318,6 @@ class ContentGenerator:
         return "\n".join(prompt_parts)
 
 
-# 全局实例
 _generator: ContentGenerator | None = None
 
 
