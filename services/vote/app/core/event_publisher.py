@@ -57,21 +57,30 @@ class EventPublisher:
     async def publish_vote_result_finalized(
         self,
         vote_cycle_id: str,
+        chapter_id: str,
         winning_candidate_id: str,
         winning_candidate_name: str,
         total_votes: int,
         finalized_at: str,
+        generated_params: dict | None = None,
+        region_scope: list | None = None,
         trace_id: str = "",
     ) -> str:
+        payload = {
+            "vote_cycle_id": vote_cycle_id,
+            "chapter_id": chapter_id,
+            "winning_candidate_id": winning_candidate_id,
+            "winning_candidate_name": winning_candidate_name,
+            "total_votes": total_votes,
+            "finalized_at": finalized_at,
+        }
+        if generated_params is not None:
+            payload["generated_params"] = generated_params
+        if region_scope is not None:
+            payload["region_scope"] = region_scope
         return await self.publish(
             "vote.result.finalized",
-            {
-                "vote_cycle_id": vote_cycle_id,
-                "winning_candidate_id": winning_candidate_id,
-                "winning_candidate_name": winning_candidate_name,
-                "total_votes": total_votes,
-                "finalized_at": finalized_at,
-            },
+            payload,
             trace_id=trace_id,
         )
 
