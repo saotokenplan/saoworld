@@ -20,6 +20,7 @@ class LLMResponse:
     model: str
     usage: dict[str, int]
     finish_reason: str
+    cost_usd: float = 0.0
 
 
 class LLMAdapterError(Exception):
@@ -134,11 +135,23 @@ class MockLLMAdapter(LLMAdapter):
         else:
             content = self._generate_mock_content(prompt)
 
+        usage = {"prompt_tokens": 100, "completion_tokens": 200, "total_tokens": 300}
+        prompt_cost = (usage["prompt_tokens"] / 1000) * settings.cost_model_price_per_1k_prompt_tokens
+        completion_cost = (usage["completion_tokens"] / 1000) * settings.cost_model_price_per_1k_completion_tokens
+
+        logger.info(
+            "mock_llm_generate prompt_length=%d usage=%s cost_usd=%.6f",
+            len(prompt),
+            usage,
+            prompt_cost + completion_cost,
+        )
+
         return LLMResponse(
             content=content,
             model=self.model,
-            usage={"prompt_tokens": 100, "completion_tokens": 200, "total_tokens": 300},
+            usage=usage,
             finish_reason="stop",
+            cost_usd=prompt_cost + completion_cost,
         )
 
     async def generate_json(
@@ -263,11 +276,28 @@ class OpenAIAdapter(LLMAdapter):
             data = response.json()
 
             choice = data["choices"][0]
+            usage = data.get("usage", {})
+            prompt_tokens = usage.get("prompt_tokens", 0)
+            completion_tokens = usage.get("completion_tokens", 0)
+
+            prompt_cost = (prompt_tokens / 1000) * settings.cost_model_price_per_1k_prompt_tokens
+            completion_cost = (completion_tokens / 1000) * settings.cost_model_price_per_1k_completion_tokens
+            total_cost = prompt_cost + completion_cost
+
+            logger.info(
+            "openai_llm_generate model=%s usage=%s cost_usd=%.6f finish_reason=%s",
+            data["model"],
+            usage,
+            total_cost,
+            choice.get("finish_reason", "stop"),
+        )
+
             return LLMResponse(
                 content=choice["message"]["content"],
                 model=data["model"],
-                usage=data.get("usage", {}),
+                usage=usage,
                 finish_reason=choice.get("finish_reason", "stop"),
+                cost_usd=total_cost,
             )
 
         except Exception as e:

@@ -1,5 +1,6 @@
 import uuid
-from typing import Any
+from datetime import datetime, timedelta
+from typing import Any, Dict
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -210,3 +211,121 @@ class GenerationRepository:
         await self.db.flush()
         await self.db.refresh(obj)
         return obj
+
+    async def update_request_cost(
+        self,
+        request_id: uuid.UUID,
+        prompt_tokens: int,
+        completion_tokens: int,
+        total_tokens: int,
+        cost_usd: float,
+    ) -> GenerationRequest:
+        req = await self.get_request_by_id(request_id)
+        if not req:
+            raise ValueError("REQUEST_NOT_FOUND")
+
+        req.prompt_tokens = prompt_tokens
+        req.completion_tokens = completion_tokens
+        req.total_tokens = total_tokens
+        req.cost_usd = cost_usd
+
+        await self.db.flush()
+        await self.db.refresh(req)
+        return req
+
+    async def get_daily_token_usage(self, date: datetime) -> Dict[str, Any]:
+        start_of_day = date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = date.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        result = await self.db.execute(
+            select(
+                func.coalesce(func.sum(GenerationRequest.prompt_tokens), 0).label("prompt_tokens"),
+                func.coalesce(func.sum(GenerationRequest.completion_tokens), 0).label("completion_tokens"),
+                func.coalesce(func.sum(GenerationRequest.total_tokens), 0).label("total_tokens"),
+                func.coalesce(func.sum(GenerationRequest.cost_usd), 0).label("total_cost"),
+            )
+            .where(GenerationRequest.created_at >= start_of_day)
+            .where(GenerationRequest.created_at <= end_of_day)
+        )
+
+        row = result.first()
+        if row:
+            return {
+                "prompt_tokens": int(row.prompt_tokens),
+                "completion_tokens": int(row.completion_tokens),
+                "total_tokens": int(row.total_tokens),
+                "total_cost": float(row.total_cost),
+            }
+        return {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "total_cost": 0.0,
+        }
+
+    async def get_monthly_token_usage(self, date: datetime) -> Dict[str, Any]:
+        start_of_month = date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if date.month == 12:
+            end_of_month = date.replace(month=12, day=31, hour=23, minute=59, second=59, microsecond=999999)
+        else:
+            end_of_month = date.replace(month=date.month + 1, day=1, hour=0, minute=0, second=0, microsecond=0) - timedelta(microseconds=1)
+
+        result = await self.db.execute(
+            select(
+                func.coalesce(func.sum(GenerationRequest.prompt_tokens), 0).label("prompt_tokens"),
+                func.coalesce(func.sum(GenerationRequest.completion_tokens), 0).label("completion_tokens"),
+                func.coalesce(func.sum(GenerationRequest.total_tokens), 0).label("total_tokens"),
+                func.coalesce(func.sum(GenerationRequest.cost_usd), 0).label("total_cost"),
+            )
+            .where(GenerationRequest.created_at >= start_of_month)
+            .where(GenerationRequest.created_at <= end_of_month)
+        )
+
+        row = result.first()
+        if row:
+            return {
+                "prompt_tokens": int(row.prompt_tokens),
+                "completion_tokens": int(row.completion_tokens),
+                "total_tokens": int(row.total_tokens),
+                "total_cost": float(row.total_cost),
+            }
+        return {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "total_cost": 0.0,
+        }
+
+    async def get_total_token_usage(
+        self,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> Dict[str, Any]:
+        query = select(
+            func.coalesce(func.sum(GenerationRequest.prompt_tokens), 0).label("prompt_tokens"),
+            func.coalesce(func.sum(GenerationRequest.completion_tokens), 0).label("completion_tokens"),
+            func.coalesce(func.sum(GenerationRequest.total_tokens), 0).label("total_tokens"),
+            func.coalesce(func.sum(GenerationRequest.cost_usd), 0).label("total_cost"),
+        )
+
+        if start_date:
+            query = query.where(GenerationRequest.created_at >= start_date)
+        if end_date:
+            query = query.where(GenerationRequest.created_at <= end_date)
+
+        result = await self.db.execute(query)
+        row = result.first()
+
+        if row:
+            return {
+                "prompt_tokens": int(row.prompt_tokens),
+                "completion_tokens": int(row.completion_tokens),
+                "total_tokens": int(row.total_tokens),
+                "total_cost": float(row.total_cost),
+            }
+        return {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "total_cost": 0.0,
+        }

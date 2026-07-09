@@ -69,6 +69,10 @@ class GenerationRequestResponse(BaseModel):
     max_retries: int
     error_message: str | None = None
     trace_id: str
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    total_tokens: int | None = None
+    cost_usd: float | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -152,3 +156,31 @@ class UpdateObjectStatusResponse(BaseModel):
     status: GeneratedObjectStatus
     request_id_: str
     trace_id: str | None = None
+
+
+class GenerationCostSummary(BaseModel):
+    total_prompt_tokens: int
+    total_completion_tokens: int
+    total_tokens: int
+    total_cost_usd: float
+    daily_used_tokens: int
+    monthly_used_tokens: int
+    daily_budget_tokens: int
+    monthly_budget_tokens: int
+    daily_usage_ratio: float
+    monthly_usage_ratio: float
+    should_alert: bool
+    should_pause: bool
+
+
+class GenerationCostResponse(BaseModel):
+    cost_summary: GenerationCostSummary
+    period: str
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+
+
+class CostQueryRequest(BaseModel):
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    period: str = Field(default="daily", pattern="^(daily|monthly|custom)$")
