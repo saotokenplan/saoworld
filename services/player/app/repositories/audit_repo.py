@@ -18,11 +18,15 @@ ACTION_QUEST_STATUS_UPDATE = "quest_status_update"
 ACTION_INVENTORY_ADD = "inventory_add"
 ACTION_INVENTORY_REMOVE = "inventory_remove"
 ACTION_INVENTORY_USE = "inventory_use"
+ACTION_REPUTATION_ADD = "reputation_add"
+ACTION_REPUTATION_REMOVE = "reputation_remove"
+ACTION_REPUTATION_ADJUST = "reputation_adjust"
 
 RESOURCE_PLAYER = "player"
 RESOURCE_REGION = "region"
 RESOURCE_QUEST = "quest"
 RESOURCE_INVENTORY = "inventory"
+RESOURCE_REPUTATION = "reputation"
 
 
 class AuditRepository:

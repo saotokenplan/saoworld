@@ -15,6 +15,40 @@ class QuestStatus(str, Enum):
     FAILED = "failed"
 
 
+class ReputationLevel(str, Enum):
+    HOSTILE = "hostile"
+    NEUTRAL = "neutral"
+    FRIENDLY = "friendly"
+    HONORED = "honored"
+    REVERED = "revered"
+    EXALTED = "exalted"
+
+
+REPUTATION_LEVEL_THRESHOLDS: dict[str, int] = {
+    "hostile": -3000,
+    "neutral": 0,
+    "friendly": 3000,
+    "honored": 9000,
+    "revered": 21000,
+    "exalted": 42000,
+}
+
+
+def get_reputation_level(reputation: int) -> ReputationLevel:
+    if reputation < REPUTATION_LEVEL_THRESHOLDS["neutral"]:
+        return ReputationLevel.HOSTILE
+    elif reputation < REPUTATION_LEVEL_THRESHOLDS["friendly"]:
+        return ReputationLevel.NEUTRAL
+    elif reputation < REPUTATION_LEVEL_THRESHOLDS["honored"]:
+        return ReputationLevel.FRIENDLY
+    elif reputation < REPUTATION_LEVEL_THRESHOLDS["revered"]:
+        return ReputationLevel.HONORED
+    elif reputation < REPUTATION_LEVEL_THRESHOLDS["exalted"]:
+        return ReputationLevel.REVERED
+    else:
+        return ReputationLevel.EXALTED
+
+
 class ErrorDetail(BaseModel):
     location: str
     field: str
@@ -103,7 +137,36 @@ class PlayerRegionResponse(BaseModel):
     region_id: str
     unlocked_at: datetime | None = None
     reputation: int = 0
+    reputation_level: ReputationLevel = ReputationLevel.NEUTRAL
     created_at: datetime
+
+    @classmethod
+    def model_validate(cls, obj: object, *args: object, **kwargs: object) -> "PlayerRegionResponse":
+        if hasattr(obj, "reputation") and isinstance(obj.reputation, int):
+            level = get_reputation_level(obj.reputation)
+            obj_dict = {
+                "player_region_id": obj.player_region_id,
+                "region_id": obj.region_id,
+                "unlocked_at": obj.unlocked_at,
+                "reputation": obj.reputation,
+                "reputation_level": level,
+                "created_at": obj.created_at,
+            }
+            return super().model_validate(obj_dict, *args, **kwargs)
+        return super().model_validate(obj, *args, **kwargs)
+
+
+class RegionReputationResponse(BaseModel):
+    region_id: str
+    reputation: int
+    reputation_level: ReputationLevel
+    next_level_threshold: int
+    current_level_progress: float
+
+
+class AdjustReputationRequest(BaseModel):
+    amount: int = Field(ge=-50000, le=50000)
+    reason: str | None = Field(default=None, max_length=256)
 
 
 class ItemType(str, Enum):
