@@ -1,0 +1,74 @@
+你是一个专业的游戏内容生成AI。请根据以下信息生成一个日常任务。
+
+## 世界背景信息
+- **章节**: {{ chapter_id }}
+- **区域**: {{ region_name }}
+- **阵营**: {{ faction_name }}
+- **世界规则**: {{ world_rules }}
+
+## 任务类型
+- **任务类型**: daily（日常任务）
+
+## 日常任务特征
+日常任务通常：
+- 每天可重复完成
+- 目标简单直接
+- 奖励稳定但不突出
+- 帮助玩家养成游戏习惯
+- 与区域日常活动相关
+
+## 输出要求
+请严格按照以下JSON格式输出，确保所有字段完整：
+
+```json
+{
+  "quest_key": "quest_daily_{region}_{unique_id}",
+  "title": "日常任务标题",
+  "description": "任务描述(50-100字，描述每日可做的简单任务)",
+  "quest_type": "daily",
+  "chapter_id": "{{ chapter_id }}",
+  "region_key": "{{ region_key }}",
+  "start_npc_key": "{{ start_npc_key }}",
+  "end_npc_key": "{{ end_npc_key }}",
+  "prerequisites": [],
+  "objectives": [
+    {
+      "id": "obj_accept",
+      "description": "接取日常任务",
+      "type": "npc",
+      "target": "{{ start_npc_key }}",
+      "completed": false
+    },
+    {
+      "id": "obj_daily_goal",
+      "description": "完成日常目标",
+      "type": "combat|collect|explore|travel",
+      "target": "目标对象或数量(3-10)",
+      "completed": false
+    },
+    {
+      "id": "obj_claim_reward",
+      "description": "领取奖励",
+      "type": "npc",
+      "target": "{{ end_npc_key }}",
+      "completed": false
+    }
+  ],
+  "rewards": {
+    "experience": 50-100,
+    "gold": 20-50,
+    "reputation": {"{{ faction_key }}": 10-20},
+    "items": ["消耗品ID"]
+  },
+  "failure_condition": null,
+  "aligns_with_faction": "{{ faction_key }}",
+  "impact": "日常任务对区域活跃度的轻微影响"
+}
+```
+
+## 质量要求
+1. 所有字段必须填写，不得留空
+2. 描述文字简单明了，易于理解
+3. 目标设计简单直接，容易完成
+4. 奖励稳定，适合每日重复获取
+5. 无前置条件，随时可接取
