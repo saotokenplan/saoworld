@@ -1,6 +1,6 @@
 from .system_designer_agent import SystemDesignerAgent
-from .input_schemas import Task, TaskInput, RuleLibrary, VersionBrief
-from .output_schemas import DesignNote, DataStructure, InterfaceDefinition, ChangePlan, ArchitectureValidationReport
+from .designer_input_schemas import Task, TaskInput, RuleLibrary, VersionBrief
+from .designer_output_schemas import DesignNote, DataStructure, InterfaceDefinition, ChangePlan, ArchitectureValidationReport
 
 __all__ = [
     "SystemDesignerAgent",

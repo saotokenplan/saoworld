@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 from typing import List, Optional, Dict, Any
 import structlog
-from input_schemas import (
+from product_input_schemas import (
     VersionStatus,
     VoteResults,
     OnlineMetrics,
@@ -9,8 +9,8 @@ from input_schemas import (
     Roadmap,
     VisionDocument,
 )
-from output_schemas import PriorityMatrix, MilestonePlan, VersionBrief, Task, OutputMilestone
-from error_handler import ErrorHandler
+from product_output_schemas import PriorityMatrix, MilestonePlan, VersionBrief, Task, OutputMilestone
+from product_error_handler import ErrorHandler
 
 logger = structlog.get_logger()
 

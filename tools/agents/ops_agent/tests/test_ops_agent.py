@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from ..ops_agent import OpsAgent
-from ..input_schemas import (
+from ..ops_input_schemas import (
     OpsTask, MetricsData, ExceptionData, FeedbackData, ServiceMetrics, SystemMetrics, GameplayMetrics,
     ExceptionItem, FeedbackItem
 )
@@ -331,43 +331,43 @@ def test_execute_ops_workflow_default_data():
 
 
 def test_error_handler_collection_failure():
-    from ..error_handler import OpsErrorHandler
+    from ..ops_error_handler import OpsErrorHandler
     handler = OpsErrorHandler()
     handler.handle_error("collection_failure", "Prometheus连接失败")
 
 
 def test_error_handler_data_inconsistency():
-    from ..error_handler import OpsErrorHandler
+    from ..ops_error_handler import OpsErrorHandler
     handler = OpsErrorHandler()
     handler.handle_error("data_inconsistency", "不同数据源数据不一致")
 
 
 def test_error_handler_alert_storm():
-    from ..error_handler import OpsErrorHandler
+    from ..ops_error_handler import OpsErrorHandler
     handler = OpsErrorHandler()
     handler.handle_error("alert_storm", "短时间内大量告警")
 
 
 def test_error_handler_analysis_failure():
-    from ..error_handler import OpsErrorHandler
+    from ..ops_error_handler import OpsErrorHandler
     handler = OpsErrorHandler()
     handler.handle_error("analysis_failure", "异常分析失败")
 
 
 def test_error_handler_report_failure():
-    from ..error_handler import OpsErrorHandler
+    from ..ops_error_handler import OpsErrorHandler
     handler = OpsErrorHandler()
     handler.handle_error("report_failure", "报告生成失败")
 
 
 def test_error_handler_workflow_error():
-    from ..error_handler import OpsErrorHandler
+    from ..ops_error_handler import OpsErrorHandler
     handler = OpsErrorHandler()
     handler.handle_error("workflow", "工作流执行异常")
 
 
 def test_error_handler_generic_error():
-    from ..error_handler import OpsErrorHandler
+    from ..ops_error_handler import OpsErrorHandler
     handler = OpsErrorHandler()
     handler.handle_error("unknown_type", "未知错误类型")
 

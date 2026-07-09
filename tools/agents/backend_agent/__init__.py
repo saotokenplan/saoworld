@@ -18,8 +18,8 @@ Backend Agent 负责编写投票服务、生成服务、审核服务和运营后
 """
 
 from .backend_agent import BackendAgent
-from .input_schemas import DesignTask, APISpec, DataStructure, ExistingCode
-from .output_schemas import ImplementationOutput, TestResult, BackendResult
+from .backend_input_schemas import DesignTask, APISpec, DataStructure, ExistingCode
+from .backend_output_schemas import ImplementationOutput, TestResult, BackendResult
 
 __all__ = [
     "BackendAgent",

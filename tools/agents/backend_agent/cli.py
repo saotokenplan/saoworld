@@ -11,7 +11,7 @@ from pathlib import Path
 import click
 
 from .backend_agent import BackendAgent
-from .input_schemas import BackendAgentInput, DataStructure, DesignTask, ExistingCode
+from .backend_input_schemas import BackendAgentInput, DataStructure, DesignTask, ExistingCode
 
 
 @click.group()
@@ -104,7 +104,7 @@ def implement_route(
         output_dir: 输出目录
     """
     # 创建 API 规范
-    from .input_schemas import APISpec
+    from .backend_input_schemas import APISpec
 
     api_spec = APISpec(
         endpoint=endpoint,

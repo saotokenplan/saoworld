@@ -2,7 +2,7 @@ import argparse
 import json
 from datetime import date
 from product_agent import ProductAgent
-from input_schemas import (
+from product_input_schemas import (
     VersionStatus,
     VoteResults,
     OnlineMetrics,

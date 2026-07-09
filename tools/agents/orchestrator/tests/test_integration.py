@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from ..orchestrator import Orchestrator
 from ..dispatcher import AgentDispatcher
 from ..workflow_executor import WorkflowExecutor
-from ..input_schemas import (
+from ..orchestrator_input_schemas import (
     VersionBrief,
     Milestone,
     TaskInput,

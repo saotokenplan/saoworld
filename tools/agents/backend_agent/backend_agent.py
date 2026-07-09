@@ -12,9 +12,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from .error_handler import BackendErrorHandler
-from .input_schemas import BackendAgentInput, DataStructure, DesignTask, ExistingCode
-from .output_schemas import (
+from .backend_error_handler import BackendErrorHandler
+from .backend_input_schemas import BackendAgentInput, DataStructure, DesignTask, ExistingCode
+from .backend_output_schemas import (
     BackendResult,
     FileInfo,
     ImplementationOutput,

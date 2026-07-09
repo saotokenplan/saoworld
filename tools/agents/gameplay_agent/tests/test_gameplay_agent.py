@@ -3,11 +3,11 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from gameplay_agent import GameplayAgent
-from input_schemas import (
+from gameplay_input_schemas import (
     DesignTask, SceneConfig, ScriptInterface, DataConfig, GameplayTaskInput,
     SceneNode, ScriptProperty, ScriptMethod, SignalDefinition,
 )
-from error_handler import (
+from gameplay_error_handler import (
     IncompleteDesignError, MissingDataConfigError,
 )
 

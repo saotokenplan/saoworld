@@ -1,13 +1,13 @@
 import uuid
 from datetime import datetime, timezone
 from typing import Optional, Dict
-from .input_schemas import BuildTask, VersionConfig, BuildConfig, GrayScope
-from .output_schemas import (
+from .build_input_schemas import BuildTask, VersionConfig, BuildConfig, GrayScope
+from .build_output_schemas import (
     BuildOutput, BuildReport, VersionMetadata, ComponentBuildResult,
     ClientBuildResult, ServerBuildResult, ContentBuildResult,
     DockerImage, BuildResultSummary, BuildResult
 )
-from .error_handler import BuildErrorHandler
+from .build_error_handler import BuildErrorHandler
 
 
 class BuildAgent:

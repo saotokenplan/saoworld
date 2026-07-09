@@ -3,7 +3,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from world_agent import WorldAgent
-from input_schemas import (
+from world_input_schemas import (
     WorldRules,
     RegionInfo,
     FactionInfo,
@@ -15,7 +15,7 @@ from input_schemas import (
     WorldTaskInput,
     RequirementItem,
 )
-from error_handler import (
+from world_error_handler import (
     MissingSkeletonError,
     TemplateMismatchError,
     ContentViolationError,
@@ -311,7 +311,7 @@ def test_handle_review_result_approved():
 
 
 def test_handle_review_result_rejected():
-    from error_handler import ReviewFailedError
+    from world_error_handler import ReviewFailedError
 
     agent = WorldAgent()
     with pytest.raises(ReviewFailedError):

@@ -1,6 +1,6 @@
 from .qa_agent import QAAgent
-from .input_schemas import TestTask, AcceptanceCase, CodeChanges, DesignDocument
-from .output_schemas import TestOutput, TestReport, FailureSummary, QAResult
+from .qa_input_schemas import TestTask, AcceptanceCase, CodeChanges, DesignDocument
+from .qa_output_schemas import TestOutput, TestReport, FailureSummary, QAResult
 
 __all__ = [
     "QAAgent",

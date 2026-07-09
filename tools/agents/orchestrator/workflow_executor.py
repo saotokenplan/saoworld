@@ -15,8 +15,8 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 
 from .dispatcher import AgentDispatcher, AgentExecutionResult
-from .input_schemas import TaskInput
-from .output_schemas import (
+from .orchestrator_input_schemas import TaskInput
+from .orchestrator_output_schemas import (
     ExecutionEvent,
     ExecutionLog,
     FailureHandling,

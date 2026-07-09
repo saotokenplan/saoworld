@@ -1,7 +1,7 @@
 import click
 import json
 from .world_agent import WorldAgent
-from .input_schemas import (
+from .world_input_schemas import (
     WorldRules,
     RegionInfo,
     FactionInfo,

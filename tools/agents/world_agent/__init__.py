@@ -1,5 +1,5 @@
 from .world_agent import WorldAgent
-from .input_schemas import (
+from .world_input_schemas import (
     WorldRules,
     RegionInfo,
     FactionInfo,
@@ -10,7 +10,7 @@ from .input_schemas import (
     DesignNote,
     WorldTaskInput,
 )
-from .output_schemas import (
+from .world_output_schemas import (
     NPCConfig,
     QuestConfig,
     Objective,

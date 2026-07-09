@@ -8,7 +8,7 @@ Backend Agent 测试用例
 
 import pytest
 from ..backend_agent import BackendAgent
-from ..input_schemas import (
+from ..backend_input_schemas import (
     BackendAgentInput,
     DataStructure,
     DesignTask,
@@ -16,7 +16,7 @@ from ..input_schemas import (
     FieldDefinition,
     APISpec,
 )
-from ..error_handler import BackendErrorHandler
+from ..backend_error_handler import BackendErrorHandler
 
 
 class TestBackendAgent:

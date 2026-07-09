@@ -1,6 +1,6 @@
 from .orchestrator import Orchestrator
-from .input_schemas import VersionBrief, GateResults, AgentStatus, TaskDefinition, TaskInput
-from .output_schemas import TaskAssignment, ExecutionLog, FailureHandling, ProgressReport, OrchestratorResult
+from .orchestrator_input_schemas import VersionBrief, GateResults, AgentStatus, TaskDefinition, TaskInput
+from .orchestrator_output_schemas import TaskAssignment, ExecutionLog, FailureHandling, ProgressReport, OrchestratorResult
 from .dispatcher import AgentDispatcher, AgentExecutionResult
 from .workflow_executor import WorkflowExecutor, TaskExecutionContext
 

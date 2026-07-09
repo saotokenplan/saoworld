@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 from ..dispatcher import AgentDispatcher, AgentExecutionResult
 from ..workflow_executor import WorkflowExecutor, TaskExecutionContext
-from ..input_schemas import TaskInput
+from ..orchestrator_input_schemas import TaskInput
 
 
 def _make_task(

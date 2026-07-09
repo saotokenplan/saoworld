@@ -4,7 +4,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from product_agent import ProductAgent
-from input_schemas import (
+from product_input_schemas import (
     VersionStatus,
     VoteResults,
     OnlineMetrics,
@@ -14,8 +14,8 @@ from input_schemas import (
     TrendData,
     Issue,
 )
-from output_schemas import PriorityMatrix, MilestonePlan, VersionBrief, Task, OutputMilestone
-from error_handler import ErrorHandler, InputMissingError
+from product_output_schemas import PriorityMatrix, MilestonePlan, VersionBrief, Task, OutputMilestone
+from product_error_handler import ErrorHandler, InputMissingError
 
 
 class TestInputSchemas:

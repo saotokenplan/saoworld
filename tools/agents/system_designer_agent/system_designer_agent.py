@@ -1,8 +1,8 @@
 from typing import List, Dict, Optional, Any
 import uuid
 from datetime import datetime, timezone
-from input_schemas import TaskInput
-from output_schemas import (
+from designer_input_schemas import TaskInput
+from designer_output_schemas import (
     DesignNote,
     DesignNoteMetadata,
     DataStructure,

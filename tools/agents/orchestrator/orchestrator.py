@@ -2,8 +2,8 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional
 
-from .input_schemas import VersionBrief, GateResults, AgentStatus, TaskInput
-from .output_schemas import (
+from .orchestrator_input_schemas import VersionBrief, GateResults, AgentStatus, TaskInput
+from .orchestrator_output_schemas import (
     TaskAssignment,
     ExecutionLog,
     ExecutionEvent,
@@ -12,7 +12,7 @@ from .output_schemas import (
     MilestoneProgress,
     OrchestratorResult,
 )
-from .error_handler import OrchestratorErrorHandler
+from .orchestrator_error_handler import OrchestratorErrorHandler
 from .dispatcher import AgentDispatcher
 from .workflow_executor import WorkflowExecutor
 
