@@ -78,6 +78,48 @@ def _generate_region_payload(
     }
 
 
+def _generate_settlement_payload(
+    template_type: str,
+    region_id: str | None,
+    chapter_id: str | None,
+    index: int,
+) -> dict[str, Any]:
+    names = ["晨光村", "铁砧镇", "月影城", "猎人营地", "石堡要塞", "黄金市场", "边境哨站"]
+    settlement_types = ["village", "town", "city", "camp", "fortress", "market", "outpost"]
+    economy_types = ["agriculture", "commerce", "mining", "hunting", "fishing", "trade"]
+    resources = [["谷物", "木材"], ["矿石", "皮革"], ["宝石", "稀有金属"], ["兽皮", "肉类"], ["鱼类", "盐"], ["香料", "丝绸"]]
+    statuses = ["peaceful", "thriving", "troubled", "warring"]
+
+    return {
+        "settlement_key": f"settlement_{settlement_types[index % len(settlement_types)]}_{index}",
+        "name": f"{names[index % len(names)]}_{index}",
+        "settlement_type": settlement_types[index % len(settlement_types)],
+        "region_key": region_id or "region_core",
+        "chapter_id": chapter_id or "chapter_01",
+        "faction_key": "faction_iron_guard",
+        "description": f"{names[index % len(names)]}是一个{settlement_types[index % len(settlement_types)]}，以{economy_types[index % len(economy_types)]}为主。",
+        "population": 100 + index * 50,
+        "main_resources": resources[index % len(resources)],
+        "economy_type": economy_types[index % len(economy_types)],
+        "status": statuses[index % len(statuses)],
+        "notable_locations": [
+            {"location_key": f"loc_settlement_{index}_1", "name": "广场", "description": "聚落中心广场"},
+            {"location_key": f"loc_settlement_{index}_2", "name": "旅馆", "description": "旅行者休息处"},
+        ],
+        "key_npcs": [f"npc_leader_{index}", f"npc_trader_{index}"],
+        "faction_influence": {"faction_iron_guard": "主导"},
+        "relationships": {},
+        "history": f"{names[index % len(names)]}有着悠久的历史，建于数百年前。",
+        "culture": "民风淳朴，重视传统。",
+        "defenses": ["木墙", "守卫塔"],
+        "services": ["旅馆", "商店", "铁匠"],
+        "special_features": ["市集", "节日"],
+        "location_x": 100 + index * 50,
+        "location_y": 200 + index * 30,
+        "schema_version": 1,
+    }
+
+
 def _generate_content_payload(
     template_type: str,
     region_id: str | None,
@@ -91,6 +133,8 @@ def _generate_content_payload(
             return _generate_quest_payload(template_type, region_id, chapter_id, index)
         case "region":
             return _generate_region_payload(template_type, region_id, chapter_id, index)
+        case "settlement":
+            return _generate_settlement_payload(template_type, region_id, chapter_id, index)
         case _:
             return {
                 "type": template_type,
