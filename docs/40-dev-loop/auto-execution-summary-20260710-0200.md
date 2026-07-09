@@ -110,4 +110,12 @@
 
 ## 合并结果
 
-待合并：见第八步「自动合并到 feature-prd」
+- **合并提交 hash**：`aa3a90f`
+- **合并方式**：`git merge --no-ff auto/auto-20260710-0200`
+- **冲突**：无冲突，自动合并成功
+- **推送结果**：`feature-prd` 已更新至 `fdf3048..aa3a90f`
+- **本地工作分支**：已删除（`git branch -d auto/auto-20260710-0200`）
+- **本次提交明细**：
+  - `bbe0c24` - feat(world): 新增 NPC 与任务数据接口
+  - `20c1e97` - docs(dev-loop): 标记 S1-11 NPC 与任务数据接口完成
+  - `aa3a90f` - Merge auto task: auto-20260710-0200 - Sprint 1 P0 S1-11 NPC与任务数据接口
