@@ -46,8 +46,36 @@ custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 custom_minimum_size = Vector2(0, 50)
 text = "开始游戏"
+visible = false
+
+[node name="ContinueButton" type="Button" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 50)
+text = "继续游戏"
+visible = false
+
+[node name="NewGameButton" type="Button" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 50)
+text = "新游戏"
 
 [node name="Spacer2" type="Control" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 20)
+
+[node name="SaveButton" type="Button" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 50)
+text = "保存"
+visible = false
+
+[node name="LoadButton" type="Button" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 50)
+text = "加载"
+visible = false
+
+[node name="Spacer3" type="Control" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 20)
 
