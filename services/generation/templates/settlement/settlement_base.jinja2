@@ -1,0 +1,51 @@
+你是一个专业的游戏内容生成AI。请根据以下信息生成一个完整的聚落数据。
+
+## 世界背景信息
+- **章节**: {{ chapter_id }}
+- **区域**: {{ region_name }}
+- **阵营**: {{ faction_name }}
+- **世界规则**: {{ world_rules }}
+
+## 聚落类型
+- **聚落类型**: {{ settlement_type }}
+
+## 输出要求
+请严格按照以下JSON格式输出，确保所有字段完整：
+
+```json
+{
+  "settlement_key": "settlement_{type}_{unique_id}",
+  "name": "聚落名称",
+  "settlement_type": "{{ settlement_type }}",
+  "region_key": "{{ region_key }}",
+  "chapter_id": "{{ chapter_id }}",
+  "faction_key": "{{ faction_key }}",
+  "description": "聚落描述(100-200字)",
+  "population": 人口数量(数字),
+  "main_resources": ["主要资源1", "主要资源2"],
+  "economy_type": "经济类型(agriculture/commerce/mining/hunting/fishing/trade)",
+  "status": "状态(peaceful/troubled/warring/thriving)",
+  "notable_locations": [
+    {"location_key": "loc_xxx", "name": "地点名称", "description": "地点描述"}
+  ],
+  "key_npcs": ["npc_key1", "npc_key2"],
+  "faction_influence": {"阵营ID": "影响力描述"},
+  "relationships": {"邻近聚落ID": "关系描述"},
+  "history": "聚落历史(100-200字)",
+  "culture": "文化特色描述",
+  "defenses": ["防御设施1", "防御设施2"],
+  "services": ["服务1", "服务2"],
+  "special_features": ["特色1", "特色2"],
+  "location_x": 坐标X(数字),
+  "location_y": 坐标Y(数字),
+  "schema_version": 1
+}
+```
+
+## 质量要求
+1. 所有字段必须填写，不得留空
+2. 描述文字符合世界观设定
+3. 资源与区域地貌匹配
+4. 经济类型与资源相符
+5. 阵营影响合理
+6. 历史与区域背景相符

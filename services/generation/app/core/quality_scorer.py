@@ -244,6 +244,120 @@ class QualityScorer:
 
         return QualityScoreResult(max(0.0, min(1.0, score)), reasons)
 
+    def score_settlement(self, payload: dict[str, Any]) -> QualityScoreResult:
+        reasons: list[str] = []
+        score = 1.0
+
+        required_fields = [
+            "settlement_key", "name", "settlement_type",
+            "region_key", "chapter_id", "description",
+            "population", "main_resources", "economy_type", "status",
+        ]
+
+        for field in required_fields:
+            value = payload.get(field)
+            if value is None:
+                score -= 0.04
+                reasons.append(f"Missing field: {field}")
+            elif isinstance(value, str) and not value.strip():
+                score -= 0.03
+                reasons.append(f"Empty field: {field}")
+            elif isinstance(value, list) and len(value) == 0:
+                score -= 0.04
+                reasons.append(f"Empty list: {field}")
+            elif isinstance(value, int) and value <= 0:
+                score -= 0.04
+                reasons.append(f"Invalid value for {field}: must be > 0")
+
+        name = payload.get("name", "")
+        if len(name) < 3:
+            score -= 0.1
+            reasons.append("Settlement name is too short")
+        elif len(name) > 100:
+            score -= 0.05
+            reasons.append("Settlement name is too long")
+
+        description = payload.get("description", "")
+        if len(description) < 50:
+            score -= 0.15
+            reasons.append("Settlement description is too short")
+        elif len(description) > 500:
+            score -= 0.05
+            reasons.append("Settlement description is too long")
+
+        settlement_type = payload.get("settlement_type", "")
+        valid_types = {"village", "town", "city", "camp", "fortress", "market", "outpost"}
+        if settlement_type and settlement_type not in valid_types:
+            score -= 0.05
+            reasons.append(f"Invalid settlement type: {settlement_type}")
+
+        economy_type = payload.get("economy_type", "")
+        valid_economy = {"agriculture", "commerce", "mining", "hunting", "fishing", "trade"}
+        if economy_type and economy_type not in valid_economy:
+            score -= 0.05
+            reasons.append(f"Invalid economy type: {economy_type}")
+
+        status = payload.get("status", "")
+        valid_statuses = {"peaceful", "troubled", "warring", "thriving"}
+        if status and status not in valid_statuses:
+            score -= 0.05
+            reasons.append(f"Invalid status: {status}")
+
+        population = payload.get("population", 0)
+        if isinstance(population, (int, float)):
+            settlement_type = payload.get("settlement_type", "village")
+            pop_limits = {
+                "village": (10, 500),
+                "town": (500, 2000),
+                "city": (2000, 10000),
+                "camp": (5, 200),
+                "fortress": (50, 500),
+                "market": (100, 1000),
+                "outpost": (10, 100),
+            }
+            if settlement_type in pop_limits:
+                min_pop, max_pop = pop_limits[settlement_type]
+                if population < min_pop:
+                    score -= 0.05
+                    reasons.append(f"Population below {settlement_type} minimum ({min_pop})")
+                elif population > max_pop:
+                    score -= 0.05
+                    reasons.append(f"Population above {settlement_type} maximum ({max_pop})")
+
+        main_resources = payload.get("main_resources", [])
+        if isinstance(main_resources, list):
+            if len(main_resources) < 1:
+                score -= 0.08
+                reasons.append("Settlement needs at least 1 main resource")
+            elif len(main_resources) > 5:
+                score -= 0.03
+                reasons.append("Too many main resources (max 5)")
+        else:
+            score -= 0.15
+            reasons.append("Main resources must be a list")
+
+        history = payload.get("history", "")
+        if len(history) < 50:
+            score -= 0.08
+            reasons.append("Settlement history is too short")
+
+        settlement_key = payload.get("settlement_key", "")
+        if settlement_key and not settlement_key.startswith("settlement_"):
+            score -= 0.03
+            reasons.append("Settlement key should start with 'settlement_'")
+
+        region_key = payload.get("region_key", "")
+        if region_key and not region_key.startswith("region_"):
+            score -= 0.02
+            reasons.append("Region key should start with 'region_'")
+
+        faction_key = payload.get("faction_key", "")
+        if faction_key and not faction_key.startswith("faction_"):
+            score -= 0.02
+            reasons.append("Faction key should start with 'faction_'")
+
+        return QualityScoreResult(max(0.0, min(1.0, score)), reasons)
+
     def score_generic(self, payload: dict[str, Any]) -> QualityScoreResult:
         reasons: list[str] = []
         score = 1.0
@@ -266,6 +380,8 @@ class QualityScorer:
                 return self.score_quest(payload)
             case "region":
                 return self.score_region(payload)
+            case "settlement":
+                return self.score_settlement(payload)
             case _:
                 return self.score_generic(payload)
 
