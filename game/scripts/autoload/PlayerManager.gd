@@ -6,6 +6,11 @@ signal player_regions_loaded
 signal player_error(error_code: String, message: String)
 signal auth_error(message: String)
 signal loading_changed(is_loading: bool)
+signal quest_accepted(quest_id: String)
+signal quest_completed(quest_id: String)
+signal quest_progress_updated(quest_id: String)
+signal quest_failed(quest_id: String)
+signal quest_detail_loaded(quest_id: String)
 
 var player_info: Dictionary = {}
 var player_quests: Array[Dictionary] = []
@@ -216,3 +221,135 @@ func accept_quest(quest_id: String) -> void:
 		_handle_player_error(result)
 	
 	_set_loading(false)
+
+func accept_quest_api(quest_id: String) -> Dictionary:
+	var existing: Dictionary = get_player_quest_by_id(quest_id)
+	if existing.size() > 0 and existing.get("status", "") == "active":
+		return _build_quest_result(false, "QUEST_ALREADY_ACCEPTED", "任务已接取", {})
+	
+	_set_loading(true)
+	var endpoint: String = "/player/quests/%s/accept" % quest_id
+	var result: Dictionary = APIManager.post(endpoint, {})
+	
+	_set_loading(false)
+	
+	if result.get("success", false):
+		var quest_data: Dictionary = result.get("data", {})
+		_upsert_player_quest(quest_data)
+		last_error.clear()
+		quest_accepted.emit(quest_id)
+		player_quests_loaded.emit()
+		return _build_quest_result(true, "", "", quest_data)
+	else:
+		_handle_player_error(result)
+		return _build_quest_result(false, result.get("code", "UNKNOWN_ERROR"), result.get("message", "接取任务失败"), {})
+
+func update_quest_progress(quest_id: String, objectives: Array[Dictionary]) -> Dictionary:
+	var quest: Dictionary = get_player_quest_by_id(quest_id)
+	if quest.size() == 0 or quest.get("status", "") != "active":
+		return _build_quest_result(false, "QUEST_NOT_ACTIVE", "任务未处于活跃状态", {})
+	
+	_set_loading(true)
+	var endpoint: String = "/player/quests/%s/progress" % quest_id
+	var result: Dictionary = APIManager.post(endpoint, {"objectives": objectives})
+	
+	_set_loading(false)
+	
+	if result.get("success", false):
+		var quest_data: Dictionary = result.get("data", {})
+		_upsert_player_quest(quest_data)
+		last_error.clear()
+		quest_progress_updated.emit(quest_id)
+		player_quests_loaded.emit()
+		return _build_quest_result(true, "", "", quest_data)
+	else:
+		_handle_player_error(result)
+		return _build_quest_result(false, result.get("code", "UNKNOWN_ERROR"), result.get("message", "更新任务进度失败"), {})
+
+func complete_quest_api(quest_id: String) -> Dictionary:
+	var quest: Dictionary = get_player_quest_by_id(quest_id)
+	if quest.size() == 0:
+		return _build_quest_result(false, "QUEST_NOT_FOUND", "任务不存在", {})
+	if quest.get("status", "") == "completed":
+		return _build_quest_result(false, "QUEST_ALREADY_COMPLETED", "任务已完成", {})
+	if quest.get("status", "") != "active":
+		return _build_quest_result(false, "QUEST_INVALID_STATE", "任务状态不允许完成", {})
+	
+	_set_loading(true)
+	var endpoint: String = "/player/quests/%s/complete" % quest_id
+	var result: Dictionary = APIManager.post(endpoint, {})
+	
+	_set_loading(false)
+	
+	if result.get("success", false):
+		var quest_data: Dictionary = result.get("data", {})
+		_upsert_player_quest(quest_data)
+		last_error.clear()
+		quest_completed.emit(quest_id)
+		player_quests_loaded.emit()
+		return _build_quest_result(true, "", "", quest_data)
+	else:
+		_handle_player_error(result)
+		return _build_quest_result(false, result.get("code", "UNKNOWN_ERROR"), result.get("message", "完成任务失败"), {})
+
+func fail_quest_api(quest_id: String) -> Dictionary:
+	var quest: Dictionary = get_player_quest_by_id(quest_id)
+	if quest.size() == 0 or quest.get("status", "") != "active":
+		return _build_quest_result(false, "QUEST_NOT_ACTIVE", "任务未处于活跃状态", {})
+	
+	_set_loading(true)
+	var endpoint: String = "/player/quests/%s/fail" % quest_id
+	var result: Dictionary = APIManager.post(endpoint, {})
+	
+	_set_loading(false)
+	
+	if result.get("success", false):
+		var quest_data: Dictionary = result.get("data", {})
+		_upsert_player_quest(quest_data)
+		last_error.clear()
+		quest_failed.emit(quest_id)
+		player_quests_loaded.emit()
+		return _build_quest_result(true, "", "", quest_data)
+	else:
+		_handle_player_error(result)
+		return _build_quest_result(false, result.get("code", "UNKNOWN_ERROR"), result.get("message", "标记任务失败失败"), {})
+
+func fetch_quest_detail(quest_id: String) -> Dictionary:
+	_set_loading(true)
+	var endpoint: String = "/player/quests/%s" % quest_id
+	var result: Dictionary = APIManager.get(endpoint)
+	
+	_set_loading(false)
+	
+	if result.get("success", false):
+		var quest_data: Dictionary = result.get("data", {})
+		_upsert_player_quest(quest_data)
+		last_error.clear()
+		quest_detail_loaded.emit(quest_id)
+		return _build_quest_result(true, "", "", quest_data)
+	else:
+		_handle_player_error(result)
+		return _build_quest_result(false, result.get("code", "UNKNOWN_ERROR"), result.get("message", "获取任务详情失败"), {})
+
+func _upsert_player_quest(quest_data: Dictionary) -> void:
+	var quest_id: String = quest_data.get("quest_id", "")
+	if quest_id == "":
+		quest_id = quest_data.get("player_quest_id", "")
+	
+	if quest_id == "":
+		return
+	
+	for i in range(player_quests.size()):
+		if player_quests[i].get("quest_id", "") == quest_id or player_quests[i].get("player_quest_id", "") == quest_id:
+			player_quests[i] = quest_data
+			return
+	
+	player_quests.append(quest_data)
+
+func _build_quest_result(success: bool, code: String, message: String, data: Dictionary) -> Dictionary:
+	return {
+		"success": success,
+		"code": code,
+		"message": message,
+		"data": data
+	}
