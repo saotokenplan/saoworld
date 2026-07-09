@@ -324,4 +324,36 @@
 
 ---
 
+---
+
+### auto-20260710-1600 - Sprint 2 S2-08「生成成本控制」
+
+**执行时间**：2026-07-10 16:00 ~ 16:30
+**状态**：已完成（待合并到 feature-prd）
+**任务描述**：实现生成成本控制能力，包括 Token 用量统计、成本估算、超阈值告警和预算限制，确保 AI 生成内容的成本可控。
+
+**完成内容**：
+- 扩展配置支持成本控制参数（每日/每月预算、告警/暂停阈值、模型定价）
+- 创建 CostCalculator 成本计算器模块（Token 用量统计、成本估算、预算检查）
+- 扩展 LLMAdapter 记录 Token 用量和成本（Mock 和 OpenAI 适配器均支持）
+- 扩展数据库模型支持成本记录（prompt_tokens、completion_tokens、total_tokens、cost_usd 字段）
+- 创建 Alembic 迁移脚本
+- 创建成本统计 API（按日/月/自定义时间段查询）
+- 实现 BudgetAlertManager 预算告警机制（超阈值检测、告警日志记录）
+- 新增 16 个测试用例（成本计算器 5 个 + 预算告警 11 个）
+
+**修改文件**：
+- 新增 4 个文件（cost_calculator.py、budget_alert.py、测试文件）
+- 修改 7 个代码文件（config.py、llm_adapter.py、models.py、schemas/generation.py、generation_repo.py、routes.py、.env.example）
+- 创建 1 个数据库迁移脚本
+- 更新 3 个文档（project-status.md、auto-plan-20260710-1600.md、auto-execution-summary-20260710-1600.md）
+
+**统计信息**：
+- generation-service 测试从 146 个增加到 162 个（+16）
+- ruff 和 mypy 检查通过
+
+**Sprint 2 状态**：S2-01、S2-02、S2-03、S2-04、S2-05、S2-06、S2-07、S2-08 全部完成，AI 生成接入阶段全部完成，准备进入灰度发布与监控优化阶段
+
+---
+
 （更早的记录请查看历史提交）
