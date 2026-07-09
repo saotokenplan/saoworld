@@ -22,7 +22,7 @@
 
 ## 当前阶段
 
-- 当前阶段：**Sprint 2 AI 生成接入阶段**（S2-01 LLM 服务接入已完成，S2-02 NPC生成模板已完成，S2-03 任务生成模板已完成，S2-04/S2-05 进行中）
+- 当前阶段：**Sprint 2 AI 生成接入阶段**（S2-01 LLM 服务接入已完成，S2-02 NPC生成模板已完成，S2-03 任务生成模板已完成，S2-06 投票结果→生成参数映射已完成，S2-04/S2-05/S2-07/S2-08 进行中）
 - 当前形态：八大核心后端服务（vote、world、content、generation、review、player、ops、gateway）+ workers Celery + CI/CD + Godot 客户端完整，投票链路、内容链路、审核链路、API 网关、运营后台、客户端框架就绪，客户端与后端 API 联调封装完善，首期内容实例化完成（世界观、区域、阵营、NPC、任务、章节），内容包打包与发布流程已实现，端到端集成验证已完成，首期内容包初始化脚本已验证，发布验证脚本已完善，Runbook 文档体系已完善（16个门禁 + 6个运维操作），遥测基础设施已初始化（metrics、logs、alerts、dashboards），三层 Loop 基础设施已实现，P2 多代理协同真实调度能力已实现（AgentDispatcher + WorkflowExecutor + 54个Orchestrator测试通过），P3 数据驱动闭环已端到端打通（洞察提取→需求生成→内容生成），LLM 服务接入已完成（OpenAI API + Mock 适配器 + 内容生成器）
 - 运维操作 Runbook 已补全：灰度发布、全量发布、内容包回滚、服务部署、数据库迁移、首期内容初始化 6 个运维操作 Runbook 全部创建完成，为灰度发布和后续运维操作提供标准化流程指导
 - Sprint 1 完成：S1-01「玩家移动与场景切换」完成、S1-02「世界地图系统」完成、S1-03「NPC 对话系统」完成、S1-04「任务系统基础」客户端与后端集成都完成、S1-05「战斗系统雏形」完成、S1-09/S1-11 完成、S1-10「玩家存档系统」完成；**Sprint 1 P0 项全部交付，核心玩法链路完整闭环（探索 + 对话 + 任务 + 战斗 + 存档）**
@@ -30,6 +30,7 @@
 - **Sprint 2 S2-01「LLM服务接入」完成（2026-07-10 10:00）**：generation-service 新增 LLM 服务适配器模块（llm_adapter.py，支持 OpenAI API 和 Mock 适配器）、内容生成器模块（content_generator.py，基于 LLM 的 NPC/任务/区域描述生成）、LLM 配置管理（API Key、模型、Token、温度、超时）、新增 25 个测试用例（LLM 适配器 17 + 内容生成器 8），generation-service 测试从 72 个增加到 96 个（+24），ruff 和 mypy 检查全部通过。可通过 API 调用生成 NPC 描述、任务文本，完成 Sprint 2 S2-01 P0 项验收标准。
 - **Sprint 2 S2-02「NPC生成模板」完成（2026-07-10 11:00）**：generation-service 新增完整 NPC 生成模板体系，包括 6 个 Jinja2 模板文件（基础模板 + 铁匠/商人/守卫/治疗师/任务发布者职业模板）、NPC 数据转换适配器（npc_data_adapter.py，支持字段完整度验证、默认值填充、world-service 格式适配）、模板匹配策略（基于职业角色匹配）、增强质量评分（字段完整性、世界观一致性、风险关键词检测）、新增 16 个测试用例（模板管理 3 + 数据适配器 9 + 集成测试 4），generation-service 测试从 96 个增加到 112 个（+16），ruff 和 mypy 检查全部通过。生成的 NPC 字段完整度>95%，符合 world-service 数据结构要求，完成 Sprint 2 S2-02 P0 项验收标准。
 - **Sprint 2 S2-03「任务生成模板」完成（2026-07-10 12:00）**：generation-service 新增完整任务生成模板体系，包括 5 个 Jinja2 模板文件（基础模板 + 主线/支线/事件/日常任务类型模板）、任务数据转换适配器（quest_data_adapter.py，支持字段完整度验证、默认值填充、world-service 格式适配、目标列表规范化、奖励规范化）、模板匹配策略（基于任务类型匹配）、增强质量评分（字段完整性、目标数量校验、奖励数值区间校验、类型合法性校验、ID 前缀校验）、内容生成器集成任务数据适配器（generate_quest 方法更新，最小完整度要求 0.95）、新增 18 个测试用例（模板管理 6 + 数据适配器 12），generation-service 测试从 112 个增加到 130 个（+18），ruff 和 mypy 检查全部通过。生成的任务字段完整度>95%，符合 world-service 数据结构要求，奖励数值在各任务类型允许区间内，完成 Sprint 2 S2-03 P0 项验收标准。
+- **Sprint 2 S2-06「投票结果→生成参数映射」完成（2026-07-10 13:00）**：vote-service 扩展 vote.result.finalized 事件 payload，新增 chapter_id、generated_params、region_scope 字段，结算时从获胜候选项提取生成参数并发布事件；workers 事件处理器更新，从事件中提取 generated_params 和 region_scope，动态构建内容生成请求参数；内容生成任务 update，支持 generated_params 参数覆盖 template_type、count、region_id、chapter_id、template_id，并透传额外参数到 input_payload；更新 workers 测试，新增 generated_params 传递测试用例，vote-service 54 个测试全部通过，workers 内容生成相关 3 个测试全部通过。投票结果→内容生成的参数映射链路打通，完成 Sprint 2 S2-06 P0 项验收标准。
 - **Sprint 2 AI 内容生成能力完成（2026-07-10 09:00）**：generation-service 新增模板管理模块（TemplateManager，支持模板加载、匹配、版本管理、Prompt 渲染）、质量评分模块（QualityScorer，支持 NPC/任务/区域/通用内容的质量评估，质量阈值 0.75）、内容生成 Celery 异步任务（process_generation_request，支持重试与幂等）、生成对象创建 API（含质量评分集成）、新增 16 个测试用例（模板管理 5 个 + 质量评分 11 个），generation-service 测试从 56 个增加到 72 个（+16），ruff 和 mypy 检查全部通过。AI 内容生成核心链路（模板匹配→内容生成→质量评分→对象落库）已就绪。
 
 ## 当前结论
