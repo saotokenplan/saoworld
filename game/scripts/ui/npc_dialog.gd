@@ -127,8 +127,12 @@ func _on_choice_selected(index: int) -> void:
 	var action: String = choice.get("action", "")
 	
 	if action == "accept_quest" and current_quest_id != "":
-		accept_quest.emit(current_quest_id)
-		_show_quest_accepted_info(current_quest_id)
+		var result: Dictionary = PlayerManager.accept_quest_api(current_quest_id)
+		if result.get("success", false):
+			accept_quest.emit(current_quest_id)
+			_show_quest_accepted_info(current_quest_id)
+		else:
+			_show_quest_error(result.get("message", "接取任务失败"))
 	
 	var next_id: String = choice.get("next", "")
 	if next_id == "" or next_id == "goodbye":
@@ -143,13 +147,26 @@ func _on_choice_selected(index: int) -> void:
 	_show_tree_node(next_id)
 
 func _show_quest_accepted_info(quest_id: String) -> void:
-	var quests: Array = _load_quests()
-	for quest in quests:
-		if quest.get("quest_id") == quest_id:
-			quest_title.text = "已接取: " + quest.get("title", "")
-			quest_desc.text = quest.get("description", "")
-			quest_info.visible = true
-			break
+	var quest: Dictionary = PlayerManager.get_player_quest_by_id(quest_id)
+	if quest.size() > 0:
+		quest_title.text = "已接取: " + quest.get("title", "")
+		quest_desc.text = quest.get("description", "")
+	else:
+		var quests: Array = _load_quests()
+		for q in quests:
+			if q.get("quest_id") == quest_id:
+				quest_title.text = "已接取: " + q.get("title", "")
+				quest_desc.text = q.get("description", "")
+				break
+	quest_info.visible = true
+
+func _show_quest_error(message: String) -> void:
+	quest_title.text = "接取失败"
+	quest_desc.text = message
+	var style_box: StyleBoxFlat = StyleBoxFlat.new()
+	style_box.bg_color = Color(0.6, 0.2, 0.2, 0.8)
+	quest_info.add_theme_stylebox_override("panel", style_box)
+	quest_info.visible = true
 
 func _clear_choices() -> void:
 	for child in choices_container.get_children():
