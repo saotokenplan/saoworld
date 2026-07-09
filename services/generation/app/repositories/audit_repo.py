@@ -6,6 +6,7 @@ from app.domain.models import AuditLog
 
 ACTION_GENERATION_REQUEST_CREATE = "generation_request_create"
 ACTION_GENERATION_REQUEST_STATUS_UPDATE = "generation_request_status_update"
+ACTION_GENERATED_OBJECT_CREATE = "generated_object_create"
 ACTION_GENERATED_OBJECT_STATUS_UPDATE = "generated_object_status_update"
 
 RESOURCE_GENERATION_REQUEST = "generation_request"

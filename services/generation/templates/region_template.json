@@ -1,0 +1,13 @@
+{
+  "template_id": "tpl_region_v1",
+  "template_type": "region",
+  "version": "1.0",
+  "name": "区域生成模板",
+  "description": "用于生成游戏世界中的新区域",
+  "region_ids": null,
+  "chapter_ids": ["chapter_01", "chapter_02", "chapter_03"],
+  "schema_version": 1,
+  "prompt_template": "生成一个{chapter_name}章节的{difficulty}难度区域。名称：{name}，描述：{description}，特色：{features}。",
+  "required_fields": ["name", "difficulty", "chapter_id"],
+  "optional_fields": ["description", "features", "connections"]
+}

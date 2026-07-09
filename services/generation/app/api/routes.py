@@ -12,8 +12,10 @@ from app.core.metrics import (
     record_generated_object_status,
     record_generation_request_status,
 )
+from app.core.quality_scorer import quality_scorer
 from app.core.skeleton_validator import skeleton_validator
 from app.repositories.audit_repo import (
+    ACTION_GENERATED_OBJECT_CREATE,
     ACTION_GENERATED_OBJECT_STATUS_UPDATE,
     ACTION_GENERATION_REQUEST_CREATE,
     ACTION_GENERATION_REQUEST_STATUS_UPDATE,
@@ -25,6 +27,8 @@ from app.repositories.generation_repo import GenerationRepository
 from app.schemas.generation import (
     CreateGenerationRequestRequest,
     CreateGenerationRequestResponse,
+    CreateGeneratedObjectRequest,
+    CreateGeneratedObjectResponse,
     EnvelopeResponse,
     ErrorDetail,
     GeneratedObjectListResponse,
@@ -576,6 +580,105 @@ async def update_generated_object_status(
             object_id=updated_obj.object_id,
             status=GeneratedObjectStatus(updated_obj.status),
             request_id_=request_id,
+            trace_id=x_trace_id,
+        ),
+        trace_id=x_trace_id,
+    )
+
+
+@ops_router.post(
+    "/generation/requests/{request_id}/objects",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"description": "Invalid request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Request not found"},
+    },
+    tags=["ops"],
+)
+async def create_generated_object(
+    request_id: uuid.UUID,
+    body: CreateGeneratedObjectRequest,
+    request: Request,
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[CreateGeneratedObjectResponse]:
+    req_id = _make_request_id("req_ops_create_object")
+
+    repo = GenerationRepository(db)
+    gen_req = await repo.get_request_by_id(request_id)
+    if gen_req is None:
+        raise_generation_error(
+            GenerationErrorCodes.REQUEST_NOT_FOUND,
+            "生成请求不存在",
+            req_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="request_id",
+                    issue="not_found",
+                    rejected_value=str(request_id),
+                )
+            ],
+        )
+
+    if gen_req.status not in ["processing"]:
+        raise_generation_error(
+            GenerationErrorCodes.INVALID_REQUEST_STATUS,
+            f"生成请求状态 {gen_req.status} 不允许创建对象",
+            req_id,
+            status_code=status.HTTP_409_CONFLICT,
+            details=[
+                ErrorDetail(
+                    location="body",
+                    field="status",
+                    issue="invalid_transition",
+                    rejected_value=gen_req.status,
+                )
+            ],
+        )
+
+    if body.quality_score is None:
+        score_result = quality_scorer.score(body.object_type, body.object_payload)
+        quality_score = score_result.score
+    else:
+        quality_score = body.quality_score
+
+    obj = await repo.create_generated_object(
+        request_id=request_id,
+        object_type=body.object_type,
+        object_payload=body.object_payload,
+        schema_version=body.schema_version,
+        quality_score=quality_score,
+    )
+
+    record_generated_object_status(obj.status)
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_GENERATED_OBJECT_CREATE,
+        resource_type=RESOURCE_GENERATED_OBJECT,
+        resource_id=obj.object_id,
+        request_payload_jsonb=body.model_dump(mode="json"),
+        result_status=201,
+    )
+
+    return EnvelopeResponse(
+        request_id=req_id,
+        data=CreateGeneratedObjectResponse(
+            object_id=obj.object_id,
+            request_id=obj.request_id,
+            object_type=obj.object_type,
+            status=GeneratedObjectStatus(obj.status),
+            quality_score=obj.quality_score,
+            request_id_=req_id,
             trace_id=x_trace_id,
         ),
         trace_id=x_trace_id,

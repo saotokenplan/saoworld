@@ -5,6 +5,32 @@
 
 ---
 
+### auto-20260710-0900 - Sprint 2 AI 内容生成异步任务实现
+
+**执行时间**：2026-07-10 09:00
+**状态**：已完成（待合并到 feature-prd）
+**任务描述**：实现 generation-service 的 AI 内容生成能力，包括模板管理、质量评分、Celery 异步任务和 API 路由更新，为 Sprint 2 AI 生成接入阶段奠定基础。
+
+**完成内容**：
+- 创建模板管理模块（TemplateManager）：支持模板加载、匹配、版本管理、Prompt 渲染
+- 创建质量评分模块（QualityScorer）：支持 NPC/任务/区域/通用内容质量评估，阈值 0.75
+- 实现内容生成 Celery 异步任务（process_generation_request）：支持重试与幂等
+- 更新 API 路由：添加生成对象创建端点，集成质量评分
+- 创建模板目录与示例模板（NPC、任务、区域）
+- 新增 16 个测试用例（模板管理 5 个 + 质量评分 11 个）
+
+**修改文件**：
+- 新增 9 个文件（template_manager.py、quality_scorer.py、3 个模板文件、2 个测试文件）
+- 修改 6 个文件（routes.py、schemas/generation.py、config.py、audit_repo.py、content_generation.py、project-status.md）
+
+**统计信息**：
+- generation-service 测试从 56 个增加到 72 个（+16）
+- ruff 和 mypy 检查全部通过
+
+**Sprint 2 状态**：AI 内容生成核心链路（模板匹配→内容生成→质量评分→对象落库）已就绪
+
+---
+
 ### auto-20260710-0800 - 玩家存档系统剩余步骤（Sprint 1 P0）
 
 **执行时间**：2026-07-10 08:00

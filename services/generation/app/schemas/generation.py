@@ -138,6 +138,7 @@ class CreateGeneratedObjectResponse(BaseModel):
     request_id: uuid.UUID
     object_type: str
     status: GeneratedObjectStatus
+    quality_score: float | None
     request_id_: str
     trace_id: str | None = None
 
