@@ -2,6 +2,7 @@ extends Node
 
 const MAIN_MENU_SCENE: PackedScene = preload("res://scenes/ui/main_menu/MainMenu.tscn")
 const WORLD_MAP_SCENE: PackedScene = preload("res://scenes/world/WorldMap.tscn")
+const CORE_REGION_SCENE: PackedScene = preload("res://scenes/world/CoreRegion.tscn")
 const VOTING_PANEL_SCENE: PackedScene = preload("res://scenes/ui/voting/VotingPanel.tscn")
 const VOTE_RESULT_SCENE: PackedScene = preload("res://scenes/ui/voting/VoteResultPanel.tscn")
 const VOTE_HISTORY_SCENE: PackedScene = preload("res://scenes/ui/voting/VoteHistoryPanel.tscn")
@@ -54,6 +55,10 @@ func _connect_scene_signals(scene_node: Node) -> void:
 		scene_node.quests_pressed.connect(_on_quests_pressed)
 	if scene_node.has_signal("back_to_menu"):
 		scene_node.back_to_menu.connect(_on_back_to_menu)
+	if scene_node.has_signal("enter_region_requested"):
+		scene_node.enter_region_requested.connect(_on_enter_region_requested)
+	if scene_node.has_signal("back_to_world_map"):
+		scene_node.back_to_world_map.connect(_on_world_map_pressed)
 
 func _on_start_game_pressed() -> void:
 	_switch_scene(WORLD_MAP_SCENE)
@@ -64,6 +69,31 @@ func _on_vote_pressed() -> void:
 
 func _on_world_map_pressed() -> void:
 	_switch_scene(WORLD_MAP_SCENE)
+
+func _on_enter_region_requested(region_id: String) -> void:
+	var region_scene: Node = _switch_scene(CORE_REGION_SCENE, true)
+	if region_scene and region_scene.has_method("set_region_data"):
+		var region_data: Dictionary = _find_region_data(region_id)
+		region_scene.set_region_data(region_data)
+
+func _find_region_data(region_id: String) -> Dictionary:
+	var file: FileAccess = FileAccess.open("res://data/regions/region_list.json", FileAccess.READ)
+	if not file:
+		return {}
+	
+	var content: String = file.get_as_text()
+	file.close()
+	
+	var data: Dictionary = JSON.parse_string(content)
+	if not data is Dictionary:
+		return {}
+	
+	var regions: Array = data.get("regions", [])
+	for region in regions:
+		if region is Dictionary and region.get("region_id", "") == region_id:
+			return region
+	
+	return {}
 
 func _on_npcs_pressed() -> void:
 	_switch_scene(NPC_PANEL_SCENE, true)

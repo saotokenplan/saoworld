@@ -10,7 +10,8 @@
       "level_range": [1, 10],
       "type": "core",
       "risk_level": "low_to_medium",
-      "resource_level": "medium"
+      "resource_level": "medium",
+      "scene_path": "res://scenes/world/CoreRegion.tscn"
     },
     {
       "region_id": "region_expansion_grayvalley",
@@ -20,7 +21,8 @@
       "level_range": [5, 15],
       "type": "expansion",
       "risk_level": "medium_to_high",
-      "resource_level": "high"
+      "resource_level": "high",
+      "scene_path": "res://scenes/world/CoreRegion.tscn"
     },
     {
       "region_id": "region_west_forest",

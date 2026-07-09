@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "description": "客户端输入映射与移动参数配置",
+  "actions": {
+    "move_up": {
+      "description": "向上移动",
+      "keyboard": ["W", "Up"]
+    },
+    "move_down": {
+      "description": "向下移动",
+      "keyboard": ["S", "Down"]
+    },
+    "move_left": {
+      "description": "向左移动",
+      "keyboard": ["A", "Left"]
+    },
+    "move_right": {
+      "description": "向右移动",
+      "keyboard": ["D", "Right"]
+    }
+  },
+  "player_movement": {
+    "speed": 200.0,
+    "acceleration": 1200.0,
+    "friction": 1200.0
+  }
+}
