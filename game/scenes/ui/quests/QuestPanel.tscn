@@ -41,12 +41,47 @@ theme_override_font_sizes/font_size = 28
 text = "任务列表"
 horizontal_alignment = 1
 
+[node name="StatusFilter" type="OptionButton" parent="."]
+layout_mode = 1
+anchors_preset = 15
+offset_left = 40.0
+offset_top = 130.0
+offset_right = 200.0
+offset_bottom = 165.0
+
+[node name="LoadingLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -20.0
+offset_right = 100.0
+offset_bottom = 20.0
+text = "加载中..."
+horizontal_alignment = 1
+visible = false
+
+[node name="ErrorLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 40.0
+offset_top = 170.0
+offset_right = -40.0
+offset_bottom = 200.0
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+text = ""
+visible = false
+
 [node name="QuestList" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 0.45
 offset_left = 40.0
-offset_top = 140.0
+offset_top = 210.0
 offset_right = -40.0
 offset_bottom = 80.0
 grow_horizontal = 2
@@ -115,7 +150,7 @@ anchor_bottom = 1.0
 offset_left = 20.0
 offset_top = 240.0
 offset_right = -20.0
-offset_bottom = -80.0
+offset_bottom = -120.0
 theme_override_constants/separation = 5
 
 [node name="Rewards" type="Label" parent="QuestDetail"]
@@ -123,17 +158,28 @@ layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 20.0
-offset_top = -70.0
+offset_top = -110.0
 offset_right = -20.0
-offset_bottom = -40.0
+offset_bottom = -80.0
 text = "奖励: "
 
 [node name="AcceptButton" type="Button" parent="QuestDetail"]
 layout_mode = 1
 anchors_preset = 15
 offset_left = 20.0
-offset_top = -40.0
+offset_top = -70.0
+offset_right = -20.0
+offset_bottom = -35.0
+custom_minimum_size = Vector2(0, 35)
+text = "接取任务"
+
+[node name="CompleteButton" type="Button" parent="QuestDetail"]
+layout_mode = 1
+anchors_preset = 15
+offset_left = 20.0
+offset_top = -30.0
 offset_right = -20.0
 offset_bottom = 0.0
-custom_minimum_size = Vector2(0, 40)
-text = "接取任务"
+custom_minimum_size = Vector2(0, 30)
+text = "完成任务"
+visible = false
