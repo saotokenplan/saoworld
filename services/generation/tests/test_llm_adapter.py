@@ -1,13 +1,11 @@
 """LLM 适配器测试。"""
 
-import asyncio
 import json
 
 import pytest
 
 from app.core.llm_adapter import (
     LLMAPIError,
-    LLMAdapter,
     LLMRateLimitError,
     LLMTimeoutError,
     LLMResponse,

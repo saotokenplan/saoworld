@@ -5,13 +5,40 @@ class TestQualityScorer:
     def test_score_npc_valid(self):
         scorer = QualityScorer()
         payload = {
+            "npc_key": "npc_iron_shield",
             "name": "艾瑞尔·铁盾",
-            "role": "铁匠",
-            "personality": "勇敢",
-            "faction_id": "faction_iron_guard",
-            "region_id": "region_core",
-            "description": "这是一位勇敢的铁匠，在铁卫城工作多年。",
-            "dialogue": "欢迎来到铁卫城，旅行者。",
+            "title": "首席铁匠",
+            "gender": "male",
+            "age": 45,
+            "race": "human",
+            "faction_key": "faction_iron_guard",
+            "region_key": "region_core",
+            "role": "blacksmith",
+            "location_key": "loc_forge",
+            "description": "这是一位勇敢的铁匠，在铁卫城工作多年，为冒险者打造各种精良的武器和护甲。他技艺精湛，为人正直，深受城中居民的尊敬。",
+            "personality": ["勇敢", "正直", "热情"],
+            "traits": ["强壮", "专注"],
+            "voice": "洪亮有力",
+            "backstory": "艾瑞尔·铁盾出生在铁匠世家，从小就跟随父亲学习锻造技艺。他年轻时曾参与多次战斗，见证了许多冒险者用他打造的武器战胜强敌。如今他在铁卫城开设了自己的铁匠铺，继续为新一代冒险者提供装备支持。",
+            "motivation": "为冒险者打造最强武器",
+            "relationship_map": {},
+            "dialog_style": "热情豪爽",
+            "dialog_nodes": {
+                "first_meet": {"id": "first_meet", "text": "欢迎来到铁卫城，旅行者。需要武器吗？", "speaker": "npc", "choices": []},
+                "about_work": {"id": "about_work", "text": "我在这里锻造了二十年，每件作品都是我的心血。", "speaker": "npc", "choices": []},
+                "has_quest": {"id": "has_quest", "text": "我需要一些稀有材料。", "speaker": "npc", "choices": []},
+                "quest_accepted": {"id": "quest_accepted", "text": "太好了，谢谢你！", "speaker": "npc", "choices": []},
+                "quest_completed": {"id": "quest_completed", "text": "完美！这正是我需要的。", "speaker": "npc", "choices": []},
+                "default": {"id": "default", "text": "有什么需要帮助的吗？", "speaker": "npc", "choices": []},
+                "goodbye": {"id": "goodbye", "text": "", "speaker": "npc", "choices": [], "is_end": True},
+            },
+            "quests_given": [],
+            "quests_related": [],
+            "shop_items": [],
+            "services_offered": [],
+            "location_x": 100,
+            "location_y": 200,
+            "interaction_radius": 30,
         }
         result = scorer.score_npc(payload)
         assert result.is_acceptable()
@@ -20,34 +47,98 @@ class TestQualityScorer:
     def test_score_npc_missing_name(self):
         scorer = QualityScorer()
         payload = {
-            "role": "铁匠",
+            "npc_key": "npc_test",
+            "role": "blacksmith",
             "description": "这是一位铁匠。",
-            "dialogue": "欢迎。",
-            "faction_id": "faction_iron_guard",
+            "faction_key": "faction_iron_guard",
+            "region_key": "region_core",
+            "location_key": "loc_test",
+            "personality": ["brave"],
+            "traits": ["strong"],
+            "voice": "deep",
+            "backstory": "Test backstory.",
+            "motivation": "Test motivation.",
+            "relationship_map": {},
+            "dialog_style": "test",
+            "dialog_nodes": {},
+            "title": "",
+            "gender": "",
+            "age": 0,
+            "race": "",
+            "location_x": 0,
+            "location_y": 0,
+            "interaction_radius": 30,
+            "quests_given": [],
+            "quests_related": [],
+            "shop_items": [],
+            "services_offered": [],
         }
         result = scorer.score_npc(payload)
         assert not result.is_acceptable()
-        assert "NPC name is too short or missing" in result.reasons
+        assert "Missing field: name" in result.reasons
 
     def test_score_npc_missing_description(self):
         scorer = QualityScorer()
         payload = {
+            "npc_key": "npc_test",
             "name": "艾瑞尔",
-            "role": "铁匠",
-            "faction_id": "faction_iron_guard",
+            "role": "blacksmith",
+            "faction_key": "faction_iron_guard",
+            "region_key": "region_core",
+            "location_key": "loc_test",
+            "personality": ["brave"],
+            "traits": ["strong"],
+            "voice": "deep",
+            "backstory": "Test backstory.",
+            "motivation": "Test motivation.",
+            "relationship_map": {},
+            "dialog_style": "test",
+            "dialog_nodes": {},
+            "title": "",
+            "gender": "",
+            "age": 0,
+            "race": "",
+            "location_x": 0,
+            "location_y": 0,
+            "interaction_radius": 30,
+            "quests_given": [],
+            "quests_related": [],
+            "shop_items": [],
+            "services_offered": [],
         }
         result = scorer.score_npc(payload)
         assert not result.is_acceptable()
-        assert "NPC description is too short or missing" in result.reasons
+        assert "Empty field: description" in result.reasons or "Missing field: description" in result.reasons
 
     def test_score_npc_risk_keywords(self):
         scorer = QualityScorer()
         payload = {
+            "npc_key": "npc_killer",
             "name": "杀手",
-            "role": "刺客",
-            "faction_id": "faction_shadow",
+            "title": "",
+            "gender": "male",
+            "age": 30,
+            "race": "human",
+            "faction_key": "faction_shadow",
+            "region_key": "region_core",
+            "role": "assassin",
+            "location_key": "loc_shadow",
             "description": "我会kill任何人。",
-            "dialogue": "我要murder你。",
+            "personality": ["cruel"],
+            "traits": ["stealthy"],
+            "voice": "whisper",
+            "backstory": "我要murder所有人。",
+            "motivation": "To kill.",
+            "relationship_map": {},
+            "dialog_style": "sinister",
+            "dialog_nodes": {},
+            "quests_given": [],
+            "quests_related": [],
+            "shop_items": [],
+            "services_offered": [],
+            "location_x": 0,
+            "location_y": 0,
+            "interaction_radius": 30,
         }
         result = scorer.score_npc(payload)
         assert not result.is_acceptable()

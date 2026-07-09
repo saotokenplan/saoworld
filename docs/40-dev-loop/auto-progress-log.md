@@ -5,6 +5,35 @@
 
 ---
 
+### auto-20260710-1100 - Sprint 2 S2-02「NPC生成模板」
+
+**执行时间**：2026-07-10 11:00
+**状态**：已完成（待合并到 feature-prd）
+**任务描述**：实现完整的 NPC 生成模板体系，包括 6 个职业模板、NPC 数据转换适配器、模板匹配策略、增强质量评分，确保生成的 NPC 字段完整度>95%，符合 world-service 数据结构要求。
+
+**完成内容**：
+- 创建 6 个 Jinja2 模板文件（基础模板 + 铁匠/商人/守卫/治疗师/任务发布者职业模板）
+- 实现 NPC 数据转换适配器（字段完整度验证、默认值填充、world-service 格式适配）
+- 更新模板管理模块（Jinja2 支持、NPC 模板匹配策略）
+- 更新内容生成器（集成模板渲染、完整性检查、质量评分）
+- 更新质量评分模块（增强 NPC 评分指标、风险关键词检测）
+- 更新 MockLLMAdapter（支持 mock_response 属性）
+- 新增 16 个测试用例（模板管理 3 + 数据适配器 9 + 集成测试 4）
+
+**修改文件**：
+- 新增 9 个文件（6 个模板文件、npc_data_adapter.py、3 个测试文件）
+- 修改 4 个文件（template_manager.py、content_generator.py、quality_scorer.py、llm_adapter.py）
+- 更新 2 个测试文件（test_content_generator.py、test_quality_scorer.py）
+- 更新 2 个文档（project-status.md、auto-plan-20260710-1100.md）
+
+**统计信息**：
+- generation-service 测试从 96 个增加到 112 个（+16）
+- ruff 和 mypy 检查全部通过
+
+**Sprint 2 状态**：S2-01 和 S2-02 已完成，AI 生成接入阶段进展顺利
+
+---
+
 ### auto-20260710-0900 - Sprint 2 AI 内容生成异步任务实现
 
 **执行时间**：2026-07-10 09:00

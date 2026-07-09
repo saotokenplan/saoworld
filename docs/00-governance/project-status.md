@@ -22,12 +22,13 @@
 
 ## 当前阶段
 
-- 当前阶段：**Sprint 2 AI 生成接入阶段**（S2-01 LLM 服务接入已完成，S2-02/S2-03/S2-04/S2-05 进行中）
+- 当前阶段：**Sprint 2 AI 生成接入阶段**（S2-01 LLM 服务接入已完成，S2-02 NPC生成模板已完成，S2-03/S2-04/S2-05 进行中）
 - 当前形态：八大核心后端服务（vote、world、content、generation、review、player、ops、gateway）+ workers Celery + CI/CD + Godot 客户端完整，投票链路、内容链路、审核链路、API 网关、运营后台、客户端框架就绪，客户端与后端 API 联调封装完善，首期内容实例化完成（世界观、区域、阵营、NPC、任务、章节），内容包打包与发布流程已实现，端到端集成验证已完成，首期内容包初始化脚本已验证，发布验证脚本已完善，Runbook 文档体系已完善（16个门禁 + 6个运维操作），遥测基础设施已初始化（metrics、logs、alerts、dashboards），三层 Loop 基础设施已实现，P2 多代理协同真实调度能力已实现（AgentDispatcher + WorkflowExecutor + 54个Orchestrator测试通过），P3 数据驱动闭环已端到端打通（洞察提取→需求生成→内容生成），LLM 服务接入已完成（OpenAI API + Mock 适配器 + 内容生成器）
 - 运维操作 Runbook 已补全：灰度发布、全量发布、内容包回滚、服务部署、数据库迁移、首期内容初始化 6 个运维操作 Runbook 全部创建完成，为灰度发布和后续运维操作提供标准化流程指导
 - Sprint 1 完成：S1-01「玩家移动与场景切换」完成、S1-02「世界地图系统」完成、S1-03「NPC 对话系统」完成、S1-04「任务系统基础」客户端与后端集成都完成、S1-05「战斗系统雏形」完成、S1-09/S1-11 完成、S1-10「玩家存档系统」完成；**Sprint 1 P0 项全部交付，核心玩法链路完整闭环（探索 + 对话 + 任务 + 战斗 + 存档）**
 - 当前目标：继续 Sprint 2 AI 生成接入，完成 NPC/任务生成模板、生成质量评分、端到端闭环验证
 - **Sprint 2 S2-01「LLM服务接入」完成（2026-07-10 10:00）**：generation-service 新增 LLM 服务适配器模块（llm_adapter.py，支持 OpenAI API 和 Mock 适配器）、内容生成器模块（content_generator.py，基于 LLM 的 NPC/任务/区域描述生成）、LLM 配置管理（API Key、模型、Token、温度、超时）、新增 25 个测试用例（LLM 适配器 17 + 内容生成器 8），generation-service 测试从 72 个增加到 96 个（+24），ruff 和 mypy 检查全部通过。可通过 API 调用生成 NPC 描述、任务文本，完成 Sprint 2 S2-01 P0 项验收标准。
+- **Sprint 2 S2-02「NPC生成模板」完成（2026-07-10 11:00）**：generation-service 新增完整 NPC 生成模板体系，包括 6 个 Jinja2 模板文件（基础模板 + 铁匠/商人/守卫/治疗师/任务发布者职业模板）、NPC 数据转换适配器（npc_data_adapter.py，支持字段完整度验证、默认值填充、world-service 格式适配）、模板匹配策略（基于职业角色匹配）、增强质量评分（字段完整性、世界观一致性、风险关键词检测）、新增 16 个测试用例（模板管理 3 + 数据适配器 9 + 集成测试 4），generation-service 测试从 96 个增加到 112 个（+16），ruff 和 mypy 检查全部通过。生成的 NPC 字段完整度>95%，符合 world-service 数据结构要求，完成 Sprint 2 S2-02 P0 项验收标准。
 - **Sprint 2 AI 内容生成能力完成（2026-07-10 09:00）**：generation-service 新增模板管理模块（TemplateManager，支持模板加载、匹配、版本管理、Prompt 渲染）、质量评分模块（QualityScorer，支持 NPC/任务/区域/通用内容的质量评估，质量阈值 0.75）、内容生成 Celery 异步任务（process_generation_request，支持重试与幂等）、生成对象创建 API（含质量评分集成）、新增 16 个测试用例（模板管理 5 个 + 质量评分 11 个），generation-service 测试从 56 个增加到 72 个（+16），ruff 和 mypy 检查全部通过。AI 内容生成核心链路（模板匹配→内容生成→质量评分→对象落库）已就绪。
 
 ## 当前结论

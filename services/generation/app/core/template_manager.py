@@ -2,6 +2,8 @@ import json
 import os
 from typing import Any, TypedDict
 
+from jinja2 import Environment, FileSystemLoader
+
 from app.core.config import settings
 
 
@@ -24,6 +26,26 @@ class TemplateManager:
         self.template_dir = template_dir or settings.template_dir
         self._templates: dict[str, GenerationTemplate] = {}
         self._templates_by_type: dict[str, list[GenerationTemplate]] = {}
+        self._jinja_env: Environment | None = None
+
+    def _init_jinja(self) -> Environment:
+        if self._jinja_env is None:
+            template_paths = [self.template_dir]
+            npc_dir = os.path.join(self.template_dir, "npc")
+            if os.path.exists(npc_dir):
+                template_paths.append(npc_dir)
+            quest_dir = os.path.join(self.template_dir, "quest")
+            if os.path.exists(quest_dir):
+                template_paths.append(quest_dir)
+            region_dir = os.path.join(self.template_dir, "region")
+            if os.path.exists(region_dir):
+                template_paths.append(region_dir)
+            self._jinja_env = Environment(
+                loader=FileSystemLoader(template_paths),
+                trim_blocks=True,
+                lstrip_blocks=True,
+            )
+        return self._jinja_env
 
     def load_templates(self) -> None:
         if not os.path.exists(self.template_dir):
@@ -69,6 +91,7 @@ class TemplateManager:
         target_type: str,
         region_id: str | None = None,
         chapter_id: str | None = None,
+        npc_role: str | None = None,
     ) -> GenerationTemplate | None:
         candidates = self.list_templates_by_type(target_type)
         if not candidates:
@@ -86,6 +109,31 @@ class TemplateManager:
     def render_prompt(self, template: GenerationTemplate, **kwargs: Any) -> str:
         prompt = template["prompt_template"]
         return prompt.format(**kwargs)
+
+    def render_jinja_template(self, template_name: str, **kwargs: Any) -> str:
+        jinja_env = self._init_jinja()
+        template = jinja_env.get_template(template_name)
+        return template.render(**kwargs)
+
+    def list_jinja_templates(self, template_type: str) -> list[str]:
+        type_dir = os.path.join(self.template_dir, template_type)
+        if not os.path.exists(type_dir):
+            return []
+        templates = []
+        for filename in os.listdir(type_dir):
+            if filename.endswith(".jinja2"):
+                templates.append(os.path.join(template_type, filename))
+        return templates
+
+    def get_npc_template_by_role(self, role: str) -> str | None:
+        role_map = {
+            "blacksmith": "npc/npc_blacksmith.jinja2",
+            "merchant": "npc/npc_merchant.jinja2",
+            "guard": "npc/npc_guard.jinja2",
+            "healer": "npc/npc_healer.jinja2",
+            "quest_giver": "npc/npc_quest_giver.jinja2",
+        }
+        return role_map.get(role) or "npc/npc_base.jinja2"
 
 
 template_manager = TemplateManager()

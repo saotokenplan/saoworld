@@ -1,0 +1,141 @@
+你是一个专业的游戏内容生成AI。请根据以下信息生成一个任务发布者NPC。
+
+## 世界背景信息
+- **章节**: {{ chapter_id }}
+- **区域**: {{ region_name }}
+- **阵营**: {{ faction_name }}
+- **世界规则**: {{ world_rules }}
+
+## NPC角色类型
+- **角色类型**: quest_giver（任务发布者）
+- **性别**: {{ gender }}
+- **种族**: {{ race }}
+
+## 任务发布者特征
+任务发布者通常：
+- 有影响力，能够发布重要任务
+- 有特定需求，需要玩家帮助
+- 与主线或支线剧情相关
+- 给予合理的奖励
+
+## 输出要求
+请严格按照以下JSON格式输出，确保所有字段完整：
+
+```json
+{
+  "npc_key": "npc_quest_giver_{unique_id}",
+  "name": "任务发布者名称",
+  "title": "首领/镇长/长老/商人",
+  "gender": "{{ gender }}",
+  "age": 年龄(30-65),
+  "race": "{{ race }}",
+  "faction_key": "{{ faction_key }}",
+  "region_key": "{{ region_key }}",
+  "role": "quest_giver",
+  "location_key": "loc_{region}_hall",
+  "description": "任务发布者描述，强调权威或重要性",
+  "personality": ["authoritative", "urgent", "grateful", "strategic"],
+  "traits": ["leader", "problem-solver", "resourceful"],
+  "voice": "沉稳有力，带着紧迫感",
+  "backstory": "任务发布者的背景故事，包括地位、当前困境",
+  "motivation": "解决危机、完成目标、保护人民",
+  "relationship_map": {"下属": "指挥关系", "盟友": "合作关系"},
+  "dialog_style": "直接明了，重点突出，总是有重要事情要说",
+  "dialog_nodes": {
+    "first_meet": {
+      "id": "first_meet",
+      "text": "你好，旅行者。我有一个重要的任务需要你帮忙。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "什么任务？", "next": "explain_quest"},
+        {"text": "先说说你的情况", "next": "about_situation"},
+        {"text": "我现在很忙", "next": "goodbye"}
+      ]
+    },
+    "about_situation": {
+      "id": "about_situation",
+      "text": "[描述当前危机或困境]，我们需要有人挺身而出。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "我可以帮忙", "next": "explain_quest"},
+        {"text": "我现在很忙", "next": "goodbye"}
+      ]
+    },
+    "explain_quest": {
+      "id": "explain_quest",
+      "text": "[详细描述任务内容和目标]，这非常重要。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "我接受这个任务", "next": "quest_accepted", "action": "accept_quest"},
+        {"text": "有什么奖励？", "next": "rewards"},
+        {"text": "我需要考虑一下", "next": "goodbye"}
+      ]
+    },
+    "rewards": {
+      "id": "rewards",
+      "text": "如果你成功完成任务，我会给予你[奖励描述]。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "我接受这个任务", "next": "quest_accepted", "action": "accept_quest"},
+        {"text": "我需要考虑一下", "next": "goodbye"}
+      ]
+    },
+    "quest_accepted": {
+      "id": "quest_accepted",
+      "text": "太好了！[任务注意事项]。祝你好运！",
+      "speaker": "npc",
+      "choices": [
+        {"text": "我会尽力的", "next": "goodbye"}
+      ]
+    },
+    "quest_completed": {
+      "id": "quest_completed",
+      "text": "任务完成！你为我们做出了巨大贡献。这是你的奖励。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "还有其他任务吗？", "next": "default"},
+        {"text": "告辞", "next": "goodbye"}
+      ]
+    },
+    "default": {
+      "id": "default",
+      "text": "事情进展如何？如果你完成了任务，请告诉我。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "我完成了任务", "next": "quest_completed"},
+        {"text": "我还在进行中", "next": "encourage"},
+        {"text": "告辞", "next": "goodbye"}
+      ]
+    },
+    "encourage": {
+      "id": "encourage",
+      "text": "继续努力，我相信你一定能完成任务。",
+      "speaker": "npc",
+      "choices": [
+        {"text": "告辞", "next": "goodbye"}
+      ]
+    },
+    "goodbye": {
+      "id": "goodbye",
+      "text": "",
+      "speaker": "npc",
+      "choices": [],
+      "is_end": true
+    }
+  },
+  "quests_given": ["quest_main_ch01_intro", "quest_main_ch01_objective"],
+  "quests_related": ["quest_side_helper"],
+  "shop_items": [],
+  "services_offered": ["发布任务", "提供情报", "评估进度"],
+  "location_x": {{ location_x }},
+  "location_y": {{ location_y }},
+  "interaction_radius": 35
+}
+```
+
+## 质量要求
+1. 所有字段必须填写，不得留空
+2. 描述文字符合任务发布者特征
+3. 性格特征与任务发布者角色匹配
+4. 对话树逻辑完整，包含至少6个节点
+5. 背景故事合理，包含领导力或重要地位相关经历

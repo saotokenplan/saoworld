@@ -117,6 +117,7 @@ class MockLLMAdapter(LLMAdapter):
         self.model = model
         self.max_tokens = max_tokens
         self.temperature = temperature
+        self.mock_response: dict[str, Any] | None = None
 
     async def generate(
         self,
@@ -126,11 +127,12 @@ class MockLLMAdapter(LLMAdapter):
         temperature: float | None = None,
     ) -> LLMResponse:
         """生成模拟内容。"""
-        # 模拟延迟
         await asyncio.sleep(0.1)
 
-        # 根据提示词生成模拟响应
-        content = self._generate_mock_content(prompt)
+        if self.mock_response is not None:
+            content = json.dumps(self.mock_response)
+        else:
+            content = self._generate_mock_content(prompt)
 
         return LLMResponse(
             content=content,
@@ -147,12 +149,14 @@ class MockLLMAdapter(LLMAdapter):
         temperature: float | None = None,
     ) -> dict[str, Any]:
         """生成模拟 JSON 内容。"""
+        if self.mock_response is not None:
+            return self.mock_response.copy()
+
         response = await self.generate(prompt, system_prompt, max_tokens, temperature)
         try:
             result: dict[str, Any] = json.loads(response.content)
             return result
         except json.JSONDecodeError:
-            # 如果不是有效 JSON，返回模拟数据
             return self._generate_mock_json(prompt)
 
     def _generate_mock_content(self, prompt: str) -> str:

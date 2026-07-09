@@ -21,38 +21,75 @@ class QualityScorer:
         reasons: list[str] = []
         score = 1.0
 
-        name = payload.get("name", "")
-        description = payload.get("description", "")
-        dialogue = payload.get("dialogue", "")
-        faction_id = payload.get("faction_id", "")
+        required_fields = [
+            "npc_key", "name", "title", "gender", "age", "race",
+            "faction_key", "region_key", "role", "location_key",
+            "description", "personality", "traits", "voice",
+            "backstory", "motivation", "dialog_style", "dialog_nodes",
+        ]
 
-        if not name or len(name) < 2:
-            score -= 0.2
-            reasons.append("NPC name is too short or missing")
+        for field in required_fields:
+            value = payload.get(field)
+            if value is None:
+                score -= 0.03
+                reasons.append(f"Missing field: {field}")
+            elif isinstance(value, str) and not value.strip():
+                score -= 0.02
+                reasons.append(f"Empty field: {field}")
+
+        name = payload.get("name", "")
+        if len(name) < 2:
+            score -= 0.05
+            reasons.append("NPC name is too short")
         elif len(name) > 50:
-            score -= 0.1
+            score -= 0.02
             reasons.append("NPC name is too long")
 
-        if not description or len(description) < 20:
-            score -= 0.25
-            reasons.append("NPC description is too short or missing")
-        elif len(description) > 500:
+        description = payload.get("description", "")
+        if len(description) < 50:
             score -= 0.1
+            reasons.append("NPC description is too short")
+        elif len(description) > 500:
+            score -= 0.03
             reasons.append("NPC description is too long")
 
-        if not dialogue or len(dialogue) < 10:
-            score -= 0.2
-            reasons.append("NPC dialogue is too short or missing")
+        backstory = payload.get("backstory", "")
+        if len(backstory) < 100:
+            score -= 0.08
+            reasons.append("NPC backstory is too short")
 
-        if not faction_id:
+        personality = payload.get("personality", [])
+        if not isinstance(personality, list) or len(personality) < 2:
+            score -= 0.05
+            reasons.append("NPC personality needs at least 2 traits")
+
+        dialog_nodes = payload.get("dialog_nodes", {})
+        if isinstance(dialog_nodes, dict):
+            node_count = len(dialog_nodes)
+            if node_count < 6:
+                score -= 0.1
+                reasons.append(f"Dialog tree needs at least 6 nodes (has {node_count})")
+        else:
             score -= 0.15
-            reasons.append("Faction ID is missing")
+            reasons.append("Dialog nodes must be a dictionary")
 
-        risk_keywords = ["kill", "murder", "death", "destroy"]
+        risk_keywords = ["kill", "murder", "death", "destroy", "suicide", "terrorist"]
+        text_content = f"{description} {backstory}"
         for keyword in risk_keywords:
-            if keyword.lower() in description.lower() or keyword.lower() in dialogue.lower():
+            if keyword.lower() in text_content.lower():
                 score -= 0.2
                 reasons.append(f"Contains risk keyword: {keyword}")
+
+        faction_key = payload.get("faction_key", "")
+        if faction_key and not faction_key.startswith("faction_"):
+            score -= 0.02
+            reasons.append("Faction key should start with 'faction_'")
+
+        role = payload.get("role", "")
+        valid_roles = ["blacksmith", "merchant", "guard", "healer", "quest_giver", "leader", "researcher", "farmer", "scavenger"]
+        if role and role not in valid_roles:
+            score -= 0.03
+            reasons.append(f"Role '{role}' is not in valid roles list")
 
         return QualityScoreResult(max(0.0, min(1.0, score)), reasons)
 

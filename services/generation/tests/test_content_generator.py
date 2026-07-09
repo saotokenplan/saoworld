@@ -15,6 +15,42 @@ class TestContentGenerator:
     def generator(self):
         """创建内容生成器实例。"""
         llm_adapter = MockLLMAdapter()
+        llm_adapter.mock_response = {
+            "npc_key": "npc_test",
+            "name": "Test NPC",
+            "title": "Test",
+            "gender": "male",
+            "age": 30,
+            "race": "human",
+            "faction_key": "faction_ironward",
+            "region_key": "region_core",
+            "role": "blacksmith",
+            "location_key": "loc_test",
+            "description": "A skilled blacksmith who has worked in the forge for over 20 years. He is known for his exceptional craftsmanship and gruff but honest demeanor.",
+            "personality": ["gruff", "skilled", "honest"],
+            "traits": ["strong", "meticulous"],
+            "voice": "deep and gruff",
+            "backstory": "Test NPC was born into a family of skilled craftsmen. From a young age, he showed exceptional talent for working with metal, spending countless hours in the forge alongside his father.",
+            "motivation": "To craft the finest weapons and armor.",
+            "relationship_map": {},
+            "dialog_style": "direct",
+            "dialog_nodes": {
+                "first_meet": {"id": "first_meet", "text": "Hello!", "speaker": "npc", "choices": []},
+                "about_work": {"id": "about_work", "text": "I've been forging for years.", "speaker": "npc", "choices": []},
+                "has_quest": {"id": "has_quest", "text": "I need materials.", "speaker": "npc", "choices": []},
+                "quest_accepted": {"id": "quest_accepted", "text": "Great!", "speaker": "npc", "choices": []},
+                "quest_completed": {"id": "quest_completed", "text": "Thank you!", "speaker": "npc", "choices": []},
+                "default": {"id": "default", "text": "Welcome!", "speaker": "npc", "choices": []},
+                "goodbye": {"id": "goodbye", "text": "", "speaker": "npc", "choices": [], "is_end": True},
+            },
+            "quests_given": [],
+            "quests_related": [],
+            "shop_items": [],
+            "services_offered": [],
+            "location_x": 100,
+            "location_y": 200,
+            "interaction_radius": 30,
+        }
         template_manager = TemplateManager()
         quality_scorer = QualityScorer()
         return ContentGenerator(
@@ -43,7 +79,7 @@ class TestContentGenerator:
         npc = await generator.generate_npc(
             region_id="region_core",
             chapter_id="chapter_01",
-            context={"faction": "faction_iron_guard", "role": "铁匠"},
+            context={"faction": "faction_ironward", "role": "blacksmith"},
         )
 
         assert isinstance(npc, dict)
@@ -52,6 +88,15 @@ class TestContentGenerator:
     @pytest.mark.asyncio
     async def test_generate_quest(self, generator):
         """测试任务生成。"""
+        generator.llm_adapter.mock_response = {
+            "title": "寻找失落的宝藏",
+            "type": "side",
+            "region_id": "region_core",
+            "chapter_id": "chapter_01",
+            "description": "在铁卫城周边寻找传说中的宝藏。据说宝藏藏在一处古老的遗迹中，需要穿越重重障碍才能到达。",
+            "objectives": ["前往目标地点", "击败守卫敌人", "收集宝藏物品"],
+            "rewards": {"experience": 100, "gold": 50},
+        }
         quest = await generator.generate_quest(
             region_id="region_core",
             chapter_id="chapter_01",
@@ -66,6 +111,15 @@ class TestContentGenerator:
     @pytest.mark.asyncio
     async def test_generate_quest_with_context(self, generator):
         """测试带上下文的任务生成。"""
+        generator.llm_adapter.mock_response = {
+            "title": "森林探险之旅",
+            "type": "side",
+            "region_id": "region_core",
+            "chapter_id": "chapter_01",
+            "description": "探索迷雾森林，发现隐藏的秘密。",
+            "objectives": ["进入森林", "探索区域", "返回报告"],
+            "rewards": {"experience": 80, "gold": 30},
+        }
         quest = await generator.generate_quest(
             region_id="region_core",
             chapter_id="chapter_01",
@@ -79,6 +133,14 @@ class TestContentGenerator:
     @pytest.mark.asyncio
     async def test_generate_region(self, generator):
         """测试区域生成。"""
+        generator.llm_adapter.mock_response = {
+            "name": "迷雾森林",
+            "difficulty": "normal",
+            "region_id": "region_forest",
+            "chapter_id": "chapter_01",
+            "description": "一片神秘的森林，充满危险和机遇。古老的树木遮蔽了阳光，各种神秘的生物在此栖息。",
+            "features": ["神秘遗迹", "危险生物", "隐藏宝藏"],
+        }
         region = await generator.generate_region(
             chapter_id="chapter_01",
         )
@@ -91,6 +153,14 @@ class TestContentGenerator:
     @pytest.mark.asyncio
     async def test_generate_region_with_context(self, generator):
         """测试带上下文的区域生成。"""
+        generator.llm_adapter.mock_response = {
+            "name": "幽暗森林",
+            "difficulty": "normal",
+            "region_id": "region_dark_forest",
+            "chapter_id": "chapter_01",
+            "description": "一片幽暗的森林，阳光难以穿透茂密的树冠。",
+            "features": ["古老树木", "神秘生物", "隐藏路径"],
+        }
         region = await generator.generate_region(
             chapter_id="chapter_01",
             context={"theme": "森林", "difficulty": "normal"},
