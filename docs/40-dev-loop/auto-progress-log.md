@@ -5,6 +5,34 @@
 
 ---
 
+### auto-20260710-1300 - Sprint 2 S2-06「投票结果→生成参数映射」
+
+**执行时间**：2026-07-10 13:00
+**状态**：已完成（待合并到 feature-prd）
+**任务描述**：实现投票结果到内容生成参数的完整映射链路，vote-service 结算时发布包含生成参数的事件，workers 从事件中提取参数并动态创建生成请求，打通投票→生成的自动化闭环。
+
+**完成内容**：
+- 扩展 vote-service 事件发布 payload，新增 chapter_id、generated_params、region_scope 字段
+- 更新 vote-service 结算逻辑，查询获胜候选项详情并提取生成参数
+- 更新 workers 事件处理器，从事件中提取生成参数并传递给生成任务
+- 更新 workers 内容生成任务，支持 generated_params 动态参数覆盖
+- 参数优先级：显式参数 > generated_params > 默认值
+- 额外参数自动透传到 input_payload，支持未来扩展
+- 更新 workers 测试，新增 generated_params 传递测试用例
+
+**修改文件**：
+- 修改 5 个代码文件（event_publisher.py、routes.py、handlers.py、content_generation.py、test_content_generation.py）
+- 更新 3 个文档（project-status.md、auto-plan-20260710-1300.md、auto-execution-summary-20260710-1300.md）
+
+**统计信息**：
+- vote-service 54 个测试全部通过
+- workers 内容生成相关 3 个测试全部通过
+- ruff 和 mypy 检查全部通过
+
+**Sprint 2 状态**：S2-01、S2-02、S2-03、S2-06 已完成，投票→生成的参数映射链路打通
+
+---
+
 ### auto-20260710-1200 - Sprint 2 S2-03「任务生成模板」
 
 **执行时间**：2026-07-10 12:00
