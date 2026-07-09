@@ -3,8 +3,10 @@ extends Node2D
 signal back_to_world_map()
 signal region_entered(region_id: String)
 signal npc_interaction_started(npc_data: Dictionary)
+signal combat_started(enemy_type: String)
 
 const PLAYER_SCENE: PackedScene = preload("res://scenes/player/Player.tscn")
+const ENEMY_SCENE: PackedScene = preload("res://scenes/enemies/Enemy.tscn")
 
 @export var region_id: String = "region_core_ironward"
 @export var region_name: String = "铁卫城周边"
@@ -17,6 +19,9 @@ var interact_prompt: Label = null
 var npc_dialog: PanelContainer = null
 var quest_tracker: PanelContainer = null
 var quest_panel: Control = null
+var combat_hud: Control = null
+var nearby_enemy: Area2D = null
+var enemy_interact_prompt: Label = null
 
 @onready var ground: ColorRect = $Ground
 @onready var obstacles: Node2D = $Obstacles
@@ -31,6 +36,8 @@ func _ready() -> void:
 	_setup_interact_prompt()
 	_load_region_npcs()
 	_setup_quest_tracker()
+	_setup_enemies()
+	_setup_combat_signals()
 	region_entered.emit(region_id)
 
 func _setup_ui() -> void:
@@ -135,10 +142,18 @@ func _update_interact_prompt_position() -> void:
 	interact_prompt.global_position = nearby_npc.global_position + Vector2(-30, -70)
 
 func _unhandled_input(event: InputEvent) -> void:
+	# 处理 NPC 对话
 	if event.is_action_pressed("interact") and is_instance_valid(nearby_npc):
 		var npc_data: Dictionary = nearby_npc.get_meta("npc_data", {})
 		if npc_data.size() > 0:
 			_open_npc_dialog(npc_data)
+			return
+	
+	# 处理敌人战斗
+	if event.is_action_pressed("interact") and is_instance_valid(nearby_enemy):
+		if nearby_enemy.has_method("trigger_combat"):
+			nearby_enemy.trigger_combat()
+			return
 
 func _open_npc_dialog(npc_data: Dictionary) -> void:
 	if npc_dialog != null and is_instance_valid(npc_dialog):
@@ -187,6 +202,91 @@ func _on_quest_panel_closed() -> void:
 	if quest_panel != null and is_instance_valid(quest_panel):
 		quest_panel.queue_free()
 		quest_panel = null
+
+func _setup_enemies() -> void:
+	# 在区域中生成敌人
+	var enemy_positions: Array[Vector2] = [
+		Vector2(200, 300),
+		Vector2(800, 400)
+	]
+	
+	var enemy_types: Array[String] = ["wolf", "bandit"]
+	
+	for i in range(mini(enemy_positions.size(), enemy_types.size())):
+		_spawn_enemy(enemy_types[i], enemy_positions[i])
+	
+	_setup_enemy_interact_prompt()
+
+func _spawn_enemy(enemy_type: String, pos: Vector2) -> void:
+	var enemy: Area2D = ENEMY_SCENE.instantiate()
+	enemy.position = pos
+	enemy.enemy_type = enemy_type
+	enemy.combat_triggered.connect(_on_enemy_combat_triggered)
+	enemy.enemy_interacted.connect(_on_enemy_interacted)
+	add_child(enemy)
+
+func _setup_enemy_interact_prompt() -> void:
+	enemy_interact_prompt = Label.new()
+	enemy_interact_prompt.text = "按 E 触发战斗"
+	enemy_interact_prompt.visible = false
+	enemy_interact_prompt.z_index = 100
+	var style_box: StyleBoxFlat = StyleBoxFlat.new()
+	style_box.bg_color = Color(0.5, 0.0, 0.0, 0.7)
+	style_box.set_content_margin_all(8)
+	enemy_interact_prompt.add_theme_stylebox_override("normal", style_box)
+	add_child(enemy_interact_prompt)
+
+func _on_enemy_interacted(enemy_type: String) -> void:
+	interact_prompt.visible = false
+	if enemy_interact_prompt:
+		enemy_interact_prompt.visible = true
+		# 更新位置需要根据具体敌人位置
+		for child in get_children():
+			if child is Area2D and child.has_method("trigger_combat"):
+				if child.enemy_type == enemy_type:
+					nearby_enemy = child
+					enemy_interact_prompt.global_position = child.global_position + Vector2(-50, -70)
+					break
+
+func _on_enemy_combat_triggered(enemy_type: String) -> void:
+	if enemy_interact_prompt:
+		enemy_interact_prompt.visible = false
+	_open_combat_hud()
+
+func _setup_combat_signals() -> void:
+	CombatManager.combat_ended.connect(_on_combat_ended)
+
+func _open_combat_hud() -> void:
+	if combat_hud != null and is_instance_valid(combat_hud):
+		combat_hud.queue_free()
+	
+	var hud_scene: PackedScene = load("res://scenes/ui/combat/CombatHUD.tscn")
+	if hud_scene:
+		combat_hud = hud_scene.instantiate()
+		add_child(combat_hud)
+		combat_hud.attack_pressed.connect(_on_attack_pressed)
+		combat_hud.flee_pressed.connect(_on_flee_pressed)
+		combat_started.emit(CombatManager.current_enemy.get("enemy_type", "unknown"))
+
+func _on_attack_pressed() -> void:
+	# 攻击逻辑在 CombatManager 中处理
+	pass
+
+func _on_flee_pressed() -> void:
+	# 逃跑逻辑在 CombatManager 中处理
+	pass
+
+func _on_combat_ended(result: String, exp_gained: int) -> void:
+	# 战斗结束后关闭 HUD
+	if combat_hud != null and is_instance_valid(combat_hud):
+		await get_tree().create_timer(2.5).timeout
+		combat_hud.queue_free()
+		combat_hud = null
+	
+	# 如果战斗胜利，移除敌人
+	if result == "victory" and is_instance_valid(nearby_enemy):
+		nearby_enemy.queue_free()
+		nearby_enemy = null
 
 func _process(_delta: float) -> void:
 	if is_instance_valid(nearby_npc) and is_instance_valid(interact_prompt):
