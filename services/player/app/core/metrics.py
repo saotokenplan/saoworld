@@ -41,6 +41,26 @@ def record_player_region_unlock() -> None:
     PLAYER_OPERATIONS_TOTAL.labels(action="unlock_region").inc()
 
 
+def record_quest_accept() -> None:
+    """记录一次任务接取。"""
+    PLAYER_OPERATIONS_TOTAL.labels(action="quest_accept").inc()
+
+
+def record_quest_complete() -> None:
+    """记录一次任务完成。"""
+    PLAYER_OPERATIONS_TOTAL.labels(action="quest_complete").inc()
+
+
+def record_quest_fail() -> None:
+    """记录一次任务失败。"""
+    PLAYER_OPERATIONS_TOTAL.labels(action="quest_fail").inc()
+
+
+def record_quest_progress_update() -> None:
+    """记录一次任务进度更新。"""
+    PLAYER_OPERATIONS_TOTAL.labels(action="quest_progress_update").inc()
+
+
 def set_players_total(count: int) -> None:
     """设置玩家总数。"""
     PLAYERS_TOTAL.set(count)
