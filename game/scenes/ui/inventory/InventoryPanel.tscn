@@ -1,0 +1,78 @@
+[gd_scene load_steps=2 format=3 uid="uid://binventorypanel001"]
+
+[ext_resource type="Script" path="res://scripts/ui/inventory_panel.gd" id="1_inv"]
+
+[node name="InventoryPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_inv")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.1, 0.12, 1)
+
+[node name="Title" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 300.0
+offset_top = 20.0
+offset_right = 980.0
+offset_bottom = 60.0
+text = "背包"
+horizontal_alignment = 1
+
+[node name="BackButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 120.0
+offset_bottom = 60.0
+text = "返回"
+
+[node name="TypeFilter" type="OptionButton" parent="."]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 20.0
+offset_top = 80.0
+offset_right = 250.0
+offset_bottom = 110.0
+
+[node name="ItemList" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 20.0
+offset_top = 130.0
+offset_right = 1260.0
+offset_bottom = 680.0
+
+[node name="EmptyLabel" type="Label" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+offset_left = 400.0
+offset_top = 300.0
+offset_right = 880.0
+offset_bottom = 340.0
+text = "背包为空"
+horizontal_alignment = 1
+
+[node name="LoadingLabel" type="Label" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+offset_left = 400.0
+offset_top = 300.0
+offset_right = 880.0
+offset_bottom = 340.0
+text = "加载中..."
+horizontal_alignment = 1
