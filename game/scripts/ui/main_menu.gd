@@ -11,6 +11,7 @@ signal vote_pressed
 signal world_map_pressed
 signal npcs_pressed
 signal quests_pressed
+signal personal_center_pressed
 
 @onready var start_button: Button = $CenterContainer/VBoxContainer/StartButton
 @onready var continue_button: Button = $CenterContainer/VBoxContainer/ContinueButton
@@ -23,6 +24,7 @@ signal quests_pressed
 @onready var world_map_button: Button = $CenterContainer/VBoxContainer/WorldMapButton
 @onready var npc_button: Button = $CenterContainer/VBoxContainer/NPCButton
 @onready var quest_button: Button = $CenterContainer/VBoxContainer/QuestButton
+@onready var personal_center_button: Button = $CenterContainer/VBoxContainer/PersonalCenterButton
 @onready var title_label: Label = $CenterContainer/VBoxContainer/TitleLabel
 
 func _ready() -> void:
@@ -37,6 +39,7 @@ func _ready() -> void:
 	world_map_button.pressed.connect(_on_world_map_pressed)
 	npc_button.pressed.connect(_on_npcs_pressed)
 	quest_button.pressed.connect(_on_quests_pressed)
+	personal_center_button.pressed.connect(_on_personal_center_pressed)
 	
 	title_label.text = "开放世界投票游戏"
 	continue_button.text = "继续游戏"
@@ -49,6 +52,7 @@ func _ready() -> void:
 	world_map_button.text = "世界地图"
 	npc_button.text = "NPC 列表"
 	quest_button.text = "任务列表"
+	personal_center_button.text = "个人中心"
 
 func set_save_state(has_save: bool) -> void:
 	start_button.visible = false
@@ -90,3 +94,6 @@ func _on_npcs_pressed() -> void:
 
 func _on_quests_pressed() -> void:
 	quests_pressed.emit()
+
+func _on_personal_center_pressed() -> void:
+	personal_center_pressed.emit()
