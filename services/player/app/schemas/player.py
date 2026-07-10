@@ -388,6 +388,20 @@ class UnlockAchievementRequest(BaseModel):
     source_id: str | None = None
 
 
+class PlayerProfileResponse(BaseModel):
+    """玩家完整信息聚合响应"""
+
+    player_id: uuid.UUID
+    display_name: str
+    chapter_id: str | None = None
+    contribution_points: int = 0
+    reputation_summary: list[RegionReputationResponse] = []
+    achievements_unlocked: int = 0
+    achievements_total: int = 0
+    created_at: datetime
+    updated_at: datetime
+
+
 class EnvelopeResponse(BaseModel, Generic[T]):
     request_id: str
     data: T

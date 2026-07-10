@@ -96,6 +96,7 @@ from app.schemas.player import (
     PaginatedMeta,
     PlayerAchievementListResponse,
     PlayerAchievementResponse,
+    PlayerProfileResponse,
     PlayerQuestResponse,
     PlayerRegionResponse,
     PlayerResponse,
@@ -176,6 +177,84 @@ async def get_player_info(
     return EnvelopeResponse(
         request_id=request_id,
         data=PlayerResponse.model_validate(player),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/profile",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Player not found"},
+    },
+    tags=["player"],
+)
+async def get_player_profile(
+    request: Request,
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[PlayerProfileResponse]:
+    """获取玩家完整信息聚合（基本信息+贡献度+声望+成就统计）"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_player_profile")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # 1. 获取玩家基本信息
+    player_repo = PlayerRepository(db)
+    player = await player_repo.get_player_by_id(player_uuid)
+
+    if player is None:
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_NOT_FOUND,
+            "玩家不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    # 2. 获取声望汇总
+    region_repo = PlayerRegionRepository(db)
+    regions, _ = await region_repo.get_player_regions(player_uuid, limit=100, offset=0)
+    reputation_summary = [
+        _build_region_reputation_response(r.region_id, r.reputation)
+        for r in regions
+    ]
+
+    # 3. 获取成就统计
+    player_achievement_repo = PlayerAchievementRepository(db)
+    achievements_unlocked, _ = await player_achievement_repo.get_player_achievements(
+        player_uuid, limit=1, offset=0
+    )
+
+    achievement_repo = AchievementDefinitionRepository(db)
+    all_achievements, achievements_total = await achievement_repo.list_definitions(
+        is_active=True, limit=1, offset=0
+    )
+
+    # 4. 构建聚合响应
+    profile = PlayerProfileResponse(
+        player_id=player.player_id,
+        display_name=player.display_name,
+        chapter_id=player.chapter_id,
+        contribution_points=player.contribution_points or 0,
+        reputation_summary=reputation_summary,
+        achievements_unlocked=len(achievements_unlocked) if achievements_unlocked else 0,
+        achievements_total=achievements_total,
+        created_at=player.created_at,
+        updated_at=player.updated_at,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=profile,
         trace_id=trace_id,
     )
 

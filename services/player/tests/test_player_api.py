@@ -380,3 +380,56 @@ async def test_complete_quest_with_rewards(client: AsyncClient, player_token: st
         assert progress["resources"]["gold"] == 100
         assert progress["stats"]["experience"] == 50
         assert reputation["iron_guard"] == 10
+
+
+# --- Player Profile API Tests ---
+
+
+@pytest.mark.asyncio
+async def test_get_player_profile_success(client: AsyncClient, player_token: str, test_player, test_player_region):
+    """测试成功获取玩家完整信息聚合"""
+    response = await client.get(
+        f"{settings.api_v1_prefix}/player/profile",
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "request_id" in data
+    assert "data" in data
+    
+    profile = data["data"]
+    assert profile["player_id"] is not None
+    assert profile["display_name"] == "TestPlayer"
+    assert profile["chapter_id"] == "ch_prologue_01"
+    assert "contribution_points" in profile
+    assert "reputation_summary" in profile
+    assert "achievements_unlocked" in profile
+    assert "achievements_total" in profile
+    
+    # 验证声望汇总
+    assert isinstance(profile["reputation_summary"], list)
+    
+    # 验证成就统计
+    assert isinstance(profile["achievements_unlocked"], int)
+    assert isinstance(profile["achievements_total"], int)
+
+
+@pytest.mark.asyncio
+async def test_get_player_profile_not_found(client: AsyncClient, player_token: str):
+    """测试玩家不存在时获取个人中心返回404"""
+    response = await client.get(
+        f"{settings.api_v1_prefix}/player/profile",
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert response.status_code == 404
+    data = response.json()
+    assert data["code"] == PlayerErrorCodes.PLAYER_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_get_player_profile_unauthorized(client: AsyncClient):
+    """测试未授权访问个人中心"""
+    response = await client.get(f"{settings.api_v1_prefix}/player/profile")
+    assert response.status_code == 401
+    data = response.json()
+    assert data["code"] == "MISSING_TOKEN"
