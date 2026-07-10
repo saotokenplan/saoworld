@@ -220,3 +220,151 @@ async def test_npc_create_then_get_by_key(
     body = get_resp.json()
     assert body["data"]["npc_key"] == "npc_test_get_by_key"
     assert body["data"]["name"] == "按 key 查询的 NPC"
+
+
+@pytest.mark.asyncio
+async def test_create_npc_with_reputation_fields(
+    client: AsyncClient, ops_token: str, player_token: str
+):
+    create_resp = await client.post(
+        "/api/v1/ops/world/npcs",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-npc-create-rep-001",
+        },
+        json={
+            "npc_key": "npc_test_reputation_high",
+            "chapter_id": "ch_01",
+            "name": "高声望 NPC",
+            "min_reputation": 50,
+            "interaction_restrictions": {
+                "trade": False,
+                "dialogue": True,
+                "gossip_level": "basic",
+            },
+        },
+    )
+    assert create_resp.status_code == 201
+    npc_id = create_resp.json()["data"]["npc_id"]
+
+    get_resp = await client.get(
+        f"/api/v1/world/npcs/{npc_id}",
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert get_resp.status_code == 200
+    body = get_resp.json()
+    assert body["data"]["min_reputation"] == 50
+    assert body["data"]["interaction_restrictions"] == {
+        "trade": False,
+        "dialogue": True,
+        "gossip_level": "basic",
+    }
+
+
+@pytest.mark.asyncio
+async def test_npc_default_min_reputation_is_zero(
+    client: AsyncClient, ops_token: str, player_token: str
+):
+    create_resp = await client.post(
+        "/api/v1/ops/world/npcs",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-npc-create-rep-002",
+        },
+        json={
+            "npc_key": "npc_test_default_rep",
+            "chapter_id": "ch_01",
+            "name": "默认声望 NPC",
+        },
+    )
+    assert create_resp.status_code == 201
+    npc_id = create_resp.json()["data"]["npc_id"]
+
+    get_resp = await client.get(
+        f"/api/v1/world/npcs/{npc_id}",
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert get_resp.status_code == 200
+    body = get_resp.json()
+    assert body["data"]["min_reputation"] == 0
+    assert body["data"]["interaction_restrictions"] is None
+
+
+@pytest.mark.asyncio
+async def test_list_npcs_filter_by_player_reputation(
+    client: AsyncClient, ops_token: str, player_token: str
+):
+    npcs_data = [
+        ("npc_test_rep_0", 0, "声望0的NPC"),
+        ("npc_test_rep_10", 10, "声望10的NPC"),
+        ("npc_test_rep_50", 50, "声望50的NPC"),
+        ("npc_test_rep_100", 100, "声望100的NPC"),
+    ]
+
+    for idx, (npc_key, min_rep, name) in enumerate(npcs_data):
+        resp = await client.post(
+            "/api/v1/ops/world/npcs",
+            headers={
+                "Authorization": f"Bearer {ops_token}",
+                "Idempotency-Key": f"test-npc-rep-filter-{idx}",
+            },
+            json={
+                "npc_key": npc_key,
+                "chapter_id": "ch_01",
+                "name": name,
+                "min_reputation": min_rep,
+            },
+        )
+        assert resp.status_code == 201
+
+    all_resp = await client.get(
+        "/api/v1/world/npcs",
+        params={"chapter_id": "ch_01"},
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert all_resp.status_code == 200
+    assert all_resp.json()["data"]["total"] == 4
+
+    rep_0_resp = await client.get(
+        "/api/v1/world/npcs",
+        params={"chapter_id": "ch_01", "player_reputation": 0},
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert rep_0_resp.status_code == 200
+    assert rep_0_resp.json()["data"]["total"] == 1
+
+    rep_25_resp = await client.get(
+        "/api/v1/world/npcs",
+        params={"chapter_id": "ch_01", "player_reputation": 25},
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert rep_25_resp.status_code == 200
+    assert rep_25_resp.json()["data"]["total"] == 2
+
+    rep_100_resp = await client.get(
+        "/api/v1/world/npcs",
+        params={"chapter_id": "ch_01", "player_reputation": 100},
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert rep_100_resp.status_code == 200
+    assert rep_100_resp.json()["data"]["total"] == 4
+
+
+@pytest.mark.asyncio
+async def test_create_npc_negative_reputation_returns_422(
+    client: AsyncClient, ops_token: str
+):
+    resp = await client.post(
+        "/api/v1/ops/world/npcs",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-npc-neg-rep-001",
+        },
+        json={
+            "npc_key": "npc_test_negative_rep",
+            "chapter_id": "ch_01",
+            "name": "负声望NPC",
+            "min_reputation": -10,
+        },
+    )
+    assert resp.status_code == 422
