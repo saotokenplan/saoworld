@@ -1,0 +1,111 @@
+[gd_scene load_steps=2 format=3 uid="uid://personal_center_001"]
+
+[ext_resource type="Script" path="res://scripts/ui/personal_center.gd" id="1_personal_center"]
+
+[node name="PersonalCenter" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_personal_center")
+
+[node name="BackgroundPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MarginContainer/VBoxContainer/Header"]
+layout_mode = 2
+text = "个人中心"
+horizontal_alignment = 1
+
+[node name="CloseButton" type="Button" parent="MarginContainer/VBoxContainer/Header"]
+layout_mode = 2
+size_flags_horizontal = 8
+text = "关闭"
+
+[node name="PlayerInfoPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="InfoVBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/PlayerInfoPanel"]
+layout_mode = 2
+
+[node name="PlayerNameLabel" type="Label" parent="MarginContainer/VBoxContainer/PlayerInfoPanel/InfoVBox"]
+layout_mode = 2
+text = "玩家名称：加载中..."
+
+[node name="ChapterLabel" type="Label" parent="MarginContainer/VBoxContainer/PlayerInfoPanel/InfoVBox"]
+layout_mode = 2
+text = "当前章节：加载中..."
+
+[node name="ContributionLabel" type="Label" parent="MarginContainer/VBoxContainer/PlayerInfoPanel/InfoVBox"]
+layout_mode = 2
+text = "贡献度：加载中..."
+
+[node name="AchievementsLabel" type="Label" parent="MarginContainer/VBoxContainer/PlayerInfoPanel/InfoVBox"]
+layout_mode = 2
+text = "成就：加载中..."
+
+[node name="RefreshButton" type="Button" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "刷新数据"
+
+[node name="TabContainer" type="TabContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="投票记录" type="VBoxContainer" parent="MarginContainer/VBoxContainer/TabContainer"]
+layout_mode = 2
+
+[node name="VoteHistoryList" type="ItemList" parent="MarginContainer/VBoxContainer/TabContainer/投票记录"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="贡献度" type="VBoxContainer" parent="MarginContainer/VBoxContainer/TabContainer"]
+layout_mode = 2
+
+[node name="ContributionPointsLabel" type="Label" parent="MarginContainer/VBoxContainer/TabContainer/贡献度"]
+layout_mode = 2
+text = "当前贡献度：加载中..."
+
+[node name="ContributionLogList" type="ItemList" parent="MarginContainer/VBoxContainer/TabContainer/贡献度"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="声望" type="VBoxContainer" parent="MarginContainer/VBoxContainer/TabContainer"]
+layout_mode = 2
+
+[node name="ReputationList" type="ItemList" parent="MarginContainer/VBoxContainer/TabContainer/声望"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="成就" type="VBoxContainer" parent="MarginContainer/VBoxContainer/TabContainer"]
+layout_mode = 2
+
+[node name="AchievementsGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/TabContainer/成就"]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 4
