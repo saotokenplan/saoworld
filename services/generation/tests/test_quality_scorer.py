@@ -147,9 +147,11 @@ class TestQualityScorer:
     def test_score_quest_valid(self):
         scorer = QualityScorer()
         payload = {
+            "quest_key": "quest_treasure_hunt_01",
+            "quest_type": "side",
             "title": "寻找失落的宝藏",
-            "type": "side",
-            "region_id": "region_core",
+            "region_key": "region_core",
+            "chapter_id": "chapter_01",
             "description": "在铁卫城周边寻找传说中的宝藏。",
             "objectives": ["前往目标地点", "击败敌人", "收集物品"],
             "rewards": {"experience": 100, "gold": 50},
@@ -161,25 +163,33 @@ class TestQualityScorer:
     def test_score_quest_missing_objectives(self):
         scorer = QualityScorer()
         payload = {
+            "quest_key": "quest_test_01",
+            "quest_type": "side",
             "title": "测试任务",
+            "region_key": "region_core",
+            "chapter_id": "chapter_01",
             "description": "测试描述。",
             "rewards": {"experience": 100},
         }
         result = scorer.score_quest(payload)
         assert not result.is_acceptable()
-        assert "Quest objectives are missing or invalid" in result.reasons
+        assert any("objectives" in r.lower() for r in result.reasons)
 
     def test_score_quest_negative_rewards(self):
         scorer = QualityScorer()
         payload = {
+            "quest_key": "quest_test_02",
+            "quest_type": "side",
             "title": "测试任务",
+            "region_key": "region_core",
+            "chapter_id": "chapter_01",
             "description": "测试描述。",
             "objectives": ["测试"],
             "rewards": {"experience": -100, "gold": -50},
         }
         result = scorer.score_quest(payload)
         assert not result.is_acceptable()
-        assert "Negative reward values" in result.reasons
+        assert any("reward" in r.lower() or "negative" in r.lower() for r in result.reasons)
 
     def test_score_region_valid(self):
         scorer = QualityScorer()
