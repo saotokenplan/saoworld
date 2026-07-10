@@ -69,6 +69,9 @@ class VoteSubmitResponse(BaseModel):
     vote_cycle_id: uuid.UUID
     candidate_id: uuid.UUID
     submitted_at: datetime
+    weight: float | None = None
+    weight_multiplier: float | None = None
+    contribution_points: int | None = None
     request_id: str
     trace_id: str | None = None
 

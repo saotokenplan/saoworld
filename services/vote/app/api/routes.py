@@ -5,6 +5,11 @@ import structlog
 from fastapi import APIRouter, Depends, Header, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
+from app.core.contribution import (
+    calculate_vote_weight_multiplier,
+    check_vote_eligibility,
+)
 from app.core.db import get_db
 from app.core.deps import (
     RequireOpsScope,
@@ -17,8 +22,10 @@ from app.core.errors import VoteErrorCodes, raise_vote_error
 from app.core.event_publisher import event_publisher
 from app.core.metrics import (
     record_vote_cycle_transition,
+    record_vote_eligibility_rejected,
     record_vote_submission,
 )
+from app.core.player_client import PlayerContributionClient
 from app.repositories.audit_repo import (
     ACTION_VOTE_CYCLE_CREATE,
     ACTION_VOTE_CYCLE_TRANSITION,
@@ -186,6 +193,7 @@ async def submit_vote(
     x_player_id: str | None = Header(default=None, alias="X-Player-Id"),
     idempotency_key: str = Header(..., alias="Idempotency-Key"),
     x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
     db: AsyncSession = Depends(get_db),
 ) -> EnvelopeResponse[VoteSubmitResponse]:
     request_id = _make_request_id("req_vote_submit")
@@ -222,6 +230,7 @@ async def submit_vote(
                 vote_cycle_id=existing_by_key.vote_cycle_id,
                 candidate_id=existing_by_key.candidate_id,
                 submitted_at=existing_by_key.created_at,
+                weight=existing_by_key.weight,
                 request_id=request_id,
                 trace_id=x_trace_id,
             ),
@@ -271,11 +280,42 @@ async def submit_vote(
             status_code=status.HTTP_409_CONFLICT,
         )
 
+    # 查询玩家贡献度并校验投票资格
+    contribution_client = PlayerContributionClient()
+    try:
+        contribution_points = await contribution_client.get_contribution(
+            player_id=str(player_uuid),
+            authorization=authorization,
+        )
+    finally:
+        await contribution_client.close()
+
+    if not check_vote_eligibility(contribution_points, settings.contribution_threshold):
+        record_vote_eligibility_rejected(player_id=str(player_uuid))
+        raise_vote_error(
+            VoteErrorCodes.INSUFFICIENT_CONTRIBUTION,
+            f"贡献度不足，当前贡献度 {contribution_points}，投票资格门槛为 {settings.contribution_threshold}",
+            request_id=request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+            details=[
+                ErrorDetail(
+                    location="player",
+                    field="contribution_points",
+                    issue="below_threshold",
+                    rejected_value=contribution_points,
+                )
+            ],
+        )
+
+    # 根据贡献度计算投票权重倍率
+    weight_multiplier = calculate_vote_weight_multiplier(contribution_points)
+    final_weight = round(body.weight * weight_multiplier, 2)
+
     vote = await repo.create_vote(
         vote_cycle_id=cycle.vote_cycle_id,
         player_id=player_uuid,
         candidate_id=body.candidate_id,
-        weight=body.weight,
+        weight=final_weight,
         device_fingerprint_hash=body.device_fingerprint_hash,
         idempotency_key=idempotency_key,
     )
@@ -292,7 +332,13 @@ async def submit_vote(
         action=ACTION_VOTE_SUBMIT,
         resource_type=RESOURCE_VOTE,
         resource_id=vote.vote_id,
-        request_payload_jsonb={"candidate_id": str(body.candidate_id), "weight": body.weight},
+        request_payload_jsonb={
+            "candidate_id": str(body.candidate_id),
+            "weight": body.weight,
+            "final_weight": final_weight,
+            "weight_multiplier": weight_multiplier,
+            "contribution_points": contribution_points,
+        },
         result_status=201,
     )
 
@@ -303,6 +349,9 @@ async def submit_vote(
             vote_cycle_id=vote.vote_cycle_id,
             candidate_id=vote.candidate_id,
             submitted_at=vote.created_at or datetime.now(timezone.utc),
+            weight=final_weight,
+            weight_multiplier=weight_multiplier,
+            contribution_points=contribution_points,
             request_id=request_id,
             trace_id=x_trace_id,
         ),

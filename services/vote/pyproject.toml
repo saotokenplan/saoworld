@@ -16,6 +16,7 @@ dependencies = [
     "structlog>=24.4.0",
     "prometheus-fastapi-instrumentator>=6.0.0",
     "redis>=5.0.0",
+    "httpx>=0.27.0",
 ]
 
 [project.optional-dependencies]
@@ -47,5 +48,5 @@ warn_return_any = true
 warn_unused_configs = true
 
 [[tool.mypy.overrides]]
-module = "redis"
+module = "redis.*"
 ignore_missing_imports = true

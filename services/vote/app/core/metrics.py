@@ -32,6 +32,13 @@ VOTE_CYCLE_TRANSITIONS_TOTAL = Counter(
     labelnames=["from_status", "to_status"],
 )
 
+# 投票资格拒绝次数（按玩家分组）
+VOTE_ELIGIBILITY_REJECTED_TOTAL = Counter(
+    "vote_eligibility_rejected_total",
+    "因贡献度不足被拒绝的投票次数",
+    labelnames=["player_id"],
+)
+
 
 def record_vote_submission() -> None:
     """记录一次成功的投票提交。"""
@@ -41,6 +48,11 @@ def record_vote_submission() -> None:
 def record_vote_cycle_transition(from_status: str, to_status: str) -> None:
     """记录一次投票周期状态迁移。"""
     VOTE_CYCLE_TRANSITIONS_TOTAL.labels(from_status=from_status, to_status=to_status).inc()
+
+
+def record_vote_eligibility_rejected(player_id: str) -> None:
+    """记录一次因贡献度不足被拒绝的投票。"""
+    VOTE_ELIGIBILITY_REJECTED_TOTAL.labels(player_id=player_id).inc()
 
 
 def set_vote_cycles_by_status(status_counts: dict[str, int]) -> None:
