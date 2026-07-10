@@ -113,6 +113,10 @@ func fetch_history(limit: int = 20, offset: int = 0) -> void:
 	
 	_set_loading(false)
 
+func fetch_vote_history(limit: int = 20, offset: int = 0) -> void:
+	"""投票历史查询别名（用于个人中心）"""
+	fetch_history(limit, offset)
+
 func get_candidate_by_id(candidate_id: String) -> Dictionary:
 	for candidate in candidates:
 		if candidate.get("candidate_id", "") == candidate_id:
