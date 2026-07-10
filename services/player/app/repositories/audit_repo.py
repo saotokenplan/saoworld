@@ -22,12 +22,14 @@ ACTION_REPUTATION_ADD = "reputation_add"
 ACTION_REPUTATION_REMOVE = "reputation_remove"
 ACTION_REPUTATION_ADJUST = "reputation_adjust"
 ACTION_REPUTATION_UNLOCK = "reputation_unlock"
+ACTION_CONTRIBUTION_ADD = "contribution_add"
 
 RESOURCE_PLAYER = "player"
 RESOURCE_REGION = "region"
 RESOURCE_QUEST = "quest"
 RESOURCE_INVENTORY = "inventory"
 RESOURCE_REPUTATION = "reputation"
+RESOURCE_CONTRIBUTION = "contribution"
 
 
 class AuditRepository:
