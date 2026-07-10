@@ -89,8 +89,10 @@ class TestContentGenerator:
     async def test_generate_quest(self, generator):
         """测试任务生成。"""
         generator.llm_adapter.mock_response = {
+            "quest_key": "quest_treasure_hunt_01",
+            "quest_type": "side",
             "title": "寻找失落的宝藏",
-            "type": "side",
+            "region_key": "region_core",
             "region_id": "region_core",
             "chapter_id": "chapter_01",
             "description": "在铁卫城周边寻找传说中的宝藏。据说宝藏藏在一处古老的遗迹中，需要穿越重重障碍才能到达。",
@@ -112,8 +114,10 @@ class TestContentGenerator:
     async def test_generate_quest_with_context(self, generator):
         """测试带上下文的任务生成。"""
         generator.llm_adapter.mock_response = {
+            "quest_key": "quest_forest_explore_01",
+            "quest_type": "side",
             "title": "森林探险之旅",
-            "type": "side",
+            "region_key": "region_core",
             "region_id": "region_core",
             "chapter_id": "chapter_01",
             "description": "探索迷雾森林，发现隐藏的秘密。",
