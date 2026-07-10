@@ -15,6 +15,11 @@ signal quest_detail_loaded(quest_id: String)
 signal reputation_updated(region_id: String, new_reputation: int)
 signal reputation_unlocked(region_id: String, unlock_type: String)
 
+# 个人中心信号
+signal profile_loaded
+signal contribution_loaded
+signal achievements_loaded
+
 var player_info: Dictionary = {}
 var player_quests: Array[Dictionary] = []
 var player_regions: Array[Dictionary] = []
@@ -23,6 +28,11 @@ var reputation_list: Array[Dictionary] = []
 var is_loading: bool = false
 var last_error: Dictionary = {}
 var schema_version: int = 1
+
+# 个人中心数据
+var profile_data: Dictionary = {}
+var contribution_data: Dictionary = {}
+var achievements_data: Array[Dictionary] = []
 
 const REPUTATION_LEVELS: Dictionary = {
 	"hostile": {"name": "敌对", "color": "#F44336", "threshold": -3000, "icon": "💀"},
@@ -617,3 +627,99 @@ func restore_quest_from_save_data(data: Dictionary) -> void:
 			})
 	
 	player_quests_loaded.emit()
+
+# --- 个人中心相关方法 ---
+
+func fetch_player_profile() -> void:
+	"""获取玩家完整信息聚合（基本信息+贡献度+声望+成就统计）"""
+	_set_loading(true)
+	var result: Dictionary = APIManager.get("/player/profile")
+	
+	if result.get("success", false):
+		_handle_profile_success(result)
+	else:
+		_handle_player_error(result)
+	
+	_set_loading(false)
+
+func _handle_profile_success(result: Dictionary) -> void:
+	var data: Dictionary = result.get("data", {})
+	profile_data = data
+	last_error.clear()
+	
+	# 同步更新 player_info 基础信息
+	player_info["player_id"] = data.get("player_id", "")
+	player_info["display_name"] = data.get("display_name", "")
+	player_info["chapter_id"] = data.get("chapter_id", "")
+	player_info["contribution_points"] = data.get("contribution_points", 0)
+	
+	profile_loaded.emit()
+
+func fetch_player_contribution(limit: int = 20, offset: int = 0) -> void:
+	"""获取贡献度详情"""
+	_set_loading(true)
+	var endpoint: String = "/player/contribution?limit=%d&offset=%d" % [limit, offset]
+	var result: Dictionary = APIManager.get(endpoint)
+	
+	if result.get("success", false):
+		_handle_contribution_success(result)
+	else:
+		_handle_player_error(result)
+	
+	_set_loading(false)
+
+func _handle_contribution_success(result: Dictionary) -> void:
+	var data: Dictionary = result.get("data", {})
+	contribution_data = data
+	last_error.clear()
+	contribution_loaded.emit()
+
+func fetch_player_achievements(limit: int = 20, offset: int = 0) -> void:
+	"""获取玩家成就列表"""
+	_set_loading(true)
+	var endpoint: String = "/player/achievements?limit=%d&offset=%d" % [limit, offset]
+	var result: Dictionary = APIManager.get(endpoint)
+	
+	if result.get("success", false):
+		_handle_achievements_success(result)
+	else:
+		_handle_player_error(result)
+	
+	_set_loading(false)
+
+func _handle_achievements_success(result: Dictionary) -> void:
+	var data: Dictionary = result.get("data", {})
+	var items: Array[Dictionary] = data.get("items", [])
+	achievements_data = items
+	last_error.clear()
+	achievements_loaded.emit()
+
+func get_contribution_points() -> int:
+	"""获取贡献度积分"""
+	if profile_data.has("contribution_points"):
+		return profile_data["contribution_points"]
+	return player_info.get("contribution_points", 0)
+
+func get_achievements_unlocked() -> int:
+	"""获取已解锁成就数量"""
+	if profile_data.has("achievements_unlocked"):
+		return profile_data["achievements_unlocked"]
+	return achievements_data.size()
+
+func get_achievements_total() -> int:
+	"""获取总成就数量"""
+	if profile_data.has("achievements_total"):
+		return profile_data["achievements_total"]
+	return 0
+
+func get_reputation_summary() -> Array[Dictionary]:
+	"""获取声望汇总列表"""
+	if profile_data.has("reputation_summary"):
+		return profile_data["reputation_summary"]
+	return reputation_list
+
+func refresh_profile() -> void:
+	"""刷新个人中心全部数据"""
+	fetch_player_profile()
+	fetch_all_reputation()
+	fetch_player_achievements()
