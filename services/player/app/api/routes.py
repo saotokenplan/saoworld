@@ -20,6 +20,8 @@ from app.core.metrics import (
     record_achievement_reward_claimed,
     record_achievement_unlocked,
     record_contribution_add,
+    record_experience_gained,
+    record_level_up,
     record_inventory_add,
     record_inventory_remove,
     record_inventory_use,
@@ -39,6 +41,8 @@ from app.repositories.audit_repo import (
     ACTION_ACHIEVEMENT_REWARD_CLAIM,
     ACTION_ACHIEVEMENT_UNLOCK,
     ACTION_CONTRIBUTION_ADD,
+    ACTION_EXPERIENCE_ADD,
+    ACTION_LEVEL_UP,
     ACTION_INVENTORY_ADD,
     ACTION_INVENTORY_REMOVE,
     ACTION_INVENTORY_USE,
@@ -55,6 +59,7 @@ from app.repositories.audit_repo import (
     ACTION_REPUTATION_UNLOCK,
     RESOURCE_ACHIEVEMENT,
     RESOURCE_CONTRIBUTION,
+    RESOURCE_EXPERIENCE,
     RESOURCE_INVENTORY,
     RESOURCE_PLAYER,
     RESOURCE_PLAYER_ACHIEVEMENT,
@@ -79,6 +84,7 @@ from app.schemas.player import (
     AchievementCategory,
     AchievementRarity,
     AddContributionRequest,
+    AddExperienceRequest,
     AddItemRequest,
     AdjustReputationRequest,
     CompleteQuestRequest,
@@ -90,12 +96,15 @@ from app.schemas.player import (
     EnvelopeResponse,
     ErrorDetail,
     FailQuestRequest,
+    get_level_progress,
     HealthResponse,
     InventoryItemResponse,
     ItemType,
+    MAX_PLAYER_LEVEL,
     PaginatedMeta,
     PlayerAchievementListResponse,
     PlayerAchievementResponse,
+    PlayerLevelResponse,
     PlayerProfileResponse,
     PlayerQuestResponse,
     PlayerRegionResponse,
@@ -239,11 +248,19 @@ async def get_player_profile(
         is_active=True, limit=1, offset=0
     )
 
-    # 4. 构建聚合响应
+    # 4. 计算等级进度
+    exp = player.experience_points or 0
+    level, next_level_exp, level_progress = get_level_progress(exp)
+
+    # 5. 构建聚合响应
     profile = PlayerProfileResponse(
         player_id=player.player_id,
         display_name=player.display_name,
         chapter_id=player.chapter_id,
+        level=level,
+        experience_points=exp,
+        next_level_experience=next_level_exp,
+        level_progress=round(level_progress, 4),
         contribution_points=player.contribution_points or 0,
         reputation_summary=reputation_summary,
         achievements_unlocked=len(achievements_unlocked) if achievements_unlocked else 0,
@@ -622,10 +639,14 @@ async def complete_quest(
                             )
 
     contribution_points = 0
+    experience_points = 0
     if player_quest.rewards_jsonb and isinstance(player_quest.rewards_jsonb, dict):
         raw_cp = player_quest.rewards_jsonb.get("contribution_points", 0)
         if isinstance(raw_cp, int) and raw_cp > 0:
             contribution_points = raw_cp
+        raw_exp = player_quest.rewards_jsonb.get("experience_points", 0)
+        if isinstance(raw_exp, int) and raw_exp > 0:
+            experience_points = raw_exp
 
     if contribution_points > 0:
         contribution_repo = ContributionRepository(db)
@@ -639,6 +660,38 @@ async def complete_quest(
         record_contribution_add(
             player_id=str(player_uuid), source="quest", amount=contribution_points
         )
+
+    if experience_points > 0:
+        player_repo = PlayerRepository(db)
+        player, levels_gained = await player_repo.add_experience(
+            player_uuid, experience_points
+        )
+        record_experience_gained(
+            player_id=str(player_uuid),
+            source="quest",
+            amount=experience_points,
+        )
+        for level in levels_gained:
+            record_level_up(
+                player_id=str(player_uuid),
+                level=level,
+            )
+            audit_repo = AuditRepository(db)
+            await audit_repo.create_audit_log(
+                trace_id=trace_id or _make_request_id("trace"),
+                request_id=request_id,
+                operator_id=current_user.user_id,
+                operator_role=current_user.role.value,
+                action=ACTION_LEVEL_UP,
+                resource_type=RESOURCE_EXPERIENCE,
+                resource_id=str(player.player_id),
+                reason="quest_completion",
+                request_payload_jsonb={
+                    "quest_id": quest_id,
+                    "new_level": level,
+                },
+                result_status=200,
+            )
 
     record_quest_complete()
 
@@ -1580,6 +1633,179 @@ async def adjust_region_reputation(
     return EnvelopeResponse(
         request_id=request_id,
         data=_build_region_reputation_response(region_id, player_region.reputation),
+        trace_id=x_trace_id,
+    )
+
+
+# --- Level & Experience API ---
+
+
+@router.get(
+    "/player/level",
+    responses={
+        401: {"description": "Unauthorized"},
+        400: {"description": "Invalid player ID"},
+    },
+    tags=["player"],
+)
+async def get_player_level(
+    request: Request,
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[PlayerLevelResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_player_level")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    player_repo = PlayerRepository(db)
+    player = await player_repo.get_player_by_id(player_uuid)
+
+    if player is None:
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_NOT_FOUND,
+            "玩家不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    exp = player.experience_points or 0
+    level, next_level_exp, level_progress = get_level_progress(exp)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=PlayerLevelResponse(
+            player_id=player.player_id,
+            level=level,
+            experience_points=exp,
+            next_level_experience=next_level_exp,
+            level_progress=round(level_progress, 4),
+            updated_at=player.updated_at,
+        ),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.post(
+    "/players/{player_id}/experience",
+    status_code=status.HTTP_200_OK,
+    responses={
+        400: {"description": "Invalid request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Player not found"},
+    },
+    tags=["ops"],
+)
+async def add_player_experience(
+    player_id: uuid.UUID,
+    body: AddExperienceRequest,
+    request: Request,
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[PlayerLevelResponse]:
+    request_id = _make_request_id("req_ops_experience_add")
+
+    player_repo = PlayerRepository(db)
+    player = await player_repo.get_player_by_id(player_id)
+    if player is None:
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_NOT_FOUND,
+            "玩家不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if body.amount <= 0:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_EXPERIENCE_AMOUNT,
+            "经验值必须为正整数",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            details=[
+                ErrorDetail(
+                    location="body",
+                    field="amount",
+                    issue="invalid_amount",
+                    rejected_value=str(body.amount),
+                )
+            ],
+        )
+
+    player, levels_gained = await player_repo.add_experience(player_id, body.amount)
+
+    exp = player.experience_points or 0
+    level, next_level_exp, level_progress = get_level_progress(exp)
+
+    record_experience_gained(
+        player_id=str(player_id),
+        source=body.source.value,
+        amount=body.amount,
+    )
+    for level_gained in levels_gained:
+        record_level_up(
+            player_id=str(player_id),
+            level=level_gained,
+        )
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_EXPERIENCE_ADD,
+        resource_type=RESOURCE_EXPERIENCE,
+        resource_id=str(player_id),
+        reason=body.reason,
+        request_payload_jsonb={
+            "player_id": str(player_id),
+            "amount": body.amount,
+            "source": body.source.value,
+            "source_id": body.source_id,
+            "levels_gained": levels_gained,
+        },
+        result_status=200,
+    )
+
+    for level_gained in levels_gained:
+        await audit_repo.create_audit_log(
+            trace_id=x_trace_id or _make_request_id("trace"),
+            request_id=request_id,
+            operator_id=current_user.user_id,
+            operator_role=current_user.role.value,
+            action=ACTION_LEVEL_UP,
+            resource_type=RESOURCE_EXPERIENCE,
+            resource_id=str(player_id),
+            reason=body.reason or "ops_adjustment",
+            request_payload_jsonb={
+                "player_id": str(player_id),
+                "new_level": level_gained,
+                "source": body.source.value,
+            },
+            result_status=200,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=PlayerLevelResponse(
+            player_id=player.player_id,
+            level=level,
+            experience_points=exp,
+            next_level_experience=next_level_exp,
+            level_progress=round(level_progress, 4),
+            updated_at=player.updated_at,
+        ),
         trace_id=x_trace_id,
     )
 
