@@ -11,14 +11,10 @@
 import os
 import sys
 import uuid
-from datetime import datetime, timezone, timedelta
-from typing import AsyncGenerator
-from unittest.mock import AsyncMock, MagicMock, patch
+from datetime import datetime, timezone
+from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 import pytest_asyncio
-from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 
 class TestEndToEndPipeline:
@@ -103,7 +99,6 @@ class TestEndToEndPipeline:
         
         # 模拟参数提取逻辑（对应 handle_vote_result_finalized 的逻辑）
         vote_cycle_id = event_payload.get("vote_cycle_id")
-        winning_candidate_id = event_payload.get("winning_candidate_id")
         generated_params = event_payload.get("generated_params", {}) or {}
         region_scope = event_payload.get("region_scope", []) or []
         chapter_id = event_payload.get("chapter_id")
@@ -163,18 +158,12 @@ class TestEndToEndPipeline:
 
         try:
             # 测试灰度可见性逻辑
-            # 玩家百分比灰度
-            gray_scope_1 = {"player_percent": 10}
             # 玩家 ID 白名单灰度
             gray_scope_2 = {
                 "player_ids": [
                     "00000000-0000-0000-0000-000000000001",
                     "00000000-0000-0000-0000-000000000002",
                 ]
-            }
-            # 区域灰度
-            gray_scope_3 = {
-                "region_ids": ["region_wasteland_01"]
             }
 
             # 模拟可见性判断
@@ -238,13 +227,6 @@ class TestEndToEndPipeline:
 
         # 4. 模拟生成请求创建
         request_id = str(uuid.uuid4())
-        generation_request = {
-            "request_id": request_id,
-            "vote_cycle_id": vote_cycle_id,
-            "template_type": generated_params["template_type"],
-            "count": generated_params["count"],
-            "status": "succeeded"
-        }
 
         # 5. 模拟生成对象创建
         generated_objects = [
@@ -272,11 +254,6 @@ class TestEndToEndPipeline:
 
         # 9. 验证内容包状态
         assert content_package["status"] == "gray"
-
-        # 10. 模拟玩家可见性判断
-        player_id = str(uuid.uuid4())
-        # 这里使用简单的 hash 判断
-        is_visible = (hash(player_id) % 100) < 10
 
         # 验证链路完整性
         assert vote_cycle_id is not None
