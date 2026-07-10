@@ -150,7 +150,7 @@ class TestQuestDataAdapter:
         assert len(normalized) == 2
         assert normalized[0]["id"] == "obj_1"
         assert normalized[0]["type"] == "npc"
-        assert normalized[0]["completed"] == False
+        assert not normalized[0]["completed"]
         assert normalized[1]["type"] == "story"
 
     def test_normalize_rewards(self):

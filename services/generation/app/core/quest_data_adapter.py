@@ -114,7 +114,7 @@ class QuestDataAdapter:
 
     def _fill_defaults(self, quest_data: dict[str, Any]) -> dict[str, Any]:
         """填充缺失字段的默认值。"""
-        defaults = {
+        defaults: dict[str, Any] = {
             "quest_key": f"quest_{uuid.uuid4().hex[:8]}",
             "title": "Unknown Quest",
             "description": "A mysterious quest.",
