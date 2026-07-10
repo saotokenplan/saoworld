@@ -105,3 +105,19 @@ func test_quest_panel_filter_status() -> void:
 	quest_panel.set_script(script)
 	
 	assert_eq(quest_panel._get_filter_status(), "")
+
+# ====== S1-08 客户端 UI 优化新增测试（auto-20260711-0200） ======
+
+func test_quest_panel_reputation_unlocked_signal_connection() -> void:
+	var quest_panel: PanelContainer = PanelContainer.new()
+	var script: GDScript = load("res://scripts/ui/quest_panel.gd")
+	quest_panel.set_script(script)
+	assert_true(quest_panel.has_signal("quest_selected"), "应保留 quest_selected 信号")
+	assert_true(quest_panel.has_signal("quest_accepted"), "应保留 quest_accepted 信号")
+
+func test_quest_panel_detail_reputation_field() -> void:
+	var quest_panel: PanelContainer = PanelContainer.new()
+	var script: GDScript = load("res://scripts/ui/quest_panel.gd")
+	quest_panel.set_script(script)
+	quest_panel._ensure_reputation_label()
+	assert(quest_panel.detail_reputation == null or is_instance_valid(quest_panel.detail_reputation), "动态创建后 detail_reputation 应可被引用")

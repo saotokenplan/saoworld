@@ -20,8 +20,12 @@ var met_npcs: Dictionary = {}
 @onready var quest_title: Label = $QuestInfo/QuestTitle
 @onready var quest_desc: Label = $QuestInfo/QuestDescription
 
+var reputation_notice: Label = null
+
 func _ready() -> void:
 	close_button.pressed.connect(_on_close_button_pressed)
+	PlayerManager.reputation_unlocked.connect(_on_reputation_unlocked)
+	_ensure_reputation_notice()
 
 func open_dialog(npc_data: Dictionary) -> void:
 	current_npc = npc_data
@@ -29,19 +33,59 @@ func open_dialog(npc_data: Dictionary) -> void:
 	current_quest_id = ""
 	dialog_tree = npc_data.get("dialog_tree", {})
 	dialog_nodes = dialog_tree.get("nodes", {})
-	
+
 	npc_name.text = npc_data.get("name", "")
 	npc_title.text = npc_data.get("title", "")
 	quest_info.visible = false
-	
+
+	_ensure_reputation_notice()
+	if is_instance_valid(reputation_notice):
+		var npc_id: String = npc_data.get("npc_id", "")
+		var region_id: String = npc_data.get("region_id", "")
+		var accessible: bool = WorldManager.is_npc_accessible(npc_id, region_id)
+		if not accessible:
+			var min_rep: int = WorldManager.get_npc_min_reputation(npc_id)
+			var region_rep: int = PlayerManager.get_region_reputation(region_id) if region_id != "" else 0
+			var level: int = PlayerManager.get_reputation_level(region_rep) if region_id != "" else 0
+			var level_name: String = PlayerManager.REPUTATION_LEVELS[level].get("name", "")
+			reputation_notice.text = "🔒 此 NPC 需要声望 %d（%s）才能完全互动" % [min_rep, level_name]
+			reputation_notice.visible = true
+		else:
+			reputation_notice.text = ""
+			reputation_notice.visible = false
+
 	if dialog_nodes.size() > 0:
 		var start_node: String = _determine_start_node()
 		current_node_id = start_node
 		_show_tree_node(start_node)
 	else:
 		_fallback_linear_dialog()
-	
+
 	visible = true
+
+func _ensure_reputation_notice() -> void:
+	if is_instance_valid(reputation_notice):
+		return
+	if not is_node_ready():
+		return
+	if has_node("ReputationNotice"):
+		reputation_notice = $ReputationNotice as Label
+		return
+	var label: Label = Label.new()
+	label.name = "ReputationNotice"
+	dialog_text.add_sibling(label)
+	reputation_notice = label
+
+func _on_reputation_unlocked(_region_id: String) -> void:
+	if not visible:
+		return
+	if current_npc.size() == 0:
+		return
+	var npc_id: String = current_npc.get("npc_id", "")
+	var region_id: String = current_npc.get("region_id", "")
+	var accessible: bool = WorldManager.is_npc_accessible(npc_id, region_id)
+	if is_instance_valid(reputation_notice):
+		reputation_notice.visible = not accessible
 
 func _determine_start_node() -> String:
 	var npc_id: String = current_npc.get("npc_id", "")
@@ -101,19 +145,28 @@ func _show_tree_node(node_id: String) -> void:
 		var choice_button: Button = Button.new()
 		choice_button.text = choice.get("text", "继续")
 		choice_button.custom_minimum_size = Vector2(500, 40)
-		
+
+		var npc_id: String = current_npc.get("npc_id", "")
+		var region_id: String = current_npc.get("region_id", "")
+		var accessible: bool = WorldManager.is_npc_accessible(npc_id, region_id)
+
 		var style_box: StyleBoxFlat = StyleBoxFlat.new()
-		style_box.bg_color = Color(0.2, 0.4, 0.6)
+		if accessible:
+			style_box.bg_color = Color(0.2, 0.4, 0.6)
+			choice_button.disabled = false
+		else:
+			style_box.bg_color = Color(0.4, 0.4, 0.4)
+			choice_button.disabled = true
 		choice_button.add_theme_stylebox_override("normal", style_box)
-		
+
 		var hover_style: StyleBoxFlat = StyleBoxFlat.new()
-		hover_style.bg_color = Color(0.3, 0.5, 0.7)
+		hover_style.bg_color = Color(0.3, 0.5, 0.7) if accessible else Color(0.45, 0.45, 0.45)
 		choice_button.add_theme_stylebox_override("hover", hover_style)
-		
+
 		choice_button.set_meta("choice_index", i)
 		choice_button.pressed.connect(_on_choice_selected.bind(i))
 		choices_container.add_child(choice_button)
-	
+
 	close_button.visible = true
 
 func _on_choice_selected(index: int) -> void:

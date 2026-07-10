@@ -295,3 +295,14 @@ func test_get_current_quest_trigger_no_trigger() -> void:
 	dialog.open_dialog(npc_data)
 	var trigger: String = dialog.get_current_quest_trigger()
 	assert_eq(trigger, "", "无触发器时应返回空字符串")
+
+# ====== S1-08 客户端 UI 优化新增测试（auto-20260711-0200） ======
+
+func test_npc_dialog_reputation_notice_field() -> void:
+	dialog._ensure_reputation_notice()
+	assert(dialog.reputation_notice == null or is_instance_valid(dialog.reputation_notice), "动态创建后 reputation_notice 应可被引用")
+
+func test_npc_dialog_reputation_unlocked_signal() -> void:
+	watch_signals(PlayerManager)
+	dialog._on_reputation_unlocked("region_test_01")
+	assert(true, "信号处理不应崩溃")

@@ -503,3 +503,37 @@ func get_accessible_quests(region_id: String = "") -> Array[Dictionary]:
 func clear_quest_cache() -> void:
 	quest_cache.clear()
 	quest_list.clear()
+
+# ====== S1-08 客户端 UI 优化：区域解锁条件格式化（auto-20260711-0200） ======
+
+func get_region_unlock_requirement_text(region_id: String) -> String:
+	var threshold: int = PlayerManager.REGION_UNLOCK_THRESHOLD
+	if is_region_unlocked(region_id):
+		return "已解锁（声望 %d 即可）" % threshold
+	var current_rep: int = get_region_reputation(region_id)
+	return "需要声望 %d（当前 %d）" % [threshold, current_rep]
+
+func get_region_reputation_progress(region_id: String) -> Dictionary:
+	var threshold: int = PlayerManager.REGION_UNLOCK_THRESHOLD
+	var current_rep: int = get_region_reputation(region_id)
+	var unlocked: bool = is_region_unlocked(region_id)
+	var progress: float = 0.0
+	if threshold > 0:
+		progress = float(current_rep) / float(threshold)
+		progress = clamp(progress, 0.0, 1.0)
+	return {
+		"current": current_rep,
+		"required": threshold,
+		"progress": progress,
+		"unlocked": unlocked
+	}
+
+func is_region_locked_by_reputation(region_id: String) -> bool:
+	var region: Dictionary = get_region_by_id(region_id)
+	if region == {}:
+		return false
+	if region.get("status", "") != "locked":
+		return false
+	var current_rep: int = get_region_reputation(region_id)
+	var threshold: int = PlayerManager.REGION_UNLOCK_THRESHOLD
+	return current_rep < threshold

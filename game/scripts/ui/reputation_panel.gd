@@ -20,11 +20,39 @@ var error_message: String = ""
 @onready var error_label: Label = $ErrorLabel
 @onready var title_label: Label = $TitleLabel
 
+var next_unlock_label: Label = null
+var unlockable_label: Label = null
+
 func _ready() -> void:
 	back_button.pressed.connect(_on_back_button_pressed)
 	PlayerManager.player_reputation_loaded.connect(_on_reputation_loaded)
 	PlayerManager.player_error.connect(_on_player_error)
+	PlayerManager.reputation_unlocked.connect(_on_reputation_unlocked)
+	_ensure_detail_extras()
 	load_reputation_from_server()
+
+func _ensure_detail_extras() -> void:
+	if not is_instance_valid(rep_detail):
+		return
+	if not is_instance_valid(next_unlock_label):
+		if rep_detail.has_node("NextUnlockLabel"):
+			next_unlock_label = rep_detail.get_node("NextUnlockLabel") as Label
+		else:
+			var label: Label = Label.new()
+			label.name = "NextUnlockLabel"
+			detail_next_level.add_sibling(label)
+			next_unlock_label = label
+	if not is_instance_valid(unlockable_label):
+		if rep_detail.has_node("UnlockableLabel"):
+			unlockable_label = rep_detail.get_node("UnlockableLabel") as Label
+		else:
+			var label2: Label = Label.new()
+			label2.name = "UnlockableLabel"
+			if is_instance_valid(next_unlock_label):
+				next_unlock_label.add_sibling(label2)
+			else:
+				detail_next_level.add_sibling(label2)
+			unlockable_label = label2
 
 func load_reputation_from_server() -> void:
 	_set_loading(true)
@@ -150,6 +178,40 @@ func _render_detail(region_id: String) -> void:
 		detail_next_level.text = "已达最高等级"
 	else:
 		detail_next_level.text = "距离下一等级: %d / %d" % [current_rep, next_threshold]
+
+	_ensure_detail_extras()
+	if is_instance_valid(next_unlock_label):
+		var next_unlock: int = PlayerManager.get_next_unlock_threshold(current_rep)
+		var unlock_level: int = PlayerManager.get_reputation_level(next_unlock) if next_unlock > 0 else -1
+		if next_unlock <= 0:
+			next_unlock_label.text = "下一解锁阈值: 已全部解锁"
+		elif current_rep < next_unlock:
+			next_unlock_label.text = "下一区域解锁阈值: 声望 %d（还需 %d 点，%s）" % [
+				next_unlock,
+				next_unlock - current_rep,
+				PlayerManager.REPUTATION_LEVELS[unlock_level].get("name", "") if unlock_level >= 0 else ""
+			]
+		else:
+			next_unlock_label.text = "下一区域解锁阈值: 声望 %d（已达成）" % next_unlock
+
+	if is_instance_valid(unlockable_label):
+		var unlockable_regions: Array = PlayerManager.get_unlocked_regions_by_reputation(current_rep)
+		var already_unlocked: Array = PlayerManager.get_unlocked_regions_by_reputation(current_rep - 1)
+		var newly_unlocked: Array = []
+		for rid in unlockable_regions:
+			if not already_unlocked.has(rid):
+				newly_unlocked.append(rid)
+		if newly_unlocked.is_empty():
+			unlockable_label.text = "当前声望可解锁: 0 个新区域"
+		else:
+			var names: Array = []
+			for rid in newly_unlocked:
+				names.append(_get_region_display_name(rid))
+			unlockable_label.text = "当前声望可解锁: " + "、".join(names) + "（%d 个）" % newly_unlocked.size()
+
+func _on_reputation_unlocked(_region_id: String) -> void:
+	if selected_region_id != "":
+		_render_detail(selected_region_id)
 
 func _on_back_button_pressed() -> void:
 	back_to_menu.emit()
