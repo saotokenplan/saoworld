@@ -25,6 +25,8 @@ var error_message: String = ""
 @onready var error_label: Label = $ErrorLabel
 @onready var status_filter_option: OptionButton = $StatusFilter
 
+var detail_reputation: Label = null
+
 func _ready() -> void:
 	back_button.pressed.connect(_on_back_button_pressed)
 	accept_button.pressed.connect(_on_accept_button_pressed)
@@ -33,6 +35,8 @@ func _ready() -> void:
 		status_filter_option.item_selected.connect(_on_status_filter_selected)
 		_init_status_filter()
 	PlayerManager.player_quests_loaded.connect(_on_player_quests_loaded)
+	PlayerManager.reputation_unlocked.connect(_on_reputation_unlocked)
+	_ensure_reputation_label()
 	PlayerManager.player_error.connect(_on_player_error)
 	load_quests_from_server()
 
@@ -113,12 +117,18 @@ func _render_quests() -> void:
 	
 	for quest in filtered_quests:
 		var quest_item: Button = Button.new()
-		quest_item.text = quest.get("title", quest.get("quest_id", "")) + " [" + _get_status_text(quest.get("status", "")) + "]"
+		var qid: String = quest.get("quest_id", "")
+		var locked: bool = false
+		if qid != "":
+			locked = not WorldManager.is_quest_accessible(qid)
+		var display_title: String = quest.get("title", qid)
+		var prefix: String = "🔒 " if locked else ""
+		quest_item.text = prefix + display_title + " [" + _get_status_text(quest.get("status", "")) + "]"
 		quest_item.custom_minimum_size = Vector2(400, 40)
-		quest_item.set_meta("quest_id", quest.get("quest_id", ""))
+		quest_item.set_meta("quest_id", qid)
 		
 		var status: String = quest.get("status", "available")
-		_update_quest_item_style(quest_item, status)
+		_update_quest_item_style(quest_item, status, locked)
 		
 		quest_item.pressed.connect(_on_quest_item_pressed)
 		quest_list.add_child(quest_item)
@@ -131,21 +141,23 @@ func _get_status_text(status: String) -> String:
 		"failed": "已失败"
 		_: "未知"
 
-func _update_quest_item_style(item: Button, status: String) -> void:
+func _update_quest_item_style(item: Button, status: String, locked: bool = false) -> void:
 	var style_box: StyleBoxFlat = StyleBoxFlat.new()
 	match status:
 		"available":
-			style_box.bg_color = Color(0.2, 0.4, 0.6)
+			style_box.bg_color = Color(0.15, 0.30, 0.45) if locked else Color(0.2, 0.4, 0.6)
 		"active":
-			style_box.bg_color = Color(0.6, 0.5, 0.2)
+			style_box.bg_color = Color(0.45, 0.38, 0.15) if locked else Color(0.6, 0.5, 0.2)
 		"completed":
 			style_box.bg_color = Color(0.2, 0.6, 0.2)
 		"failed":
 			style_box.bg_color = Color(0.6, 0.2, 0.2)
 		_:
 			style_box.bg_color = Color(0.3, 0.3, 0.3)
-	
+
 	item.add_theme_stylebox_override("normal", style_box)
+	if locked:
+		item.modulate = Color(1, 1, 1, 0.65)
 
 func _on_quest_item_pressed() -> void:
 	var item: Button = get_last_signal_receiver()
@@ -209,8 +221,43 @@ func _show_quest_detail(quest: Dictionary) -> void:
 	var status: String = quest.get("status", "available")
 	accept_button.visible = (status == "available")
 	complete_button.visible = (status == "active")
-	
+
+	_ensure_reputation_label()
+	if is_instance_valid(detail_reputation):
+		var qid: String = quest.get("quest_id", "")
+		var min_rep: int = WorldManager.get_quest_min_reputation(qid)
+		var region_id: String = quest.get("region_id", "")
+		var player_rep: int = PlayerManager.get_region_reputation(region_id) if region_id != "" else 0
+		if min_rep > 0:
+			var level: int = PlayerManager.get_reputation_level(player_rep) if region_id != "" else 0
+			var level_name: String = PlayerManager.REPUTATION_LEVELS[level].get("name", "")
+			detail_reputation.text = "声望要求: %d（%s） / 你的区域声望: %d" % [min_rep, level_name, player_rep]
+			detail_reputation.visible = true
+		else:
+			detail_reputation.text = "声望要求: 无"
+			detail_reputation.visible = true
+
 	quest_detail.visible = true
+
+func _ensure_reputation_label() -> void:
+	if is_instance_valid(detail_reputation):
+		return
+	if not is_instance_valid(quest_detail):
+		return
+	if not quest_detail.has_node("ReputationRequirement"):
+		var label: Label = Label.new()
+		label.name = "ReputationRequirement"
+		detail_rewards.add_sibling(label)
+	detail_reputation = quest_detail.get_node("ReputationRequirement") as Label
+
+func _on_reputation_unlocked(_region_id: String) -> void:
+	_render_quests()
+	if selected_quest_id != "":
+		for quest in quests:
+			var qid: String = quest.get("quest_id", quest.get("player_quest_id", ""))
+			if qid == selected_quest_id:
+				_show_quest_detail(quest)
+				break
 
 func hide_quest_detail() -> void:
 	quest_detail.visible = false
