@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import (
+    RequireContributionReadScope,
     RequireOpsRole,
     RequirePlayerRole,
     RequireQuestsReadScope,
@@ -1494,7 +1495,7 @@ async def adjust_region_reputation(
 )
 async def get_player_contribution(
     request: Request,
-    current_user: UserPayload = RequireQuestsReadScope,
+    current_user: UserPayload = RequireContributionReadScope,
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),

@@ -115,6 +115,35 @@ def require_scope(required_scope: str | Scope) -> Any:
     return Depends(scope_checker)
 
 
+def require_any_scope(required_scopes: list[str | Scope]) -> Any:
+    """要求用户具备指定 Scope 列表中的任意一个。
+
+    Args:
+        required_scopes: 需要的 Scope 列表
+
+    Returns:
+        Depends: FastAPI 依赖注入
+    """
+    scope_strs = [
+        s if isinstance(s, str) else s.value for s in required_scopes
+    ]
+
+    async def scope_checker(
+        user: UserPayload = Depends(get_current_user),
+    ) -> UserPayload:
+        if not any(user.has_scope(s) for s in scope_strs):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "code": "FORBIDDEN",
+                    "message": f"缺少必要的权限: {', '.join(scope_strs)}",
+                },
+            )
+        return user
+
+    return Depends(scope_checker)
+
+
 def require_role(required_role: Role) -> Any:
     """要求用户具备指定的角色。
 
@@ -147,3 +176,4 @@ RequirePlayerReadScope = require_scope(Scope.WORLD_READ)
 RequireQuestsReadScope = require_scope(Scope.QUESTS_READ)
 RequireQuestsWriteScope = require_scope(Scope.QUESTS_WRITE)
 RequireOpsPlayersWriteScope = require_scope(Scope.OPS_PLAYERS_WRITE)
+RequireContributionReadScope = require_any_scope([Scope.QUESTS_READ, Scope.VOTES_SUBMIT])
