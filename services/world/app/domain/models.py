@@ -87,6 +87,8 @@ class NPC(Base):
     dialogues: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, nullable=True)
     related_quests: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     rewards: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    min_reputation: Mapped[int] = mapped_column(nullable=False, default=0, server_default="0", index=True)
+    interaction_restrictions_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -95,8 +97,13 @@ class NPC(Base):
     )
 
     __table_args__ = (
+        CheckConstraint(
+            "min_reputation >= 0",
+            name="npcs_min_reputation_check",
+        ),
         Index("npcs_chapter_id_idx", "chapter_id"),
         Index("npcs_faction_key_idx", "faction_key"),
+        Index("npcs_min_reputation_idx", "min_reputation"),
     )
 
 
@@ -116,6 +123,8 @@ class QuestDefinition(Base):
     objectives: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
     rewards: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     failure_condition: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    min_reputation: Mapped[int] = mapped_column(nullable=False, default=0, server_default="0", index=True)
+    required_reputation_level: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -128,9 +137,14 @@ class QuestDefinition(Base):
             "quest_type IN ('main', 'side', 'event', 'daily')",
             name="quest_definitions_quest_type_check",
         ),
+        CheckConstraint(
+            "min_reputation >= 0",
+            name="quest_definitions_min_reputation_check",
+        ),
         Index("quest_definitions_chapter_id_idx", "chapter_id"),
         Index("quest_definitions_quest_type_idx", "quest_type"),
         Index("quest_definitions_region_key_idx", "region_key"),
+        Index("quest_definitions_min_reputation_idx", "min_reputation"),
     )
 
 

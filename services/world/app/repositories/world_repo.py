@@ -181,6 +181,7 @@ class NpcRepository:
         self,
         chapter_id: str | None = None,
         faction_key: str | None = None,
+        player_reputation: int | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> tuple[Sequence[NPC], int]:
@@ -189,6 +190,8 @@ class NpcRepository:
             count_stmt = count_stmt.where(NPC.chapter_id == chapter_id)
         if faction_key:
             count_stmt = count_stmt.where(NPC.faction_key == faction_key)
+        if player_reputation is not None:
+            count_stmt = count_stmt.where(NPC.min_reputation <= player_reputation)
         count_result = await self.db.execute(count_stmt)
         total = count_result.scalar_one()
 
@@ -199,6 +202,8 @@ class NpcRepository:
             stmt = stmt.where(NPC.chapter_id == chapter_id)
         if faction_key:
             stmt = stmt.where(NPC.faction_key == faction_key)
+        if player_reputation is not None:
+            stmt = stmt.where(NPC.min_reputation <= player_reputation)
 
         result = await self.db.execute(stmt)
         npcs = result.scalars().all()
@@ -236,6 +241,8 @@ class NpcRepository:
         dialogues: list[dict[str, Any]] | None = None,
         related_quests: list[str] | None = None,
         rewards: dict[str, Any] | None = None,
+        min_reputation: int = 0,
+        interaction_restrictions: dict[str, Any] | None = None,
     ) -> NPC:
         npc = NPC(
             npc_key=npc_key,
@@ -250,6 +257,8 @@ class NpcRepository:
             dialogues=dialogues,
             related_quests=related_quests,
             rewards=rewards,
+            min_reputation=min_reputation,
+            interaction_restrictions_jsonb=interaction_restrictions,
         )
         self.db.add(npc)
         await self.db.flush()
@@ -265,6 +274,7 @@ class QuestDefinitionRepository:
         chapter_id: str | None = None,
         quest_type: str | None = None,
         region_key: str | None = None,
+        player_reputation: int | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> tuple[Sequence[QuestDefinition], int]:
@@ -275,6 +285,8 @@ class QuestDefinitionRepository:
             count_stmt = count_stmt.where(QuestDefinition.quest_type == quest_type)
         if region_key:
             count_stmt = count_stmt.where(QuestDefinition.region_key == region_key)
+        if player_reputation is not None:
+            count_stmt = count_stmt.where(QuestDefinition.min_reputation <= player_reputation)
         count_result = await self.db.execute(count_stmt)
         total = count_result.scalar_one()
 
@@ -290,6 +302,8 @@ class QuestDefinitionRepository:
             stmt = stmt.where(QuestDefinition.quest_type == quest_type)
         if region_key:
             stmt = stmt.where(QuestDefinition.region_key == region_key)
+        if player_reputation is not None:
+            stmt = stmt.where(QuestDefinition.min_reputation <= player_reputation)
 
         result = await self.db.execute(stmt)
         quests = result.scalars().all()
@@ -333,6 +347,8 @@ class QuestDefinitionRepository:
         objectives: list[dict[str, Any]],
         rewards: dict[str, Any] | None = None,
         failure_condition: dict[str, Any] | None = None,
+        min_reputation: int = 0,
+        required_reputation_level: str | None = None,
     ) -> QuestDefinition:
         quest = QuestDefinition(
             quest_key=quest_key,
@@ -347,6 +363,8 @@ class QuestDefinitionRepository:
             objectives=objectives,
             rewards=rewards,
             failure_condition=failure_condition,
+            min_reputation=min_reputation,
+            required_reputation_level=required_reputation_level,
         )
         self.db.add(quest)
         await self.db.flush()
