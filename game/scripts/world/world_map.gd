@@ -18,6 +18,8 @@ var current_chapter_filter: String = ""
 @onready var detail_type: Label = $RegionDetail/RegionType
 @onready var detail_progress: Label = $RegionDetail/Progress
 @onready var detail_reputation: Label = $RegionDetail/Reputation
+@onready var detail_unlock_requirement: Label = $RegionDetail/UnlockRequirement
+@onready var detail_unlock_progress: ProgressBar = $RegionDetail/UnlockProgress
 @onready var back_button: Button = $BackButton
 @onready var enter_button: Button = $EnterRegionButton
 @onready var status_filter: ButtonGroup = $StatusFilter
@@ -35,6 +37,7 @@ func _ready() -> void:
 		search_box.text_changed.connect(_on_search_text_changed)
 	
 	WorldManager.regions_loaded.connect(_on_regions_loaded)
+	PlayerManager.reputation_unlocked.connect(_on_reputation_unlocked)
 	
 	load_regions_from_data()
 	
@@ -66,15 +69,21 @@ func _render_regions() -> void:
 		var status_info: Dictionary = WorldManager.get_region_status_info(region.get("status", ""))
 		var status_name: String = status_info.get("name", "")
 		
-		region_card.text = "%s %s\n[%s]" % [type_icon, region.get("name", ""), status_name]
-		region_card.custom_minimum_size = Vector2(220, 90)
-		region_card.set_meta("region_id", region.get("region_id", ""))
-		
+		var region_id: String = region.get("region_id", "")
 		var status: String = region.get("status", "locked")
-		var is_unlocked: bool = WorldManager.is_region_unlocked(region.get("region_id", ""))
+		var is_unlocked: bool = WorldManager.is_region_unlocked(region_id)
+		var locked_by_rep: bool = WorldManager.is_region_locked_by_reputation(region_id)
+		
+		var display_name: String = region.get("name", "")
+		if locked_by_rep:
+			var required_text: String = WorldManager.get_region_unlock_requirement_text(region_id)
+			display_name = "🔒 " + display_name + "\n" + required_text
+		region_card.text = "%s %s\n[%s]" % [type_icon, display_name, status_name]
+		region_card.custom_minimum_size = Vector2(220, 90)
+		region_card.set_meta("region_id", region_id)
+		
 		_update_region_card_style(region_card, status, is_unlocked)
 		
-		var region_id: String = region.get("region_id", "")
 		region_card.pressed.connect(_on_region_card_pressed.bind(region_id))
 		region_container.add_child(region_card)
 
@@ -155,13 +164,32 @@ func _show_region_detail(region: Dictionary) -> void:
 	
 	var reputation: int = WorldManager.get_region_reputation(region_id)
 	detail_reputation.text = "声望值: %d" % reputation
-	
+
+	if is_instance_valid(detail_unlock_requirement):
+		detail_unlock_requirement.text = "解锁要求: " + WorldManager.get_region_unlock_requirement_text(region_id)
+	if is_instance_valid(detail_unlock_progress):
+		var progress_info: Dictionary = WorldManager.get_region_reputation_progress(region_id)
+		detail_unlock_progress.max_value = 1.0
+		detail_unlock_progress.value = progress_info.get("progress", 0.0)
+		detail_unlock_progress.tooltip_text = "%d / %d" % [
+			progress_info.get("current", 0),
+			progress_info.get("required", 0)
+		]
+
 	region_detail.visible = true
-	
+
 	if is_instance_valid(enter_button):
 		var can_enter: bool = is_unlocked and region.get("status", "locked") != "archived"
 		enter_button.visible = can_enter
 		enter_button.disabled = not can_enter
+
+func _on_reputation_unlocked(_region_id: String) -> void:
+	if selected_region_id != "":
+		var region: Dictionary = WorldManager.get_region_by_id(selected_region_id)
+		if region != {}:
+			_show_region_detail(region)
+		else:
+			_rebuild_region_cards()
 
 func hide_region_detail() -> void:
 	region_detail.visible = false
