@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -13,6 +13,14 @@ class QuestStatus(str, Enum):
     ACTIVE = "active"
     COMPLETED = "completed"
     FAILED = "failed"
+
+
+class ContributionSource(str, Enum):
+    QUEST = "quest"
+    VOTE = "vote"
+    BUILDING = "building"
+    OPS = "ops"
+    SYSTEM = "system"
 
 
 class ReputationLevel(str, Enum):
@@ -131,6 +139,7 @@ class PlayerResponse(BaseModel):
     player_id: uuid.UUID
     display_name: str
     chapter_id: str | None = None
+    contribution_points: int = 0
     reputation_snapshot: dict | None = None
     progress_jsonb: dict | None = None
     created_at: datetime
@@ -197,7 +206,7 @@ class PlayerRegionResponse(BaseModel):
     created_at: datetime
 
     @classmethod
-    def model_validate(cls, obj: object, *args: object, **kwargs: object) -> "PlayerRegionResponse":
+    def model_validate(cls, obj: Any, *args: Any, **kwargs: Any) -> "PlayerRegionResponse":
         if hasattr(obj, "reputation") and isinstance(obj.reputation, int):
             level = get_reputation_level(obj.reputation)
             obj_dict = {
@@ -257,6 +266,31 @@ class RemoveItemRequest(BaseModel):
 
 class UseItemRequest(BaseModel):
     quantity: int = Field(default=1, ge=1)
+
+
+class ContributionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    contribution_id: uuid.UUID
+    player_id: uuid.UUID
+    amount: int
+    source: ContributionSource
+    source_id: str | None = None
+    description: str | None = None
+    created_at: datetime
+
+
+class ContributionListResponse(BaseModel):
+    contribution_points: int
+    contributions: list[ContributionResponse]
+    total: int
+
+
+class AddContributionRequest(BaseModel):
+    amount: int = Field(ge=1)
+    source: ContributionSource
+    source_id: str | None = None
+    description: str | None = None
 
 
 class PaginatedMeta(BaseModel):

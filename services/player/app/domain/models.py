@@ -17,11 +17,45 @@ class Player(Base):
     reputation_snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     progress_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     chapter_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    contribution_points: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "contribution_points >= 0", name="players_contribution_points_check"
+        ),
+    )
+
+
+class PlayerContribution(Base):
+    __tablename__ = "player_contributions"
+
+    contribution_id: Mapped[uuid.UUID] = mapped_column(
+        UUIDType(), primary_key=True, default=uuid.uuid4
+    )
+    player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    source: Mapped[str] = mapped_column(String(32), nullable=False)
+    source_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint("amount > 0", name="player_contributions_amount_check"),
+        CheckConstraint(
+            "source IN ('quest', 'vote', 'building', 'ops', 'system')",
+            name="player_contributions_source_check",
+        ),
+        Index("player_contributions_player_created_idx", "player_id", "created_at"),
     )
 
 

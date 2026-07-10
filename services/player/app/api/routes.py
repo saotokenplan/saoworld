@@ -13,6 +13,7 @@ from app.core.deps import (
 )
 from app.core.errors import PlayerErrorCodes, raise_player_error
 from app.core.metrics import (
+    record_contribution_add,
     record_inventory_add,
     record_inventory_remove,
     record_inventory_use,
@@ -28,6 +29,7 @@ from app.core.metrics import (
     record_reputation_unlock,
 )
 from app.repositories.audit_repo import (
+    ACTION_CONTRIBUTION_ADD,
     ACTION_INVENTORY_ADD,
     ACTION_INVENTORY_REMOVE,
     ACTION_INVENTORY_USE,
@@ -42,6 +44,7 @@ from app.repositories.audit_repo import (
     ACTION_REGION_UNLOCK,
     ACTION_REPUTATION_ADJUST,
     ACTION_REPUTATION_UNLOCK,
+    RESOURCE_CONTRIBUTION,
     RESOURCE_INVENTORY,
     RESOURCE_PLAYER,
     RESOURCE_QUEST,
@@ -49,15 +52,19 @@ from app.repositories.audit_repo import (
     RESOURCE_REPUTATION,
     AuditRepository,
 )
+from app.repositories.contribution_repo import ContributionRepository
 from app.repositories.inventory_repo import InventoryRepository
 from app.repositories.player_quest_repo import PlayerQuestRepository
 from app.repositories.player_region_repo import PlayerRegionRepository
 from app.repositories.player_repo import PlayerRepository
 from app.schemas.player import (
     AcceptQuestRequest,
+    AddContributionRequest,
     AddItemRequest,
     AdjustReputationRequest,
     CompleteQuestRequest,
+    ContributionListResponse,
+    ContributionResponse,
     CreatePlayerQuestRequest,
     CreatePlayerRequest,
     EnvelopeResponse,
@@ -305,6 +312,7 @@ async def accept_quest(
         )
 
     player_quest = await repo.accept_quest(player_uuid, quest_id)
+    assert player_quest is not None
     record_quest_accept()
 
     audit_repo = AuditRepository(db)
@@ -379,6 +387,7 @@ async def update_quest_progress(
     player_quest = await repo.update_objectives(
         player_uuid, quest_id, body.objectives
     )
+    assert player_quest is not None
     record_quest_progress_update()
 
     audit_repo = AuditRepository(db)
@@ -509,6 +518,25 @@ async def complete_quest(
                                 result_status=200,
                             )
 
+    contribution_points = 0
+    if player_quest.rewards_jsonb and isinstance(player_quest.rewards_jsonb, dict):
+        raw_cp = player_quest.rewards_jsonb.get("contribution_points", 0)
+        if isinstance(raw_cp, int) and raw_cp > 0:
+            contribution_points = raw_cp
+
+    if contribution_points > 0:
+        contribution_repo = ContributionRepository(db)
+        await contribution_repo.add_contribution(
+            player_id=player_uuid,
+            amount=contribution_points,
+            source="quest",
+            source_id=quest_id,
+            description="任务完成奖励",
+        )
+        record_contribution_add(
+            player_id=str(player_uuid), source="quest", amount=contribution_points
+        )
+
     record_quest_complete()
 
     audit_repo = AuditRepository(db)
@@ -582,6 +610,7 @@ async def fail_quest(
         )
 
     player_quest = await repo.fail_quest(player_uuid, quest_id)
+    assert player_quest is not None
     record_quest_fail()
 
     audit_repo = AuditRepository(db)
@@ -1448,5 +1477,133 @@ async def adjust_region_reputation(
     return EnvelopeResponse(
         request_id=request_id,
         data=_build_region_reputation_response(region_id, player_region.reputation),
+        trace_id=x_trace_id,
+    )
+
+
+# --- Contribution API ---
+
+
+@router.get(
+    "/player/contribution",
+    responses={
+        401: {"description": "Unauthorized"},
+        400: {"description": "Invalid player ID"},
+    },
+    tags=["player"],
+)
+async def get_player_contribution(
+    request: Request,
+    current_user: UserPayload = RequireQuestsReadScope,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[ContributionListResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_player_contribution")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    contribution_repo = ContributionRepository(db)
+    contribution_points = await contribution_repo.get_player_contribution(player_uuid)
+    contributions, total = await contribution_repo.list_contributions(
+        player_uuid, limit=limit, offset=offset
+    )
+
+    contribution_responses = [
+        ContributionResponse.model_validate(c) for c in contributions
+    ]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=ContributionListResponse(
+            contribution_points=contribution_points,
+            contributions=contribution_responses,
+            total=total,
+        ),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.post(
+    "/players/{player_id}/contribution",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"description": "Invalid request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Player not found"},
+    },
+    tags=["ops"],
+)
+async def add_player_contribution(
+    player_id: uuid.UUID,
+    body: AddContributionRequest,
+    request: Request,
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[ContributionResponse]:
+    request_id = _make_request_id("req_ops_contribution_add")
+
+    contribution_repo = ContributionRepository(db)
+
+    try:
+        contribution = await contribution_repo.add_contribution(
+            player_id=player_id,
+            amount=body.amount,
+            source=body.source.value,
+            source_id=body.source_id,
+            description=body.description,
+        )
+    except ValueError as exc:
+        message = str(exc)
+        if "玩家不存在" in message:
+            raise_player_error(
+                PlayerErrorCodes.CONTRIBUTION_PLAYER_NOT_FOUND,
+                "玩家不存在",
+                request_id,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        raise_player_error(
+            PlayerErrorCodes.INVALID_CONTRIBUTION_AMOUNT,
+            message,
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    record_contribution_add(
+        player_id=str(player_id), source=body.source.value, amount=body.amount
+    )
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_CONTRIBUTION_ADD,
+        resource_type=RESOURCE_CONTRIBUTION,
+        resource_id=contribution.contribution_id,
+        request_payload_jsonb={
+            "player_id": str(player_id),
+            **body.model_dump(mode="json"),
+        },
+        result_status=201,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=ContributionResponse.model_validate(contribution),
         trace_id=x_trace_id,
     )

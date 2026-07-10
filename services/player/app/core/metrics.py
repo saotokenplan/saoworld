@@ -25,6 +25,13 @@ PLAYER_QUESTS_BY_STATUS = Gauge(
     labelnames=["status"],
 )
 
+# 贡献度发放次数（按玩家、来源分组）
+CONTRIBUTION_ADDITIONS_TOTAL = Counter(
+    "contribution_additions_total",
+    "贡献度发放次数",
+    labelnames=["player_id", "source"],
+)
+
 
 def record_player_create() -> None:
     """记录一次玩家创建。"""
@@ -106,3 +113,14 @@ def set_player_quests_by_status(status_counts: dict[str, int]) -> None:
         PLAYER_QUESTS_BY_STATUS.labels(status=status_label).set(
             status_counts.get(status_label, 0)
         )
+
+
+def record_contribution_add(player_id: str, source: str, amount: int) -> None:
+    """记录一次贡献度发放。
+
+    Args:
+        player_id: 玩家ID
+        source: 贡献度来源
+        amount: 发放数量
+    """
+    CONTRIBUTION_ADDITIONS_TOTAL.labels(player_id=player_id, source=source).inc(amount)
