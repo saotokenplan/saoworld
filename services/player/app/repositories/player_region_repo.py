@@ -6,6 +6,7 @@ from sqlalchemy import Select, func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.models import PlayerRegion
+from app.schemas.player import DEFAULT_REGION_UNLOCK_THRESHOLD
 
 
 class PlayerRegionRepository:
@@ -105,3 +106,22 @@ class PlayerRegionRepository:
         )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def check_and_unlock_by_reputation(
+        self,
+        player_id: uuid.UUID,
+        region_id: str,
+        threshold: int | None = None,
+    ) -> bool:
+        if threshold is None:
+            threshold = DEFAULT_REGION_UNLOCK_THRESHOLD
+        player_region = await self.get_region_reputation(player_id, region_id)
+        if player_region is None:
+            return False
+        if player_region.reputation < threshold:
+            return False
+        if player_region.unlocked_at is not None:
+            return False
+        player_region.unlocked_at = datetime.now(timezone.utc)
+        await self.db.flush()
+        return True

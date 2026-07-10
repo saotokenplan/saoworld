@@ -7,11 +7,15 @@ signal auth_error(message: String)
 signal loading_changed(is_loading: bool)
 signal npcs_loaded
 signal npc_detail_loaded(npc_id: String)
+signal quests_loaded
+signal quest_detail_loaded(quest_id: String)
 
 var regions: Array[Dictionary] = []
 var region_cache: Dictionary = {}
 var npc_cache: Dictionary = {}
 var npc_list: Array[Dictionary] = []
+var quest_list: Array[Dictionary] = []
+var quest_cache: Dictionary = {}
 var is_loading: bool = false
 var last_error: Dictionary = {}
 var schema_version: int = 1
@@ -264,13 +268,15 @@ func sort_regions(sort_by: String = "name", ascending: bool = true) -> Array[Dic
 	
 	return sorted_regions
 
-func fetch_npcs(region_id: String = "", limit: int = 50, offset: int = 0) -> void:
+func fetch_npcs(region_id: String = "", limit: int = 50, offset: int = 0, player_reputation: int = -1) -> void:
 	_set_loading(true)
 	var params: Array[String] = []
 	params.append("limit=%d" % limit)
 	params.append("offset=%d" % offset)
 	if region_id != "":
 		params.append("region_id=%s" % region_id)
+	if player_reputation >= 0:
+		params.append("player_reputation=%d" % player_reputation)
 	
 	var endpoint: String = "/world/npcs?%s" % "&".join(params)
 	var result: Dictionary = APIManager.get(endpoint)
@@ -351,3 +357,149 @@ func load_npcs_from_local() -> void:
 func clear_npc_cache() -> void:
 	npc_cache.clear()
 	npc_list.clear()
+
+func is_npc_accessible(npc_id: String, region_id: String = "") -> bool:
+	var npc: Dictionary = get_npc_by_id(npc_id)
+	if npc == {}:
+		return false
+	
+	var min_reputation: int = npc.get("min_reputation", 0)
+	if min_reputation <= 0:
+		return true
+	
+	var rep: int = 0
+	if region_id != "":
+		rep = PlayerManager.get_region_reputation(region_id)
+	else:
+		var npc_region: String = npc.get("location", "")
+		if npc_region != "":
+			rep = PlayerManager.get_region_reputation(npc_region)
+	
+	return rep >= min_reputation
+
+func get_npc_min_reputation(npc_id: String) -> int:
+	var npc: Dictionary = get_npc_by_id(npc_id)
+	return npc.get("min_reputation", 0)
+
+func get_accessible_npcs(region_id: String = "") -> Array[Dictionary]:
+	var filtered: Array[Dictionary] = []
+	var npcs_to_check: Array[Dictionary] = []
+	
+	if region_id != "":
+		npcs_to_check = get_npcs_by_region(region_id)
+	else:
+		npcs_to_check = npc_list
+	
+	for npc in npcs_to_check:
+		var npc_id: String = npc.get("npc_id", "")
+		if is_npc_accessible(npc_id, region_id):
+			filtered.append(npc)
+	
+	return filtered
+
+func fetch_quests(region_id: String = "", limit: int = 50, offset: int = 0, player_reputation: int = -1) -> void:
+	_set_loading(true)
+	var params: Array[String] = []
+	params.append("limit=%d" % limit)
+	params.append("offset=%d" % offset)
+	if region_id != "":
+		params.append("region_id=%s" % region_id)
+	if player_reputation >= 0:
+		params.append("player_reputation=%d" % player_reputation)
+	
+	var endpoint: String = "/world/quests?%s" % "&".join(params)
+	var result: Dictionary = APIManager.get(endpoint)
+	
+	if result.get("success", false):
+		var data: Dictionary = result.get("data", {})
+		quest_list = data.get("items", [])
+		for quest in quest_list:
+			var quest_id: String = quest.get("quest_id", "")
+			if quest_id != "":
+				quest_cache[quest_id] = quest
+		last_error.clear()
+		quests_loaded.emit()
+	else:
+		_handle_world_error(result)
+	
+	_set_loading(false)
+
+func fetch_quest_detail(quest_id: String) -> Dictionary:
+	if quest_cache.has(quest_id):
+		return quest_cache[quest_id]
+	
+	_set_loading(true)
+	var result: Dictionary = APIManager.get("/world/quests/%s" % quest_id)
+	
+	if result.get("success", false):
+		var data: Dictionary = result.get("data", {})
+		quest_cache[quest_id] = data
+		last_error.clear()
+		quest_detail_loaded.emit(quest_id)
+		_set_loading(false)
+		return data
+	else:
+		_handle_world_error(result)
+		_set_loading(false)
+		return {}
+
+func get_quest_by_id(quest_id: String) -> Dictionary:
+	if quest_cache.has(quest_id):
+		return quest_cache[quest_id]
+	for quest in quest_list:
+		if quest.get("quest_id", "") == quest_id:
+			return quest
+	return {}
+
+func get_quests_by_region(region_id: String) -> Array[Dictionary]:
+	var filtered: Array[Dictionary] = []
+	for quest in quest_list:
+		if quest.get("region_id", "") == region_id:
+			filtered.append(quest)
+	return filtered
+
+func get_quest_count() -> int:
+	return quest_list.size()
+
+func is_quest_accessible(quest_id: String, region_id: String = "") -> bool:
+	var quest: Dictionary = get_quest_by_id(quest_id)
+	if quest == {}:
+		return false
+	
+	var min_reputation: int = quest.get("min_reputation", 0)
+	if min_reputation <= 0:
+		return true
+	
+	var rep: int = 0
+	if region_id != "":
+		rep = PlayerManager.get_region_reputation(region_id)
+	else:
+		var quest_region: String = quest.get("region_id", "")
+		if quest_region != "":
+			rep = PlayerManager.get_region_reputation(quest_region)
+	
+	return rep >= min_reputation
+
+func get_quest_min_reputation(quest_id: String) -> int:
+	var quest: Dictionary = get_quest_by_id(quest_id)
+	return quest.get("min_reputation", 0)
+
+func get_accessible_quests(region_id: String = "") -> Array[Dictionary]:
+	var filtered: Array[Dictionary] = []
+	var quests_to_check: Array[Dictionary] = []
+	
+	if region_id != "":
+		quests_to_check = get_quests_by_region(region_id)
+	else:
+		quests_to_check = quest_list
+	
+	for quest in quests_to_check:
+		var quest_id: String = quest.get("quest_id", "")
+		if is_quest_accessible(quest_id, region_id):
+			filtered.append(quest)
+	
+	return filtered
+
+func clear_quest_cache() -> void:
+	quest_cache.clear()
+	quest_list.clear()

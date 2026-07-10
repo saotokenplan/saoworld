@@ -158,6 +158,8 @@ class NpcResponse(BaseModel):
     dialogues: list[dict[str, object]] | None = None
     related_quests: list[str] | None = None
     rewards: dict[str, object] | None = None
+    min_reputation: int = 0
+    interaction_restrictions: dict[str, object] | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -180,6 +182,8 @@ class CreateNpcRequest(BaseModel):
     dialogues: list[dict[str, object]] | None = None
     related_quests: list[str] | None = None
     rewards: dict[str, object] | None = None
+    min_reputation: int = Field(default=0, ge=0)
+    interaction_restrictions: dict[str, object] | None = None
 
 
 class CreateNpcResponse(BaseModel):
@@ -214,6 +218,8 @@ class QuestResponse(BaseModel):
     objectives: list[dict[str, object]]
     rewards: dict[str, object] | None = None
     failure_condition: dict[str, object] | None = None
+    min_reputation: int = 0
+    required_reputation_level: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -236,6 +242,8 @@ class CreateQuestRequest(BaseModel):
     objectives: list[dict[str, object]] = Field(min_length=1)
     rewards: dict[str, object] | None = None
     failure_condition: dict[str, object] | None = None
+    min_reputation: int = Field(default=0, ge=0)
+    required_reputation_level: str | None = Field(default=None, max_length=32)
 
 
 class CreateQuestResponse(BaseModel):

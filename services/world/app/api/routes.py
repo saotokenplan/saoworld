@@ -476,6 +476,7 @@ async def list_npcs(
     request: Request,
     chapter_id: str | None = Query(default=None, max_length=64),
     faction_key: str | None = Query(default=None, max_length=128),
+    player_reputation: int | None = Query(default=None, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     current_user: UserPayload = RequireWorldReadScope,
@@ -488,6 +489,7 @@ async def list_npcs(
     npcs, total = await repo.list_npcs(
         chapter_id=chapter_id,
         faction_key=faction_key,
+        player_reputation=player_reputation,
         limit=limit,
         offset=offset,
     )
@@ -507,6 +509,8 @@ async def list_npcs(
             dialogues=n.dialogues,
             related_quests=n.related_quests,
             rewards=n.rewards,
+            min_reputation=n.min_reputation,
+            interaction_restrictions=n.interaction_restrictions_jsonb,
             created_at=n.created_at,
             updated_at=n.updated_at,
         )
@@ -574,6 +578,8 @@ async def get_npc_detail(
             dialogues=npc.dialogues,
             related_quests=npc.related_quests,
             rewards=npc.rewards,
+            min_reputation=npc.min_reputation,
+            interaction_restrictions=npc.interaction_restrictions_jsonb,
             created_at=npc.created_at,
             updated_at=npc.updated_at,
         ),
@@ -654,6 +660,8 @@ async def get_npc_by_key(
             dialogues=npc.dialogues,
             related_quests=npc.related_quests,
             rewards=npc.rewards,
+            min_reputation=npc.min_reputation,
+            interaction_restrictions=npc.interaction_restrictions_jsonb,
             created_at=npc.created_at,
             updated_at=npc.updated_at,
         ),
@@ -713,6 +721,8 @@ async def create_npc(
         dialogues=body.dialogues,
         related_quests=body.related_quests,
         rewards=body.rewards,
+        min_reputation=body.min_reputation,
+        interaction_restrictions=body.interaction_restrictions,
     )
 
     record_npc_create()
@@ -761,6 +771,7 @@ async def list_quests(
     chapter_id: str | None = Query(default=None, max_length=64),
     quest_type: QuestType | None = Query(default=None),
     region_key: str | None = Query(default=None, max_length=128),
+    player_reputation: int | None = Query(default=None, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     current_user: UserPayload = RequireWorldReadScope,
@@ -774,6 +785,7 @@ async def list_quests(
         chapter_id=chapter_id,
         quest_type=quest_type.value if quest_type else None,
         region_key=region_key,
+        player_reputation=player_reputation,
         limit=limit,
         offset=offset,
     )
@@ -793,6 +805,8 @@ async def list_quests(
             objectives=q.objectives,
             rewards=q.rewards,
             failure_condition=q.failure_condition,
+            min_reputation=q.min_reputation,
+            required_reputation_level=q.required_reputation_level,
             created_at=q.created_at,
             updated_at=q.updated_at,
         )
@@ -860,6 +874,8 @@ async def get_quest_detail(
             objectives=quest.objectives,
             rewards=quest.rewards,
             failure_condition=quest.failure_condition,
+            min_reputation=quest.min_reputation,
+            required_reputation_level=quest.required_reputation_level,
             created_at=quest.created_at,
             updated_at=quest.updated_at,
         ),
@@ -940,6 +956,8 @@ async def get_quest_by_key(
             objectives=quest.objectives,
             rewards=quest.rewards,
             failure_condition=quest.failure_condition,
+            min_reputation=quest.min_reputation,
+            required_reputation_level=quest.required_reputation_level,
             created_at=quest.created_at,
             updated_at=quest.updated_at,
         ),
@@ -999,6 +1017,8 @@ async def create_quest(
         objectives=body.objectives,
         rewards=body.rewards,
         failure_condition=body.failure_condition,
+        min_reputation=body.min_reputation,
+        required_reputation_level=body.required_reputation_level,
     )
 
     record_quest_create()

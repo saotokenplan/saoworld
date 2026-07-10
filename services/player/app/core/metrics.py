@@ -86,6 +86,11 @@ def record_reputation_remove() -> None:
     PLAYER_OPERATIONS_TOTAL.labels(action="reputation_remove").inc()
 
 
+def record_reputation_unlock() -> None:
+    """记录一次声望解锁。"""
+    PLAYER_OPERATIONS_TOTAL.labels(action="reputation_unlock").inc()
+
+
 def set_players_total(count: int) -> None:
     """设置玩家总数。"""
     PLAYERS_TOTAL.set(count)

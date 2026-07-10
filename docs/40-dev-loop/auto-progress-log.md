@@ -6,3 +6,4 @@
 | 2026-07-10 18:00 | auto-20260710-1800 | P3 完成后规划文档漂移修复 - 同步 p3-online-ops-plan.md 与 ai-coding-game-dev-loop-plan.md 状态 | ✅ 已完成 |
 | 2026-07-10 20:00 | auto-20260710-2000 | S1-06 背包与资源系统 - player-service 背包 API + InventoryManager + InventoryPanel + SaveManager 集成 | ✅ 已完成 |
 | 2026-07-10 21:00 | auto-20260710-2100 | S1-07 声望系统基础 - player-service 声望 API + PlayerManager 声望管理 + ReputationPanel + 任务奖励集成 | ✅ 已完成 |
+| 2026-07-10 22:00 | auto-20260710-2200 | S1-08 声望解锁系统 - player-service 声望解锁 + world-service NPC/任务声望字段 + 客户端声望过滤 | ✅ 已完成 |

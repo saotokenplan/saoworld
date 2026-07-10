@@ -309,3 +309,151 @@ async def test_get_quest_by_key_chapter_filter(
         headers={"Authorization": f"Bearer {player_token}"},
     )
     assert correct.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_create_quest_with_reputation_fields(
+    client: AsyncClient, ops_token: str, player_token: str
+):
+    create_resp = await client.post(
+        "/api/v1/ops/world/quests",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-quest-create-rep-001",
+        },
+        json={
+            "quest_key": "quest_test_reputation_high",
+            "chapter_id": "ch_01",
+            "title": "高声望任务",
+            "quest_type": "side",
+            "objectives": [{"type": "collect", "item": "rare_ore", "count": 10}],
+            "min_reputation": 75,
+            "required_reputation_level": "honored",
+        },
+    )
+    assert create_resp.status_code == 201
+    quest_id = create_resp.json()["data"]["quest_id"]
+
+    get_resp = await client.get(
+        f"/api/v1/world/quests/{quest_id}",
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert get_resp.status_code == 200
+    body = get_resp.json()
+    assert body["data"]["min_reputation"] == 75
+    assert body["data"]["required_reputation_level"] == "honored"
+
+
+@pytest.mark.asyncio
+async def test_quest_default_min_reputation_is_zero(
+    client: AsyncClient, ops_token: str, player_token: str
+):
+    create_resp = await client.post(
+        "/api/v1/ops/world/quests",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-quest-create-rep-002",
+        },
+        json={
+            "quest_key": "quest_test_default_rep",
+            "chapter_id": "ch_01",
+            "title": "默认声望任务",
+            "quest_type": "main",
+            "objectives": [{"type": "talk", "npc": "npc_test"}],
+        },
+    )
+    assert create_resp.status_code == 201
+    quest_id = create_resp.json()["data"]["quest_id"]
+
+    get_resp = await client.get(
+        f"/api/v1/world/quests/{quest_id}",
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert get_resp.status_code == 200
+    body = get_resp.json()
+    assert body["data"]["min_reputation"] == 0
+    assert body["data"]["required_reputation_level"] is None
+
+
+@pytest.mark.asyncio
+async def test_list_quests_filter_by_player_reputation(
+    client: AsyncClient, ops_token: str, player_token: str
+):
+    quests_data = [
+        ("quest_test_rep_0", 0, "声望0的任务"),
+        ("quest_test_rep_20", 20, "声望20的任务"),
+        ("quest_test_rep_60", 60, "声望60的任务"),
+        ("quest_test_rep_80", 80, "声望80的任务"),
+    ]
+
+    for idx, (quest_key, min_rep, title) in enumerate(quests_data):
+        resp = await client.post(
+            "/api/v1/ops/world/quests",
+            headers={
+                "Authorization": f"Bearer {ops_token}",
+                "Idempotency-Key": f"test-quest-rep-filter-{idx}",
+            },
+            json={
+                "quest_key": quest_key,
+                "chapter_id": "ch_01",
+                "title": title,
+                "quest_type": "side",
+                "objectives": [{"type": "kill", "target": "target_001", "count": 1}],
+                "min_reputation": min_rep,
+            },
+        )
+        assert resp.status_code == 201
+
+    all_resp = await client.get(
+        "/api/v1/world/quests",
+        params={"chapter_id": "ch_01"},
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert all_resp.status_code == 200
+    assert all_resp.json()["data"]["total"] == 4
+
+    rep_0_resp = await client.get(
+        "/api/v1/world/quests",
+        params={"chapter_id": "ch_01", "player_reputation": 0},
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert rep_0_resp.status_code == 200
+    assert rep_0_resp.json()["data"]["total"] == 1
+
+    rep_40_resp = await client.get(
+        "/api/v1/world/quests",
+        params={"chapter_id": "ch_01", "player_reputation": 40},
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert rep_40_resp.status_code == 200
+    assert rep_40_resp.json()["data"]["total"] == 2
+
+    rep_100_resp = await client.get(
+        "/api/v1/world/quests",
+        params={"chapter_id": "ch_01", "player_reputation": 100},
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert rep_100_resp.status_code == 200
+    assert rep_100_resp.json()["data"]["total"] == 4
+
+
+@pytest.mark.asyncio
+async def test_create_quest_negative_reputation_returns_422(
+    client: AsyncClient, ops_token: str
+):
+    resp = await client.post(
+        "/api/v1/ops/world/quests",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-quest-neg-rep-001",
+        },
+        json={
+            "quest_key": "quest_test_negative_rep",
+            "chapter_id": "ch_01",
+            "title": "负声望任务",
+            "quest_type": "daily",
+            "objectives": [{"type": "gather"}],
+            "min_reputation": -5,
+        },
+    )
+    assert resp.status_code == 422

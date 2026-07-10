@@ -21,6 +21,7 @@ ACTION_INVENTORY_USE = "inventory_use"
 ACTION_REPUTATION_ADD = "reputation_add"
 ACTION_REPUTATION_REMOVE = "reputation_remove"
 ACTION_REPUTATION_ADJUST = "reputation_adjust"
+ACTION_REPUTATION_UNLOCK = "reputation_unlock"
 
 RESOURCE_PLAYER = "player"
 RESOURCE_REGION = "region"

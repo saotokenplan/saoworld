@@ -25,6 +25,7 @@ from app.core.metrics import (
     record_quest_progress_update,
     record_reputation_add,
     record_reputation_remove,
+    record_reputation_unlock,
 )
 from app.repositories.audit_repo import (
     ACTION_INVENTORY_ADD,
@@ -39,9 +40,8 @@ from app.repositories.audit_repo import (
     ACTION_QUEST_PROGRESS_UPDATE,
     ACTION_QUEST_STATUS_UPDATE,
     ACTION_REGION_UNLOCK,
-    ACTION_REPUTATION_ADD,
-    ACTION_REPUTATION_REMOVE,
     ACTION_REPUTATION_ADJUST,
+    ACTION_REPUTATION_UNLOCK,
     RESOURCE_INVENTORY,
     RESOURCE_PLAYER,
     RESOURCE_QUEST,
@@ -475,6 +475,7 @@ async def complete_quest(
         rep_rewards = player_quest.rewards_jsonb.get("reputation", {})
         if isinstance(rep_rewards, dict):
             region_repo = PlayerRegionRepository(db)
+            audit_repo = AuditRepository(db)
             for region_id, rep_amount in rep_rewards.items():
                 if isinstance(rep_amount, int) and rep_amount != 0:
                     await region_repo.add_reputation(player_uuid, region_id, rep_amount)
@@ -482,6 +483,31 @@ async def complete_quest(
                         record_reputation_add()
                     else:
                         record_reputation_remove()
+                    unlocked = await region_repo.check_and_unlock_by_reputation(
+                        player_uuid, region_id
+                    )
+                    if unlocked:
+                        record_reputation_unlock()
+                        record_player_region_unlock()
+                        player_region = await region_repo.get_region_reputation(
+                            player_uuid, region_id
+                        )
+                        if player_region is not None:
+                            await audit_repo.create_audit_log(
+                                trace_id=trace_id or _make_request_id("trace"),
+                                request_id=request_id,
+                                operator_id=current_user.user_id,
+                                operator_role=current_user.role.value,
+                                action=ACTION_REPUTATION_UNLOCK,
+                                resource_type=RESOURCE_REGION,
+                                resource_id=player_region.player_region_id,
+                                reason="reputation_threshold_reached",
+                                request_payload_jsonb={
+                                    "region_id": region_id,
+                                    "reputation": player_region.reputation,
+                                },
+                                result_status=200,
+                            )
 
     record_quest_complete()
 

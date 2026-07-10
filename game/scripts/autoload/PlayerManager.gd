@@ -13,6 +13,7 @@ signal quest_progress_updated(quest_id: String)
 signal quest_failed(quest_id: String)
 signal quest_detail_loaded(quest_id: String)
 signal reputation_updated(region_id: String, new_reputation: int)
+signal reputation_unlocked(region_id: String, unlock_type: String)
 
 var player_info: Dictionary = {}
 var player_quests: Array[Dictionary] = []
@@ -31,6 +32,8 @@ const REPUTATION_LEVELS: Dictionary = {
 	"revered": {"name": "崇敬", "color": "#9C27B0", "threshold": 21000, "icon": "😍"},
 	"exalted": {"name": "崇拜", "color": "#FFD700", "threshold": 42000, "icon": "✨"}
 }
+
+const REGION_UNLOCK_THRESHOLD: int = 3000
 
 const QUEST_STATUS: Dictionary = {
 	"available": {"name": "可接取", "color": "#2196F3"},
@@ -325,6 +328,79 @@ func get_reputation_progress(region_id: String) -> Dictionary:
 
 func get_reputation_count() -> int:
 	return reputation_list.size()
+
+func check_reputation_unlock(current_reputation: int, required_level: String = "", min_reputation: int = 0) -> bool:
+	if min_reputation > 0:
+		return current_reputation >= min_reputation
+	if required_level != "" and REPUTATION_LEVELS.has(required_level):
+		var threshold: int = REPUTATION_LEVELS[required_level].threshold
+		return current_reputation >= threshold
+	return true
+
+func get_next_unlock_threshold(current_reputation: int) -> Dictionary:
+	var levels: Array = ["hostile", "neutral", "friendly", "honored", "revered", "exalted"]
+	var next_level: String = ""
+	var next_threshold: int = 0
+	var progress: float = 0.0
+	var current_level: String = calculate_reputation_level(current_reputation)
+	var current_idx: int = levels.find(current_level)
+	
+	if current_idx < levels.size() - 1:
+		next_level = levels[current_idx + 1]
+		next_threshold = REPUTATION_LEVELS[next_level].threshold
+		var current_threshold: int = REPUTATION_LEVELS[current_level].threshold
+		var range_val: int = next_threshold - current_threshold
+		var current_progress: int = current_reputation - current_threshold
+		if range_val > 0:
+			progress = float(current_progress) / float(range_val)
+			progress = clamp(progress, 0.0, 1.0)
+	else:
+		next_level = "exalted"
+		next_threshold = REPUTATION_LEVELS["exalted"].threshold
+		progress = 1.0
+	
+	return {
+		"current_level": current_level,
+		"current_reputation": current_reputation,
+		"next_level": next_level,
+		"next_threshold": next_threshold,
+		"progress": progress
+	}
+
+func check_and_unlock_by_reputation(region_id: String) -> bool:
+	var rep: int = get_region_reputation(region_id)
+	if rep < REGION_UNLOCK_THRESHOLD:
+		return false
+	
+	var player_region: Dictionary = get_player_region_by_id(region_id)
+	if player_region.get("unlocked", false):
+		return false
+	
+	player_region["unlocked"] = true
+	player_region["unlocked_at"] = Time.get_datetime_string_from_system()
+	_upsert_player_region(player_region)
+	reputation_unlocked.emit(region_id, "region_unlock")
+	return true
+
+func _upsert_player_region(region_data: Dictionary) -> void:
+	var region_id: String = region_data.get("region_id", "")
+	if region_id == "":
+		return
+	
+	for i in range(player_regions.size()):
+		if player_regions[i].get("region_id", "") == region_id:
+			player_regions[i] = region_data
+			return
+	
+	player_regions.append(region_data)
+
+func get_unlocked_regions_by_reputation() -> Array[Dictionary]:
+	var unlocked: Array[Dictionary] = []
+	for region in player_regions:
+		var rep: int = region.get("reputation", 0)
+		if rep >= REGION_UNLOCK_THRESHOLD:
+			unlocked.append(region)
+	return unlocked
 
 func _set_loading(loading: bool) -> void:
 	if is_loading != loading:
