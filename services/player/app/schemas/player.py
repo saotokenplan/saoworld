@@ -49,6 +49,62 @@ def get_reputation_level(reputation: int) -> ReputationLevel:
         return ReputationLevel.EXALTED
 
 
+class UnlockType(str, Enum):
+    REGION_UNLOCK = "region_unlock"
+    QUEST_VISIBLE = "quest_visible"
+    NPC_INTERACTION = "npc_interaction"
+
+
+class ReputationUnlockCondition(BaseModel):
+    unlock_type: UnlockType
+    required_level: ReputationLevel | None = None
+    min_reputation: int | None = None
+    region_id: str | None = None
+
+
+DEFAULT_REGION_UNLOCK_THRESHOLD = REPUTATION_LEVEL_THRESHOLDS["friendly"]
+
+
+def check_reputation_unlock(
+    current_reputation: int,
+    condition: ReputationUnlockCondition,
+) -> bool:
+    if condition.min_reputation is not None:
+        if current_reputation < condition.min_reputation:
+            return False
+    if condition.required_level is not None:
+        required_threshold = REPUTATION_LEVEL_THRESHOLDS[condition.required_level.value]
+        if current_reputation < required_threshold:
+            return False
+    return True
+
+
+def get_next_unlock_threshold(
+    current_reputation: int,
+    thresholds: list[int] | None = None,
+) -> tuple[int, float]:
+    if thresholds is None:
+        thresholds = sorted(REPUTATION_LEVEL_THRESHOLDS.values())
+    thresholds = sorted(thresholds)
+    next_threshold = thresholds[-1]
+    for t in thresholds:
+        if t > current_reputation:
+            next_threshold = t
+            break
+    prev_threshold = 0
+    for t in reversed(thresholds):
+        if t <= current_reputation:
+            prev_threshold = t
+            break
+    progress_range = next_threshold - prev_threshold
+    if progress_range <= 0:
+        progress = 1.0
+    else:
+        current_progress = current_reputation - prev_threshold
+        progress = min(1.0, max(0.0, current_progress / progress_range))
+    return next_threshold, progress
+
+
 class ErrorDetail(BaseModel):
     location: str
     field: str
