@@ -76,6 +76,20 @@ def player_token() -> str:
     )
 
 
+@pytest_asyncio.fixture(autouse=True)
+async def mock_player_contribution_client(monkeypatch):
+    """默认将 player-service 贡献度查询 mock 为 1000 点，保证现有测试通过。"""
+
+    async def mock_get_contribution(*args: object, **kwargs: object) -> int:
+        return 1000
+
+    monkeypatch.setattr(
+        "app.core.player_client.PlayerContributionClient.get_contribution",
+        mock_get_contribution,
+    )
+    yield
+
+
 @pytest_asyncio.fixture
 async def open_vote_cycle() -> VoteCycle:
     from sqlalchemy import select
