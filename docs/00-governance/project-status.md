@@ -24,6 +24,7 @@
 
 - 当前阶段：**灰度发布与监控优化阶段**（Sprint 1 P0/P1 全部完成，Sprint 2 AI生成接入全部完成，P3 线上运营闭环全部完成，项目具备首期内容包灰度发布条件）
 - **2026-07-11 更新**：Sprint 1 全部 P0/P1 需求已交付（探索+对话+任务+战斗+存档+背包+声望），Sprint 2 AI生成接入完整闭环已验证（投票→生成→审核→打包→发布→客户端可见），P3 数据驱动闭环已端到端打通。项目处于灰度发布等待决策状态，可同步推进 Sprint 3 玩家成长系统预研。
+- **Sprint 3 S3-02「投票资格门槛」完成（2026-07-11 07:00）**：vote-service 新增 `PlayerContributionClient` 跨服务查询 player-service 贡献度 API，实现投票提交时贡献度门槛校验与权重倍率计算（每 1000 贡献度 +0.1，上限 1.2），新增 `INSUFFICIENT_CONTRIBUTION` 错误码与 `vote_eligibility_rejected_total` 业务指标；player-service 贡献度接口扩展 Scope 权限以允许 vote-service 访问。vote-service 测试 56 个全部通过，player-service 测试 98 个全部通过，ruff 与 mypy 检查通过。
 - **灰度发布就绪状态持续验证通过（2026-07-11 05:00）**：修复 generation-service 测试数据完整度问题。为 pyproject.toml 补充缺失的 jinja2 和 openai 依赖，修复 test_content_generator.py 和 test_quality_scorer.py 的 quest 测试数据（添加 quest_key、quest_type、region_key、chapter_id 必需字段）。全量测试验证完成，8 个后端服务共 592 个测试用例通过（vote 54 + world 85 + content 62 + generation 161 + review 41 + player 87 + ops 67 + gateway 37），generation-service 从 156 个测试增加到 161 个。ruff 和 mypy 检查全部通过。项目持续保持灰度发布就绪状态。
 - **灰度发布就绪状态持续验证通过（2026-07-11 04:00）**：全量测试验证完成，8 个后端服务共 590 个测试用例通过（vote 54 + world 85 + content 62 + generation 156 + review 41 + player 87 + ops 67 + gateway 37），generation-service 5 个失败为 mock LLM 数据格式问题；workers 30 个测试通过（7 个 Redis 环境限制）；content_check 28 个测试通过；loop_logging 36 个测试通过；agents 226 个测试通过；playtest 21 个测试通过（2 个测试隔离问题）。代码质量检查通过（修复了 generation-service 1 个 ruff 问题、playtest 13 个 ruff 问题、generation-service 1 个 mypy 类型注解缺失）。项目持续保持灰度发布就绪状态。
 - 当前形态：八大核心后端服务（vote、world、content、generation、review、player、ops、gateway）+ workers Celery + CI/CD + Godot 客户端完整，投票链路、内容链路、审核链路、API 网关、运营后台、客户端框架就绪，客户端与后端 API 联调封装完善，首期内容实例化完成（世界观、区域、阵营、NPC、任务、章节），内容包打包与发布流程已实现，端到端集成验证已完成，首期内容包初始化脚本已验证，发布验证脚本已完善，Runbook 文档体系已完善（16个门禁 + 6个运维操作），遥测基础设施已初始化（metrics、logs、alerts、dashboards），三层 Loop 基础设施已实现，P2 多代理协同真实调度能力已实现（AgentDispatcher + WorkflowExecutor + 54个Orchestrator测试通过），P3 数据驱动闭环已端到端打通并验证通过（数据采集→分析→洞察提取→需求生成→内容生成），LLM 服务接入已完成（OpenAI API + Mock 适配器 + 内容生成器）
@@ -500,7 +501,7 @@
 32. ~~Sprint 1 P1 项 S1-07「声望系统基础」：player-service 实现声望等级定义、数据模型、API 接口、任务奖励集成、测试补充；客户端实现 PlayerManager 声望管理和 ReputationPanel 界面~~ 已完成
 33. ~~Sprint 1 P1 项 S1-08「声望解锁系统」：player-service 实现声望解锁条件、解锁检查、自动解锁区域、任务完成触发；world-service 实现 NPC/任务声望字段与过滤；客户端实现声望解锁检查与内容过滤~~ 已完成
 34. ~~Sprint 1 P1 项 S1-08 客户端 UI 优化：WorldManager 新增 3 个格式化方法（get_region_unlock_requirement_text / get_region_reputation_progress / is_region_locked_by_reputation）；WorldMap 在锁定区域卡片显示「🔒 需声望 X」并新增 UnlockRequirement Label + UnlockProgress ProgressBar；QuestPanel 在声望不足任务前显示「🔒」并降透明度，详情面板新增 ReputationRequirement Label 显示声望要求；NPCDialog 新增 ReputationNotice 提示，对话选项按声望可达性样式化；ReputationPanel 新增 NextUnlockLabel 显示下一区域解锁阈值，UnlockableLabel 显示当前声望可解锁的区域；新增/扩展 13 个 GUT 测试用例~~ 已完成
-35. Sprint 3 S3-02「投票资格门槛」：vote-service 在投票提交时校验玩家贡献度是否达到门槛，并根据贡献度计算投票权重倍率（上限 1.2），与 player-service 贡献度 API 集成
+35. ~~Sprint 3 S3-02「投票资格门槛」：vote-service 在投票提交时校验玩家贡献度是否达到门槛，并根据贡献度计算投票权重倍率（上限 1.2），与 player-service 贡献度 API 集成~~ 已完成（2026-07-11 07:00）：vote-service 新增 `PlayerContributionClient` 跨服务查询 player-service 贡献度 API，新增 `INSUFFICIENT_CONTRIBUTION` 错误码与 `vote_eligibility_rejected_total` 指标，投票提交时校验贡献度门槛并按每 1000 贡献度增加 0.1 倍率计算最终权重（上限 1.2）；player-service 贡献度接口扩展 Scope 权限允许 vote-service 访问；vote-service 测试从 54 个增加到 56 个（+2），player-service 测试 98 个全部通过，ruff 与 mypy 检查通过。
 
 ## 进入实施前的建议门槛
 
