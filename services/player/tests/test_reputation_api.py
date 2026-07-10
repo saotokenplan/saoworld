@@ -218,3 +218,117 @@ async def test_complete_quest_grants_reputation(client: AsyncClient, player_toke
     assert rep_response.status_code == 200
     rep_data = rep_response.json()
     assert rep_data["data"]["reputation"] == 10
+
+
+@pytest.mark.asyncio
+async def test_check_reputation_unlock_various_levels():
+    from app.schemas.player import (
+        ReputationUnlockCondition,
+        UnlockType,
+        ReputationLevel,
+        check_reputation_unlock,
+        get_next_unlock_threshold,
+    )
+
+    condition_min_rep = ReputationUnlockCondition(
+        unlock_type=UnlockType.REGION_UNLOCK,
+        min_reputation=3000,
+    )
+    assert check_reputation_unlock(2000, condition_min_rep) is False
+    assert check_reputation_unlock(3000, condition_min_rep) is True
+    assert check_reputation_unlock(5000, condition_min_rep) is True
+
+    condition_level = ReputationUnlockCondition(
+        unlock_type=UnlockType.REGION_UNLOCK,
+        required_level=ReputationLevel.FRIENDLY,
+    )
+    assert check_reputation_unlock(2999, condition_level) is False
+    assert check_reputation_unlock(3000, condition_level) is True
+    assert check_reputation_unlock(9000, condition_level) is True
+
+    condition_npc = ReputationUnlockCondition(
+        unlock_type=UnlockType.NPC_INTERACTION,
+        min_reputation=1000,
+    )
+    assert check_reputation_unlock(500, condition_npc) is False
+    assert check_reputation_unlock(1500, condition_npc) is True
+
+    next_thresh, progress = get_next_unlock_threshold(0)
+    assert next_thresh >= 0
+    assert 0.0 <= progress <= 1.0
+
+    next_thresh, progress = get_next_unlock_threshold(3000)
+    assert next_thresh > 3000
+    assert progress == 0.0 or progress > 0.0
+
+
+@pytest.mark.asyncio
+async def test_reputation_unlocks_region(client: AsyncClient, player_token: str, test_player):
+    from app.domain.models import PlayerRegion
+    import uuid
+
+    async with TestSessionLocal() as session:
+        player_region = PlayerRegion(
+            player_region_id=uuid.uuid4(),
+            player_id=test_player.player_id,
+            region_id="region_test_unlock_01",
+            unlocked_at=None,
+            reputation=2990,
+        )
+        session.add(player_region)
+        await session.commit()
+
+    from app.domain.models import PlayerQuest
+    quest = PlayerQuest(
+        player_quest_id=uuid.uuid4(),
+        player_id=test_player.player_id,
+        quest_id="quest_unlock_test_01",
+        status="active",
+        objectives_jsonb={"objectives": [{"id": "obj1", "completed": True}]},
+        rewards_jsonb={"reputation": {"region_test_unlock_01": 20}},
+    )
+    async with TestSessionLocal() as session:
+        session.add(quest)
+        await session.commit()
+
+    response = await client.post(
+        f"{settings.api_v1_prefix}/player/quests/quest_unlock_test_01/complete",
+        json={},
+        headers={
+            "Authorization": f"Bearer {player_token}",
+            "Idempotency-Key": "test-unlock-region-001",
+        },
+    )
+    assert response.status_code == 200
+
+    regions_response = await client.get(
+        f"{settings.api_v1_prefix}/player/regions",
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert regions_response.status_code == 200
+    regions_data = regions_response.json()
+    unlocked_regions = [
+        r for r in regions_data["data"]
+        if r["region_id"] == "region_test_unlock_01"
+    ]
+    assert len(unlocked_regions) == 1
+    assert unlocked_regions[0]["unlocked_at"] is not None
+
+
+@pytest.mark.asyncio
+async def test_reputation_locked_error():
+    from app.core.errors import PlayerErrorCodes
+    from app.schemas.player import (
+        ReputationUnlockCondition,
+        UnlockType,
+        check_reputation_unlock,
+    )
+
+    assert PlayerErrorCodes.REPUTATION_LOCKED == "REPUTATION_LOCKED"
+
+    condition = ReputationUnlockCondition(
+        unlock_type=UnlockType.REGION_UNLOCK,
+        min_reputation=3000,
+    )
+    assert check_reputation_unlock(1000, condition) is False
+    assert check_reputation_unlock(5000, condition) is True
