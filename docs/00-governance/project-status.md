@@ -22,7 +22,7 @@
 
 ## 当前阶段
 
-- 当前阶段：**Sprint 2 AI 生成接入阶段**（S2-01 LLM 服务接入已完成，S2-02 NPC生成模板已完成，S2-03 任务生成模板已完成，S2-04 聚落描述生成已完成，S2-05 生成质量评分已完成，S2-06 投票结果→生成参数映射已完成，S2-07 端到端闭环验证已完成，S2-08 生成成本控制已完成）→ **P3 阶段灰度验证已完成** → **Sprint 1 P1 补充中（S1-06 背包与资源系统已完成，S1-07 声望系统基础已完成，S1-08 声望解锁系统已完成）**
+- 当前阶段：**灰度发布与监控优化阶段**（Sprint 1 P0/P1 全部完成，Sprint 2 AI生成接入全部完成，P3 线上运营闭环全部完成，项目具备首期内容包灰度发布条件）
 - 当前形态：八大核心后端服务（vote、world、content、generation、review、player、ops、gateway）+ workers Celery + CI/CD + Godot 客户端完整，投票链路、内容链路、审核链路、API 网关、运营后台、客户端框架就绪，客户端与后端 API 联调封装完善，首期内容实例化完成（世界观、区域、阵营、NPC、任务、章节），内容包打包与发布流程已实现，端到端集成验证已完成，首期内容包初始化脚本已验证，发布验证脚本已完善，Runbook 文档体系已完善（16个门禁 + 6个运维操作），遥测基础设施已初始化（metrics、logs、alerts、dashboards），三层 Loop 基础设施已实现，P2 多代理协同真实调度能力已实现（AgentDispatcher + WorkflowExecutor + 54个Orchestrator测试通过），P3 数据驱动闭环已端到端打通并验证通过（数据采集→分析→洞察提取→需求生成→内容生成），LLM 服务接入已完成（OpenAI API + Mock 适配器 + 内容生成器）
 - 运维操作 Runbook 已补全：灰度发布、全量发布、内容包回滚、服务部署、数据库迁移、首期内容初始化 6 个运维操作 Runbook 全部创建完成，为灰度发布和后续运维操作提供标准化流程指导
 - Sprint 1 完成：S1-01「玩家移动与场景切换」完成、S1-02「世界地图系统」完成、S1-03「NPC 对话系统」完成、S1-04「任务系统基础」客户端与后端集成都完成、S1-05「战斗系统雏形」完成、S1-09/S1-11 完成、S1-10「玩家存档系统」完成；**Sprint 1 P0 项全部交付，核心玩法链路完整闭环（探索 + 对话 + 任务 + 战斗 + 存档）**
@@ -42,7 +42,8 @@
 
 ## 当前结论
 
-- **Sprint 1 P0 项全部完成（2026-07-10 07:00）**：S1-10「玩家存档系统」完成，实现 SaveManager 存档管理单例（JSON 格式存档读写、定时自动保存、快速保存/加载、存档备份），保存玩家位置、属性、进度、任务进度，自动保存触发（任务状态更新、返回主菜单、退出游戏），新增 10 个测试用例。Sprint 1 P0 项（S1-01/S1-02/S1-03/S1-04/S1-05/S1-09/S1-10/S1-11）全部交付，核心玩法链路完整闭环（探索 + 对话 + 任务 + 战斗 + 存档）。项目进入下一阶段：Sprint 2 AI 生成接入。
+- **项目进入灰度发布与监控优化阶段（2026-07-11 03:00）**：全量测试验证完成，8 个后端服务共 595 个测试用例通过（vote 54 + world 85 + content 62 + generation 156 + review 41 + player 87 + ops 67 + gateway 37），workers 30 个测试通过，content_check 28 个测试通过，loop_logging 36 个测试通过，agents 226 个测试通过，playtest 21 个测试通过。代码质量检查通过（ruff 和 mypy）。项目已具备首期内容包灰度发布条件，等待运营决策启动灰度发布流程。
+- **Sprint 1 P0 项全部完成（2026-07-10 07:00）**：S1-10「玩家存档系统」完成，实现 SaveManager 存档管理单例（JSON 格式存档读写、定时自动保存、快速保存/加载、存档备份），保存玩家位置、属性、进度、任务进度，自动保存触发（任务状态更新、返回主菜单、退出游戏），新增 10 个测试用例。Sprint 1 P0 项（S1-01/S1-02/S1-03/S1-04/S1-05/S1-09/S1-10/S1-11）全部交付，核心玩法链路完整闭环（探索 + 对话 + 任务 + 战斗 + 存档）。
 - **每日进展更新（2026-07-10 06:00）**：Sprint 1 进度约 40%。S1-05「战斗系统雏形」完成——GameState 扩展战斗属性（血量、攻击、防御、存活状态）、CombatManager 战斗管理单例（状态机、伤害计算、胜负判定、经验奖励）、Enemy 怪物实体（碰撞检测、战斗触发）、CombatHUD 战斗 UI（血条、战斗状态、攻击/逃跑按钮）、CoreRegion 集成敌人实例、新增 25 个测试用例（CombatManager 13 + Enemy 8 + Player 战斗属性 4）。Sprint 1 已完成 S1-01/S1-02/S1-03/S1-04/S1-05/S1-09/S1-11，剩余 P0 项：S1-10 玩家存档系统。迭代方向评估为"正常"——进度大幅提前，技术方向正确、质量达标。后续任务规划：继续推进 S1-10 玩家存档系统。
 - **每日进展更新（2026-07-10）**：Sprint 1 已提前约19天启动，进度约30%。S1-01「玩家移动与场景切换」、S1-02「世界地图系统」、S1-03「NPC 对话系统」客户端实现完成，S1-04「任务系统基础」后端 API 已完成，S1-09/S1-11 已完成。迭代方向评估为"正常"——进度大幅提前，技术方向正确、质量达标。后续任务规划：继续推进 S1-05 战斗系统雏形、S1-10 玩家存档系统。
 - **Sprint 1 P0 项 S1-03「NPC 对话系统」完成**：2026-07-10 04:00 完成 NPC 对话系统核心能力。重构 NPCDialog 脚本支持对话树遍历（对话节点跳转、条件分支、任务触发），支持 first_meet/has_quest/quest_completed/default 四种对话状态；创建 NPCDialog 独立场景文件；扩展 WorldManager 支持 NPC 数据（fetch_npcs、fetch_npc_detail、get_npcs_by_region/faction、load_npcs_from_local）；扩展 CoreRegion 区域场景添加 NPC 交互点（Area2D 接近检测、按 E 对话提示、NPCDialog 弹出）；集成任务系统（NPC 对话中可接取任务、触发 accept_quest 信号、PlayerManager 新增 accept_quest 方法）；扩展 npc_list.json 对话树数据（schema_version 2，6 个 NPC 完整对话树）；新增 interact 输入动作（E 键）；新增 PlayerManager/WorldManager 为 Autoload；新增 10 个 NPCDialog 测试 + 7 个 WorldManager NPC 测试；vote-service 54 测试通过、world-service 77 测试通过。
@@ -494,7 +495,7 @@
 31. ~~Sprint 1 P1 项 S1-06「背包与资源系统」：player-service 实现背包数据模型、仓储层、API 接口、测试补充；客户端实现 InventoryManager 和 InventoryPanel~~ 已完成
 32. ~~Sprint 1 P1 项 S1-07「声望系统基础」：player-service 实现声望等级定义、数据模型、API 接口、任务奖励集成、测试补充；客户端实现 PlayerManager 声望管理和 ReputationPanel 界面~~ 已完成
 33. ~~Sprint 1 P1 项 S1-08「声望解锁系统」：player-service 实现声望解锁条件、解锁检查、自动解锁区域、任务完成触发；world-service 实现 NPC/任务声望字段与过滤；客户端实现声望解锁检查与内容过滤~~ 已完成
-34. Sprint 1 P1 项 S1-08 客户端 UI 优化：WorldManager 新增 3 个格式化方法（get_region_unlock_requirement_text / get_region_reputation_progress / is_region_locked_by_reputation）；WorldMap 在锁定区域卡片显示「🔒 需声望 X」并新增 UnlockRequirement Label + UnlockProgress ProgressBar；QuestPanel 在声望不足任务前显示「🔒」并降透明度，详情面板新增 ReputationRequirement Label 显示声望要求；NPCDialog 新增 ReputationNotice 提示，对话选项按声望可达性样式化；ReputationPanel 新增 NextUnlockLabel 显示下一区域解锁阈值，UnlockableLabel 显示当前声望可解锁的区域；新增/扩展 13 个 GUT 测试用例
+34. ~~Sprint 1 P1 项 S1-08 客户端 UI 优化：WorldManager 新增 3 个格式化方法（get_region_unlock_requirement_text / get_region_reputation_progress / is_region_locked_by_reputation）；WorldMap 在锁定区域卡片显示「🔒 需声望 X」并新增 UnlockRequirement Label + UnlockProgress ProgressBar；QuestPanel 在声望不足任务前显示「🔒」并降透明度，详情面板新增 ReputationRequirement Label 显示声望要求；NPCDialog 新增 ReputationNotice 提示，对话选项按声望可达性样式化；ReputationPanel 新增 NextUnlockLabel 显示下一区域解锁阈值，UnlockableLabel 显示当前声望可解锁的区域；新增/扩展 13 个 GUT 测试用例~~ 已完成
 
 ## 进入实施前的建议门槛
 
