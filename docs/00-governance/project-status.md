@@ -494,6 +494,7 @@
 31. ~~Sprint 1 P1 项 S1-06「背包与资源系统」：player-service 实现背包数据模型、仓储层、API 接口、测试补充；客户端实现 InventoryManager 和 InventoryPanel~~ 已完成
 32. ~~Sprint 1 P1 项 S1-07「声望系统基础」：player-service 实现声望等级定义、数据模型、API 接口、任务奖励集成、测试补充；客户端实现 PlayerManager 声望管理和 ReputationPanel 界面~~ 已完成
 33. ~~Sprint 1 P1 项 S1-08「声望解锁系统」：player-service 实现声望解锁条件、解锁检查、自动解锁区域、任务完成触发；world-service 实现 NPC/任务声望字段与过滤；客户端实现声望解锁检查与内容过滤~~ 已完成
+34. Sprint 1 P1 项 S1-08 客户端 UI 优化：WorldManager 新增 3 个格式化方法（get_region_unlock_requirement_text / get_region_reputation_progress / is_region_locked_by_reputation）；WorldMap 在锁定区域卡片显示「🔒 需声望 X」并新增 UnlockRequirement Label + UnlockProgress ProgressBar；QuestPanel 在声望不足任务前显示「🔒」并降透明度，详情面板新增 ReputationRequirement Label 显示声望要求；NPCDialog 新增 ReputationNotice 提示，对话选项按声望可达性样式化；ReputationPanel 新增 NextUnlockLabel 显示下一区域解锁阈值，UnlockableLabel 显示当前声望可解锁的区域；新增/扩展 13 个 GUT 测试用例
 
 ## 进入实施前的建议门槛
 
