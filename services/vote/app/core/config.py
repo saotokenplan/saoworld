@@ -22,5 +22,10 @@ class Settings(BaseSettings):
 
     api_v1_prefix: str = "/api/v1"
 
+    # 玩家服务与投票资格配置
+    player_service_url: str = "http://localhost:8001"
+    player_service_timeout_seconds: float = 3.0
+    contribution_threshold: int = 100
+
 
 settings = Settings()

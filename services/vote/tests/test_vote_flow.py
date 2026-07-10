@@ -101,8 +101,80 @@ async def test_submit_vote_success(
     assert data["candidate_id"] == str(candidate.candidate_id)
     assert data["request_id"]
     assert "submitted_at" in data
+    assert data["weight"] == 2.75
+    assert data["weight_multiplier"] == 1.1
+    assert data["contribution_points"] == 1000
     assert body["request_id"]
     assert "X-Request-Id" in response.headers
+
+
+@pytest.mark.asyncio
+async def test_submit_vote_insufficient_contribution(
+    client: AsyncClient, open_vote_cycle: VoteCycle, monkeypatch
+):
+    """测试贡献度不足时投票被拒绝。"""
+    player_id = str(uuid.uuid4())
+    candidate = open_vote_cycle.candidates[0]
+
+    async def mock_get_contribution(*args: object, **kwargs: object) -> int:
+        return 50
+
+    monkeypatch.setattr(
+        "app.core.player_client.PlayerContributionClient.get_contribution",
+        mock_get_contribution,
+    )
+
+    response = await client.post(
+        f"{settings.api_v1_prefix}/votes/submit",
+        headers={
+            **_player_headers(player_id),
+            "Idempotency-Key": "test-insufficient-contribution",
+        },
+        json={
+            "candidate_id": str(candidate.candidate_id),
+            "device_fingerprint_hash": "hash_test",
+            "weight": 1.0,
+        },
+    )
+    assert response.status_code == 403
+    data = response.json()
+    assert data["code"] == VoteErrorCodes.INSUFFICIENT_CONTRIBUTION
+    assert "贡献度不足" in data["message"]
+
+
+@pytest.mark.asyncio
+async def test_submit_vote_high_contribution_weight_multiplier(
+    client: AsyncClient, open_vote_cycle: VoteCycle, monkeypatch
+):
+    """测试高贡献度玩家投票权重按倍率放大并受上限约束。"""
+    player_id = str(uuid.uuid4())
+    candidate = open_vote_cycle.candidates[1]
+
+    async def mock_get_contribution(*args: object, **kwargs: object) -> int:
+        return 2500
+
+    monkeypatch.setattr(
+        "app.core.player_client.PlayerContributionClient.get_contribution",
+        mock_get_contribution,
+    )
+
+    response = await client.post(
+        f"{settings.api_v1_prefix}/votes/submit",
+        headers={
+            **_player_headers(player_id),
+            "Idempotency-Key": "test-high-contribution",
+        },
+        json={
+            "candidate_id": str(candidate.candidate_id),
+            "device_fingerprint_hash": "hash_high",
+            "weight": 2.5,
+        },
+    )
+    assert response.status_code == 201
+    data = response.json()["data"]
+    assert data["weight"] == 3.0
+    assert data["weight_multiplier"] == 1.2
+    assert data["contribution_points"] == 2500
 
 
 @pytest.mark.asyncio
@@ -276,7 +348,7 @@ async def test_vote_history_returns_submitted_votes(
     vote = data["votes"][0]
     assert vote["candidate_id"] == str(candidate.candidate_id)
     assert vote["candidate_title"] == candidate.title
-    assert vote["weight"] == 1.5
+    assert vote["weight"] == 1.65
     assert "vote_id" in vote
     assert "created_at" in vote
 
