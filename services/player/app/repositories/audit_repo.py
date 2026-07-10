@@ -23,6 +23,9 @@ ACTION_REPUTATION_REMOVE = "reputation_remove"
 ACTION_REPUTATION_ADJUST = "reputation_adjust"
 ACTION_REPUTATION_UNLOCK = "reputation_unlock"
 ACTION_CONTRIBUTION_ADD = "contribution_add"
+ACTION_ACHIEVEMENT_CREATE = "achievement_create"
+ACTION_ACHIEVEMENT_UNLOCK = "achievement_unlock"
+ACTION_ACHIEVEMENT_REWARD_CLAIM = "achievement_reward_claim"
 
 RESOURCE_PLAYER = "player"
 RESOURCE_REGION = "region"
@@ -30,6 +33,8 @@ RESOURCE_QUEST = "quest"
 RESOURCE_INVENTORY = "inventory"
 RESOURCE_REPUTATION = "reputation"
 RESOURCE_CONTRIBUTION = "contribution"
+RESOURCE_ACHIEVEMENT = "achievement"
+RESOURCE_PLAYER_ACHIEVEMENT = "player_achievement"
 
 
 class AuditRepository:

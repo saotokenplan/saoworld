@@ -59,6 +59,68 @@ class PlayerContribution(Base):
     )
 
 
+class AchievementDefinition(Base):
+    __tablename__ = "achievement_definitions"
+
+    achievement_key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    icon: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    rarity: Mapped[str] = mapped_column(String(32), nullable=False, server_default="common")
+    category: Mapped[str] = mapped_column(String(32), nullable=False, server_default="quest")
+    points: Mapped[int] = mapped_column(Integer, nullable=False, default=10, server_default="10")
+    reward_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    condition_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    is_active: Mapped[bool] = mapped_column(nullable=False, default=True, server_default="true")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "rarity IN ('common', 'uncommon', 'rare', 'epic', 'legendary')",
+            name="achievement_definitions_rarity_check",
+        ),
+        CheckConstraint(
+            "category IN ('quest', 'exploration', 'combat', 'reputation', 'vote', 'social', 'collection')",
+            name="achievement_definitions_category_check",
+        ),
+        CheckConstraint("points >= 0", name="achievement_definitions_points_check"),
+        Index("achievement_definitions_category_idx", "category"),
+        Index("achievement_definitions_rarity_idx", "rarity"),
+        Index("achievement_definitions_is_active_idx", "is_active"),
+    )
+
+
+class PlayerAchievement(Base):
+    __tablename__ = "player_achievements"
+
+    player_achievement_id: Mapped[uuid.UUID] = mapped_column(
+        UUIDType(), primary_key=True, default=uuid.uuid4
+    )
+    player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    achievement_key: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    unlocked_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    reward_claimed: Mapped[bool] = mapped_column(nullable=False, default=False, server_default="false")
+    claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    source: Mapped[str] = mapped_column(String(32), nullable=False, server_default="system")
+    source_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "source IN ('quest', 'exploration', 'combat', 'reputation', 'vote', 'ops', 'system')",
+            name="player_achievements_source_check",
+        ),
+        Index("player_achievements_player_achievement_idx", "player_id", "achievement_key", unique=True),
+        Index("player_achievements_player_unlocked_idx", "player_id", "unlocked_at"),
+    )
+
+
 class PlayerQuest(Base):
     __tablename__ = "player_quests"
 

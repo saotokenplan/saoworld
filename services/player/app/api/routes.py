@@ -5,7 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
 from app.core.deps import (
+    RequireAchievementsReadScope,
+    RequireAchievementsUnlockScope,
     RequireContributionReadScope,
+    RequireOpsAchievementsWriteScope,
     RequireOpsRole,
     RequirePlayerRole,
     RequireQuestsReadScope,
@@ -14,6 +17,8 @@ from app.core.deps import (
 )
 from app.core.errors import PlayerErrorCodes, raise_player_error
 from app.core.metrics import (
+    record_achievement_reward_claimed,
+    record_achievement_unlocked,
     record_contribution_add,
     record_inventory_add,
     record_inventory_remove,
@@ -30,6 +35,9 @@ from app.core.metrics import (
     record_reputation_unlock,
 )
 from app.repositories.audit_repo import (
+    ACTION_ACHIEVEMENT_CREATE,
+    ACTION_ACHIEVEMENT_REWARD_CLAIM,
+    ACTION_ACHIEVEMENT_UNLOCK,
     ACTION_CONTRIBUTION_ADD,
     ACTION_INVENTORY_ADD,
     ACTION_INVENTORY_REMOVE,
@@ -45,13 +53,19 @@ from app.repositories.audit_repo import (
     ACTION_REGION_UNLOCK,
     ACTION_REPUTATION_ADJUST,
     ACTION_REPUTATION_UNLOCK,
+    RESOURCE_ACHIEVEMENT,
     RESOURCE_CONTRIBUTION,
     RESOURCE_INVENTORY,
     RESOURCE_PLAYER,
+    RESOURCE_PLAYER_ACHIEVEMENT,
     RESOURCE_QUEST,
     RESOURCE_REGION,
     RESOURCE_REPUTATION,
     AuditRepository,
+)
+from app.repositories.achievement_repo import (
+    AchievementDefinitionRepository,
+    PlayerAchievementRepository,
 )
 from app.repositories.contribution_repo import ContributionRepository
 from app.repositories.inventory_repo import InventoryRepository
@@ -60,26 +74,35 @@ from app.repositories.player_region_repo import PlayerRegionRepository
 from app.repositories.player_repo import PlayerRepository
 from app.schemas.player import (
     AcceptQuestRequest,
+    AchievementDefinitionListResponse,
+    AchievementDefinitionResponse,
+    AchievementCategory,
+    AchievementRarity,
     AddContributionRequest,
     AddItemRequest,
     AdjustReputationRequest,
     CompleteQuestRequest,
     ContributionListResponse,
     ContributionResponse,
+    CreateAchievementRequest,
     CreatePlayerQuestRequest,
     CreatePlayerRequest,
     EnvelopeResponse,
+    ErrorDetail,
     FailQuestRequest,
     HealthResponse,
     InventoryItemResponse,
     ItemType,
     PaginatedMeta,
+    PlayerAchievementListResponse,
+    PlayerAchievementResponse,
     PlayerQuestResponse,
     PlayerRegionResponse,
     PlayerResponse,
     QuestStatus,
     RegionReputationResponse,
     RemoveItemRequest,
+    UnlockAchievementRequest,
     UpdatePlayerRequest,
     UpdateQuestProgressRequest,
     UpdateQuestStatusRequest,
@@ -1606,5 +1629,328 @@ async def add_player_contribution(
     return EnvelopeResponse(
         request_id=request_id,
         data=ContributionResponse.model_validate(contribution),
+        trace_id=x_trace_id,
+    )
+
+
+@router.get("/player/achievements", tags=["achievements"])
+async def list_achievement_definitions(
+    request: Request,
+    category: AchievementCategory | None = Query(default=None),
+    rarity: AchievementRarity | None = Query(default=None),
+    is_active: bool | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireAchievementsReadScope,
+) -> EnvelopeResponse[AchievementDefinitionListResponse]:
+    request_id = _make_request_id("req_achievement_list")
+    trace_id = _get_trace_id(request)
+
+    achievement_repo = AchievementDefinitionRepository(db)
+    achievements, total = await achievement_repo.list_definitions(
+        category=category.value if category else None,
+        rarity=rarity.value if rarity else None,
+        is_active=is_active,
+        limit=limit,
+        offset=offset,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=AchievementDefinitionListResponse(
+            achievements=[
+                AchievementDefinitionResponse.model_validate(a) for a in achievements
+            ],
+            total=total,
+        ),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get("/player/achievements/{achievement_key}", tags=["achievements"])
+async def get_achievement_definition(
+    achievement_key: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireAchievementsReadScope,
+) -> EnvelopeResponse[AchievementDefinitionResponse]:
+    request_id = _make_request_id("req_achievement_get")
+    trace_id = _get_trace_id(request)
+
+    achievement_repo = AchievementDefinitionRepository(db)
+    achievement = await achievement_repo.get_definition(achievement_key)
+    if achievement is None:
+        raise_player_error(
+            PlayerErrorCodes.ACHIEVEMENT_NOT_FOUND,
+            "成就不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="achievement_key",
+                    issue="not_found",
+                    rejected_value=achievement_key,
+                )
+            ],
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=AchievementDefinitionResponse.model_validate(achievement),
+        trace_id=trace_id,
+    )
+
+
+@router.get("/player/me/achievements", tags=["achievements"])
+async def list_my_achievements(
+    request: Request,
+    x_player_id: uuid.UUID = Header(..., alias="X-Player-Id"),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireAchievementsReadScope,
+) -> EnvelopeResponse[PlayerAchievementListResponse]:
+    request_id = _make_request_id("req_player_achievement_list")
+    trace_id = _get_trace_id(request)
+
+    player_achievement_repo = PlayerAchievementRepository(db)
+    achievements, total = await player_achievement_repo.get_player_achievements(
+        x_player_id, limit=limit, offset=offset
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=PlayerAchievementListResponse(
+            achievements=[
+                PlayerAchievementResponse.model_validate(a) for a in achievements
+            ],
+            total=total,
+        ),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/me/achievements/{achievement_key}/claim",
+    tags=["achievements"],
+)
+async def claim_achievement_reward(
+    achievement_key: str,
+    request: Request,
+    x_player_id: uuid.UUID = Header(..., alias="X-Player-Id"),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireAchievementsReadScope,
+) -> EnvelopeResponse[PlayerAchievementResponse]:
+    request_id = _make_request_id("req_achievement_claim")
+
+    player_achievement_repo = PlayerAchievementRepository(db)
+
+    try:
+        achievement = await player_achievement_repo.claim_reward(
+            x_player_id, achievement_key
+        )
+    except ValueError as exc:
+        message = str(exc)
+        if "玩家未解锁该成就" in message:
+            raise_player_error(
+                PlayerErrorCodes.ACHIEVEMENT_NOT_FOUND,
+                "玩家未解锁该成就",
+                request_id,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        if "成就奖励已领取" in message:
+            raise_player_error(
+                PlayerErrorCodes.ACHIEVEMENT_REWARD_ALREADY_CLAIMED,
+                "成就奖励已领取",
+                request_id,
+                status_code=status.HTTP_409_CONFLICT,
+            )
+        raise
+
+    definition_repo = AchievementDefinitionRepository(db)
+    definition = await definition_repo.get_definition(achievement_key)
+    if definition is not None:
+        record_achievement_reward_claimed(
+            player_id=str(x_player_id),
+            achievement_key=achievement_key,
+        )
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ACHIEVEMENT_REWARD_CLAIM,
+        resource_type=RESOURCE_PLAYER_ACHIEVEMENT,
+        resource_id=achievement.player_achievement_id,
+        request_payload_jsonb={
+            "player_id": str(x_player_id),
+            "achievement_key": achievement_key,
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=PlayerAchievementResponse.model_validate(achievement),
+        trace_id=x_trace_id,
+    )
+
+
+@ops_router.post(
+    "/achievements",
+    tags=["achievements"],
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_achievement_definition(
+    body: CreateAchievementRequest,
+    request: Request,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsAchievementsWriteScope,
+) -> EnvelopeResponse[AchievementDefinitionResponse]:
+    request_id = _make_request_id("req_ops_achievement_create")
+
+    achievement_repo = AchievementDefinitionRepository(db)
+
+    try:
+        achievement = await achievement_repo.create_definition(
+            achievement_key=body.achievement_key,
+            name=body.name,
+            description=body.description,
+            rarity=body.rarity.value,
+            category=body.category.value,
+            points=body.points,
+            icon=body.icon,
+            reward_jsonb=body.reward_jsonb,
+            condition_jsonb=body.condition_jsonb,
+        )
+    except ValueError as exc:
+        message = str(exc)
+        if "成就键已存在" in message:
+            raise_player_error(
+                PlayerErrorCodes.ACHIEVEMENT_KEY_EXISTS,
+                "成就键已存在",
+                request_id,
+                status_code=status.HTTP_409_CONFLICT,
+                details=[
+                    ErrorDetail(
+                        location="body",
+                        field="achievement_key",
+                        issue="already_exists",
+                        rejected_value=body.achievement_key,
+                    )
+                ],
+            )
+        raise
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ACHIEVEMENT_CREATE,
+        resource_type=RESOURCE_ACHIEVEMENT,
+        resource_id=None,
+        request_payload_jsonb={
+            "achievement_key": achievement.achievement_key,
+            **body.model_dump(mode="json"),
+        },
+        result_status=201,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=AchievementDefinitionResponse.model_validate(achievement),
+        trace_id=x_trace_id,
+    )
+
+
+@ops_router.post(
+    "/players/{player_id}/achievements/{achievement_key}/unlock",
+    tags=["achievements"],
+    status_code=status.HTTP_201_CREATED,
+)
+async def unlock_player_achievement(
+    player_id: uuid.UUID,
+    achievement_key: str,
+    body: UnlockAchievementRequest,
+    request: Request,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireAchievementsUnlockScope,
+) -> EnvelopeResponse[PlayerAchievementResponse]:
+    request_id = _make_request_id("req_ops_achievement_unlock")
+
+    player_achievement_repo = PlayerAchievementRepository(db)
+
+    try:
+        achievement = await player_achievement_repo.unlock_achievement(
+            player_id,
+            achievement_key,
+            source=body.source.value,
+            source_id=body.source_id,
+        )
+    except ValueError as exc:
+        message = str(exc)
+        if "玩家不存在" in message:
+            raise_player_error(
+                PlayerErrorCodes.PLAYER_NOT_FOUND,
+                "玩家不存在",
+                request_id,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        if "成就不存在" in message:
+            raise_player_error(
+                PlayerErrorCodes.ACHIEVEMENT_NOT_FOUND,
+                "成就不存在",
+                request_id,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        if "成就未激活" in message:
+            raise_player_error(
+                PlayerErrorCodes.ACHIEVEMENT_NOT_ACTIVE,
+                "成就未激活，无法解锁",
+                request_id,
+                status_code=status.HTTP_409_CONFLICT,
+            )
+        raise
+
+    definition_repo = AchievementDefinitionRepository(db)
+    definition = await definition_repo.get_definition(achievement_key)
+    if definition is not None:
+        record_achievement_unlocked(
+            player_id=str(player_id),
+            category=definition.category,
+        )
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ACHIEVEMENT_UNLOCK,
+        resource_type=RESOURCE_PLAYER_ACHIEVEMENT,
+        resource_id=achievement.player_achievement_id,
+        request_payload_jsonb={
+            "player_id": str(player_id),
+            "achievement_key": achievement_key,
+            **body.model_dump(mode="json"),
+        },
+        result_status=201,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=PlayerAchievementResponse.model_validate(achievement),
         trace_id=x_trace_id,
     )

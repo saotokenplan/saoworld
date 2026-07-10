@@ -124,3 +124,38 @@ def record_contribution_add(player_id: str, source: str, amount: int) -> None:
         amount: 发放数量
     """
     CONTRIBUTION_ADDITIONS_TOTAL.labels(player_id=player_id, source=source).inc(amount)
+
+
+ACHIEVEMENTS_UNLOCKED_TOTAL = Counter(
+    "achievements_unlocked_total",
+    "成就解锁次数",
+    labelnames=["player_id", "category"],
+)
+
+ACHIEVEMENTS_REWARD_CLAIMED_TOTAL = Counter(
+    "achievements_reward_claimed_total",
+    "成就奖励领取次数",
+    labelnames=["player_id", "achievement_key"],
+)
+
+
+def record_achievement_unlocked(player_id: str, category: str) -> None:
+    """记录一次成就解锁。
+
+    Args:
+        player_id: 玩家ID
+        category: 成就类别
+    """
+    ACHIEVEMENTS_UNLOCKED_TOTAL.labels(player_id=player_id, category=category).inc()
+
+
+def record_achievement_reward_claimed(player_id: str, achievement_key: str) -> None:
+    """记录一次成就奖励领取。
+
+    Args:
+        player_id: 玩家ID
+        achievement_key: 成就键
+    """
+    ACHIEVEMENTS_REWARD_CLAIMED_TOTAL.labels(
+        player_id=player_id, achievement_key=achievement_key
+    ).inc()

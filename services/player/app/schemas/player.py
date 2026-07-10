@@ -23,6 +23,38 @@ class ContributionSource(str, Enum):
     SYSTEM = "system"
 
 
+class AchievementRarity(str, Enum):
+    COMMON = "common"
+    UNCOMMON = "uncommon"
+    RARE = "rare"
+    EPIC = "epic"
+    LEGENDARY = "legendary"
+
+
+class AchievementCategory(str, Enum):
+    QUEST = "quest"
+    EXPLORATION = "exploration"
+    COMBAT = "combat"
+    REPUTATION = "reputation"
+    VOTE = "vote"
+    SOCIAL = "social"
+    COLLECTION = "collection"
+
+
+class AchievementSource(str, Enum):
+    QUEST = "quest"
+    EXPLORATION = "exploration"
+    COMBAT = "combat"
+    REPUTATION = "reputation"
+    VOTE = "vote"
+    OPS = "ops"
+    SYSTEM = "system"
+
+
+VALID_ACHIEVEMENT_RARITIES = {r.value for r in AchievementRarity}
+VALID_ACHIEVEMENT_CATEGORIES = {c.value for c in AchievementCategory}
+
+
 class ReputationLevel(str, Enum):
     HOSTILE = "hostile"
     NEUTRAL = "neutral"
@@ -297,6 +329,63 @@ class PaginatedMeta(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class AchievementDefinitionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    achievement_key: str
+    name: str
+    description: str
+    icon: str | None = None
+    rarity: AchievementRarity
+    category: AchievementCategory
+    points: int
+    reward_jsonb: dict | None = None
+    condition_jsonb: dict | None = None
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class AchievementDefinitionListResponse(BaseModel):
+    achievements: list[AchievementDefinitionResponse]
+    total: int
+
+
+class CreateAchievementRequest(BaseModel):
+    achievement_key: str = Field(min_length=1, max_length=128)
+    name: str = Field(min_length=1, max_length=128)
+    description: str = Field(min_length=1)
+    rarity: AchievementRarity
+    category: AchievementCategory
+    points: int = Field(ge=0, default=10)
+    icon: str | None = Field(default=None, max_length=256)
+    reward_jsonb: dict | None = None
+    condition_jsonb: dict | None = None
+
+
+class PlayerAchievementResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    player_achievement_id: uuid.UUID
+    player_id: uuid.UUID
+    achievement_key: str
+    unlocked_at: datetime
+    reward_claimed: bool
+    claimed_at: datetime | None = None
+    source: AchievementSource
+    source_id: str | None = None
+
+
+class PlayerAchievementListResponse(BaseModel):
+    achievements: list[PlayerAchievementResponse]
+    total: int
+
+
+class UnlockAchievementRequest(BaseModel):
+    source: AchievementSource = AchievementSource.SYSTEM
+    source_id: str | None = None
 
 
 class EnvelopeResponse(BaseModel, Generic[T]):
