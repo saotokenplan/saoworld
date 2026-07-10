@@ -20,6 +20,12 @@ class Player(Base):
     contribution_points: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default="0"
     )
+    level: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
+    experience_points: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -30,6 +36,12 @@ class Player(Base):
     __table_args__ = (
         CheckConstraint(
             "contribution_points >= 0", name="players_contribution_points_check"
+        ),
+        CheckConstraint(
+            "level >= 1", name="players_level_check"
+        ),
+        CheckConstraint(
+            "experience_points >= 0", name="players_experience_points_check"
         ),
     )
 

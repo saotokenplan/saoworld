@@ -26,6 +26,8 @@ ACTION_CONTRIBUTION_ADD = "contribution_add"
 ACTION_ACHIEVEMENT_CREATE = "achievement_create"
 ACTION_ACHIEVEMENT_UNLOCK = "achievement_unlock"
 ACTION_ACHIEVEMENT_REWARD_CLAIM = "achievement_reward_claim"
+ACTION_EXPERIENCE_ADD = "experience_add"
+ACTION_LEVEL_UP = "level_up"
 
 RESOURCE_PLAYER = "player"
 RESOURCE_REGION = "region"
@@ -35,6 +37,7 @@ RESOURCE_REPUTATION = "reputation"
 RESOURCE_CONTRIBUTION = "contribution"
 RESOURCE_ACHIEVEMENT = "achievement"
 RESOURCE_PLAYER_ACHIEVEMENT = "player_achievement"
+RESOURCE_EXPERIENCE = "experience"
 
 
 class AuditRepository:

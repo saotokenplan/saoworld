@@ -171,6 +171,8 @@ class PlayerResponse(BaseModel):
     player_id: uuid.UUID
     display_name: str
     chapter_id: str | None = None
+    level: int = 1
+    experience_points: int = 0
     contribution_points: int = 0
     reputation_snapshot: dict | None = None
     progress_jsonb: dict | None = None
@@ -394,12 +396,93 @@ class PlayerProfileResponse(BaseModel):
     player_id: uuid.UUID
     display_name: str
     chapter_id: str | None = None
+    level: int = 1
+    experience_points: int = 0
+    next_level_experience: int = 0
+    level_progress: float = 0.0
     contribution_points: int = 0
     reputation_summary: list[RegionReputationResponse] = []
     achievements_unlocked: int = 0
     achievements_total: int = 0
     created_at: datetime
     updated_at: datetime
+
+
+MAX_PLAYER_LEVEL = 60
+BASE_EXPERIENCE = 100
+EXPERIENCE_GROWTH_RATE = 1.15
+
+
+def get_experience_for_level(level: int) -> int:
+    if level <= 1:
+        return 0
+    level = min(level, MAX_PLAYER_LEVEL + 1)
+    total_exp = 0
+    for i in range(1, level):
+        total_exp += int(BASE_EXPERIENCE * (EXPERIENCE_GROWTH_RATE ** (i - 1)))
+    return total_exp
+
+
+def get_level_from_experience(exp: int) -> int:
+    if exp < 0:
+        return 1
+    level = 1
+    cumulative_exp = 0
+    while level <= MAX_PLAYER_LEVEL:
+        next_level_exp = int(BASE_EXPERIENCE * (EXPERIENCE_GROWTH_RATE ** (level - 1)))
+        if cumulative_exp + next_level_exp > exp:
+            break
+        cumulative_exp += next_level_exp
+        level += 1
+    return min(level, MAX_PLAYER_LEVEL)
+
+
+def get_level_progress(exp: int) -> tuple[int, int, float]:
+    level = get_level_from_experience(exp)
+    if level >= MAX_PLAYER_LEVEL:
+        return level, get_experience_for_level(level), 1.0
+    current_level_exp = get_experience_for_level(level)
+    next_level_exp = get_experience_for_level(level + 1)
+    progress_range = next_level_exp - current_level_exp
+    if progress_range <= 0:
+        return level, next_level_exp, 1.0
+    current_progress = exp - current_level_exp
+    progress = min(1.0, max(0.0, current_progress / progress_range))
+    return level, next_level_exp, progress
+
+
+def calculate_level_up_rewards(new_level: int) -> dict[str, int]:
+    rewards: dict[str, int] = {}
+    rewards["contribution_points"] = new_level * 10
+    return rewards
+
+
+class ExperienceSource(str, Enum):
+    QUEST = "quest"
+    COMBAT = "combat"
+    EXPLORATION = "exploration"
+    ACHIEVEMENT = "achievement"
+    OPS = "ops"
+    SYSTEM = "system"
+
+
+VALID_EXPERIENCE_SOURCES = {s.value for s in ExperienceSource}
+
+
+class PlayerLevelResponse(BaseModel):
+    player_id: uuid.UUID
+    level: int
+    experience_points: int
+    next_level_experience: int
+    level_progress: float
+    updated_at: datetime
+
+
+class AddExperienceRequest(BaseModel):
+    amount: int = Field(ge=1, le=100000)
+    source: ExperienceSource = ExperienceSource.SYSTEM
+    source_id: str | None = Field(default=None, max_length=128)
+    reason: str | None = Field(default=None, max_length=256)
 
 
 class EnvelopeResponse(BaseModel, Generic[T]):

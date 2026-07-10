@@ -64,6 +64,53 @@ class PlayerRepository:
         rows = result.scalars().all()
         return rows, total
 
+    async def add_experience(
+        self,
+        player_id: uuid.UUID,
+        amount: int,
+    ) -> tuple[Player, list[int]]:
+        from datetime import datetime, timezone
+        from app.schemas.player import (
+            get_level_from_experience,
+            MAX_PLAYER_LEVEL,
+            calculate_level_up_rewards,
+        )
+        from app.repositories.contribution_repo import ContributionRepository
+
+        stmt: Select[tuple[Player]] = select(Player).where(Player.player_id == player_id)
+        result = await self.db.execute(stmt)
+        player = result.scalar_one_or_none()
+        if player is None:
+            raise ValueError("Player not found")
+
+        old_level = player.level
+        old_exp = player.experience_points or 0
+        new_exp = old_exp + amount
+
+        player.experience_points = new_exp
+        new_level = get_level_from_experience(new_exp)
+        new_level = min(new_level, MAX_PLAYER_LEVEL)
+
+        levels_gained: list[int] = []
+        if new_level > old_level:
+            player.level = new_level
+            contribution_repo = ContributionRepository(self.db)
+            for level in range(old_level + 1, new_level + 1):
+                levels_gained.append(level)
+                rewards = calculate_level_up_rewards(level)
+                if rewards.get("contribution_points", 0) > 0:
+                    await contribution_repo.add_contribution(
+                        player_id=player_id,
+                        amount=rewards["contribution_points"],
+                        source="system",
+                        source_id=f"level_up_{level}",
+                        description=f"升级到 {level} 级奖励",
+                    )
+
+        player.updated_at = datetime.now(timezone.utc)
+        await self.db.flush()
+        return player, levels_gained
+
     async def grant_rewards(
         self,
         player_id: uuid.UUID,

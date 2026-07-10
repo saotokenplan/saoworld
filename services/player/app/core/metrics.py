@@ -159,3 +159,37 @@ def record_achievement_reward_claimed(player_id: str, achievement_key: str) -> N
     ACHIEVEMENTS_REWARD_CLAIMED_TOTAL.labels(
         player_id=player_id, achievement_key=achievement_key
     ).inc()
+
+
+EXPERIENCE_GAINED_TOTAL = Counter(
+    "experience_gained_total",
+    "经验值获得总量",
+    labelnames=["player_id", "source"],
+)
+
+LEVEL_UPS_TOTAL = Counter(
+    "level_ups_total",
+    "升级次数",
+    labelnames=["player_id", "level"],
+)
+
+
+def record_experience_gained(player_id: str, source: str, amount: int) -> None:
+    """记录一次经验值获得。
+
+    Args:
+        player_id: 玩家ID
+        source: 经验来源
+        amount: 获得数量
+    """
+    EXPERIENCE_GAINED_TOTAL.labels(player_id=player_id, source=source).inc(amount)
+
+
+def record_level_up(player_id: str, level: int) -> None:
+    """记录一次升级。
+
+    Args:
+        player_id: 玩家ID
+        level: 达到的等级
+    """
+    LEVEL_UPS_TOTAL.labels(player_id=player_id, level=str(level)).inc()
