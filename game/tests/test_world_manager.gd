@@ -250,3 +250,41 @@ func test_clear_npc_cache() -> void:
 	world.clear_npc_cache()
 	assert_eq(world.npc_cache.size(), 0, "NPC 缓存应被清除")
 	assert_eq(world.npc_list.size(), 0, "NPC 列表应被清除")
+
+# ====== S1-08 客户端 UI 优化新增方法测试（auto-20260711-0200） ======
+
+func test_get_region_unlock_requirement_text_locked() -> void:
+	var world := WorldManager
+	world.regions = [{"region_id": "region_test_01", "status": "locked"}]
+	world.region_cache["region_test_01"] = {"region_id": "region_test_01", "status": "locked"}
+	var text: String = world.get_region_unlock_requirement_text("region_test_01")
+	assert_true(text.contains("需要声望"), "锁定区域应提示需要声望")
+	assert_true(text.contains(str(PlayerManager.REGION_UNLOCK_THRESHOLD)), "应包含阈值数值")
+
+func test_get_region_unlock_requirement_text_unlocked() -> void:
+	var world := WorldManager
+	world.regions = [{"region_id": "region_test_01", "status": "active"}]
+	world.region_cache["region_test_01"] = {"region_id": "region_test_01", "status": "active"}
+	var text: String = world.get_region_unlock_requirement_text("region_test_01")
+	assert_true(text.contains("已解锁"), "活跃区域应显示已解锁")
+
+func test_get_region_reputation_progress() -> void:
+	var world := WorldManager
+	var progress: Dictionary = world.get_region_reputation_progress("region_test_01")
+	assert_true(progress.has("current"), "进度字典应包含 current")
+	assert_true(progress.has("required"), "进度字典应包含 required")
+	assert_true(progress.has("progress"), "进度字典应包含 progress")
+	assert_true(progress.has("unlocked"), "进度字典应包含 unlocked")
+	assert_eq(progress["required"], PlayerManager.REGION_UNLOCK_THRESHOLD, "required 应为解锁阈值")
+	assert_eq(progress["current"], 0, "默认 current 应为 0")
+	assert_eq(progress["unlocked"], false, "默认 unlocked 应为 false")
+
+func test_is_region_locked_by_reputation() -> void:
+	var world := WorldManager
+	world.regions = [{"region_id": "region_test_01", "status": "locked"}]
+	world.region_cache["region_test_01"] = {"region_id": "region_test_01", "status": "locked"}
+	assert_true(world.is_region_locked_by_reputation("region_test_01"), "锁定且未达阈值应返回 true")
+	world.regions = [{"region_id": "region_test_01", "status": "active"}]
+	world.region_cache["region_test_01"] = {"region_id": "region_test_01", "status": "active"}
+	assert_false(world.is_region_locked_by_reputation("region_test_01"), "活跃区域应返回 false")
+	assert_false(world.is_region_locked_by_reputation("nonexistent"), "不存在区域应返回 false")
