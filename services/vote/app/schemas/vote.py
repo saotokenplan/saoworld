@@ -76,6 +76,16 @@ class VoteSubmitResponse(BaseModel):
     trace_id: str | None = None
 
 
+class ContentPackageLandingInfo(BaseModel):
+    """内容包落地信息。"""
+
+    content_package_id: uuid.UUID
+    version: str
+    status: str
+    affected_regions: list[str] = Field(default_factory=list)
+    landed_at: datetime | None = None
+
+
 class VoteHistoryItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -85,6 +95,7 @@ class VoteHistoryItem(BaseModel):
     candidate_title: str
     weight: float
     created_at: datetime
+    content_package: ContentPackageLandingInfo | None = None
 
 
 class VoteHistoryResponse(BaseModel):
