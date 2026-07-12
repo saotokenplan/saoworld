@@ -11,10 +11,17 @@ from app.domain.models import AuditLog
 ACTION_VOTE_SUBMIT = "vote_submit"
 ACTION_VOTE_CYCLE_CREATE = "vote_cycle_create"
 ACTION_VOTE_CYCLE_TRANSITION = "vote_cycle_transition"
+ACTION_DISCUSSION_CREATE = "discussion_create"
+ACTION_DISCUSSION_LIKE = "discussion_like"
+ACTION_REPLY_CREATE = "reply_create"
+ACTION_DISCUSSION_DELETE = "discussion_delete"
+ACTION_REPLY_DELETE = "reply_delete"
 
 # 资源类型常量
 RESOURCE_VOTE = "vote"
 RESOURCE_VOTE_CYCLE = "vote_cycle"
+RESOURCE_DISCUSSION = "discussion"
+RESOURCE_DISCUSSION_REPLY = "discussion_reply"
 
 
 class AuditRepository:

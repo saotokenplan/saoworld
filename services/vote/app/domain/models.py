@@ -130,6 +130,115 @@ class Vote(Base):
     )
 
 
+class VoteDiscussion(Base):
+    __tablename__ = "vote_discussions"
+
+    discussion_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    vote_cycle_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("vote_cycles.vote_cycle_id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    player_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    like_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    reply_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="active", server_default="active", index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    replies: Mapped[list["VoteDiscussionReply"]] = relationship(
+        back_populates="discussion",
+        foreign_keys="VoteDiscussionReply.discussion_id",
+    )
+
+    __table_args__ = (
+        CheckConstraint("length(content) >= 1 AND length(content) <= 500", name="discussions_content_length"),
+        CheckConstraint(
+            "status IN ('active', 'hidden', 'deleted')",
+            name="discussions_status_check",
+        ),
+        Index("vote_discussions_cycle_created_idx", "vote_cycle_id", "created_at"),
+        Index("vote_discussions_cycle_likes_idx", "vote_cycle_id", "like_count"),
+    )
+
+
+class VoteDiscussionReply(Base):
+    __tablename__ = "vote_discussion_replies"
+
+    reply_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    discussion_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("vote_discussions.discussion_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    player_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    like_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="active", server_default="active"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    discussion: Mapped["VoteDiscussion"] = relationship(
+        back_populates="replies",
+        foreign_keys=[discussion_id],
+    )
+
+    __table_args__ = (
+        CheckConstraint("length(content) >= 1 AND length(content) <= 500", name="replies_content_length"),
+        CheckConstraint(
+            "status IN ('active', 'hidden', 'deleted')",
+            name="replies_status_check",
+        ),
+        Index("vote_discussion_replies_discussion_created_idx", "discussion_id", "created_at"),
+    )
+
+
+class VoteDiscussionLike(Base):
+    __tablename__ = "vote_discussion_likes"
+
+    like_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    player_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    discussion_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("vote_discussions.discussion_id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    reply_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("vote_discussion_replies.reply_id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "player_id", "discussion_id",
+            name="vote_discussion_likes_player_discussion_uniq",
+        ),
+        UniqueConstraint(
+            "player_id", "reply_id",
+            name="vote_discussion_likes_player_reply_uniq",
+        ),
+    )
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 

@@ -13,6 +13,8 @@ from app.core.contribution import (
 )
 from app.core.db import get_db
 from app.core.deps import (
+    RequireDiscussionsReadScope,
+    RequireDiscussionsWriteScope,
     RequireOpsScope,
     RequireVotesHistoryReadScope,
     RequireVotesReadScope,
@@ -22,32 +24,51 @@ from app.core.deps import (
 from app.core.errors import VoteErrorCodes, raise_vote_error
 from app.core.event_publisher import event_publisher
 from app.core.metrics import (
+    record_discussion_created,
+    record_discussion_liked,
+    record_reply_created,
+    record_reply_liked,
     record_vote_cycle_transition,
     record_vote_eligibility_rejected,
     record_vote_submission,
 )
 from app.core.player_client import PlayerContributionClient
 from app.repositories.audit_repo import (
+    ACTION_DISCUSSION_CREATE,
+    ACTION_DISCUSSION_DELETE,
+    ACTION_DISCUSSION_LIKE,
+    ACTION_REPLY_CREATE,
+    ACTION_REPLY_DELETE,
     ACTION_VOTE_CYCLE_CREATE,
     ACTION_VOTE_CYCLE_TRANSITION,
     ACTION_VOTE_SUBMIT,
+    RESOURCE_DISCUSSION,
+    RESOURCE_DISCUSSION_REPLY,
     RESOURCE_VOTE,
     RESOURCE_VOTE_CYCLE,
     AuditRepository,
 )
+from app.repositories.discussion_repo import DiscussionRepository
 from app.repositories.vote_repo import VoteRepository
 from app.schemas.vote import (
     CandidateResponse,
+    CreateDiscussionRequest,
+    CreateReplyRequest,
     CreateVoteCycleRequest,
     CreateVoteCycleResponse,
     CurrentVoteResponse,
+    DiscussionListData,
     EnvelopeResponse,
     ErrorDetail,
     HealthResponse,
+    LikeResponse,
     PaginatedMeta,
+    ReplyListData,
     TransitionVoteCycleRequest,
     TransitionVoteCycleResponse,
     VoteCycleStatus,
+    VoteDiscussionReplyResponse,
+    VoteDiscussionResponse,
     VoteHistoryItem,
     VoteHistoryResponse,
     VoteSubmitRequest,
@@ -461,6 +482,653 @@ async def get_vote_history(
         ),
         meta=PaginatedMeta(total=total, limit=limit, offset=offset),
         trace_id=trace_id,
+    )
+
+
+# --- 投票讨论区接口 ---
+
+
+@router.get(
+    "/votes/discussions/{vote_cycle_id}",
+    responses={
+        404: {"description": "Vote cycle not found"},
+    },
+    tags=["discussions"],
+)
+async def list_discussions(
+    vote_cycle_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireDiscussionsReadScope,
+    sort_by: str = Query(default="time", pattern="^(time|hot)$"),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[DiscussionListData]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_discussions_list")
+
+    vote_repo = VoteRepository(db)
+    cycle = await vote_repo.get_cycle_by_id(vote_cycle_id)
+    if cycle is None:
+        raise_vote_error(
+            VoteErrorCodes.VOTE_CYCLE_NOT_FOUND,
+            "投票周期不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    discussion_repo = DiscussionRepository(db)
+    discussions, total = await discussion_repo.list_discussions(
+        vote_cycle_id=vote_cycle_id,
+        sort_by=sort_by,
+        limit=limit,
+        offset=offset,
+    )
+
+    player_id_str = current_user.user_id
+    try:
+        player_uuid = uuid.UUID(player_id_str)
+    except ValueError:
+        player_uuid = None
+
+    discussion_responses = []
+    for d in discussions:
+        has_liked = False
+        if player_uuid:
+            has_liked = await discussion_repo.has_liked_discussion(player_uuid, d.discussion_id)
+        resp = VoteDiscussionResponse.model_validate(d)
+        resp.has_liked = has_liked
+        discussion_responses.append(resp)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=DiscussionListData(discussions=discussion_responses),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/votes/discussions/{vote_cycle_id}",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"description": "Invalid request"},
+        404: {"description": "Vote cycle not found"},
+        422: {"description": "Validation error"},
+    },
+    tags=["discussions"],
+)
+async def create_discussion(
+    vote_cycle_id: uuid.UUID,
+    body: CreateDiscussionRequest,
+    request: Request,
+    current_user: UserPayload = RequireDiscussionsWriteScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[VoteDiscussionResponse]:
+    request_id = _make_request_id("req_discussion_create")
+    player_id_str = current_user.user_id
+
+    try:
+        player_uuid = uuid.UUID(player_id_str)
+    except ValueError:
+        raise_vote_error(
+            VoteErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id=request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            details=[
+                ErrorDetail(
+                    location="token",
+                    field="sub",
+                    issue="invalid_uuid",
+                    rejected_value=player_id_str,
+                )
+            ],
+        )
+
+    vote_repo = VoteRepository(db)
+    cycle = await vote_repo.get_cycle_by_id(vote_cycle_id)
+    if cycle is None:
+        raise_vote_error(
+            VoteErrorCodes.VOTE_CYCLE_NOT_FOUND,
+            "投票周期不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    discussion_repo = DiscussionRepository(db)
+    discussion = await discussion_repo.create_discussion(
+        vote_cycle_id=vote_cycle_id,
+        player_id=player_uuid,
+        content=body.content,
+    )
+
+    record_discussion_created()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=str(player_uuid),
+        operator_role="player",
+        action=ACTION_DISCUSSION_CREATE,
+        resource_type=RESOURCE_DISCUSSION,
+        resource_id=discussion.discussion_id,
+        request_payload_jsonb={"content": body.content, "vote_cycle_id": str(vote_cycle_id)},
+        result_status=201,
+    )
+
+    resp = VoteDiscussionResponse.model_validate(discussion)
+    resp.has_liked = False
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=resp,
+        trace_id=x_trace_id,
+    )
+
+
+@router.post(
+    "/votes/discussions/{discussion_id}/like",
+    responses={
+        404: {"description": "Discussion not found"},
+    },
+    tags=["discussions"],
+)
+async def like_discussion(
+    discussion_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireDiscussionsWriteScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[LikeResponse]:
+    request_id = _make_request_id("req_discussion_like")
+    player_id_str = current_user.user_id
+
+    try:
+        player_uuid = uuid.UUID(player_id_str)
+    except ValueError:
+        raise_vote_error(
+            VoteErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id=request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    discussion_repo = DiscussionRepository(db)
+    discussion = await discussion_repo.get_discussion(discussion_id)
+    if discussion is None:
+        raise_vote_error(
+            VoteErrorCodes.DISCUSSION_NOT_FOUND,
+            "讨论不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    liked = await discussion_repo.like_discussion(discussion_id, player_uuid)
+    if liked:
+        record_discussion_liked()
+
+    refreshed = await discussion_repo.get_discussion(discussion_id)
+    like_count = refreshed.like_count if refreshed else discussion.like_count
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=str(player_uuid),
+        operator_role="player",
+        action=ACTION_DISCUSSION_LIKE,
+        resource_type=RESOURCE_DISCUSSION,
+        resource_id=discussion_id,
+        request_payload_jsonb={"liked": liked},
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=LikeResponse(
+            liked=liked,
+            like_count=like_count,
+            request_id=request_id,
+            trace_id=x_trace_id,
+        ),
+        trace_id=x_trace_id,
+    )
+
+
+@router.post(
+    "/votes/discussions/{discussion_id}/unlike",
+    responses={
+        404: {"description": "Discussion not found"},
+    },
+    tags=["discussions"],
+)
+async def unlike_discussion(
+    discussion_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireDiscussionsWriteScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[LikeResponse]:
+    request_id = _make_request_id("req_discussion_unlike")
+    player_id_str = current_user.user_id
+
+    try:
+        player_uuid = uuid.UUID(player_id_str)
+    except ValueError:
+        raise_vote_error(
+            VoteErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id=request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    discussion_repo = DiscussionRepository(db)
+    discussion = await discussion_repo.get_discussion(discussion_id)
+    if discussion is None:
+        raise_vote_error(
+            VoteErrorCodes.DISCUSSION_NOT_FOUND,
+            "讨论不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    unliked = await discussion_repo.unlike_discussion(discussion_id, player_uuid)
+
+    refreshed = await discussion_repo.get_discussion(discussion_id)
+    like_count = refreshed.like_count if refreshed else discussion.like_count
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=LikeResponse(
+            liked=not unliked,
+            like_count=like_count,
+            request_id=request_id,
+            trace_id=x_trace_id,
+        ),
+        trace_id=x_trace_id,
+    )
+
+
+@router.delete(
+    "/votes/discussions/{discussion_id}",
+    responses={
+        404: {"description": "Discussion not found"},
+    },
+    tags=["discussions"],
+)
+async def delete_discussion(
+    discussion_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireDiscussionsWriteScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[VoteDiscussionResponse]:
+    request_id = _make_request_id("req_discussion_delete")
+    player_id_str = current_user.user_id
+
+    try:
+        player_uuid = uuid.UUID(player_id_str)
+    except ValueError:
+        raise_vote_error(
+            VoteErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id=request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    discussion_repo = DiscussionRepository(db)
+    discussion = await discussion_repo.get_discussion(discussion_id)
+    if discussion is None:
+        raise_vote_error(
+            VoteErrorCodes.DISCUSSION_NOT_FOUND,
+            "讨论不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    is_moderator = current_user.has_scope("ops:discussions:moderate")
+    if discussion.player_id != player_uuid and not is_moderator:
+        raise_vote_error(
+            VoteErrorCodes.INVALID_ARGUMENT,
+            "无权删除他人的讨论",
+            request_id=request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    deleted = await discussion_repo.delete_discussion(discussion_id)
+    assert deleted is not None
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=str(player_uuid),
+        operator_role=current_user.role.value,
+        action=ACTION_DISCUSSION_DELETE,
+        resource_type=RESOURCE_DISCUSSION,
+        resource_id=discussion_id,
+        result_status=200,
+    )
+
+    resp = VoteDiscussionResponse.model_validate(deleted)
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=resp,
+        trace_id=x_trace_id,
+    )
+
+
+@router.get(
+    "/votes/discussions/{discussion_id}/replies",
+    responses={
+        404: {"description": "Discussion not found"},
+    },
+    tags=["discussions"],
+)
+async def list_replies(
+    discussion_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireDiscussionsReadScope,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[ReplyListData]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_replies_list")
+
+    discussion_repo = DiscussionRepository(db)
+    discussion = await discussion_repo.get_discussion(discussion_id)
+    if discussion is None:
+        raise_vote_error(
+            VoteErrorCodes.DISCUSSION_NOT_FOUND,
+            "讨论不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    replies, total = await discussion_repo.list_replies(
+        discussion_id=discussion_id,
+        limit=limit,
+        offset=offset,
+    )
+
+    player_id_str = current_user.user_id
+    try:
+        player_uuid = uuid.UUID(player_id_str)
+    except ValueError:
+        player_uuid = None
+
+    reply_responses = []
+    for r in replies:
+        has_liked = False
+        if player_uuid:
+            has_liked = await discussion_repo.has_liked_reply(player_uuid, r.reply_id)
+        resp = VoteDiscussionReplyResponse.model_validate(r)
+        resp.has_liked = has_liked
+        reply_responses.append(resp)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=ReplyListData(replies=reply_responses),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/votes/discussions/{discussion_id}/replies",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"description": "Invalid request"},
+        404: {"description": "Discussion not found"},
+        422: {"description": "Validation error"},
+    },
+    tags=["discussions"],
+)
+async def create_reply(
+    discussion_id: uuid.UUID,
+    body: CreateReplyRequest,
+    request: Request,
+    current_user: UserPayload = RequireDiscussionsWriteScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[VoteDiscussionReplyResponse]:
+    request_id = _make_request_id("req_reply_create")
+    player_id_str = current_user.user_id
+
+    try:
+        player_uuid = uuid.UUID(player_id_str)
+    except ValueError:
+        raise_vote_error(
+            VoteErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id=request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            details=[
+                ErrorDetail(
+                    location="token",
+                    field="sub",
+                    issue="invalid_uuid",
+                    rejected_value=player_id_str,
+                )
+            ],
+        )
+
+    discussion_repo = DiscussionRepository(db)
+    discussion = await discussion_repo.get_discussion(discussion_id)
+    if discussion is None:
+        raise_vote_error(
+            VoteErrorCodes.DISCUSSION_NOT_FOUND,
+            "讨论不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    reply = await discussion_repo.create_reply(
+        discussion_id=discussion_id,
+        player_id=player_uuid,
+        content=body.content,
+    )
+
+    record_reply_created()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=str(player_uuid),
+        operator_role="player",
+        action=ACTION_REPLY_CREATE,
+        resource_type=RESOURCE_DISCUSSION_REPLY,
+        resource_id=reply.reply_id,
+        request_payload_jsonb={"content": body.content, "discussion_id": str(discussion_id)},
+        result_status=201,
+    )
+
+    resp = VoteDiscussionReplyResponse.model_validate(reply)
+    resp.has_liked = False
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=resp,
+        trace_id=x_trace_id,
+    )
+
+
+@router.post(
+    "/votes/replies/{reply_id}/like",
+    responses={
+        404: {"description": "Reply not found"},
+    },
+    tags=["discussions"],
+)
+async def like_reply(
+    reply_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireDiscussionsWriteScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[LikeResponse]:
+    request_id = _make_request_id("req_reply_like")
+    player_id_str = current_user.user_id
+
+    try:
+        player_uuid = uuid.UUID(player_id_str)
+    except ValueError:
+        raise_vote_error(
+            VoteErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id=request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    discussion_repo = DiscussionRepository(db)
+    reply = await discussion_repo.get_reply(reply_id)
+    if reply is None:
+        raise_vote_error(
+            VoteErrorCodes.REPLY_NOT_FOUND,
+            "回复不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    liked = await discussion_repo.like_reply(reply_id, player_uuid)
+    if liked:
+        record_reply_liked()
+
+    refreshed = await discussion_repo.get_reply(reply_id)
+    like_count = refreshed.like_count if refreshed else reply.like_count
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=LikeResponse(
+            liked=liked,
+            like_count=like_count,
+            request_id=request_id,
+            trace_id=x_trace_id,
+        ),
+        trace_id=x_trace_id,
+    )
+
+
+@router.post(
+    "/votes/replies/{reply_id}/unlike",
+    responses={
+        404: {"description": "Reply not found"},
+    },
+    tags=["discussions"],
+)
+async def unlike_reply(
+    reply_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireDiscussionsWriteScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[LikeResponse]:
+    request_id = _make_request_id("req_reply_unlike")
+    player_id_str = current_user.user_id
+
+    try:
+        player_uuid = uuid.UUID(player_id_str)
+    except ValueError:
+        raise_vote_error(
+            VoteErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id=request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    discussion_repo = DiscussionRepository(db)
+    reply = await discussion_repo.get_reply(reply_id)
+    if reply is None:
+        raise_vote_error(
+            VoteErrorCodes.REPLY_NOT_FOUND,
+            "回复不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    unliked = await discussion_repo.unlike_reply(reply_id, player_uuid)
+
+    refreshed = await discussion_repo.get_reply(reply_id)
+    like_count = refreshed.like_count if refreshed else reply.like_count
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=LikeResponse(
+            liked=not unliked,
+            like_count=like_count,
+            request_id=request_id,
+            trace_id=x_trace_id,
+        ),
+        trace_id=x_trace_id,
+    )
+
+
+@router.delete(
+    "/votes/replies/{reply_id}",
+    responses={
+        404: {"description": "Reply not found"},
+    },
+    tags=["discussions"],
+)
+async def delete_reply(
+    reply_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireDiscussionsWriteScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[VoteDiscussionReplyResponse]:
+    request_id = _make_request_id("req_reply_delete")
+    player_id_str = current_user.user_id
+
+    try:
+        player_uuid = uuid.UUID(player_id_str)
+    except ValueError:
+        raise_vote_error(
+            VoteErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id=request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    discussion_repo = DiscussionRepository(db)
+    reply = await discussion_repo.get_reply(reply_id)
+    if reply is None:
+        raise_vote_error(
+            VoteErrorCodes.REPLY_NOT_FOUND,
+            "回复不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    is_moderator = current_user.has_scope("ops:discussions:moderate")
+    if reply.player_id != player_uuid and not is_moderator:
+        raise_vote_error(
+            VoteErrorCodes.INVALID_ARGUMENT,
+            "无权删除他人的回复",
+            request_id=request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    deleted = await discussion_repo.delete_reply(reply_id)
+    assert deleted is not None
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=str(player_uuid),
+        operator_role=current_user.role.value,
+        action=ACTION_REPLY_DELETE,
+        resource_type=RESOURCE_DISCUSSION_REPLY,
+        resource_id=reply_id,
+        result_status=200,
+    )
+
+    resp = VoteDiscussionReplyResponse.model_validate(deleted)
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=resp,
+        trace_id=x_trace_id,
     )
 
 
