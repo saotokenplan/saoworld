@@ -39,6 +39,30 @@ VOTE_ELIGIBILITY_REJECTED_TOTAL = Counter(
     labelnames=["player_id"],
 )
 
+# 讨论发布总数
+VOTE_DISCUSSION_CREATED_TOTAL = Counter(
+    "vote_discussion_created_total",
+    "讨论发布总数",
+)
+
+# 讨论点赞总数
+VOTE_DISCUSSION_LIKED_TOTAL = Counter(
+    "vote_discussion_liked_total",
+    "讨论点赞总数",
+)
+
+# 回复发布总数
+VOTE_REPLY_CREATED_TOTAL = Counter(
+    "vote_reply_created_total",
+    "回复发布总数",
+)
+
+# 回复点赞总数
+VOTE_REPLY_LIKED_TOTAL = Counter(
+    "vote_reply_liked_total",
+    "回复点赞总数",
+)
+
 
 def record_vote_submission() -> None:
     """记录一次成功的投票提交。"""
@@ -53,6 +77,26 @@ def record_vote_cycle_transition(from_status: str, to_status: str) -> None:
 def record_vote_eligibility_rejected(player_id: str) -> None:
     """记录一次因贡献度不足被拒绝的投票。"""
     VOTE_ELIGIBILITY_REJECTED_TOTAL.labels(player_id=player_id).inc()
+
+
+def record_discussion_created() -> None:
+    """记录一次讨论发布。"""
+    VOTE_DISCUSSION_CREATED_TOTAL.inc()
+
+
+def record_discussion_liked() -> None:
+    """记录一次讨论点赞。"""
+    VOTE_DISCUSSION_LIKED_TOTAL.inc()
+
+
+def record_reply_created() -> None:
+    """记录一次回复发布。"""
+    VOTE_REPLY_CREATED_TOTAL.inc()
+
+
+def record_reply_liked() -> None:
+    """记录一次回复点赞。"""
+    VOTE_REPLY_LIKED_TOTAL.inc()
 
 
 def set_vote_cycles_by_status(status_counts: dict[str, int]) -> None:

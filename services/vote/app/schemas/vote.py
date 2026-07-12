@@ -110,6 +110,67 @@ class HealthResponse(BaseModel):
     status: str = "ok"
 
 
+# --- 讨论区相关 Schema ---
+
+
+class DiscussionStatus(str, Enum):
+    ACTIVE = "active"
+    HIDDEN = "hidden"
+    DELETED = "deleted"
+
+
+class VoteDiscussionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    discussion_id: uuid.UUID
+    vote_cycle_id: uuid.UUID
+    player_id: uuid.UUID
+    content: str
+    like_count: int = 0
+    reply_count: int = 0
+    status: DiscussionStatus
+    has_liked: bool = False
+    created_at: datetime
+    updated_at: datetime
+
+
+class VoteDiscussionReplyResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    reply_id: uuid.UUID
+    discussion_id: uuid.UUID
+    player_id: uuid.UUID
+    content: str
+    like_count: int = 0
+    status: DiscussionStatus
+    has_liked: bool = False
+    created_at: datetime
+    updated_at: datetime
+
+
+class DiscussionListData(BaseModel):
+    discussions: list[VoteDiscussionResponse]
+
+
+class ReplyListData(BaseModel):
+    replies: list[VoteDiscussionReplyResponse]
+
+
+class CreateDiscussionRequest(BaseModel):
+    content: str = Field(min_length=1, max_length=500)
+
+
+class CreateReplyRequest(BaseModel):
+    content: str = Field(min_length=1, max_length=500)
+
+
+class LikeResponse(BaseModel):
+    liked: bool
+    like_count: int
+    request_id: str
+    trace_id: str | None = None
+
+
 # --- 运营写接口 Schema ---
 
 

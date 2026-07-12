@@ -23,10 +23,13 @@ class Scope(str, Enum):
     VOTES_READ = "votes:read"
     VOTES_SUBMIT = "votes:submit"
     VOTES_HISTORY_READ = "votes:history:read"
+    VOTES_DISCUSSIONS_READ = "votes:discussions:read"
+    VOTES_DISCUSSIONS_WRITE = "votes:discussions:write"
     CONTENT_READ = "content:read"
 
     # 运营权限
     OPS_VOTE_CYCLES_WRITE = "ops:vote-cycles:write"
+    OPS_DISCUSSIONS_MODERATE = "ops:discussions:moderate"
     CONTENT_RELEASE = "content:release"
     CONTENT_ROLLBACK = "content:rollback"
 
@@ -42,12 +45,16 @@ ROLE_SCOPES: dict[Role, list[Scope]] = {
         Scope.VOTES_READ,
         Scope.VOTES_SUBMIT,
         Scope.VOTES_HISTORY_READ,
+        Scope.VOTES_DISCUSSIONS_READ,
+        Scope.VOTES_DISCUSSIONS_WRITE,
         Scope.CONTENT_READ,
     ],
     Role.OPS: [
         Scope.VOTES_HISTORY_READ,
+        Scope.VOTES_DISCUSSIONS_READ,
         Scope.CONTENT_READ,
         Scope.OPS_VOTE_CYCLES_WRITE,
+        Scope.OPS_DISCUSSIONS_MODERATE,
         Scope.CONTENT_RELEASE,
         Scope.CONTENT_ROLLBACK,
     ],
@@ -61,8 +68,11 @@ ROLE_SCOPES: dict[Role, list[Scope]] = {
         Scope.QUESTS_READ,
         Scope.VOTES_READ,
         Scope.VOTES_HISTORY_READ,
+        Scope.VOTES_DISCUSSIONS_READ,
+        Scope.VOTES_DISCUSSIONS_WRITE,
         Scope.CONTENT_READ,
         Scope.OPS_VOTE_CYCLES_WRITE,
+        Scope.OPS_DISCUSSIONS_MODERATE,
         Scope.CONTENT_RELEASE,
         Scope.CONTENT_ROLLBACK,
         Scope.REVIEW_APPROVE,
