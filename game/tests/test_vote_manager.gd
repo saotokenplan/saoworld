@@ -65,3 +65,142 @@ func test_is_cycle_open_with_data() -> void:
 	vm.current_cycle = {"vote_cycle_id": "vc_closed", "status": "closed"}
 	assert_false(vm.is_cycle_open(), "状态为 closed 时 is_cycle_open 应返回 false")
 	vm.reset()
+
+func test_is_vote_landed_no_content_package() -> void:
+	var vm := VoteManager
+	vm.reset()
+	var item: Dictionary = {"vote_cycle_id": "vc_001", "title": "周期A"}
+	assert_false(vm.is_vote_landed(item), "无 content_package 字段时应返回 false")
+	vm.reset()
+
+func test_is_vote_landed_empty_content_package() -> void:
+	var vm := VoteManager
+	vm.reset()
+	var item: Dictionary = {"vote_cycle_id": "vc_001", "content_package": {}}
+	assert_false(vm.is_vote_landed(item), "content_package 为空字典时应返回 false")
+	vm.reset()
+
+func test_is_vote_landed_with_content_package() -> void:
+	var vm := VoteManager
+	vm.reset()
+	var item: Dictionary = {
+		"vote_cycle_id": "vc_001",
+		"content_package": {"package_version": "pkg_ch02_waste_20260701_01"}
+	}
+	assert_true(vm.is_vote_landed(item), "content_package 非空时应返回 true")
+	vm.reset()
+
+func test_get_vote_history_with_landing_empty() -> void:
+	var vm := VoteManager
+	vm.reset()
+	vm.vote_history = []
+	var result: Array[Dictionary] = vm.get_vote_history_with_landing()
+	assert_eq(result.size(), 0, "空历史时应返回空数组")
+	vm.reset()
+
+func test_get_vote_history_with_landing_mixed() -> void:
+	var vm := VoteManager
+	vm.reset()
+	var landed_item: Dictionary = {
+		"vote_cycle_id": "vc_001",
+		"title": "已落地周期",
+		"content_package": {"package_version": "pkg_001"}
+	}
+	var unlanded_item: Dictionary = {
+		"vote_cycle_id": "vc_002",
+		"title": "未落地周期"
+	}
+	vm.vote_history = [landed_item, unlanded_item]
+	var result: Array[Dictionary] = vm.get_vote_history_with_landing()
+	assert_eq(result.size(), 2, "返回数组长度应与历史一致")
+	assert_true(result[0].get("is_landed", false), "已落地项应带 is_landed=true 标记")
+	assert_false(result[1].get("is_landed", true), "未落地项应带 is_landed=false 标记")
+	assert_eq(result[0].get("title", ""), "已落地周期", "原始字段应保留")
+	assert_eq(result[1].get("title", ""), "未落地周期", "原始字段应保留")
+	assert_eq(vm.vote_history[0].get("is_landed", null), null, "原始历史不应被修改")
+	vm.reset()
+
+func test_get_content_package_for_vote_by_vote_cycle_id() -> void:
+	var vm := VoteManager
+	vm.reset()
+	var pkg: Dictionary = {"package_version": "pkg_001"}
+	vm.vote_history = [{"vote_cycle_id": "vc_001", "content_package": pkg}]
+	var result: Dictionary = vm.get_content_package_for_vote("vc_001")
+	assert_eq(result, pkg, "通过 vote_cycle_id 命中时应返回对应 content_package")
+	vm.reset()
+
+func test_get_content_package_for_vote_by_cycle_id_alias() -> void:
+	var vm := VoteManager
+	vm.reset()
+	var pkg: Dictionary = {"package_version": "pkg_002"}
+	vm.vote_history = [{"cycle_id": "vc_002", "content_package": pkg}]
+	var result: Dictionary = vm.get_content_package_for_vote("vc_002")
+	assert_eq(result, pkg, "通过 cycle_id 别名命中时应返回对应 content_package")
+	vm.reset()
+
+func test_get_content_package_for_vote_not_found() -> void:
+	var vm := VoteManager
+	vm.reset()
+	vm.vote_history = [{"vote_cycle_id": "vc_001", "content_package": {"package_version": "pkg_001"}}]
+	var result: Dictionary = vm.get_content_package_for_vote("vc_not_exist")
+	assert_eq(result, {}, "未命中时应返回空字典")
+	vm.reset()
+
+func test_get_landed_at_with_released_at() -> void:
+	var vm := VoteManager
+	vm.reset()
+	var item: Dictionary = {
+		"content_package": {"released_at": "2026-07-13T10:00:00Z"}
+	}
+	assert_eq(vm.get_landed_at(item), "2026-07-13T10:00:00Z", "有 released_at 时应返回该值")
+	vm.reset()
+
+func test_get_landed_at_without_content_package() -> void:
+	var vm := VoteManager
+	vm.reset()
+	var item: Dictionary = {"vote_cycle_id": "vc_001"}
+	assert_eq(vm.get_landed_at(item), "", "无 content_package 时应返回空字符串")
+	vm.reset()
+
+func test_get_affected_regions_with_dict_array() -> void:
+	var vm := VoteManager
+	vm.reset()
+	var item: Dictionary = {
+		"content_package": {
+			"payload": {
+				"regions": [
+					{"name": "铁卫城周边", "region_type": "core"},
+					{"region_id": "region_wasteland_01"}
+				]
+			}
+		}
+	}
+	var result: Array[String] = vm.get_affected_regions(item)
+	assert_eq(result.size(), 2, "应返回 2 个区域名称")
+	assert_eq(result[0], "铁卫城周边", "第一个区域应取 name 字段")
+	assert_eq(result[1], "region_wasteland_01", "无 name 时应取 region_id")
+	vm.reset()
+
+func test_get_affected_regions_with_string_array() -> void:
+	var vm := VoteManager
+	vm.reset()
+	var item: Dictionary = {
+		"content_package": {
+			"payload": {
+				"regions": ["region_alpha", "region_beta"]
+			}
+		}
+	}
+	var result: Array[String] = vm.get_affected_regions(item)
+	assert_eq(result.size(), 2, "字符串数组应返回 2 个元素")
+	assert_eq(result[0], "region_alpha", "第一个元素应原样返回")
+	assert_eq(result[1], "region_beta", "第二个元素应原样返回")
+	vm.reset()
+
+func test_get_affected_regions_empty() -> void:
+	var vm := VoteManager
+	vm.reset()
+	var item: Dictionary = {"content_package": {}}
+	var result: Array[String] = vm.get_affected_regions(item)
+	assert_eq(result.size(), 0, "无 payload 或 regions 时应返回空数组")
+	vm.reset()
