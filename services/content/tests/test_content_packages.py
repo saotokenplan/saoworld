@@ -380,4 +380,142 @@ def test_is_player_in_gray_scope_priority():
     assert is_player_in_gray_scope(scope, "player-002", "region_01") is False
 
 
+@pytest.mark.asyncio
+async def test_get_package_by_vote_cycle_found(
+    client: AsyncClient, player_token: str, content_packages
+):
+    from app.core.db import get_db
+    from app.domain.models import ContentPackage
+    from datetime import datetime, timezone
+    import uuid
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    test_vote_cycle_id = uuid.uuid4()
+
+    test_engine = create_async_engine(
+        "sqlite+aiosqlite:///file:testdb_vote_cycle?mode=memory&cache=shared&uri=true",
+        echo=False,
+        connect_args={"check_same_thread": False},
+    )
+    TestSession = async_sessionmaker(
+        test_engine,
+        expire_on_commit=False,
+    )
+
+    from app.core.db import Base
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    async with TestSession() as session:
+        pkg = ContentPackage(
+            content_package_id=uuid.uuid4(),
+            chapter_id="chapter_01",
+            package_version="pkg_test_vote_01",
+            source_vote_cycle_id=test_vote_cycle_id,
+            title="投票结果测试包",
+            summary="测试投票结果落地",
+            status="live",
+            payload_jsonb={"regions": [{"name": "测试区域"}]},
+            released_at=datetime.now(timezone.utc),
+        )
+        session.add(pkg)
+        await session.commit()
+
+    async def override_db():
+        async with TestSession() as s:
+            yield s
+
+    from app.main import app
+    app.dependency_overrides[get_db] = override_db
+
+    try:
+        response = await client.get(
+            f"/api/v1/content/packages/by-vote-cycle/{test_vote_cycle_id}",
+            headers={"Authorization": f"Bearer {player_token}"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "request_id" in data
+        assert "data" in data
+        assert data["data"]["title"] == "投票结果测试包"
+        assert data["data"]["source_vote_cycle_id"] == str(test_vote_cycle_id)
+    finally:
+        app.dependency_overrides.clear()
+        await test_engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_get_package_by_vote_cycle_not_found(
+    client: AsyncClient, player_token: str
+):
+    non_existent_vote_cycle_id = uuid.uuid4()
+    response = await client.get(
+        f"/api/v1/content/packages/by-vote-cycle/{non_existent_vote_cycle_id}",
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert response.status_code == 404
+    data = response.json()
+    assert data["code"] == "PACKAGE_NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_get_package_by_vote_cycle_packaged_hidden_from_player(
+    client: AsyncClient, player_token: str
+):
+    from app.core.db import get_db
+    from app.domain.models import ContentPackage
+    from datetime import datetime, timezone
+    import uuid
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    test_vote_cycle_id = uuid.uuid4()
+
+    test_engine = create_async_engine(
+        "sqlite+aiosqlite:///file:testdb_vote_packaged?mode=memory&cache=shared&uri=true",
+        echo=False,
+        connect_args={"check_same_thread": False},
+    )
+    TestSession = async_sessionmaker(
+        test_engine,
+        expire_on_commit=False,
+    )
+
+    from app.core.db import Base
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    async with TestSession() as session:
+        pkg = ContentPackage(
+            content_package_id=uuid.uuid4(),
+            chapter_id="chapter_01",
+            package_version="pkg_test_packaged_01",
+            source_vote_cycle_id=test_vote_cycle_id,
+            title="打包状态测试包",
+            summary="测试打包状态不可见",
+            status="packaged",
+            payload_jsonb={},
+        )
+        session.add(pkg)
+        await session.commit()
+
+    async def override_db():
+        async with TestSession() as s:
+            yield s
+
+    from app.main import app
+    app.dependency_overrides[get_db] = override_db
+
+    try:
+        response = await client.get(
+            f"/api/v1/content/packages/by-vote-cycle/{test_vote_cycle_id}",
+            headers={"Authorization": f"Bearer {player_token}"},
+        )
+        assert response.status_code == 404
+        data = response.json()
+        assert data["code"] == "PACKAGE_NOT_FOUND"
+    finally:
+        app.dependency_overrides.clear()
+        await test_engine.dispose()
+
+
 
