@@ -29,18 +29,25 @@
 
 | 测试文件 | 覆盖模块 | 测试数量 |
 |---------|---------|---------|
-| test_game_state.gd | GameState 全局状态管理 | 10 |
-| test_api_manager.gd | APIManager API 请求管理 | 10 |
-| test_vote_manager.gd | VoteManager 投票系统管理（含落地信息方法） | 20 |
-| test_world_manager.gd | WorldManager 区域管理 | 7 |
-| test_player_manager.gd | PlayerManager 玩家信息管理 | 6 |
-| test_world_map.gd | WorldMap 世界地图组件 | 6 |
-| test_quest_panel.gd | QuestPanel 任务面板组件 | 6 |
-| test_npc_dialog.gd | NPCDialog 对话交互组件 | 5 |
-| test_player.gd | Player 玩家移动与状态 | 5 |
+| test_world_manager.gd | WorldManager 区域管理 | 39 |
+| test_vote_manager.gd | VoteManager 投票系统管理（含落地信息、讨论区方法） | 32 |
+| test_combat_manager.gd | CombatManager 战斗系统管理 | 13 |
+| test_npc_dialog.gd | NPCDialog 对话交互组件 | 13 |
+| test_api_manager.gd | APIManager API 请求管理 | 11 |
+| test_game_state.gd | GameState 全局状态管理 | 11 |
+| test_player_manager.gd | PlayerManager 玩家信息管理 | 15 |
+| test_player.gd | Player 玩家移动与状态 | 15 |
+| test_enemy.gd | Enemy 怪物实体 | 8 |
+| test_content_package_detail.gd | ContentPackageDetail 内容包详情弹窗 | 9 |
+| test_inventory_manager.gd | InventoryManager 背包系统管理 | 9 |
+| test_save_manager.gd | SaveManager 存档系统管理 | 9 |
+| test_quest_panel.gd | QuestPanel 任务面板组件 | 9 |
+| test_world_map.gd | WorldMap 世界地图组件 | 7 |
+| test_reputation_panel.gd | ReputationPanel 声望面板组件 | 6 |
+| test_quest_tracker.gd | QuestTracker 任务追踪 HUD | 5 |
 | test_region_scene.gd | CoreRegion 区域探索场景 | 5 |
 | test_world_map_navigation.gd | WorldMap 区域导航与进入 | 5 |
-| test_content_package_detail.gd | ContentPackageDetail 内容包详情弹窗 | 9 |
+| test_vote_discussion_panel.gd | VoteDiscussionPanel 投票讨论区面板 | 30 |
 
 ## 测试覆盖范围
 
@@ -56,6 +63,8 @@
 - **QuestPanel**：任务列表、详情展示、目标进度、奖励展示、任务接取
 - **NPCDialog**：对话加载、多轮对话、选项选择、任务接取、信号发射
 - **ContentPackageDetail**：状态文本映射、状态颜色映射、信号声明、package_data 清理
+- **VoteDiscussionPanel**：初始状态、讨论列表渲染、回复列表渲染、排序切换、发布验证、信号发射
+- **ReputationPanel**：声望列表、详情展示、信号声明
 
 ### 场景与角色测试
 - **Player**：初始状态、重置状态、移动状态信号、输入方向、配置加载
