@@ -3,6 +3,7 @@ extends Control
 
 signal vote_submitted(candidate_id: String)
 signal back_pressed
+signal open_discussion_pressed
 
 @onready var back_button: Button = $TopBar/BackButton
 @onready var cycle_title: Label = $Content/VBox/CycleTitle
@@ -10,6 +11,7 @@ signal back_pressed
 @onready var candidates_container: VBoxContainer = $Content/VBox/CandidatesContainer
 @onready var submit_button: Button = $Content/VBox/SubmitButton
 @onready var status_label: Label = $Content/VBox/StatusLabel
+@onready var discussion_button: Button = $Content/VBox/DiscussionButton
 
 var selected_candidate_id: String = ""
 var candidate_buttons: Array[Button] = []
@@ -19,8 +21,10 @@ var has_voted: bool = false
 func _ready() -> void:
 	back_button.pressed.connect(_on_back_pressed)
 	submit_button.pressed.connect(_on_submit_pressed)
+	discussion_button.pressed.connect(_on_discussion_pressed)
 	back_button.text = "返回"
 	submit_button.text = "提交投票"
+	discussion_button.text = "进入讨论区"
 	status_label.text = "请选择一个候选项"
 	
 	VoteManager.current_vote_loaded.connect(_on_current_vote_loaded)
@@ -96,6 +100,9 @@ func _on_submit_pressed() -> void:
 
 func _on_back_pressed() -> void:
 	back_pressed.emit()
+
+func _on_discussion_pressed() -> void:
+	open_discussion_pressed.emit()
 
 func show_status(message: String) -> void:
 	status_label.text = message
