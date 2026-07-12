@@ -6,6 +6,7 @@ signal vote_history_loaded
 signal vote_error(error_code: String, message: String)
 signal loading_changed(is_loading: bool)
 signal auth_error(message: String)
+signal vote_landing_updated(cycle_id: String, landed: bool)
 
 var current_cycle: Dictionary = {}
 var candidates: Array[Dictionary] = []
@@ -192,3 +193,37 @@ func reset() -> void:
 	has_voted = false
 	is_loading = false
 	last_error.clear()
+
+func get_vote_history_with_landing() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for item in vote_history:
+		var landed_item: Dictionary = item.duplicate()
+		landed_item["is_landed"] = is_vote_landed(item)
+		result.append(landed_item)
+	return result
+
+func is_vote_landed(vote_item: Dictionary) -> bool:
+	var content_package: Dictionary = vote_item.get("content_package", {})
+	return not content_package.is_empty()
+
+func get_content_package_for_vote(cycle_id: String) -> Dictionary:
+	for item in vote_history:
+		if item.get("vote_cycle_id", item.get("cycle_id", "")) == cycle_id:
+			return item.get("content_package", {})
+	return {}
+
+func get_landed_at(vote_item: Dictionary) -> String:
+	var content_package: Dictionary = vote_item.get("content_package", {})
+	return content_package.get("released_at", "")
+
+func get_affected_regions(vote_item: Dictionary) -> Array[String]:
+	var content_package: Dictionary = vote_item.get("content_package", {})
+	var payload: Dictionary = content_package.get("payload", {})
+	var regions: Array = payload.get("regions", [])
+	var result: Array[String] = []
+	for region in regions:
+		if typeof(region) == TYPE_DICTIONARY:
+			result.append(region.get("name", region.get("region_id", "")))
+		else:
+			result.append(str(region))
+	return result

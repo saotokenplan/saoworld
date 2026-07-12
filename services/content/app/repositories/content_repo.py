@@ -55,6 +55,12 @@ class ContentRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_package_by_vote_cycle_id(self, vote_cycle_id: uuid.UUID) -> ContentPackage | None:
+        result = await self.db.execute(
+            select(ContentPackage).where(ContentPackage.source_vote_cycle_id == vote_cycle_id)
+        )
+        return result.scalar_one_or_none()
+
     async def list_visible_packages(
         self,
         chapter_id: str | None = None,

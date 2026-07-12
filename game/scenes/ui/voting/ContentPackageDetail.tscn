@@ -1,0 +1,150 @@
+[gd_scene load_steps=2 format=3 uid="uid://contentpackagedetail01"]
+
+[ext_resource type="Script" path="res://scripts/ui/content_package_detail.gd" id="1_detail"]
+
+[node name="ContentPackageDetail" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_detail")
+
+[node name="ModalBackground" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.7)
+
+[node name="DetailPanel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 2
+offset_left = 200.0
+offset_top = 100.0
+offset_right = -200.0
+offset_bottom = -100.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/panel_margin = 20
+
+[node name="VBox" type="VBoxContainer" parent="DetailPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="TopBar" type="HBoxContainer" parent="DetailPanel/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TitleLabel" type="Label" parent="DetailPanel/VBox/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/bold = true
+text = "内容包详情"
+
+[node name="CloseButton" type="Button" parent="DetailPanel/VBox/TopBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 32)
+text = "关闭"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="DetailPanel/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 300)
+
+[node name="ContentBox" type="VBoxContainer" parent="DetailPanel/VBox/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="PackageVersionLabel" type="Label" parent="DetailPanel/VBox/ScrollContainer/ContentBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "版本："
+
+[node name="StatusLabel" type="Label" parent="DetailPanel/VBox/ScrollContainer/ContentBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "状态："
+
+[node name="ReleasedAtLabel" type="Label" parent="DetailPanel/VBox/ScrollContainer/ContentBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "发布时间："
+
+[node name="ChapterLabel" type="Label" parent="DetailPanel/VBox/ScrollContainer/ContentBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "章节："
+
+[node name="SummaryLabel" type="Label" parent="DetailPanel/VBox/ScrollContainer/ContentBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "描述："
+autowrap_mode = 2
+
+[node name="Divider1" type="ColorRect" parent="DetailPanel/VBox/ScrollContainer/ContentBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 2)
+color = Color(0.3, 0.3, 0.3)
+
+[node name="RegionsTitle" type="Label" parent="DetailPanel/VBox/ScrollContainer/ContentBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/bold = true
+text = "包含区域"
+
+[node name="RegionsList" type="VBoxContainer" parent="DetailPanel/VBox/ScrollContainer/ContentBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="Divider2" type="ColorRect" parent="DetailPanel/VBox/ScrollContainer/ContentBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 2)
+color = Color(0.3, 0.3, 0.3)
+
+[node name="NPCsTitle" type="Label" parent="DetailPanel/VBox/ScrollContainer/ContentBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/bold = true
+text = "新增NPC"
+
+[node name="NPCsList" type="VBoxContainer" parent="DetailPanel/VBox/ScrollContainer/ContentBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="Divider3" type="ColorRect" parent="DetailPanel/VBox/ScrollContainer/ContentBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 2)
+color = Color(0.3, 0.3, 0.3)
+
+[node name="QuestsTitle" type="Label" parent="DetailPanel/VBox/ScrollContainer/ContentBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/bold = true
+text = "新增任务"
+
+[node name="QuestsList" type="VBoxContainer" parent="DetailPanel/VBox/ScrollContainer/ContentBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4

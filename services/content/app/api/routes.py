@@ -200,6 +200,78 @@ async def get_package_detail(
     )
 
 
+@router.get(
+    "/content/packages/by-vote-cycle/{vote_cycle_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Package not found"},
+    },
+    tags=["content"],
+)
+async def get_package_by_vote_cycle(
+    vote_cycle_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireContentReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[ContentPackageResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_content_package_by_vote")
+
+    repo = ContentRepository(db)
+    pkg = await repo.get_package_by_vote_cycle_id(vote_cycle_id)
+
+    if pkg is None:
+        raise_content_error(
+            ContentErrorCodes.PACKAGE_NOT_FOUND,
+            "内容包不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="vote_cycle_id",
+                    issue="not_found",
+                    rejected_value=str(vote_cycle_id),
+                )
+            ],
+        )
+
+    if pkg.status not in ("gray", "live") and current_user.role.value not in (
+        "ops",
+        "system",
+        "reviewer",
+    ):
+        raise_content_error(
+            ContentErrorCodes.PACKAGE_NOT_FOUND,
+            "内容包不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=ContentPackageResponse(
+            content_package_id=pkg.content_package_id,
+            chapter_id=pkg.chapter_id,
+            region_id=pkg.region_id,
+            package_version=pkg.package_version,
+            source_vote_cycle_id=pkg.source_vote_cycle_id,
+            source_request_id=pkg.source_request_id,
+            title=pkg.title,
+            summary=pkg.summary,
+            status=PackageStatus(pkg.status),
+            gray_scope=pkg.gray_scope_jsonb,
+            payload=pkg.payload_jsonb,
+            schema_version=pkg.schema_version,
+            released_at=pkg.released_at,
+            created_at=pkg.created_at,
+            updated_at=pkg.updated_at,
+        ),
+        trace_id=trace_id,
+    )
+
+
 @ops_router.post(
     "/content-packages",
     status_code=status.HTTP_201_CREATED,

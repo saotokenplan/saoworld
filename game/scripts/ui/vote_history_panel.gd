@@ -4,6 +4,7 @@ extends Control
 signal back_pressed
 signal item_selected(cycle_id: String)
 signal load_more_pressed
+signal view_content_package(cycle_id: String)
 
 @onready var back_button: Button = $TopBar/BackButton
 @onready var title_label: Label = $TopBar/TitleLabel
@@ -48,14 +49,35 @@ func add_history_items(items: Array[Dictionary]) -> void:
 
 func _create_history_item(item: Dictionary) -> Control:
 	var panel: PanelContainer = PanelContainer.new()
+	
+	var hbox_main: HBoxContainer = HBoxContainer.new()
+	hbox_main.add_theme_constant_override("separation", 8)
+	
 	var vbox: VBoxContainer = VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 4)
+	
+	var title_hbox: HBoxContainer = HBoxContainer.new()
+	title_hbox.add_theme_constant_override("separation", 8)
 	
 	var title_label_item: Label = Label.new()
 	title_label_item.text = item.get("title", "未知周期")
 	title_label_item.add_theme_font_size_override("font_size", 16)
 	title_label_item.bold = true
-	vbox.add_child(title_label_item)
+	title_hbox.add_child(title_label_item)
+	
+	var is_landed: bool = item.get("is_landed", false) or not item.get("content_package", {}).is_empty()
+	if is_landed:
+		var landed_badge: Label = Label.new()
+		landed_badge.text = "✓ 已落地"
+		landed_badge.add_theme_font_size_override("font_size", 12)
+		landed_badge.add_theme_color_override("font_color", Color(0.2, 0.8, 0.2))
+		landed_badge.add_theme_constant_override("outline_size", 1)
+		title_hbox.add_child(landed_badge)
+		panel.add_theme_color_override("panel_bg_color", Color(0.15, 0.25, 0.15))
+	else:
+		panel.add_theme_color_override("panel_bg_color", Color(0.15, 0.15, 0.2))
+	
+	vbox.add_child(title_hbox)
 	
 	var time_label: Label = Label.new()
 	var vote_time: String = item.get("vote_time", item.get("created_at", ""))
@@ -91,7 +113,37 @@ func _create_history_item(item: Dictionary) -> Control:
 	status_label_item.text = "状态：%s" % status_text
 	vbox.add_child(status_label_item)
 	
-	panel.add_child(vbox)
+	var landed_at: String = item.get("landed_at", "")
+	if is_landed and landed_at != "":
+		var landed_label: Label = Label.new()
+		landed_label.text = "落地时间：%s" % landed_at
+		landed_label.add_theme_font_size_override("font_size", 11)
+		landed_label.add_theme_color_override("font_color", Color(0.6, 0.9, 0.6))
+		vbox.add_child(landed_label)
+	
+	var affected_regions: Array = item.get("affected_regions", [])
+	if is_landed and not affected_regions.is_empty():
+		var regions_label: Label = Label.new()
+		regions_label.text = "影响区域：%s" % ", ".join(affected_regions)
+		regions_label.add_theme_font_size_override("font_size", 11)
+		regions_label.add_theme_color_override("font_color", Color(0.7, 0.8, 1.0))
+		vbox.add_child(regions_label)
+	
+	hbox_main.add_child(vbox)
+	
+	if is_landed:
+		var view_button: Button = Button.new()
+		view_button.text = "查看内容"
+		view_button.add_theme_font_size_override("font_size", 12)
+		view_button.custom_minimum_size = Vector2(80, 24)
+		hbox_main.add_child(view_button)
+		
+		var cycle_id: String = item.get("vote_cycle_id", item.get("cycle_id", ""))
+		view_button.pressed.connect(func():
+			view_content_package.emit(cycle_id)
+		)
+	
+	panel.add_child(hbox_main)
 	panel.custom_minimum_size = Vector2(0, 100)
 	
 	var cycle_id: String = item.get("vote_cycle_id", item.get("cycle_id", ""))

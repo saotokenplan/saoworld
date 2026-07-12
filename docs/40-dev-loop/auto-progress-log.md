@@ -18,3 +18,4 @@
 | 2026-07-11 09:00 | auto-20260711-0900 | Sprint 3 S3-04 个人中心（后端部分）- player-service 个人中心 API + 聚合玩家信息 + 3 个测试用例 | ✅ 已完成 |
 | 2026-07-11 09:30 | auto-20260711-0930 | Sprint 3 S3-04 个人中心（客户端部分）- PlayerManager/VoteManager 扩展 + PersonalCenter 界面 + 主菜单集成 | ✅ 已完成 |
 | 2026-07-11 10:00 | auto-20260711-1000 | Sprint 3 S3-05 等级与经验系统 - player-service 等级经验模型、经验曲线、升级奖励、任务经验发放 + 17 个测试 | ✅ 已完成 |
+| 2026-07-13 15:00 | auto-20260713-1500 | Sprint 4 S4-01 投票结果落地展示（续）- content-service 按 vote_cycle_id 查询 API + 客户端 VoteManager 扩展 + VoteHistoryPanel 优化 + ContentPackageDetail 弹窗 + 3 个测试 | ✅ 已完成 |
