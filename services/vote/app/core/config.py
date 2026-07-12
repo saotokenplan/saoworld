@@ -27,5 +27,9 @@ class Settings(BaseSettings):
     player_service_timeout_seconds: float = 3.0
     contribution_threshold: int = 100
 
+    # 内容服务配置
+    content_service_url: str = "http://localhost:8003"
+    content_service_timeout_seconds: float = 5.0
+
 
 settings = Settings()

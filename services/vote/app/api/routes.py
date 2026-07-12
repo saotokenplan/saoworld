@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from typing import Any
 
 import structlog
 from fastapi import APIRouter, Depends, Header, Query, Request, status
@@ -370,6 +371,7 @@ async def get_vote_history(
     request: Request,
     current_user: UserPayload = RequireVotesHistoryReadScope,
     x_player_id: str | None = Header(default=None, alias="X-Player-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -401,17 +403,54 @@ async def get_vote_history(
     repo = VoteRepository(db)
     rows, total = await repo.get_vote_history(player_uuid, limit=limit, offset=offset)
 
-    vote_items = [
-        VoteHistoryItem(
-            vote_id=v.vote_id,
-            vote_cycle_id=v.vote_cycle_id,
-            candidate_id=v.candidate_id,
-            candidate_title=c.title,
-            weight=v.weight,
-            created_at=v.created_at,
+    # 收集所有投票周期 ID，批量查询内容包信息
+    vote_cycle_ids = [v.vote_cycle_id for v, _ in rows]
+
+    content_package_map: dict[uuid.UUID, Any] = {}
+    if vote_cycle_ids:
+        try:
+            from app.core.content_client import ContentPackageClient
+
+            content_client = ContentPackageClient()
+            content_package_map = await content_client.get_content_packages_batch(
+                vote_cycle_ids,
+                authorization=authorization,
+            )
+        except Exception as exc:
+            logger.error(
+                "content_package_batch_query_failed",
+                error=str(exc),
+                vote_cycle_ids=[str(vcid) for vcid in vote_cycle_ids],
+            )
+        finally:
+            await content_client.close()
+
+    vote_items = []
+    for v, c in rows:
+        # 查找对应的内容包信息
+        content_package_info = content_package_map.get(v.vote_cycle_id)
+
+        content_package_data = None
+        if content_package_info:
+            content_package_data = {
+                "content_package_id": content_package_info.content_package_id,
+                "version": content_package_info.version,
+                "status": content_package_info.status,
+                "affected_regions": content_package_info.affected_regions,
+                "landed_at": content_package_info.landed_at,
+            }
+
+        vote_items.append(
+            VoteHistoryItem(
+                vote_id=v.vote_id,
+                vote_cycle_id=v.vote_cycle_id,
+                candidate_id=v.candidate_id,
+                candidate_title=c.title,
+                weight=v.weight,
+                created_at=v.created_at,
+                content_package=content_package_data,
+            )
         )
-        for v, c in rows
-    ]
 
     return EnvelopeResponse(
         request_id=request_id,
