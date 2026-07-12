@@ -204,3 +204,119 @@ func test_get_affected_regions_empty() -> void:
 	var result: Array[String] = vm.get_affected_regions(item)
 	assert_eq(result.size(), 0, "无 payload 或 regions 时应返回空数组")
 	vm.reset()
+
+func test_discussions_initial_state() -> void:
+	var vm := VoteManager
+	assert_eq(vm.discussions, [], "初始 discussions 应为空数组")
+	assert_eq(vm.current_discussion_id, "", "初始 current_discussion_id 应为空字符串")
+	assert_eq(vm.replies, [], "初始 replies 应为空数组")
+
+func test_reset_discussions() -> void:
+	var vm := VoteManager
+	vm.discussions = [{"discussion_id": "d1", "content": "test"}]
+	vm.current_discussion_id = "d1"
+	vm.replies = [{"reply_id": "r1", "content": "reply"}]
+	vm.discussions_meta = {"total": 1}
+	vm.replies_meta = {"total": 1}
+	vm.reset_discussions()
+	assert_eq(vm.discussions, [], "重置后 discussions 应为空数组")
+	assert_eq(vm.current_discussion_id, "", "重置后 current_discussion_id 应为空")
+	assert_eq(vm.replies, [], "重置后 replies 应为空数组")
+	assert_eq(vm.discussions_meta, {}, "重置后 discussions_meta 应为空字典")
+	assert_eq(vm.replies_meta, {}, "重置后 replies_meta 应为空字典")
+
+func test_get_discussion_by_id_found() -> void:
+	var vm := VoteManager
+	vm.reset_discussions()
+	var d1: Dictionary = {"discussion_id": "d_001", "content": "讨论1", "like_count": 5}
+	var d2: Dictionary = {"discussion_id": "d_002", "content": "讨论2", "like_count": 10}
+	vm.discussions = [d1, d2]
+	var result: Dictionary = vm.get_discussion_by_id("d_001")
+	assert_eq(result, d1, "应能通过ID找到讨论")
+	vm.reset_discussions()
+
+func test_get_discussion_by_id_not_found() -> void:
+	var vm := VoteManager
+	vm.reset_discussions()
+	var d1: Dictionary = {"discussion_id": "d_001", "content": "讨论1"}
+	vm.discussions = [d1]
+	var result: Dictionary = vm.get_discussion_by_id("d_not_exist")
+	assert_eq(result, {}, "找不到讨论时应返回空字典")
+	vm.reset_discussions()
+
+func test_update_discussion_like_count() -> void:
+	var vm := VoteManager
+	vm.reset_discussions()
+	var d1: Dictionary = {"discussion_id": "d_001", "content": "讨论1", "like_count": 5}
+	var d2: Dictionary = {"discussion_id": "d_002", "content": "讨论2", "like_count": 10}
+	vm.discussions = [d1.duplicate(), d2.duplicate()]
+	vm._update_discussion_like_count("d_001", 15)
+	assert_eq(vm.discussions[0]["like_count"], 15, "讨论1的点赞数应更新为15")
+	assert_eq(vm.discussions[1]["like_count"], 10, "讨论2的点赞数应保持10")
+	vm.reset_discussions()
+
+func test_increment_discussion_reply_count() -> void:
+	var vm := VoteManager
+	vm.reset_discussions()
+	var d1: Dictionary = {"discussion_id": "d_001", "content": "讨论1", "reply_count": 3}
+	vm.discussions = [d1.duplicate()]
+	vm._increment_discussion_reply_count("d_001")
+	assert_eq(vm.discussions[0]["reply_count"], 4, "回复数应增加1")
+	vm.reset_discussions()
+
+func test_update_reply_like_count() -> void:
+	var vm := VoteManager
+	vm.reset_discussions()
+	var r1: Dictionary = {"reply_id": "r_001", "content": "回复1", "like_count": 2}
+	var r2: Dictionary = {"reply_id": "r_002", "content": "回复2", "like_count": 5}
+	vm.replies = [r1.duplicate(), r2.duplicate()]
+	vm._update_reply_like_count("r_002", 8)
+	assert_eq(vm.replies[0]["like_count"], 2, "回复1的点赞数应保持2")
+	assert_eq(vm.replies[1]["like_count"], 8, "回复2的点赞数应更新为8")
+	vm.reset_discussions()
+
+func test_create_discussion_empty_content() -> void:
+	var vm := VoteManager
+	vm.reset_discussions()
+	var result: bool = vm.create_discussion("vc_test", "")
+	assert_false(result, "空内容应返回false")
+	assert_eq(vm.last_error.get("code", ""), "DISCUSSION_CONTENT_EMPTY", "错误码应为 DISCUSSION_CONTENT_EMPTY")
+	vm.reset_discussions()
+
+func test_create_discussion_whitespace_content() -> void:
+	var vm := VoteManager
+	vm.reset_discussions()
+	var result: bool = vm.create_discussion("vc_test", "   ")
+	assert_false(result, "空白内容应返回false")
+	assert_eq(vm.last_error.get("code", ""), "DISCUSSION_CONTENT_EMPTY", "错误码应为 DISCUSSION_CONTENT_EMPTY")
+	vm.reset_discussions()
+
+func test_create_discussion_too_long() -> void:
+	var vm := VoteManager
+	vm.reset_discussions()
+	var long_content: String = ""
+	for i in range(501):
+		long_content += "a"
+	var result: bool = vm.create_discussion("vc_test", long_content)
+	assert_false(result, "内容超过500字应返回false")
+	assert_eq(vm.last_error.get("code", ""), "DISCUSSION_CONTENT_TOO_LONG", "错误码应为 DISCUSSION_CONTENT_TOO_LONG")
+	vm.reset_discussions()
+
+func test_create_reply_empty_content() -> void:
+	var vm := VoteManager
+	vm.reset_discussions()
+	var result: bool = vm.create_reply("d_test", "")
+	assert_false(result, "空回复应返回false")
+	assert_eq(vm.last_error.get("code", ""), "REPLY_CONTENT_EMPTY", "错误码应为 REPLY_CONTENT_EMPTY")
+	vm.reset_discussions()
+
+func test_create_reply_too_long() -> void:
+	var vm := VoteManager
+	vm.reset_discussions()
+	var long_content: String = ""
+	for i in range(501):
+		long_content += "a"
+	var result: bool = vm.create_reply("d_test", long_content)
+	assert_false(result, "回复超过500字应返回false")
+	assert_eq(vm.last_error.get("code", ""), "REPLY_CONTENT_TOO_LONG", "错误码应为 REPLY_CONTENT_TOO_LONG")
+	vm.reset_discussions()
