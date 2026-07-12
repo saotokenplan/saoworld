@@ -52,6 +52,7 @@ from app.repositories.discussion_repo import DiscussionRepository
 from app.repositories.vote_repo import VoteRepository
 from app.schemas.vote import (
     CandidateResponse,
+    ContentPackageLandingInfo,
     CreateDiscussionRequest,
     CreateReplyRequest,
     CreateVoteCycleRequest,
@@ -451,15 +452,15 @@ async def get_vote_history(
         # 查找对应的内容包信息
         content_package_info = content_package_map.get(v.vote_cycle_id)
 
-        content_package_data = None
+        content_package_data: ContentPackageLandingInfo | None = None
         if content_package_info:
-            content_package_data = {
-                "content_package_id": content_package_info.content_package_id,
-                "version": content_package_info.version,
-                "status": content_package_info.status,
-                "affected_regions": content_package_info.affected_regions,
-                "landed_at": content_package_info.landed_at,
-            }
+            content_package_data = ContentPackageLandingInfo(
+                content_package_id=content_package_info.content_package_id,
+                version=content_package_info.version,
+                status=content_package_info.status,
+                affected_regions=content_package_info.affected_regions,
+                landed_at=content_package_info.landed_at,
+            )
 
         vote_items.append(
             VoteHistoryItem(

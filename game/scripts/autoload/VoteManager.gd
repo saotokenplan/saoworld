@@ -7,6 +7,11 @@ signal vote_error(error_code: String, message: String)
 signal loading_changed(is_loading: bool)
 signal auth_error(message: String)
 signal vote_landing_updated(cycle_id: String, landed: bool)
+signal discussions_loaded(discussions: Array, meta: Dictionary)
+signal discussion_created(discussion: Dictionary)
+signal replies_loaded(discussion_id: String, replies: Array, meta: Dictionary)
+signal reply_created(reply: Dictionary)
+signal discussion_like_changed(discussion_id: String, liked: bool, like_count: int)
 
 var current_cycle: Dictionary = {}
 var candidates: Array[Dictionary] = []
@@ -15,6 +20,11 @@ var has_voted: bool = false
 var is_loading: bool = false
 var last_error: Dictionary = {}
 var schema_version: int = 1
+var discussions: Array[Dictionary] = []
+var current_discussion_id: String = ""
+var replies: Array[Dictionary] = []
+var discussions_meta: Dictionary = {}
+var replies_meta: Dictionary = {}
 
 func _ready() -> void:
 	APIManager.auth_error.connect(_on_auth_error)
@@ -227,3 +237,196 @@ func get_affected_regions(vote_item: Dictionary) -> Array[String]:
 		else:
 			result.append(str(region))
 	return result
+
+func fetch_discussions(vote_cycle_id: String, sort_by: String = "time", limit: int = 20, offset: int = 0) -> void:
+	_set_loading(true)
+	var endpoint: String = "/votes/discussions/%s?sort_by=%s&limit=%d&offset=%d" % [vote_cycle_id, sort_by, limit, offset]
+	var result: Dictionary = APIManager.get(endpoint)
+	
+	if result.get("success", false):
+		var data: Dictionary = result.get("data", {})
+		discussions = data.get("items", [])
+		discussions_meta = result.get("meta", {})
+		last_error.clear()
+		discussions_loaded.emit(discussions, discussions_meta)
+	else:
+		_handle_vote_error(result)
+	
+	_set_loading(false)
+
+func create_discussion(vote_cycle_id: String, content: String) -> bool:
+	if content.strip_edges() == "":
+		last_error = {"code": "DISCUSSION_CONTENT_EMPTY", "message": "讨论内容不能为空"}
+		vote_error.emit("DISCUSSION_CONTENT_EMPTY", "讨论内容不能为空")
+		return false
+	
+	if content.length() > 500:
+		last_error = {"code": "DISCUSSION_CONTENT_TOO_LONG", "message": "讨论内容不能超过500字"}
+		vote_error.emit("DISCUSSION_CONTENT_TOO_LONG", "讨论内容不能超过500字")
+		return false
+	
+	var body: Dictionary = {
+		"content": content
+	}
+	
+	_set_loading(true)
+	var result: Dictionary = APIManager.post("/votes/discussions/%s" % vote_cycle_id, body)
+	
+	if result.get("success", false):
+		var data: Dictionary = result.get("data", {})
+		var new_discussion: Dictionary = data.get("discussion", {})
+		discussions.insert(0, new_discussion)
+		last_error.clear()
+		discussion_created.emit(new_discussion)
+		_set_loading(false)
+		return true
+	else:
+		_handle_vote_error(result)
+		_set_loading(false)
+		return false
+
+func like_discussion(discussion_id: String) -> bool:
+	_set_loading(true)
+	var result: Dictionary = APIManager.post("/votes/discussions/%s/like" % discussion_id)
+	
+	if result.get("success", false):
+		var data: Dictionary = result.get("data", {})
+		var like_count: int = data.get("like_count", 0)
+		_update_discussion_like_count(discussion_id, like_count)
+		last_error.clear()
+		discussion_like_changed.emit(discussion_id, true, like_count)
+		_set_loading(false)
+		return true
+	else:
+		_handle_vote_error(result)
+		_set_loading(false)
+		return false
+
+func unlike_discussion(discussion_id: String) -> bool:
+	_set_loading(true)
+	var result: Dictionary = APIManager.delete("/votes/discussions/%s/like" % discussion_id)
+	
+	if result.get("success", false):
+		var data: Dictionary = result.get("data", {})
+		var like_count: int = data.get("like_count", 0)
+		_update_discussion_like_count(discussion_id, like_count)
+		last_error.clear()
+		discussion_like_changed.emit(discussion_id, false, like_count)
+		_set_loading(false)
+		return true
+	else:
+		_handle_vote_error(result)
+		_set_loading(false)
+		return false
+
+func _update_discussion_like_count(discussion_id: String, like_count: int) -> void:
+	for i in range(discussions.size()):
+		if discussions[i].get("discussion_id", "") == discussion_id:
+			discussions[i]["like_count"] = like_count
+			break
+
+func fetch_replies(discussion_id: String, limit: int = 20, offset: int = 0) -> void:
+	_set_loading(true)
+	var endpoint: String = "/votes/discussions/%s/replies?limit=%d&offset=%d" % [discussion_id, limit, offset]
+	var result: Dictionary = APIManager.get(endpoint)
+	
+	if result.get("success", false):
+		current_discussion_id = discussion_id
+		var data: Dictionary = result.get("data", {})
+		replies = data.get("items", [])
+		replies_meta = result.get("meta", {})
+		last_error.clear()
+		replies_loaded.emit(discussion_id, replies, replies_meta)
+	else:
+		_handle_vote_error(result)
+	
+	_set_loading(false)
+
+func create_reply(discussion_id: String, content: String) -> bool:
+	if content.strip_edges() == "":
+		last_error = {"code": "REPLY_CONTENT_EMPTY", "message": "回复内容不能为空"}
+		vote_error.emit("REPLY_CONTENT_EMPTY", "回复内容不能为空")
+		return false
+	
+	if content.length() > 500:
+		last_error = {"code": "REPLY_CONTENT_TOO_LONG", "message": "回复内容不能超过500字"}
+		vote_error.emit("REPLY_CONTENT_TOO_LONG", "回复内容不能超过500字")
+		return false
+	
+	var body: Dictionary = {
+		"content": content
+	}
+	
+	_set_loading(true)
+	var result: Dictionary = APIManager.post("/votes/discussions/%s/replies" % discussion_id, body)
+	
+	if result.get("success", false):
+		var data: Dictionary = result.get("data", {})
+		var new_reply: Dictionary = data.get("reply", {})
+		replies.append(new_reply)
+		_increment_discussion_reply_count(discussion_id)
+		last_error.clear()
+		reply_created.emit(new_reply)
+		_set_loading(false)
+		return true
+	else:
+		_handle_vote_error(result)
+		_set_loading(false)
+		return false
+
+func _increment_discussion_reply_count(discussion_id: String) -> void:
+	for i in range(discussions.size()):
+		if discussions[i].get("discussion_id", "") == discussion_id:
+			discussions[i]["reply_count"] = discussions[i].get("reply_count", 0) + 1
+			break
+
+func like_reply(reply_id: String) -> bool:
+	_set_loading(true)
+	var result: Dictionary = APIManager.post("/votes/replies/%s/like" % reply_id)
+	
+	if result.get("success", false):
+		var data: Dictionary = result.get("data", {})
+		var like_count: int = data.get("like_count", 0)
+		_update_reply_like_count(reply_id, like_count)
+		last_error.clear()
+		_set_loading(false)
+		return true
+	else:
+		_handle_vote_error(result)
+		_set_loading(false)
+		return false
+
+func unlike_reply(reply_id: String) -> bool:
+	_set_loading(true)
+	var result: Dictionary = APIManager.delete("/votes/replies/%s/like" % reply_id)
+	
+	if result.get("success", false):
+		var data: Dictionary = result.get("data", {})
+		var like_count: int = data.get("like_count", 0)
+		_update_reply_like_count(reply_id, like_count)
+		last_error.clear()
+		_set_loading(false)
+		return true
+	else:
+		_handle_vote_error(result)
+		_set_loading(false)
+		return false
+
+func _update_reply_like_count(reply_id: String, like_count: int) -> void:
+	for i in range(replies.size()):
+		if replies[i].get("reply_id", "") == reply_id:
+			replies[i]["like_count"] = like_count
+			break
+
+func get_discussion_by_id(discussion_id: String) -> Dictionary:
+	for discussion in discussions:
+		if discussion.get("discussion_id", "") == discussion_id:
+			return discussion
+	return {}
+
+func reset_discussions() -> void:
+	discussions.clear()
+	current_discussion_id = ""
+	replies.clear()
+	discussions_meta.clear()
+	replies_meta.clear()

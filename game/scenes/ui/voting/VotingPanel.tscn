@@ -84,6 +84,11 @@ custom_minimum_size = Vector2(0, 50)
 disabled = true
 text = "提交投票"
 
+[node name="DiscussionButton" type="Button" parent="Content/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+text = "进入讨论区"
+
 [node name="StatusLabel" type="Label" parent="Content/VBox"]
 layout_mode = 2
 text = ""

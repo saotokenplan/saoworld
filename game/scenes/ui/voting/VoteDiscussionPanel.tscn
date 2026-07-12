@@ -1,0 +1,179 @@
+[gd_scene load_steps=2 format=3 uid="uid://bvotediscussionpanel01"]
+
+[ext_resource type="Script" path="res://scripts/ui/vote_discussion_panel.gd" id="1_disc"]
+
+[node name="VoteDiscussionPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_disc")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.08, 0.12, 1)
+
+[node name="TopBar" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 15.0
+offset_right = -20.0
+offset_bottom = 65.0
+grow_horizontal = 2
+theme_override_constants/separation = 10
+
+[node name="BackButton" type="Button" parent="TopBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 40)
+text = "返回"
+
+[node name="TitleLabel" type="Label" parent="TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 22
+text = "讨论区"
+horizontal_alignment = 1
+
+[node name="SortTabs" type="TabContainer" parent="TopBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 40)
+
+[node name="TimeTab" type="Control" parent="TopBar/SortTabs"]
+layout_mode = 2
+
+[node name="HotTab" type="Control" parent="TopBar/SortTabs"]
+layout_mode = 2
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_top = 0.1
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_top = 70.0
+offset_left = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+theme_override_constants/separation = 10
+
+[node name="StatusLabel" type="Label" parent="Content"]
+layout_mode = 2
+text = "加载中..."
+horizontal_alignment = 1
+
+[node name="DiscussionsScroll" type="ScrollContainer" parent="Content"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="DiscussionsContainer" type="VBoxContainer" parent="Content/DiscussionsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="NewDiscussionPanel" type="VBoxContainer" parent="Content"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Input" type="TextEdit" parent="Content/NewDiscussionPanel"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 80)
+placeholder_text = "说点什么吧..."
+
+[node name="SubmitButton" type="Button" parent="Content/NewDiscussionPanel"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+text = "发布讨论"
+
+[node name="ReplyPanel" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="ReplyBackground" type="ColorRect" parent="ReplyPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.08, 0.12, 1)
+
+[node name="TopBar" type="HBoxContainer" parent="ReplyPanel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 15.0
+offset_right = -20.0
+offset_bottom = 65.0
+grow_horizontal = 2
+theme_override_constants/separation = 10
+
+[node name="BackButton" type="Button" parent="ReplyPanel/TopBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 40)
+text = "返回"
+
+[node name="DiscussionTitle" type="Label" parent="ReplyPanel/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "讨论详情"
+horizontal_alignment = 1
+
+[node name="Content" type="VBoxContainer" parent="ReplyPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_top = 0.1
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_top = 70.0
+offset_left = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+theme_override_constants/separation = 10
+
+[node name="StatusLabel" type="Label" parent="ReplyPanel/Content"]
+layout_mode = 2
+text = "加载中..."
+horizontal_alignment = 1
+
+[node name="RepliesScroll" type="ScrollContainer" parent="ReplyPanel/Content"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RepliesContainer" type="VBoxContainer" parent="ReplyPanel/Content/RepliesScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="NewReplyPanel" type="VBoxContainer" parent="ReplyPanel/Content"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Input" type="TextEdit" parent="ReplyPanel/NewReplyPanel"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 60)
+placeholder_text = "写下你的回复..."
+
+[node name="SubmitButton" type="Button" parent="ReplyPanel/NewReplyPanel"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 36)
+text = "发布回复"
