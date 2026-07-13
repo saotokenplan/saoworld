@@ -10,6 +10,8 @@ from app.core.deps import (
     RequireContributionReadScope,
     RequireFriendsReadScope,
     RequireFriendsWriteScope,
+    RequireMessagesReadScope,
+    RequireMessagesWriteScope,
     RequireOpsAchievementsWriteScope,
     RequireOpsRole,
     RequirePlayerRole,
@@ -32,6 +34,8 @@ from app.core.metrics import (
     record_player_create,
     record_player_region_unlock,
     record_player_update,
+    record_private_message_sent,
+    record_private_message_read,
     record_quest_accept,
     record_quest_complete,
     record_quest_fail,
@@ -65,6 +69,8 @@ from app.repositories.audit_repo import (
     ACTION_REGION_UNLOCK,
     ACTION_REPUTATION_ADJUST,
     ACTION_REPUTATION_UNLOCK,
+    ACTION_PRIVATE_MESSAGE_SEND,
+    ACTION_PRIVATE_MESSAGE_READ,
     RESOURCE_ACHIEVEMENT,
     RESOURCE_CONTRIBUTION,
     RESOURCE_EXPERIENCE,
@@ -75,6 +81,7 @@ from app.repositories.audit_repo import (
     RESOURCE_QUEST,
     RESOURCE_REGION,
     RESOURCE_REPUTATION,
+    RESOURCE_PRIVATE_MESSAGE,
     AuditRepository,
 )
 from app.repositories.achievement_repo import (
@@ -84,6 +91,7 @@ from app.repositories.achievement_repo import (
 from app.repositories.contribution_repo import ContributionRepository
 from app.repositories.friend_repo import FriendRepository
 from app.repositories.inventory_repo import InventoryRepository
+from app.repositories.private_message_repo import PrivateMessageRepository
 from app.repositories.player_quest_repo import PlayerQuestRepository
 from app.repositories.player_region_repo import PlayerRegionRepository
 from app.repositories.player_repo import PlayerRepository
@@ -113,6 +121,12 @@ from app.schemas.player import (
     FriendRequestItemResponse,
     FriendStatusResponse,
     FriendshipResponse,
+    SendMessageRequest,
+    PrivateMessageResponse,
+    ConversationResponse,
+    ConversationListResponse,
+    MessageListResponse,
+    UnreadCountResponse,
     get_level_progress,
     HealthResponse,
     InventoryItemResponse,
@@ -2753,5 +2767,317 @@ async def get_friend_status(
             friend_id=friendship.friend_id,
             status=friendship.status,
         ),
+        trace_id=trace_id,
+    )
+
+
+# ===== 私聊消息 API =====
+
+
+@router.post(
+    "/player/messages",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not friends"},
+        400: {"description": "Message empty or too long"},
+    },
+    tags=["messages"],
+)
+async def send_private_message(
+    body: SendMessageRequest,
+    request: Request,
+    current_user: UserPayload = RequireMessagesWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[PrivateMessageResponse]:
+    """发送私聊消息"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_msg_send")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if player_uuid == body.receiver_id:
+        raise_player_error(
+            PlayerErrorCodes.CANNOT_FRIEND_SELF,
+            "不能给自己发送消息",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # 检查好友关系
+    friend_repo = FriendRepository(db)
+    if not await friend_repo.are_friends(player_uuid, body.receiver_id):
+        raise_player_error(
+            PlayerErrorCodes.NOT_FRIENDS,
+            "非好友关系不能发送私聊",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    # 发送消息
+    message_repo = PrivateMessageRepository(db)
+    message = await message_repo.send_message(
+        sender_id=player_uuid,
+        receiver_id=body.receiver_id,
+        content=body.content,
+    )
+
+    record_private_message_sent(
+        sender_id=str(player_uuid),
+        receiver_id=str(body.receiver_id),
+    )
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_PRIVATE_MESSAGE_SEND,
+        resource_type=RESOURCE_PRIVATE_MESSAGE,
+        resource_id=message.message_id,
+        request_payload_jsonb={
+            "receiver_id": str(body.receiver_id),
+            "content_length": len(body.content),
+        },
+        result_status=201,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=PrivateMessageResponse.model_validate(message),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/messages/conversations",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["messages"],
+)
+async def get_recent_conversations(
+    request: Request,
+    limit: int = Query(default=20, ge=1, le=100),
+    current_user: UserPayload = RequireMessagesReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[ConversationListResponse]:
+    """获取最近对话列表"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_conv_list")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    message_repo = PrivateMessageRepository(db)
+    conversations = await message_repo.get_recent_conversations(player_uuid, limit)
+
+    conv_responses = []
+    for conv in conversations:
+        conv_responses.append(
+            ConversationResponse(
+                friend_id=conv["friend_id"],
+                latest_message=PrivateMessageResponse.model_validate(conv["latest_message"])
+                if conv["latest_message"]
+                else None,
+            )
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=ConversationListResponse(conversations=conv_responses),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/messages/conversations/{friend_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["messages"],
+)
+async def get_conversation(
+    friend_id: uuid.UUID,
+    request: Request,
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireMessagesReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[MessageListResponse]:
+    """获取与指定好友的对话"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_conv_get")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    message_repo = PrivateMessageRepository(db)
+    messages = await message_repo.get_conversation(player_uuid, friend_id, limit, offset)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=MessageListResponse(
+            messages=[PrivateMessageResponse.model_validate(m) for m in messages]
+        ),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/messages/{message_id}/read",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Message not found"},
+    },
+    tags=["messages"],
+)
+async def mark_message_read(
+    message_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireMessagesWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[PrivateMessageResponse]:
+    """标记消息已读"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_msg_read")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    message_repo = PrivateMessageRepository(db)
+    success = await message_repo.mark_as_read(message_id, player_uuid)
+
+    if not success:
+        raise_player_error(
+            PlayerErrorCodes.MESSAGE_NOT_FOUND,
+            "消息不存在或无权标记",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    record_private_message_read(receiver_id=str(player_uuid))
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_PRIVATE_MESSAGE_READ,
+        resource_type=RESOURCE_PRIVATE_MESSAGE,
+        resource_id=message_id,
+        result_status=200,
+    )
+
+    message = await message_repo.get_message_by_id(message_id)
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=PrivateMessageResponse.model_validate(message),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/messages/unread",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["messages"],
+)
+async def get_unread_messages(
+    request: Request,
+    limit: int = Query(default=50, ge=1, le=100),
+    current_user: UserPayload = RequireMessagesReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[MessageListResponse]:
+    """获取未读消息列表"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_unread_list")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    message_repo = PrivateMessageRepository(db)
+    messages = await message_repo.get_unread_messages(player_uuid, limit)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=MessageListResponse(
+            messages=[PrivateMessageResponse.model_validate(m) for m in messages]
+        ),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/messages/unread/count",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["messages"],
+)
+async def get_unread_count(
+    request: Request,
+    current_user: UserPayload = RequireMessagesReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[UnreadCountResponse]:
+    """获取未读消息数"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_unread_cnt")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    message_repo = PrivateMessageRepository(db)
+    count = await message_repo.get_unread_count(player_uuid)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=UnreadCountResponse(unread_count=count),
         trace_id=trace_id,
     )
