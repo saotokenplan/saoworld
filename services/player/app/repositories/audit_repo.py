@@ -45,6 +45,9 @@ ACTION_GUILD_MEMBER_ADD = "guild_member_add"
 ACTION_GUILD_MEMBER_REMOVE = "guild_member_remove"
 ACTION_GUILD_MEMBER_LEAVE = "guild_member_leave"
 ACTION_GUILD_TRANSFER_LEADER = "guild_transfer_leader"
+ACTION_GUILD_MESSAGE_SEND = "guild_message_send"
+ACTION_GUILD_MESSAGE_READ = "guild_message_read"
+ACTION_GUILD_MESSAGE_DELETE = "guild_message_delete"
 
 RESOURCE_PLAYER = "player"
 RESOURCE_REGION = "region"
@@ -59,6 +62,7 @@ RESOURCE_FRIENDSHIP = "friendship"
 RESOURCE_PRIVATE_MESSAGE = "private_message"
 RESOURCE_GUILD = "guild"
 RESOURCE_GUILD_MEMBER = "guild_member"
+RESOURCE_GUILD_MESSAGE = "guild_message"
 
 
 class AuditRepository:

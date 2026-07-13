@@ -303,3 +303,36 @@ def record_guild_member_removed(guild_id: str) -> None:
         guild_id: 公会ID
     """
     GUILD_MEMBERS_REMOVED_TOTAL.labels(guild_id=guild_id).inc()
+
+
+GUILD_MESSAGES_SENT_TOTAL = Counter(
+    "guild_messages_sent_total",
+    "公会消息发送次数",
+    labelnames=["guild_id", "sender_id"],
+)
+
+GUILD_MESSAGES_READ_TOTAL = Counter(
+    "guild_messages_read_total",
+    "公会消息已读次数",
+    labelnames=["guild_id", "player_id"],
+)
+
+
+def record_guild_message_sent(guild_id: str, sender_id: str) -> None:
+    """记录一次公会消息发送。
+
+    Args:
+        guild_id: 公会ID
+        sender_id: 发送者ID
+    """
+    GUILD_MESSAGES_SENT_TOTAL.labels(guild_id=guild_id, sender_id=sender_id).inc()
+
+
+def record_guild_message_read(guild_id: str, player_id: str) -> None:
+    """记录一次公会消息已读。
+
+    Args:
+        guild_id: 公会ID
+        player_id: 玩家ID
+    """
+    GUILD_MESSAGES_READ_TOTAL.labels(guild_id=guild_id, player_id=player_id).inc()

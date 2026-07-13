@@ -42,6 +42,8 @@ from app.core.metrics import (
     record_guild_created,
     record_guild_member_added,
     record_guild_member_removed,
+    record_guild_message_sent,
+    record_guild_message_read,
     record_quest_accept,
     record_quest_complete,
     record_quest_fail,
@@ -84,6 +86,9 @@ from app.repositories.audit_repo import (
     ACTION_GUILD_MEMBER_REMOVE,
     ACTION_GUILD_MEMBER_LEAVE,
     ACTION_GUILD_TRANSFER_LEADER,
+    ACTION_GUILD_MESSAGE_SEND,
+    ACTION_GUILD_MESSAGE_READ,
+    ACTION_GUILD_MESSAGE_DELETE,
     RESOURCE_ACHIEVEMENT,
     RESOURCE_CONTRIBUTION,
     RESOURCE_EXPERIENCE,
@@ -97,6 +102,7 @@ from app.repositories.audit_repo import (
     RESOURCE_PRIVATE_MESSAGE,
     RESOURCE_GUILD,
     RESOURCE_GUILD_MEMBER,
+    RESOURCE_GUILD_MESSAGE,
     AuditRepository,
 )
 from app.repositories.achievement_repo import (
@@ -106,6 +112,7 @@ from app.repositories.achievement_repo import (
 from app.repositories.contribution_repo import ContributionRepository
 from app.repositories.friend_repo import FriendRepository
 from app.repositories.guild_repo import GuildRepository
+from app.repositories.guild_message_repo import GuildMessageRepository
 from app.repositories.inventory_repo import InventoryRepository
 from app.repositories.private_message_repo import PrivateMessageRepository
 from app.repositories.player_quest_repo import PlayerQuestRepository
@@ -151,6 +158,9 @@ from app.schemas.player import (
     GuildMemberResponse,
     GuildMemberListItemResponse,
     GuildMemberListResponse,
+    SendGuildMessageRequest,
+    GuildMessageResponse,
+    GuildMessageListResponse,
     SocialOverview,
     GuildSummary,
     FriendSummary,
@@ -3828,6 +3838,386 @@ async def get_guild_members(
     return EnvelopeResponse(
         request_id=request_id,
         data=GuildMemberListResponse(members=member_items, total=total),
+        trace_id=trace_id,
+    )
+
+
+# === 公会消息 API ===
+
+
+@router.post(
+    "/player/guilds/{guild_id}/messages",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not in guild"},
+        404: {"description": "Guild not found"},
+        400: {"description": "Message empty or too long"},
+    },
+    tags=["guilds"],
+)
+async def send_guild_message(
+    request: Request,
+    guild_id: uuid.UUID,
+    body: SendGuildMessageRequest,
+    current_user: UserPayload = RequireGuildWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildMessageResponse]:
+    """发送公会消息"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_msg_send")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    message_repo = GuildMessageRepository(db)
+    audit_repo = AuditRepository(db)
+
+    guild = await guild_repo.get_guild_by_id(guild_id)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    guild_member = await guild_repo.get_member(guild_id, player_uuid)
+    if guild_member is None:
+        raise_player_error(
+            PlayerErrorCodes.NOT_IN_GUILD,
+            "您不是该公会成员，无法发送消息",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    message = await message_repo.send_message(
+        guild_id=guild_id,
+        sender_id=player_uuid,
+        content=body.content,
+    )
+
+    record_guild_message_sent(guild_id=str(guild_id), sender_id=str(player_uuid))
+
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_GUILD_MESSAGE_SEND,
+        resource_type=RESOURCE_GUILD_MESSAGE,
+        resource_id=message.message_id,
+        request_payload_jsonb={"content_length": len(body.content)},
+        result_status=201,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildMessageResponse.model_validate(message),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/guilds/{guild_id}/messages",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not in guild"},
+        404: {"description": "Guild not found"},
+    },
+    tags=["guilds"],
+)
+async def get_guild_messages(
+    request: Request,
+    guild_id: uuid.UUID,
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireGuildReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildMessageListResponse]:
+    """获取公会消息列表"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_msg_list")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    message_repo = GuildMessageRepository(db)
+
+    guild = await guild_repo.get_guild_by_id(guild_id)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    guild_member = await guild_repo.get_member(guild_id, player_uuid)
+    if guild_member is None:
+        raise_player_error(
+            PlayerErrorCodes.NOT_IN_GUILD,
+            "您不是该公会成员",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    messages, total = await message_repo.get_guild_messages(
+        guild_id=guild_id,
+        limit=limit,
+        offset=offset,
+    )
+
+    message_responses = [GuildMessageResponse.model_validate(m) for m in messages]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildMessageListResponse(messages=message_responses),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/guilds/{guild_id}/messages/read",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not in guild"},
+        404: {"description": "Guild not found"},
+    },
+    tags=["guilds"],
+)
+async def mark_guild_messages_read(
+    request: Request,
+    guild_id: uuid.UUID,
+    current_user: UserPayload = RequireGuildReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[dict]:
+    """标记公会消息已读"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_msg_read")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    message_repo = GuildMessageRepository(db)
+    audit_repo = AuditRepository(db)
+
+    guild = await guild_repo.get_guild_by_id(guild_id)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    guild_member = await guild_repo.get_member(guild_id, player_uuid)
+    if guild_member is None:
+        raise_player_error(
+            PlayerErrorCodes.NOT_IN_GUILD,
+            "您不是该公会成员",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    updated_count = await message_repo.mark_messages_as_read(guild_id, player_uuid)
+
+    record_guild_message_read(guild_id=str(guild_id), player_id=str(player_uuid))
+
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_GUILD_MESSAGE_READ,
+        resource_type=RESOURCE_GUILD_MESSAGE,
+        resource_id=None,
+        request_payload_jsonb={"updated_count": updated_count},
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data={"marked_read": updated_count},
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/guilds/{guild_id}/messages/unread-count",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not in guild"},
+        404: {"description": "Guild not found"},
+    },
+    tags=["guilds"],
+)
+async def get_guild_unread_count(
+    request: Request,
+    guild_id: uuid.UUID,
+    current_user: UserPayload = RequireGuildReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[UnreadCountResponse]:
+    """获取公会未读消息数"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_msg_unread")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    message_repo = GuildMessageRepository(db)
+
+    guild = await guild_repo.get_guild_by_id(guild_id)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    guild_member = await guild_repo.get_member(guild_id, player_uuid)
+    if guild_member is None:
+        raise_player_error(
+            PlayerErrorCodes.NOT_IN_GUILD,
+            "您不是该公会成员",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    unread_count = await message_repo.get_unread_count(guild_id, player_uuid)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=UnreadCountResponse(unread_count=unread_count),
+        trace_id=trace_id,
+    )
+
+
+@router.delete(
+    "/player/guilds/{guild_id}/messages/{message_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Cannot delete other's message"},
+        404: {"description": "Message not found"},
+    },
+    tags=["guilds"],
+)
+async def delete_guild_message(
+    request: Request,
+    guild_id: uuid.UUID,
+    message_id: uuid.UUID,
+    current_user: UserPayload = RequireGuildWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[dict]:
+    """删除公会消息（发送者或会长/官员）"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_msg_delete")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    message_repo = GuildMessageRepository(db)
+    audit_repo = AuditRepository(db)
+
+    guild = await guild_repo.get_guild_by_id(guild_id)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    guild_member = await guild_repo.get_member(guild_id, player_uuid)
+    if guild_member is None:
+        raise_player_error(
+            PlayerErrorCodes.NOT_IN_GUILD,
+            "您不是该公会成员",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    is_leader_or_officer = await guild_repo.is_guild_officer(guild_id, player_uuid)
+
+    deleted = await message_repo.delete_message(
+        guild_id=guild_id,
+        message_id=message_id,
+        player_id=player_uuid,
+        is_leader_or_officer=is_leader_or_officer,
+    )
+
+    if not deleted:
+        message = await message_repo.get_message_by_id(guild_id, message_id)
+        if message is None:
+            raise_player_error(
+                PlayerErrorCodes.MESSAGE_NOT_FOUND,
+                "消息不存在",
+                request_id,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        raise_player_error(
+            PlayerErrorCodes.CANNOT_DELETE_OTHER_MESSAGE,
+            "只能删除自己发送的消息",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_GUILD_MESSAGE_DELETE,
+        resource_type=RESOURCE_GUILD_MESSAGE,
+        resource_id=message_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data={"deleted": True},
         trace_id=trace_id,
     )
 
