@@ -87,7 +87,10 @@ def _generate_settlement_payload(
     names = ["晨光村", "铁砧镇", "月影城", "猎人营地", "石堡要塞", "黄金市场", "边境哨站"]
     settlement_types = ["village", "town", "city", "camp", "fortress", "market", "outpost"]
     economy_types = ["agriculture", "commerce", "mining", "hunting", "fishing", "trade"]
-    resources = [["谷物", "木材"], ["矿石", "皮革"], ["宝石", "稀有金属"], ["兽皮", "肉类"], ["鱼类", "盐"], ["香料", "丝绸"]]
+    resources = [
+        ["谷物", "木材"], ["矿石", "皮革"], ["宝石", "稀有金属"],
+        ["兽皮", "肉类"], ["鱼类", "盐"], ["香料", "丝绸"],
+    ]
     statuses = ["peaceful", "thriving", "troubled", "warring"]
 
     return {
@@ -97,7 +100,11 @@ def _generate_settlement_payload(
         "region_key": region_id or "region_core",
         "chapter_id": chapter_id or "chapter_01",
         "faction_key": "faction_iron_guard",
-        "description": f"{names[index % len(names)]}是一个{settlement_types[index % len(settlement_types)]}，以{economy_types[index % len(economy_types)]}为主。",
+        "description": (
+            f"{names[index % len(names)]}是一个"
+            f"{settlement_types[index % len(settlement_types)]}，"
+            f"以{economy_types[index % len(economy_types)]}为主。"
+        ),
         "population": 100 + index * 50,
         "main_resources": resources[index % len(resources)],
         "economy_type": economy_types[index % len(economy_types)],

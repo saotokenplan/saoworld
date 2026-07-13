@@ -146,7 +146,10 @@ def test_package_content_from_directory_success(mock_audit_log):
 
                 mock_regions_dir = MagicMock()
                 mock_regions_dir.exists.return_value = True
-                mock_regions_dir.glob.return_value = [MagicMock(name="region_list.json"), MagicMock(name="test_region.json")]
+                mock_regions_dir.glob.return_value = [
+                    MagicMock(name="region_list.json"),
+                    MagicMock(name="test_region.json"),
+                ]
 
                 mock_factions_dir = MagicMock()
                 mock_factions_dir.exists.return_value = True

@@ -15,7 +15,12 @@ def test_daily_content_review_task_exists():
 
 
 def test_sync_gauge_metrics_function():
-    from workers.utils.metrics import sync_gauge_metrics, VOTE_CYCLES_BY_STATUS, CONTENT_PACKAGES_BY_STATUS, GENERATION_REQUESTS_BY_STATUS
+    from workers.utils.metrics import (
+        sync_gauge_metrics,
+        VOTE_CYCLES_BY_STATUS,
+        CONTENT_PACKAGES_BY_STATUS,
+        GENERATION_REQUESTS_BY_STATUS,
+    )
 
     sync_gauge_metrics()
 

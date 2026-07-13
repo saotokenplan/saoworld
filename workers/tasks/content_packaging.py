@@ -181,7 +181,10 @@ def package_content_batch(
         raise self.retry(exc=e)
 
 
-@app.task(bind=True, max_retries=3, retry_backoff=2, name="workers.tasks.content_packaging.package_content_from_directory")
+@app.task(
+    bind=True, max_retries=3, retry_backoff=2,
+    name="workers.tasks.content_packaging.package_content_from_directory",
+)
 def package_content_from_directory(
     self,
     data_dir: str,
