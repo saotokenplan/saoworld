@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://bvoteresultpanel01"]
+[gd_scene load_steps=3 format=3 uid="uid://bvoteresultpanel01"]
 
 [ext_resource type="Script" path="res://scripts/ui/vote_result_panel.gd" id="1_result"]
+[ext_resource type="Script" path="res://scripts/ui/voting/ChartDraw.gd" id="2_chart"]
 
 [node name="VoteResultPanel" type="Control"]
 layout_mode = 3
@@ -93,6 +94,26 @@ size_flags_horizontal = 3
 [node name="TurnoutLabel" type="Label" parent="Content/VBox/StatsHBox"]
 layout_mode = 2
 text = "参与率：0%"
+
+[node name="ChartToggleButtons" type="HBoxContainer" parent="Content/VBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="PieChartButton" type="Button" parent="Content/VBox/ChartToggleButtons"]
+layout_mode = 2
+custom_minimum_size = Vector2(100, 40)
+text = "饼图"
+
+[node name="BarChartButton" type="Button" parent="Content/VBox/ChartToggleButtons"]
+layout_mode = 2
+custom_minimum_size = Vector2(100, 40)
+text = "柱状图"
+
+[node name="ChartDraw" type="Control" parent="Content/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(600, 400)
+size_flags_horizontal = 3
+script = ExtResource("2_chart")
 
 [node name="CandidatesContainer" type="VBoxContainer" parent="Content/VBox"]
 layout_mode = 2

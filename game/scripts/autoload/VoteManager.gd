@@ -13,6 +13,7 @@ signal replies_loaded(discussion_id: String, replies: Array, meta: Dictionary)
 signal reply_created(reply: Dictionary)
 signal discussion_like_changed(discussion_id: String, liked: bool, like_count: int)
 signal vote_progress_updated(progress: Dictionary)
+signal chart_data_loaded(chart_data: Dictionary)
 
 var current_cycle: Dictionary = {}
 var candidates: Array[Dictionary] = []
@@ -30,6 +31,7 @@ var current_progress: Dictionary = {}
 var progress_poll_timer: Timer = null
 var progress_poll_interval: int = 10
 var is_polling_progress: bool = false
+var _chart_data_cache: Dictionary = {}
 
 func _ready() -> void:
 	APIManager.auth_error.connect(_on_auth_error)
@@ -218,6 +220,7 @@ func reset() -> void:
 	is_loading = false
 	last_error.clear()
 	current_progress.clear()
+	_chart_data_cache.clear()
 	stop_progress_polling()
 
 func get_vote_history_with_landing() -> Array[Dictionary]:
@@ -489,4 +492,43 @@ func get_candidate_progress(candidate_id: String) -> Dictionary:
 	for candidate in current_progress.get("candidates", []):
 		if str(candidate.get("candidate_id", "")) == candidate_id:
 			return candidate.duplicate()
+	return {}
+
+func fetch_vote_result_chart_data(vote_cycle_id: String, chart_type: String = "pie") -> void:
+	"""获取投票结果的图表数据。
+
+	参数：
+		vote_cycle_id: 投票周期ID
+		chart_type: 图表类型（pie 或 bar），默认为 pie
+	"""
+	# 检查缓存
+	var cache_key: String = "%s_%s" % [vote_cycle_id, chart_type]
+	if _chart_data_cache.has(cache_key):
+		chart_data_loaded.emit(_chart_data_cache[cache_key])
+		return
+
+	_set_loading(true)
+	var endpoint: String = "/votes/history/%s/chart-data?chart_type=%s" % [vote_cycle_id, chart_type]
+	var result: Dictionary = APIManager.get(endpoint)
+
+	if result.get("success", false):
+		var data: Dictionary = result.get("data", {})
+		# 缓存数据
+		_chart_data_cache[cache_key] = data
+		last_error.clear()
+		chart_data_loaded.emit(data)
+	else:
+		_handle_vote_error(result)
+
+	_set_loading(false)
+
+func clear_chart_data_cache() -> void:
+	"""清空图表数据缓存。"""
+	_chart_data_cache.clear()
+
+func get_cached_chart_data(vote_cycle_id: String, chart_type: String = "pie") -> Dictionary:
+	"""从缓存获取图表数据。"""
+	var cache_key: String = "%s_%s" % [vote_cycle_id, chart_type]
+	if _chart_data_cache.has(cache_key):
+		return _chart_data_cache[cache_key].duplicate()
 	return {}
