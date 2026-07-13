@@ -1,5 +1,3 @@
-import json
-import logging
 from datetime import datetime
 from typing import Any, Dict
 
@@ -12,7 +10,7 @@ logger = structlog.get_logger()
 
 async def store_player_event(event_data: Dict[str, Any]) -> None:
     try:
-        from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+        from sqlalchemy.ext.asyncio import create_async_engine
         from sqlalchemy import insert
         from app.domain.models import PlayerEvent
 

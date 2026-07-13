@@ -1,4 +1,3 @@
-import json
 import logging
 
 from workers.events.schemas import Event, EventType, PlayerBehaviorEventType

@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Optional
 from uuid import uuid4
 
@@ -33,7 +33,7 @@ class EventBus:
         event = Event(
             event_id=uuid4(),
             event_type=event_type,
-            occurred_at=datetime.utcnow(),
+            occurred_at=datetime.now(UTC),
             trace_id=trace_id,
             producer=producer,
             payload=payload,

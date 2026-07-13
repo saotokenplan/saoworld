@@ -55,7 +55,7 @@ def extract_insights_from_report(report_data: dict[str, Any]) -> list[dict]:
 
 
 def _extract_region_heat_insights(summary: dict, details: dict) -> list[dict]:
-    insights = []
+    insights: list[dict] = []
 
     regions = details.get("regions", {})
     if not regions:
@@ -92,7 +92,7 @@ def _extract_region_heat_insights(summary: dict, details: dict) -> list[dict]:
 
 
 def _extract_quest_difficulty_insights(summary: dict, details: dict) -> list[dict]:
-    insights = []
+    insights: list[dict] = []
 
     quests = details.get("quests", {})
     if not quests:
@@ -143,7 +143,7 @@ def _extract_content_preference_insights(summary: dict, details: dict) -> list[d
         if total_events > 0:
             exploration_events = event_types.get("player.enter_region", 0) + event_types.get("player.leave_region", 0)
             interaction_events = event_types.get("player.interact_npc", 0)
-            quest_events = event_types.get("player.complete_quest", 0)
+            _quest_events = event_types.get("player.complete_quest", 0)
 
             exploration_ratio = exploration_events / total_events
             interaction_ratio = interaction_events / total_events
