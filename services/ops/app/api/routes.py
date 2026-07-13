@@ -10,8 +10,14 @@ from app.core.errors import OpsErrorCodes, raise_ops_error
 from app.core.metrics import (
     record_dashboard_view,
     record_ops_action,
+    record_vote_cycle_op,
+    record_content_op,
+    record_review_op,
 )
 from app.core.requirement_generator import generate_requirements_from_insight
+from app.core.vote_service_client import VoteServiceClient
+from app.core.content_service_client import ContentServiceClient
+from app.core.review_service_client import ReviewServiceClient
 from app.repositories.audit_repo import (
     ACTION_DASHBOARD_VIEW,
     ACTION_ANALYTICS_QUERY,
@@ -20,12 +26,24 @@ from app.repositories.audit_repo import (
     ACTION_INSIGHT_QUERY,
     ACTION_REQUIREMENT_QUERY,
     ACTION_REQUIREMENT_APPROVE,
+    ACTION_VOTE_CYCLE_CREATE,
+    ACTION_VOTE_CYCLE_SCHEDULE,
+    ACTION_VOTE_CYCLE_OPEN,
+    ACTION_VOTE_CYCLE_CLOSE,
+    ACTION_VOTE_CYCLE_FINALIZE,
+    ACTION_CONTENT_RELEASE,
+    ACTION_CONTENT_ROLLBACK,
+    ACTION_REVIEW_APPROVE,
+    ACTION_REVIEW_REJECT,
     RESOURCE_ANALYTICS,
     RESOURCE_DASHBOARD,
     RESOURCE_OPS_ACTION,
     RESOURCE_SYSTEM,
     RESOURCE_INSIGHT,
     RESOURCE_REQUIREMENT,
+    RESOURCE_VOTE_CYCLE,
+    RESOURCE_CONTENT_PACKAGE,
+    RESOURCE_REVIEW_OBJECT,
     AuditRepository,
 )
 from app.repositories.analytics_repo import AnalyticsRepository
@@ -36,6 +54,9 @@ from app.repositories.requirement_repo import RequirementRepository
 from app.schemas.ops import (
     AnalyticsOverview,
     AnalyticsReportItem,
+    ContentPackageResponse,
+    ContentReleaseRequest,
+    ContentRollbackRequest,
     DashboardMetrics,
     DashboardResponse,
     EnvelopeResponse,
@@ -48,11 +69,17 @@ from app.schemas.ops import (
     RegionAnalyticsItem,
     RegionMetricItem,
     RequirementResponse,
+    ReviewApproveRequest,
+    ReviewObjectResponse,
+    ReviewRejectRequest,
+    ReviewStatsResponse,
     SystemServiceStatus,
     SystemStatusResponse,
     TrendDataPoint,
     TrendResponse,
     VoteAnalyticsItem,
+    VoteCycleCreateRequest,
+    VoteCycleResponse,
 )
 
 router = APIRouter()
@@ -1134,6 +1161,831 @@ async def approve_requirement(
         resource_id=requirement_id,
         result_status=200,
     )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+# ============================================================
+# 投票管理 API
+# ============================================================
+
+
+@router.post(
+    "/ops/vote-cycles",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["vote-management"],
+)
+async def create_vote_cycle(
+    body: VoteCycleCreateRequest,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[VoteCycleResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    client = VoteServiceClient()
+    try:
+        result = await client.create_vote_cycle(
+            chapter_id=body.chapter_id,
+            title=body.title,
+            description=body.description,
+            started_at=body.started_at,
+            ended_at=body.ended_at,
+            token=authorization.replace("Bearer ", "") if authorization and authorization.startswith("Bearer ") else None,
+            trace_id=trace_id,
+        )
+    except Exception as exc:
+        raise_ops_error(
+            OpsErrorCodes.VOTE_CYCLE_CREATE_FAILED,
+            f"投票周期创建失败: {exc}",
+            request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    cycle_data = result.get("data", result)
+    response_data = VoteCycleResponse(detail=cycle_data)
+
+    record_vote_cycle_op("create")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_VOTE_CYCLE_CREATE,
+        resource_type=RESOURCE_VOTE_CYCLE,
+        request_payload_jsonb=body.model_dump(),
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/ops/vote-cycles/{vote_cycle_id}/schedule",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["vote-management"],
+)
+async def schedule_vote_cycle(
+    vote_cycle_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[VoteCycleResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    client = VoteServiceClient()
+    try:
+        result = await client.schedule_vote_cycle(
+            str(vote_cycle_id),
+            token=authorization.replace("Bearer ", "") if authorization and authorization.startswith("Bearer ") else None,
+            trace_id=trace_id,
+        )
+    except Exception as exc:
+        raise_ops_error(
+            OpsErrorCodes.UPSTREAM_SERVICE_ERROR,
+            f"投票周期计划失败: {exc}",
+            request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    cycle_data = result.get("data", result)
+    response_data = VoteCycleResponse(detail=cycle_data)
+
+    record_vote_cycle_op("schedule")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_VOTE_CYCLE_SCHEDULE,
+        resource_type=RESOURCE_VOTE_CYCLE,
+        resource_id=vote_cycle_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/ops/vote-cycles/{vote_cycle_id}/open",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["vote-management"],
+)
+async def open_vote_cycle(
+    vote_cycle_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[VoteCycleResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    client = VoteServiceClient()
+    try:
+        result = await client.open_vote_cycle(
+            str(vote_cycle_id),
+            token=authorization.replace("Bearer ", "") if authorization and authorization.startswith("Bearer ") else None,
+            trace_id=trace_id,
+        )
+    except Exception as exc:
+        raise_ops_error(
+            OpsErrorCodes.UPSTREAM_SERVICE_ERROR,
+            f"投票周期开启失败: {exc}",
+            request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    cycle_data = result.get("data", result)
+    response_data = VoteCycleResponse(detail=cycle_data)
+
+    record_vote_cycle_op("open")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_VOTE_CYCLE_OPEN,
+        resource_type=RESOURCE_VOTE_CYCLE,
+        resource_id=vote_cycle_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/ops/vote-cycles/{vote_cycle_id}/close",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["vote-management"],
+)
+async def close_vote_cycle(
+    vote_cycle_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[VoteCycleResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    client = VoteServiceClient()
+    try:
+        result = await client.close_vote_cycle(
+            str(vote_cycle_id),
+            token=authorization.replace("Bearer ", "") if authorization and authorization.startswith("Bearer ") else None,
+            trace_id=trace_id,
+        )
+    except Exception as exc:
+        raise_ops_error(
+            OpsErrorCodes.UPSTREAM_SERVICE_ERROR,
+            f"投票周期关闭失败: {exc}",
+            request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    cycle_data = result.get("data", result)
+    response_data = VoteCycleResponse(detail=cycle_data)
+
+    record_vote_cycle_op("close")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_VOTE_CYCLE_CLOSE,
+        resource_type=RESOURCE_VOTE_CYCLE,
+        resource_id=vote_cycle_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/ops/vote-cycles/{vote_cycle_id}/finalize",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["vote-management"],
+)
+async def finalize_vote_cycle(
+    vote_cycle_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[VoteCycleResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    client = VoteServiceClient()
+    try:
+        result = await client.finalize_vote_cycle(
+            str(vote_cycle_id),
+            token=authorization.replace("Bearer ", "") if authorization and authorization.startswith("Bearer ") else None,
+            trace_id=trace_id,
+        )
+    except Exception as exc:
+        raise_ops_error(
+            OpsErrorCodes.UPSTREAM_SERVICE_ERROR,
+            f"投票周期确认失败: {exc}",
+            request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    cycle_data = result.get("data", result)
+    response_data = VoteCycleResponse(detail=cycle_data)
+
+    record_vote_cycle_op("finalize")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_VOTE_CYCLE_FINALIZE,
+        resource_type=RESOURCE_VOTE_CYCLE,
+        resource_id=vote_cycle_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/vote-cycles",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["vote-management"],
+)
+async def list_vote_cycles(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    cycle_status: str | None = Query(default=None, alias="status"),
+    chapter_id: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[VoteCycleResponse]]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    client = VoteServiceClient()
+    try:
+        result = await client.list_vote_cycles(
+            status=cycle_status,
+            chapter_id=chapter_id,
+            limit=limit,
+            offset=offset,
+            token=authorization.replace("Bearer ", "") if authorization and authorization.startswith("Bearer ") else None,
+            trace_id=trace_id,
+        )
+    except Exception as exc:
+        raise_ops_error(
+            OpsErrorCodes.UPSTREAM_SERVICE_ERROR,
+            f"投票周期列表查询失败: {exc}",
+            request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    data = result.get("data", [])
+    if isinstance(data, dict):
+        data = [data]
+    response_data = [VoteCycleResponse(detail=item) for item in data]
+    meta_data = result.get("meta")
+    meta = PaginatedMeta(**meta_data) if meta_data else None
+
+    record_vote_cycle_op("list")
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        meta=meta,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/vote-cycles/{vote_cycle_id}",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["vote-management"],
+)
+async def get_vote_cycle_detail(
+    vote_cycle_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[VoteCycleResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    client = VoteServiceClient()
+    try:
+        result = await client.get_vote_cycle_detail(
+            str(vote_cycle_id),
+            token=authorization.replace("Bearer ", "") if authorization and authorization.startswith("Bearer ") else None,
+            trace_id=trace_id,
+        )
+    except Exception as exc:
+        raise_ops_error(
+            OpsErrorCodes.UPSTREAM_SERVICE_ERROR,
+            f"投票周期详情查询失败: {exc}",
+            request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    cycle_data = result.get("data", result)
+    response_data = VoteCycleResponse(detail=cycle_data)
+
+    record_vote_cycle_op("detail")
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+# ============================================================
+# 内容管理 API
+# ============================================================
+
+
+@router.post(
+    "/ops/content-packages/{content_package_id}/release",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["content-management"],
+)
+async def release_content_package(
+    content_package_id: uuid.UUID,
+    body: ContentReleaseRequest,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[ContentPackageResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    client = ContentServiceClient()
+    try:
+        result = await client.release_content_package(
+            str(content_package_id),
+            release_mode=body.release_mode,
+            gray_scope=body.gray_scope,
+            token=authorization.replace("Bearer ", "") if authorization and authorization.startswith("Bearer ") else None,
+            trace_id=trace_id,
+            idempotency_key=idempotency_key,
+        )
+    except Exception as exc:
+        raise_ops_error(
+            OpsErrorCodes.CONTENT_RELEASE_FAILED,
+            f"内容包发布失败: {exc}",
+            request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    pkg_data = result.get("data", result)
+    response_data = ContentPackageResponse(detail=pkg_data)
+
+    record_content_op("release")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_CONTENT_RELEASE,
+        resource_type=RESOURCE_CONTENT_PACKAGE,
+        resource_id=content_package_id,
+        request_payload_jsonb=body.model_dump(),
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/ops/content-packages/{content_package_id}/rollback",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["content-management"],
+)
+async def rollback_content_package(
+    content_package_id: uuid.UUID,
+    body: ContentRollbackRequest,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[ContentPackageResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    client = ContentServiceClient()
+    try:
+        result = await client.rollback_content_package(
+            str(content_package_id),
+            reason=body.reason,
+            token=authorization.replace("Bearer ", "") if authorization and authorization.startswith("Bearer ") else None,
+            trace_id=trace_id,
+            idempotency_key=idempotency_key,
+        )
+    except Exception as exc:
+        raise_ops_error(
+            OpsErrorCodes.CONTENT_ROLLBACK_FAILED,
+            f"内容包回滚失败: {exc}",
+            request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    pkg_data = result.get("data", result)
+    response_data = ContentPackageResponse(detail=pkg_data)
+
+    record_content_op("rollback")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_CONTENT_ROLLBACK,
+        resource_type=RESOURCE_CONTENT_PACKAGE,
+        resource_id=content_package_id,
+        reason=body.reason,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/content-packages",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["content-management"],
+)
+async def list_content_packages(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    pkg_status: str | None = Query(default=None, alias="status"),
+    region_id: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[ContentPackageResponse]]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    client = ContentServiceClient()
+    try:
+        result = await client.list_content_packages(
+            status=pkg_status,
+            region_id=region_id,
+            limit=limit,
+            offset=offset,
+            token=authorization.replace("Bearer ", "") if authorization and authorization.startswith("Bearer ") else None,
+            trace_id=trace_id,
+        )
+    except Exception as exc:
+        raise_ops_error(
+            OpsErrorCodes.UPSTREAM_SERVICE_ERROR,
+            f"内容包列表查询失败: {exc}",
+            request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    data = result.get("data", [])
+    if isinstance(data, dict):
+        data = [data]
+    response_data = [ContentPackageResponse(detail=item) for item in data]
+    meta_data = result.get("meta")
+    meta = PaginatedMeta(**meta_data) if meta_data else None
+
+    record_content_op("list")
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        meta=meta,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/content-packages/{content_package_id}",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["content-management"],
+)
+async def get_content_package_detail(
+    content_package_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[ContentPackageResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    client = ContentServiceClient()
+    try:
+        result = await client.get_content_package_detail(
+            str(content_package_id),
+            token=authorization.replace("Bearer ", "") if authorization and authorization.startswith("Bearer ") else None,
+            trace_id=trace_id,
+        )
+    except Exception as exc:
+        raise_ops_error(
+            OpsErrorCodes.UPSTREAM_SERVICE_ERROR,
+            f"内容包详情查询失败: {exc}",
+            request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    pkg_data = result.get("data", result)
+    response_data = ContentPackageResponse(detail=pkg_data)
+
+    record_content_op("detail")
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+# ============================================================
+# 审核工作流 API
+# ============================================================
+
+
+@router.post(
+    "/ops/review/{object_id}/approve",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["review-workflow"],
+)
+async def approve_review_object(
+    object_id: uuid.UUID,
+    body: ReviewApproveRequest,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[ReviewObjectResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    client = ReviewServiceClient()
+    try:
+        result = await client.approve_review_object(
+            str(object_id),
+            notes=body.notes,
+            token=authorization.replace("Bearer ", "") if authorization and authorization.startswith("Bearer ") else None,
+            trace_id=trace_id,
+            idempotency_key=idempotency_key,
+        )
+    except Exception as exc:
+        raise_ops_error(
+            OpsErrorCodes.REVIEW_APPROVE_FAILED,
+            f"审核批准失败: {exc}",
+            request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    obj_data = result.get("data", result)
+    response_data = ReviewObjectResponse(detail=obj_data)
+
+    record_review_op("approve")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_REVIEW_APPROVE,
+        resource_type=RESOURCE_REVIEW_OBJECT,
+        resource_id=object_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/ops/review/{object_id}/reject",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["review-workflow"],
+)
+async def reject_review_object(
+    object_id: uuid.UUID,
+    body: ReviewRejectRequest,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[ReviewObjectResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    client = ReviewServiceClient()
+    try:
+        result = await client.reject_review_object(
+            str(object_id),
+            reason=body.reason,
+            token=authorization.replace("Bearer ", "") if authorization and authorization.startswith("Bearer ") else None,
+            trace_id=trace_id,
+            idempotency_key=idempotency_key,
+        )
+    except Exception as exc:
+        raise_ops_error(
+            OpsErrorCodes.REVIEW_REJECT_FAILED,
+            f"审核拒绝失败: {exc}",
+            request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    obj_data = result.get("data", result)
+    response_data = ReviewObjectResponse(detail=obj_data)
+
+    record_review_op("reject")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_REVIEW_REJECT,
+        resource_type=RESOURCE_REVIEW_OBJECT,
+        resource_id=object_id,
+        reason=body.reason,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/review/objects",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["review-workflow"],
+)
+async def list_review_objects(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    obj_status: str | None = Query(default=None, alias="status"),
+    risk_level: str | None = Query(default=None),
+    object_type: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[ReviewObjectResponse]]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    client = ReviewServiceClient()
+    try:
+        result = await client.list_review_objects(
+            status=obj_status,
+            risk_level=risk_level,
+            object_type=object_type,
+            limit=limit,
+            offset=offset,
+            token=authorization.replace("Bearer ", "") if authorization and authorization.startswith("Bearer ") else None,
+            trace_id=trace_id,
+        )
+    except Exception as exc:
+        raise_ops_error(
+            OpsErrorCodes.UPSTREAM_SERVICE_ERROR,
+            f"审核列表查询失败: {exc}",
+            request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    data = result.get("data", [])
+    if isinstance(data, dict):
+        data = [data]
+    response_data = [ReviewObjectResponse(detail=item) for item in data]
+    meta_data = result.get("meta")
+    meta = PaginatedMeta(**meta_data) if meta_data else None
+
+    record_review_op("list")
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        meta=meta,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/review/stats",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["review-workflow"],
+)
+async def get_review_stats(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[ReviewStatsResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    client = ReviewServiceClient()
+    try:
+        result = await client.get_review_stats(
+            token=authorization.replace("Bearer ", "") if authorization and authorization.startswith("Bearer ") else None,
+            trace_id=trace_id,
+        )
+    except Exception as exc:
+        raise_ops_error(
+            OpsErrorCodes.UPSTREAM_SERVICE_ERROR,
+            f"审核统计查询失败: {exc}",
+            request_id,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    stats_data = result.get("data", result)
+    response_data = ReviewStatsResponse(**stats_data) if isinstance(stats_data, dict) else ReviewStatsResponse()
+
+    record_review_op("stats")
 
     return EnvelopeResponse(
         request_id=request_id,
