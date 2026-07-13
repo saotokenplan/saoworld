@@ -21,6 +21,13 @@ ACTION_CONTENT_RELEASE = "content_release"
 ACTION_CONTENT_ROLLBACK = "content_rollback"
 ACTION_REVIEW_APPROVE = "review_approve"
 ACTION_REVIEW_REJECT = "review_reject"
+ACTION_EVENT_CREATE = "event_create"
+ACTION_EVENT_UPDATE = "event_update"
+ACTION_EVENT_ACTIVATE = "event_activate"
+ACTION_EVENT_PAUSE = "event_pause"
+ACTION_EVENT_END = "event_end"
+ACTION_EVENT_DELETE = "event_delete"
+ACTION_EVENT_QUERY = "event_query"
 
 RESOURCE_DASHBOARD = "dashboard"
 RESOURCE_OPS_ACTION = "ops_action"
@@ -31,6 +38,7 @@ RESOURCE_REQUIREMENT = "requirement"
 RESOURCE_VOTE_CYCLE = "vote_cycle"
 RESOURCE_CONTENT_PACKAGE = "content_package"
 RESOURCE_REVIEW_OBJECT = "review_object"
+RESOURCE_OPS_EVENT = "ops_event"
 
 
 class AuditRepository:

@@ -3,7 +3,7 @@
 使用 prometheus_client 定义业务指标，由 routes 层在关键操作发生时更新。
 """
 
-from prometheus_client import Counter
+from prometheus_client import Counter, Gauge
 
 # 运营操作数（按动作类型分组：dashboard_view、action_query、system_status）
 OPS_ACTIONS_TOTAL = Counter(
@@ -68,3 +68,37 @@ def record_content_op(operation: str) -> None:
 def record_review_op(operation: str) -> None:
     """记录一次审核操作。"""
     OPS_REVIEW_OPS_TOTAL.labels(operation=operation).inc()
+
+
+# 运营事件指标
+OPS_EVENTS_CREATED_TOTAL = Counter(
+    "ops_events_created_total",
+    "运营事件创建数",
+    labelnames=["event_type"],
+)
+
+OPS_EVENTS_ACTIVE_COUNT = Gauge(
+    "ops_events_active_count",
+    "当前生效的运营事件数",
+)
+
+OPS_EVENT_TRIGGERS_TOTAL = Counter(
+    "ops_event_triggers_total",
+    "运营事件触发次数",
+    labelnames=["event_type"],
+)
+
+
+def record_event_created(event_type: str) -> None:
+    """记录一次事件创建。"""
+    OPS_EVENTS_CREATED_TOTAL.labels(event_type=event_type).inc()
+
+
+def record_event_trigger(event_type: str) -> None:
+    """记录一次事件触发。"""
+    OPS_EVENT_TRIGGERS_TOTAL.labels(event_type=event_type).inc()
+
+
+def set_active_events_count(count: int) -> None:
+    """设置当前生效事件数。"""
+    OPS_EVENTS_ACTIVE_COUNT.set(count)
