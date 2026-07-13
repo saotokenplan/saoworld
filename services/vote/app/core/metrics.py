@@ -116,3 +116,14 @@ def set_vote_candidates_by_status(status_counts: dict[str, int]) -> None:
         VOTE_CANDIDATES_BY_STATUS.labels(status=status_label).set(
             status_counts.get(status_label, 0)
         )
+
+
+VOTE_PROGRESS_QUERIES_TOTAL = Counter(
+    "vote_progress_queries_total",
+    "投票进度查询总数",
+)
+
+
+def record_vote_progress_query() -> None:
+    """记录一次投票进度查询。"""
+    VOTE_PROGRESS_QUERIES_TOTAL.inc()

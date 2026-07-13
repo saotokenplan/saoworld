@@ -249,6 +249,75 @@ class VoteRepository:
         rows = result.all()
         return rows, total
 
+    async def get_vote_progress(self, vote_cycle_id: uuid.UUID) -> dict[str, Any] | None:
+        """获取投票周期的实时进度。"""
+        cycle = await self.get_cycle_by_id(vote_cycle_id)
+        if cycle is None:
+            return None
+
+        stmt = (
+            select(
+                Vote.candidate_id,
+                sa_func.count(Vote.vote_id).label("count"),
+                sa_func.sum(Vote.weight).label("total_weight"),
+            )
+            .where(Vote.vote_cycle_id == vote_cycle_id)
+            .group_by(Vote.candidate_id)
+        )
+        result = await self.db.execute(stmt)
+        tally_rows = result.all()
+
+        candidates = await self.get_all_candidates_for_cycle(vote_cycle_id)
+        candidate_map = {c.candidate_id: c for c in candidates}
+
+        total_votes = 0
+        total_weighted_votes = 0.0
+        max_weighted_score = -1.0
+        leading_candidate_id: uuid.UUID | None = None
+
+        progress_items = []
+        for row in tally_rows:
+            count = row.count
+            total_weight = float(row.total_weight) if row.total_weight else 0.0
+            total_votes += count
+            total_weighted_votes += total_weight
+
+            candidate = candidate_map.get(row.candidate_id)
+            if candidate:
+                if total_weight > max_weighted_score and candidate.status == "active":
+                    max_weighted_score = total_weight
+                    leading_candidate_id = row.candidate_id
+
+                progress_items.append({
+                    "candidate_id": row.candidate_id,
+                    "title": candidate.title,
+                    "vote_count": count,
+                    "weighted_score": total_weight,
+                    "status": candidate.status,
+                })
+
+        for candidate_id, candidate in candidate_map.items():
+            if candidate_id not in {row.candidate_id for row in tally_rows}:
+                progress_items.append({
+                    "candidate_id": candidate_id,
+                    "title": candidate.title,
+                    "vote_count": 0,
+                    "weighted_score": 0.0,
+                    "status": candidate.status,
+                })
+
+        progress_items.sort(key=lambda x: x["weighted_score"], reverse=True)
+
+        return {
+            "vote_cycle_id": vote_cycle_id,
+            "chapter_id": cycle.chapter_id,
+            "status": cycle.status,
+            "total_votes": total_votes,
+            "total_weighted_votes": total_weighted_votes,
+            "leading_candidate_id": leading_candidate_id,
+            "candidates": progress_items,
+        }
+
     @staticmethod
     def is_valid_transition(current_status: str, new_status: str) -> bool:
         allowed = VALID_TRANSITIONS.get(current_status, set())
