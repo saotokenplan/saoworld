@@ -1,17 +1,12 @@
 """私聊消息 API 测试。"""
 
 import uuid
-from datetime import datetime, timezone
 
 import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.repositories.audit_repo import (
-    ACTION_PRIVATE_MESSAGE_SEND,
-    RESOURCE_PRIVATE_MESSAGE,
-)
 from app.schemas.auth import Role, Scope
 
 
