@@ -324,3 +324,41 @@ class VoteRepository:
     def is_valid_transition(current_status: str, new_status: str) -> bool:
         allowed = VALID_TRANSITIONS.get(current_status, set())
         return new_status in allowed
+
+    # --- 异常检测相关查询 ---
+
+    async def get_recent_votes_by_player(
+        self, player_id: uuid.UUID, since: datetime
+    ) -> Sequence[Vote]:
+        stmt: Select[tuple[Vote]] = (
+            select(Vote)
+            .where(Vote.player_id == player_id)
+            .where(Vote.created_at >= since)
+            .order_by(Vote.created_at.desc())
+        )
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
+
+    async def get_recent_votes_by_device(
+        self, device_fingerprint_hash: str, since: datetime
+    ) -> Sequence[Vote]:
+        stmt: Select[tuple[Vote]] = (
+            select(Vote)
+            .where(Vote.device_fingerprint_hash == device_fingerprint_hash)
+            .where(Vote.created_at >= since)
+            .order_by(Vote.created_at.desc())
+        )
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
+
+    async def count_votes_in_cycle_since(
+        self, vote_cycle_id: uuid.UUID, since: datetime
+    ) -> int:
+        stmt = (
+            select(sa_func.count(Vote.vote_id))
+            .where(Vote.vote_cycle_id == vote_cycle_id)
+            .where(Vote.created_at >= since)
+        )
+        result = await self.db.execute(stmt)
+        count = result.scalar_one()
+        return int(count)

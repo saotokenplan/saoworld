@@ -24,6 +24,9 @@ from app.core.deps import (
 from app.core.errors import VoteErrorCodes, raise_vote_error
 from app.core.event_publisher import event_publisher
 from app.core.metrics import (
+    observe_anomaly_detection_duration,
+    record_anomaly_detected,
+    record_anomaly_resolved,
     record_discussion_created,
     record_discussion_liked,
     record_reply_created,
@@ -35,6 +38,9 @@ from app.core.metrics import (
 )
 from app.core.player_client import PlayerContributionClient
 from app.repositories.audit_repo import (
+    ACTION_ANOMALY_DETECTED,
+    ACTION_ANOMALY_FALSE_POSITIVE,
+    ACTION_ANOMALY_RESOLVED,
     ACTION_DISCUSSION_CREATE,
     ACTION_DISCUSSION_DELETE,
     ACTION_DISCUSSION_LIKE,
@@ -46,12 +52,18 @@ from app.repositories.audit_repo import (
     RESOURCE_DISCUSSION,
     RESOURCE_DISCUSSION_REPLY,
     RESOURCE_VOTE,
+    RESOURCE_VOTE_ANOMALY,
     RESOURCE_VOTE_CYCLE,
     AuditRepository,
 )
+from app.core.anomaly_detector import AnomalyDetector, AnomalyDetectionConfig
+from app.repositories.anomaly_repo import AnomalyRepository
 from app.repositories.discussion_repo import DiscussionRepository
 from app.repositories.vote_repo import VoteRepository
 from app.schemas.vote import (
+    AnomalyListData,
+    AnomalyStatsResponse,
+    AnomalyUpdateRequest,
     CandidateResponse,
     ChartDataItem,
     ChartDataResponse,
@@ -70,6 +82,7 @@ from app.schemas.vote import (
     ReplyListData,
     TransitionVoteCycleRequest,
     TransitionVoteCycleResponse,
+    VoteAnomalyResponse,
     VoteCandidateStatus,
     VoteCycleStatus,
     VoteDiscussionReplyResponse,
@@ -110,6 +123,25 @@ def _make_request_id(prefix: str) -> str:
 def _get_trace_id(request: Request) -> str | None:
     """从请求头获取 trace_id。"""
     return request.headers.get("X-Trace-Id")
+
+
+def _anomaly_to_response(anomaly: Any) -> VoteAnomalyResponse:
+    """将 VoteAnomaly ORM 对象转换为 VoteAnomalyResponse。"""
+    return VoteAnomalyResponse(
+        anomaly_id=anomaly.anomaly_id,
+        vote_cycle_id=anomaly.vote_cycle_id,
+        player_id=anomaly.player_id,
+        vote_id=anomaly.vote_id,
+        anomaly_type=anomaly.anomaly_type,
+        severity=anomaly.severity,
+        status=anomaly.status,
+        description=anomaly.description,
+        detail=anomaly.detail_jsonb,
+        detected_at=anomaly.detected_at,
+        resolved_at=anomaly.resolved_at,
+        resolver_id=anomaly.resolver_id,
+        created_at=anomaly.created_at,
+    )
 
 
 async def _log_transition_audit(
@@ -448,6 +480,72 @@ async def submit_vote(
         device_fingerprint_hash=body.device_fingerprint_hash,
         idempotency_key=idempotency_key,
     )
+
+    # 异常检测
+    anomaly_detector = AnomalyDetector(
+        config=AnomalyDetectionConfig(
+            frequency_window_seconds=settings.anomaly_frequency_window_seconds,
+            frequency_threshold=settings.anomaly_frequency_threshold,
+            device_multi_player_threshold=settings.anomaly_device_multi_player_threshold,
+            weight_high_threshold=settings.anomaly_weight_high_threshold,
+            weight_critical_threshold=settings.anomaly_weight_critical_threshold,
+            time_window_seconds=settings.anomaly_time_window_seconds,
+            time_surge_threshold=settings.anomaly_time_surge_threshold,
+        )
+    )
+
+    from datetime import timedelta
+    frequency_since = datetime.now(timezone.utc) - timedelta(seconds=settings.anomaly_frequency_window_seconds)
+    time_surge_since = datetime.now(timezone.utc) - timedelta(seconds=settings.anomaly_time_window_seconds)
+
+    recent_player_votes = await repo.get_recent_votes_by_player(player_uuid, frequency_since)
+    recent_device_votes = await repo.get_recent_votes_by_device(body.device_fingerprint_hash, frequency_since)
+    cycle_recent_count = await repo.count_votes_in_cycle_since(cycle.vote_cycle_id, time_surge_since)
+
+    detection_start = datetime.now(timezone.utc)
+    anomaly_results = await anomaly_detector.detect_vote_anomalies(
+        vote_cycle_id=cycle.vote_cycle_id,
+        player_id=player_uuid,
+        candidate_id=body.candidate_id,
+        weight=final_weight,
+        device_fingerprint_hash=body.device_fingerprint_hash,
+        recent_votes=list(recent_player_votes),
+        recent_same_device_votes=list(recent_device_votes),
+        cycle_vote_count=cycle_recent_count,
+    )
+    detection_duration = (datetime.now(timezone.utc) - detection_start).total_seconds()
+    observe_anomaly_detection_duration(detection_duration)
+
+    if anomaly_results:
+        anomaly_repo = AnomalyRepository(db)
+        audit_repo_local = AuditRepository(db)
+        for result in anomaly_results:
+            anomaly = await anomaly_repo.create_anomaly(
+                vote_cycle_id=cycle.vote_cycle_id,
+                player_id=player_uuid,
+                vote_id=vote.vote_id,
+                anomaly_type=result.anomaly_type.value,
+                severity=result.severity.value,
+                description=result.description,
+                detail=result.detail,
+                detected_at=datetime.now(timezone.utc),
+            )
+            record_anomaly_detected(result.anomaly_type.value, result.severity.value)
+            await audit_repo_local.create_audit_log(
+                trace_id=x_trace_id or _make_request_id("trace"),
+                operator_id="system",
+                operator_role="system",
+                action=ACTION_ANOMALY_DETECTED,
+                resource_type=RESOURCE_VOTE_ANOMALY,
+                resource_id=anomaly.anomaly_id,
+                request_payload_jsonb={
+                    "vote_id": str(vote.vote_id),
+                    "anomaly_type": result.anomaly_type.value,
+                    "severity": result.severity.value,
+                    "description": result.description,
+                },
+                result_status=201,
+            )
 
     # 业务指标：投票提交计数
     record_vote_submission()
@@ -1945,5 +2043,251 @@ async def finalize_vote_cycle(
             request_id=request_id,
             trace_id=x_trace_id,
         ),
+        trace_id=x_trace_id,
+    )
+
+
+# --- 运营异常管理接口 ---
+
+
+@ops_router.get(
+    "/anomalies",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["ops"],
+)
+async def list_anomalies(
+    request: Request,
+    vote_cycle_id: uuid.UUID | None = Query(default=None),
+    player_id: uuid.UUID | None = Query(default=None),
+    anomaly_type: str | None = Query(default=None),
+    severity: str | None = Query(default=None),
+    anomaly_status: str | None = Query(default=None, alias="status"),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsScope,
+) -> EnvelopeResponse[AnomalyListData]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_ops_anomalies_list")
+
+    anomaly_repo = AnomalyRepository(db)
+    anomalies, total = await anomaly_repo.list_anomalies(
+        vote_cycle_id=vote_cycle_id,
+        player_id=player_id,
+        anomaly_type=anomaly_type,
+        severity=severity,
+        status=anomaly_status,
+        limit=limit,
+        offset=offset,
+    )
+
+    anomaly_responses = [_anomaly_to_response(a) for a in anomalies]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=AnomalyListData(anomalies=anomaly_responses),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.get(
+    "/anomalies/stats",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["ops"],
+)
+async def get_anomaly_stats(
+    request: Request,
+    vote_cycle_id: uuid.UUID | None = Query(default=None),
+    start_time: datetime | None = Query(default=None),
+    end_time: datetime | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsScope,
+) -> EnvelopeResponse[AnomalyStatsResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_ops_anomaly_stats")
+
+    anomaly_repo = AnomalyRepository(db)
+    stats = await anomaly_repo.get_anomaly_stats(
+        vote_cycle_id=vote_cycle_id,
+        start_time=start_time,
+        end_time=end_time,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=AnomalyStatsResponse(
+            total=stats["total"],
+            by_type=stats["by_type"],
+            by_severity=stats["by_severity"],
+            by_status=stats["by_status"],
+        ),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.get(
+    "/anomalies/{anomaly_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Anomaly not found"},
+    },
+    tags=["ops"],
+)
+async def get_anomaly(
+    anomaly_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsScope,
+) -> EnvelopeResponse[VoteAnomalyResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_ops_anomaly_get")
+
+    anomaly_repo = AnomalyRepository(db)
+    anomaly = await anomaly_repo.get_anomaly_by_id(anomaly_id)
+
+    if anomaly is None:
+        raise_vote_error(
+            VoteErrorCodes.ANOMALY_NOT_FOUND,
+            "异常记录不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=_anomaly_to_response(anomaly),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.patch(
+    "/anomalies/{anomaly_id}/resolve",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Anomaly not found"},
+        409: {"description": "Invalid anomaly status"},
+    },
+    tags=["ops"],
+)
+async def resolve_anomaly(
+    anomaly_id: uuid.UUID,
+    body: AnomalyUpdateRequest,
+    request: Request,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsScope,
+) -> EnvelopeResponse[VoteAnomalyResponse]:
+    request_id = _make_request_id("req_ops_anomaly_resolve")
+
+    anomaly_repo = AnomalyRepository(db)
+    anomaly = await anomaly_repo.get_anomaly_by_id(anomaly_id)
+
+    if anomaly is None:
+        raise_vote_error(
+            VoteErrorCodes.ANOMALY_NOT_FOUND,
+            "异常记录不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if anomaly.status in ("resolved", "false_positive"):
+        raise_vote_error(
+            VoteErrorCodes.INVALID_ANOMALY_STATUS,
+            f"异常状态 {anomaly.status} 不允许标记为已解决",
+            request_id=request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    updated = await anomaly_repo.update_anomaly_status(
+        anomaly_id=anomaly_id,
+        status="resolved",
+        resolver_id=current_user.user_id,
+    )
+    assert updated is not None
+
+    record_anomaly_resolved("resolved")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ANOMALY_RESOLVED,
+        resource_type=RESOURCE_VOTE_ANOMALY,
+        resource_id=anomaly_id,
+        reason=body.reason,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=_anomaly_to_response(updated),
+        trace_id=x_trace_id,
+    )
+
+
+@ops_router.patch(
+    "/anomalies/{anomaly_id}/false-positive",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Anomaly not found"},
+    },
+    tags=["ops"],
+)
+async def mark_anomaly_false_positive(
+    anomaly_id: uuid.UUID,
+    body: AnomalyUpdateRequest,
+    request: Request,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsScope,
+) -> EnvelopeResponse[VoteAnomalyResponse]:
+    request_id = _make_request_id("req_ops_anomaly_false_positive")
+
+    anomaly_repo = AnomalyRepository(db)
+    anomaly = await anomaly_repo.get_anomaly_by_id(anomaly_id)
+
+    if anomaly is None:
+        raise_vote_error(
+            VoteErrorCodes.ANOMALY_NOT_FOUND,
+            "异常记录不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    updated = await anomaly_repo.update_anomaly_status(
+        anomaly_id=anomaly_id,
+        status="false_positive",
+        resolver_id=current_user.user_id,
+    )
+    assert updated is not None
+
+    record_anomaly_resolved("false_positive")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ANOMALY_FALSE_POSITIVE,
+        resource_type=RESOURCE_VOTE_ANOMALY,
+        resource_id=anomaly_id,
+        reason=body.reason,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=_anomaly_to_response(updated),
         trace_id=x_trace_id,
     )
