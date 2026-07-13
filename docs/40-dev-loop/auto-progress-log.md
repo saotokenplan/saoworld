@@ -2,6 +2,23 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-14 10:00 — auto-20260714-1000
+
+- 任务：S5-02 私聊系统实现
+- 分支：auto/auto-20260714-1000
+- 状态：✅ 已完成
+- 工作内容：
+  - player-service 新增 PrivateMessage 数据模型（private_messages 表，message_id/sender_id/receiver_id/content/is_read）
+  - 新增 PrivateMessageRepository 仓储层（7 个方法：send_message、get_conversation、get_recent_conversations、mark_as_read、get_unread_count、get_unread_messages、delete_message）
+  - 新增 6 个私聊 API 端点（发送消息、对话列表、对话历史、标记已读、未读列表、未读数）
+  - 新增 5 个错误码（NOT_FRIENDS、MESSAGE_TOO_LONG、MESSAGE_EMPTY、MESSAGE_NOT_FOUND、CANNOT_DELETE_OTHER_MESSAGE）
+  - 新增 2 类业务指标、2 个 Scope（messages:read、messages:write）、3 个审计动作
+  - 新增 Alembic 迁移脚本、测试骨架
+  - 客户端新增 PrivateChatManager 自动加载单例（6 个信号、6 个 API 方法、缓存机制）+ GUT 测试骨架
+  - ruff 检查通过
+- 修改文件：15 个，+1487 行代码
+- 合并状态：✅ 已合并到 feature-prd（commit: 72005b9）
+
 ## 2026-07-14 09:00 — auto-20260714-0900
 
 - 任务：S5-01 好友系统实现
