@@ -336,3 +336,27 @@ def record_guild_message_read(guild_id: str, player_id: str) -> None:
         player_id: 玩家ID
     """
     GUILD_MESSAGES_READ_TOTAL.labels(guild_id=guild_id, player_id=player_id).inc()
+
+
+# 装备相关指标
+EQUIPMENT_OPERATIONS_TOTAL = Counter(
+    "equipment_operations_total",
+    "装备操作次数（按动作类型）",
+    labelnames=["action"],
+)
+
+EQUIPPED_ITEMS_BY_SLOT = Gauge(
+    "equipped_items_by_slot",
+    "装备物品数（按槽位）",
+    labelnames=["slot"],
+)
+
+
+def record_equipment_equip() -> None:
+    """记录一次装备穿戴。"""
+    EQUIPMENT_OPERATIONS_TOTAL.labels(action="equip").inc()
+
+
+def record_equipment_unequip() -> None:
+    """记录一次装备卸下。"""
+    EQUIPMENT_OPERATIONS_TOTAL.labels(action="unequip").inc()

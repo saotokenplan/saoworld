@@ -302,6 +302,64 @@ class UseItemRequest(BaseModel):
     quantity: int = Field(default=1, ge=1)
 
 
+class EquipmentSlot(str, Enum):
+    HEAD = "head"
+    CHEST = "chest"
+    LEGS = "legs"
+    FEET = "feet"
+    WEAPON = "weapon"
+    OFF_HAND = "off_hand"
+    RING = "ring"
+    NECKLACE = "necklace"
+
+
+class EquipmentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    equipment_id: uuid.UUID
+    player_id: uuid.UUID
+    slot: EquipmentSlot
+    item_key: str
+    item_instance_id: uuid.UUID
+    level: int = 0
+    stats: dict[str, object] | None = None
+    equipped_at: datetime
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    def model_validate(cls, obj: Any, *args: Any, **kwargs: Any) -> "EquipmentResponse":
+        if hasattr(obj, "stats_jsonb"):
+            obj_dict = {
+                "equipment_id": obj.equipment_id,
+                "player_id": obj.player_id,
+                "slot": obj.slot,
+                "item_key": obj.item_key,
+                "item_instance_id": obj.item_instance_id,
+                "level": obj.level,
+                "stats": obj.stats_jsonb,
+                "equipped_at": obj.equipped_at,
+                "created_at": obj.created_at,
+                "updated_at": obj.updated_at,
+            }
+            return super().model_validate(obj_dict, *args, **kwargs)
+        return super().model_validate(obj, *args, **kwargs)
+
+
+class EquipItemRequest(BaseModel):
+    item_key: str = Field(min_length=1, max_length=128)
+    slot: EquipmentSlot
+    item_stats: dict[str, object] | None = None
+
+
+class UnequipItemRequest(BaseModel):
+    slot: EquipmentSlot
+
+
+class EquipmentStatsResponse(BaseModel):
+    stats: dict[str, int]
+
+
 class ContributionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

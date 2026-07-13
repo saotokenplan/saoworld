@@ -51,6 +51,8 @@ from app.core.metrics import (
     record_reputation_add,
     record_reputation_remove,
     record_reputation_unlock,
+    record_equipment_equip,
+    record_equipment_unequip,
 )
 from app.repositories.audit_repo import (
     ACTION_ACHIEVEMENT_CREATE,
@@ -89,6 +91,8 @@ from app.repositories.audit_repo import (
     ACTION_GUILD_MESSAGE_SEND,
     ACTION_GUILD_MESSAGE_READ,
     ACTION_GUILD_MESSAGE_DELETE,
+    ACTION_EQUIPMENT_EQUIP,
+    ACTION_EQUIPMENT_UNEQUIP,
     RESOURCE_ACHIEVEMENT,
     RESOURCE_CONTRIBUTION,
     RESOURCE_EXPERIENCE,
@@ -103,6 +107,7 @@ from app.repositories.audit_repo import (
     RESOURCE_GUILD,
     RESOURCE_GUILD_MEMBER,
     RESOURCE_GUILD_MESSAGE,
+    RESOURCE_EQUIPMENT,
     AuditRepository,
 )
 from app.repositories.achievement_repo import (
@@ -114,6 +119,7 @@ from app.repositories.friend_repo import FriendRepository
 from app.repositories.guild_repo import GuildRepository
 from app.repositories.guild_message_repo import GuildMessageRepository
 from app.repositories.inventory_repo import InventoryRepository
+from app.repositories.equipment_repo import EquipmentRepository
 from app.repositories.private_message_repo import PrivateMessageRepository
 from app.repositories.player_quest_repo import PlayerQuestRepository
 from app.repositories.player_region_repo import PlayerRegionRepository
@@ -186,6 +192,11 @@ from app.schemas.player import (
     UpdateQuestProgressRequest,
     UpdateQuestStatusRequest,
     UseItemRequest,
+    EquipmentSlot,
+    EquipmentResponse,
+    EquipItemRequest,
+    UnequipItemRequest,
+    EquipmentStatsResponse,
     get_reputation_level,
     REPUTATION_LEVEL_THRESHOLDS,
 )
@@ -4311,5 +4322,206 @@ async def get_social_overview(
             guild_info=guild_info,
             recent_friends=recent_friends,
         ),
+        trace_id=trace_id,
+    )
+
+
+# === 装备系统 API ===
+
+
+@router.get(
+    "/player/equipment",
+    responses={
+        401: {"description": "Unauthorized"},
+        400: {"description": "Invalid player ID"},
+    },
+    tags=["equipment"],
+)
+async def get_player_equipment(
+    request: Request,
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[EquipmentResponse]]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_player_equipment")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    repo = EquipmentRepository(db)
+    equipment = await repo.get_equipment(player_uuid)
+
+    equipment_responses = [EquipmentResponse.model_validate(e) for e in equipment]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=equipment_responses,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/equipment/stats",
+    responses={
+        401: {"description": "Unauthorized"},
+        400: {"description": "Invalid player ID"},
+    },
+    tags=["equipment"],
+)
+async def get_equipment_stats(
+    request: Request,
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[EquipmentStatsResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_equipment_stats")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    repo = EquipmentRepository(db)
+    stats = await repo.get_equipment_stats(player_uuid)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=EquipmentStatsResponse(stats=stats),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/equipment/equip",
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"description": "Unauthorized"},
+        400: {"description": "Invalid request"},
+        404: {"description": "Item not found"},
+        409: {"description": "Slot occupied or cannot equip"},
+    },
+    tags=["equipment"],
+)
+async def equip_item(
+    body: EquipItemRequest,
+    request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[EquipmentResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_equip_item")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    repo = EquipmentRepository(db)
+    equipment = await repo.equip_item(
+        player_id=player_uuid,
+        item_key=body.item_key,
+        slot=body.slot.value,
+        item_stats=body.item_stats,
+    )
+
+    record_equipment_equip()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_EQUIPMENT_EQUIP,
+        resource_type=RESOURCE_EQUIPMENT,
+        resource_id=equipment.equipment_id,
+        request_payload_jsonb={
+            "item_key": body.item_key,
+            "slot": body.slot.value,
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=EquipmentResponse.model_validate(equipment),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/equipment/unequip",
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"description": "Unauthorized"},
+        400: {"description": "Invalid request"},
+        409: {"description": "Slot is empty"},
+    },
+    tags=["equipment"],
+)
+async def unequip_item(
+    body: UnequipItemRequest,
+    request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[EquipmentResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_unequip_item")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    repo = EquipmentRepository(db)
+    equipment = await repo.unequip_item(
+        player_id=player_uuid,
+        slot=body.slot.value,
+    )
+
+    record_equipment_unequip()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_EQUIPMENT_UNEQUIP,
+        resource_type=RESOURCE_EQUIPMENT,
+        resource_id=equipment.equipment_id,
+        request_payload_jsonb={
+            "slot": body.slot.value,
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=EquipmentResponse.model_validate(equipment),
         trace_id=trace_id,
     )

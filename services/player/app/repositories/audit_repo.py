@@ -49,6 +49,10 @@ ACTION_GUILD_MESSAGE_SEND = "guild_message_send"
 ACTION_GUILD_MESSAGE_READ = "guild_message_read"
 ACTION_GUILD_MESSAGE_DELETE = "guild_message_delete"
 
+# 装备相关动作
+ACTION_EQUIPMENT_EQUIP = "equipment_equip"
+ACTION_EQUIPMENT_UNEQUIP = "equipment_unequip"
+
 RESOURCE_PLAYER = "player"
 RESOURCE_REGION = "region"
 RESOURCE_QUEST = "quest"
@@ -63,6 +67,7 @@ RESOURCE_PRIVATE_MESSAGE = "private_message"
 RESOURCE_GUILD = "guild"
 RESOURCE_GUILD_MEMBER = "guild_member"
 RESOURCE_GUILD_MESSAGE = "guild_message"
+RESOURCE_EQUIPMENT = "equipment"
 
 
 class AuditRepository:
