@@ -159,7 +159,7 @@ def validate_commit_message(message):
         errors.append("提交标题与正文之间需要保留一个空行")
 
     if len(lines) > 2:
-        body_lines = [l for l in lines[2:] if l.strip() and not l.startswith("#")]
+        body_lines = [line for line in lines[2:] if line.strip() and not line.startswith("#")]
         for line in body_lines:
             if len(line) > 200:
                 errors.append("正文中存在过长的行（{} 字符），建议每行不超过 200 字符".format(len(line)))
@@ -311,7 +311,6 @@ def check_type_consistency(commit_type: str) -> tuple[list[str], list[str]]:
             config_count += 1
 
     code_ratio = code_count / total if total > 0 else 0
-    doc_ratio = doc_count / total if total > 0 else 0
 
     if commit_type == "docs" and code_ratio > 0.3:
         errors.append(
