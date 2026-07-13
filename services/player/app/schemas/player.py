@@ -668,6 +668,32 @@ class GuildMemberListResponse(BaseModel):
     total: int
 
 
+# === 公会消息相关 Schema ===
+
+
+class SendGuildMessageRequest(BaseModel):
+    content: str = Field(min_length=1, max_length=500)
+
+
+class GuildMessageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    message_id: uuid.UUID
+    guild_id: uuid.UUID
+    sender_id: uuid.UUID
+    content: str
+    is_read: bool
+    created_at: datetime
+
+
+class GuildMessageListResponse(BaseModel):
+    messages: list[GuildMessageResponse]
+
+
+class MarkGuildMessagesReadRequest(BaseModel):
+    pass
+
+
 # === 社交数据聚合 Schema ===
 
 
