@@ -89,3 +89,11 @@
 2. **VoteReviewPanel 场景节点对齐**：虽然脚本中使用 `@onready` 引用了 `$TopBar/BackButton` 等路径，但实际场景文件尚未与脚本节点完全绑定（当前为独立创建的场景）。建议在 Godot 编辑器中打开 `VoteReviewPanel.tscn` 与 `VoteHistoryPanel.tscn`，确认按钮信号和节点路径匹配。
 3. **S4-06 vote-service 扩展**：Sprint 4 剩余 S4-06 仍处于「部分完成」状态，下一轮自动任务可优先收尾。
 4. **性能压测**：复盘报告接口涉及跨服务查询与内容包 payload 序列化，建议在灰度发布前使用 `tools/perf_test/` 补充该接口的 p95 延迟压测。
+
+## 合并结果
+
+- 合并目标分支：`feature-prd`
+- 合并提交：`3998643`
+- 合并消息：`Merge auto task: auto-20260714-0500 - S4-05 投票复盘报告`
+- 状态：✅ 合并成功，无冲突
+- 工作分支 `auto/auto-20260714-0500` 已删除
