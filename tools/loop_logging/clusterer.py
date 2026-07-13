@@ -120,7 +120,11 @@ class FailureClusterer:
         for cluster in clusters:
             if cluster.first_seen and cluster.last_seen:
                 age_days = (now - cluster.first_seen).days
-                recurrence_interval = (cluster.last_seen - cluster.first_seen).days / cluster.count if cluster.count > 1 else 0
+                recurrence_interval = (
+                    (cluster.last_seen - cluster.first_seen).days / cluster.count
+                    if cluster.count > 1
+                    else 0
+                )
                 is_chronic = age_days > 7 and cluster.count > 3
             else:
                 age_days = 0

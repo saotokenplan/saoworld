@@ -244,7 +244,12 @@ async def create_generation_request(
             trace_id=x_trace_id or "",
         )
     except Exception as exc:
-        logger.error("event_publish_failed", event_type="generation_request_created", request_id=str(req.request_id), error=str(exc))
+        logger.error(
+            "event_publish_failed",
+            event_type="generation_request_created",
+            request_id=str(req.request_id),
+            error=str(exc),
+        )
 
     return EnvelopeResponse(
         request_id=request_id,
@@ -378,7 +383,12 @@ async def update_generation_request_status(
                 trace_id=x_trace_id or "",
             )
         except Exception as exc:
-            logger.error("event_publish_failed", event_type="generation_batch_completed", request_id=str(request_id), error=str(exc))
+            logger.error(
+                "event_publish_failed",
+                event_type="generation_batch_completed",
+                request_id=str(request_id),
+                error=str(exc),
+            )
 
     return EnvelopeResponse(
         request_id=req_id,
@@ -725,7 +735,10 @@ async def get_generation_cost(
         if now.month == 12:
             end_date = now.replace(month=12, day=31, hour=23, minute=59, second=59, microsecond=999999)
         else:
-            end_date = now.replace(month=now.month + 1, day=1, hour=0, minute=0, second=0, microsecond=0) - timedelta(microseconds=1)
+            end_date = (
+                now.replace(month=now.month + 1, day=1, hour=0, minute=0, second=0, microsecond=0)
+                - timedelta(microseconds=1)
+            )
         daily_usage = await repo.get_daily_token_usage(now)
         monthly_usage = await repo.get_monthly_token_usage(now)
         total_usage = monthly_usage
@@ -736,8 +749,16 @@ async def get_generation_cost(
 
     from app.core.config import settings
 
-    daily_ratio = min(1.0, daily_usage["total_tokens"] / settings.cost_daily_budget_tokens) if settings.cost_daily_budget_tokens > 0 else 0.0
-    monthly_ratio = min(1.0, monthly_usage["total_tokens"] / settings.cost_monthly_budget_tokens) if settings.cost_monthly_budget_tokens > 0 else 0.0
+    daily_ratio = (
+        min(1.0, daily_usage["total_tokens"] / settings.cost_daily_budget_tokens)
+        if settings.cost_daily_budget_tokens > 0
+        else 0.0
+    )
+    monthly_ratio = (
+        min(1.0, monthly_usage["total_tokens"] / settings.cost_monthly_budget_tokens)
+        if settings.cost_monthly_budget_tokens > 0
+        else 0.0
+    )
 
     cost_summary = GenerationCostSummary(
         total_prompt_tokens=total_usage["prompt_tokens"],
@@ -750,8 +771,14 @@ async def get_generation_cost(
         monthly_budget_tokens=settings.cost_monthly_budget_tokens,
         daily_usage_ratio=daily_ratio,
         monthly_usage_ratio=monthly_ratio,
-        should_alert=daily_ratio >= settings.cost_alert_threshold_ratio or monthly_ratio >= settings.cost_alert_threshold_ratio,
-        should_pause=daily_ratio >= settings.cost_pause_threshold_ratio or monthly_ratio >= settings.cost_pause_threshold_ratio,
+        should_alert=(
+            daily_ratio >= settings.cost_alert_threshold_ratio
+            or monthly_ratio >= settings.cost_alert_threshold_ratio
+        ),
+        should_pause=(
+            daily_ratio >= settings.cost_pause_threshold_ratio
+            or monthly_ratio >= settings.cost_pause_threshold_ratio
+        ),
     )
 
     return EnvelopeResponse(

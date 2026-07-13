@@ -268,7 +268,10 @@ class GenerationRepository:
         if date.month == 12:
             end_of_month = date.replace(month=12, day=31, hour=23, minute=59, second=59, microsecond=999999)
         else:
-            end_of_month = date.replace(month=date.month + 1, day=1, hour=0, minute=0, second=0, microsecond=0) - timedelta(microseconds=1)
+            end_of_month = (
+                date.replace(month=date.month + 1, day=1, hour=0, minute=0, second=0, microsecond=0)
+                - timedelta(microseconds=1)
+            )
 
         result = await self.db.execute(
             select(

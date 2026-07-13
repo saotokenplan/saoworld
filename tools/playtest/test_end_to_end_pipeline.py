@@ -84,7 +84,7 @@ class TestEndToEndPipeline:
         """测试 workers 事件处理器参数提取（不依赖实际模块导入）"""
         # 本测试验证事件 payload 参数提取逻辑
         # 不实际导入 workers 模块，避免依赖问题
-        
+
         event_payload = {
             "vote_cycle_id": "vc_test_001",
             "winning_candidate_id": "candidate_001",
@@ -96,17 +96,17 @@ class TestEndToEndPipeline:
             },
             "region_scope": ["region_wasteland_01", "region_iron_city"],
         }
-        
+
         # 模拟参数提取逻辑（对应 handle_vote_result_finalized 的逻辑）
         vote_cycle_id = event_payload.get("vote_cycle_id")
         generated_params = event_payload.get("generated_params", {}) or {}
         region_scope = event_payload.get("region_scope", []) or []
         chapter_id = event_payload.get("chapter_id")
-        
+
         region_id = region_scope[0] if region_scope else None
         template_type = generated_params.get("template_type", "npc")
         count = generated_params.get("count", 1)
-        
+
         # 验证参数提取正确
         assert vote_cycle_id == "vc_test_001"
         assert template_type == "quest"
@@ -123,11 +123,11 @@ class TestEndToEndPipeline:
             "status": "succeeded",
             "object_count": 5,
         }
-        
+
         # 验证条件：status == "succeeded" 时触发打包
         request_id = event_payload.get("request_id")
         status = event_payload.get("status")
-        
+
         # 验证打包任务应被触发
         assert request_id == "req_test_001"
         assert status == "succeeded"
@@ -141,11 +141,11 @@ class TestEndToEndPipeline:
             "approved_count": 5,
             "rejected_count": 0,
         }
-        
+
         # 验证条件：approved_count > 0 时触发完整审核
         content_package_id = event_payload.get("content_package_id")
         approved_count = event_payload.get("approved_count", 0)
-        
+
         # 验证条件满足
         assert content_package_id == "pkg_test_001"
         assert approved_count > 0
@@ -275,7 +275,7 @@ class TestEventFlowIntegration:
         """测试事件类型定义完整性（不依赖实际模块导入）"""
         # 验证核心事件类型命名约定
         # 这些值在 workers/events/schemas.py 中定义
-        
+
         expected_event_types = {
             "vote.result.finalized": "投票结果确认",
             "generation.batch.completed": "生成批次完成",
@@ -283,7 +283,7 @@ class TestEventFlowIntegration:
             "content.package.released": "内容包发布",
             "content.package.rolled_back": "内容包回滚",
         }
-        
+
         # 验证事件类型已定义
         for event_type in expected_event_types:
             assert "." in event_type  # 格式：domain.action
@@ -292,7 +292,7 @@ class TestEventFlowIntegration:
         """测试事件处理器注册（验证处理器映射）"""
         # 验证每个事件类型都有对应的处理器
         # handlers 定义在 workers/events/handlers.py
-        
+
         event_handler_mapping = {
             "vote.result.finalized": "handle_vote_result_finalized",
             "generation.batch.completed": "handle_generation_batch_completed",
@@ -300,7 +300,7 @@ class TestEventFlowIntegration:
             "content.package.released": "handle_content_package_released",
             "content.package.rolled_back": "handle_content_package_rolled_back",
         }
-        
+
         # 验证映射完整性
         assert len(event_handler_mapping) == 5
         for event_type, handler_name in event_handler_mapping.items():

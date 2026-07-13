@@ -10,8 +10,17 @@ def test_feedback_collector_load_feedbacks():
     with tempfile.TemporaryDirectory() as tmpdir:
         feedback_file = os.path.join(tmpdir, "issue_feedback.jsonl")
         with open(feedback_file, "w") as f:
-            f.write('{"issue_id": "ISSUE-001", "rule_id": "rule1", "issue_type": "gate_improvement", "status": "completed", "acceptance": "accepted", "comments": ["Good issue"], "improvement_effect": 0.8}\n')
-            f.write('{"issue_id": "ISSUE-002", "rule_id": "rule1", "issue_type": "gate_improvement", "status": "completed", "acceptance": "rejected", "comments": ["Not valid"]}\n')
+            f.write(
+                '{"issue_id": "ISSUE-001", "rule_id": "rule1", '
+                '"issue_type": "gate_improvement", "status": "completed", '
+                '"acceptance": "accepted", "comments": ["Good issue"], '
+                '"improvement_effect": 0.8}\n'
+            )
+            f.write(
+                '{"issue_id": "ISSUE-002", "rule_id": "rule1", '
+                '"issue_type": "gate_improvement", "status": "completed", '
+                '"acceptance": "rejected", "comments": ["Not valid"]}\n'
+            )
 
         collector = IssueFeedbackCollector(tmpdir)
         assert collector.get_feedback_count() == 2
@@ -41,9 +50,21 @@ def test_feedback_collector_get_by_rule_id():
     with tempfile.TemporaryDirectory() as tmpdir:
         feedback_file = os.path.join(tmpdir, "issue_feedback.jsonl")
         with open(feedback_file, "w") as f:
-            f.write('{"issue_id": "ISSUE-001", "rule_id": "rule1", "issue_type": "gate_improvement", "status": "completed", "acceptance": "accepted"}\n')
-            f.write('{"issue_id": "ISSUE-002", "rule_id": "rule2", "issue_type": "gate_improvement", "status": "completed", "acceptance": "accepted"}\n')
-            f.write('{"issue_id": "ISSUE-003", "rule_id": "rule1", "issue_type": "gate_improvement", "status": "completed", "acceptance": "rejected"}\n')
+            f.write(
+                '{"issue_id": "ISSUE-001", "rule_id": "rule1", '
+                '"issue_type": "gate_improvement", "status": "completed", '
+                '"acceptance": "accepted"}\n'
+            )
+            f.write(
+                '{"issue_id": "ISSUE-002", "rule_id": "rule2", '
+                '"issue_type": "gate_improvement", "status": "completed", '
+                '"acceptance": "accepted"}\n'
+            )
+            f.write(
+                '{"issue_id": "ISSUE-003", "rule_id": "rule1", '
+                '"issue_type": "gate_improvement", "status": "completed", '
+                '"acceptance": "rejected"}\n'
+            )
 
         collector = IssueFeedbackCollector(tmpdir)
         rule1_feedbacks = collector.get_feedbacks_by_rule_id("rule1")

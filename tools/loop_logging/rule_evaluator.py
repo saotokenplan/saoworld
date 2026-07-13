@@ -115,14 +115,34 @@ class RuleEvaluator:
         if len(feedbacks) < 3:
             return 0.0
 
-        accepted_recent = [fb for fb in feedbacks if fb.acceptance == "accepted" and fb.ts > datetime.now() - timedelta(days=14)]
-        rejected_recent = [fb for fb in feedbacks if fb.acceptance == "rejected" and fb.ts > datetime.now() - timedelta(days=14)]
+        accepted_recent = [
+            fb for fb in feedbacks
+            if fb.acceptance == "accepted" and fb.ts > datetime.now() - timedelta(days=14)
+        ]
+        rejected_recent = [
+            fb for fb in feedbacks
+            if fb.acceptance == "rejected" and fb.ts > datetime.now() - timedelta(days=14)
+        ]
 
-        accepted_old = [fb for fb in feedbacks if fb.acceptance == "accepted" and fb.ts <= datetime.now() - timedelta(days=14)]
-        rejected_old = [fb for fb in feedbacks if fb.acceptance == "rejected" and fb.ts <= datetime.now() - timedelta(days=14)]
+        accepted_old = [
+            fb for fb in feedbacks
+            if fb.acceptance == "accepted" and fb.ts <= datetime.now() - timedelta(days=14)
+        ]
+        rejected_old = [
+            fb for fb in feedbacks
+            if fb.acceptance == "rejected" and fb.ts <= datetime.now() - timedelta(days=14)
+        ]
 
-        rate_recent = len(accepted_recent) / (len(accepted_recent) + len(rejected_recent)) if (len(accepted_recent) + len(rejected_recent)) > 0 else 0.5
-        rate_old = len(accepted_old) / (len(accepted_old) + len(rejected_old)) if (len(accepted_old) + len(rejected_old)) > 0 else 0.5
+        rate_recent = (
+            len(accepted_recent) / (len(accepted_recent) + len(rejected_recent))
+            if (len(accepted_recent) + len(rejected_recent)) > 0
+            else 0.5
+        )
+        rate_old = (
+            len(accepted_old) / (len(accepted_old) + len(rejected_old))
+            if (len(accepted_old) + len(rejected_old)) > 0
+            else 0.5
+        )
 
         return abs(rate_recent - rate_old)
 

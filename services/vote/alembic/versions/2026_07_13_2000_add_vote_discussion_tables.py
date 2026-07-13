@@ -21,7 +21,11 @@ def upgrade() -> None:
     op.create_table(
         "vote_discussions",
         sa.Column("discussion_id", sa.Uuid(), primary_key=True, server_default=sa.func.gen_random_uuid()),
-        sa.Column("vote_cycle_id", sa.Uuid(), sa.ForeignKey("vote_cycles.vote_cycle_id", ondelete="RESTRICT"), nullable=False),
+        sa.Column(
+            "vote_cycle_id", sa.Uuid(),
+            sa.ForeignKey("vote_cycles.vote_cycle_id", ondelete="RESTRICT"),
+            nullable=False,
+        ),
         sa.Column("player_id", sa.Uuid(), nullable=False),
         sa.Column("content", sa.Text(), nullable=False),
         sa.Column("like_count", sa.Integer(), nullable=False, server_default="0"),
@@ -43,7 +47,11 @@ def upgrade() -> None:
     op.create_table(
         "vote_discussion_replies",
         sa.Column("reply_id", sa.Uuid(), primary_key=True, server_default=sa.func.gen_random_uuid()),
-        sa.Column("discussion_id", sa.Uuid(), sa.ForeignKey("vote_discussions.discussion_id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "discussion_id", sa.Uuid(),
+            sa.ForeignKey("vote_discussions.discussion_id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("player_id", sa.Uuid(), nullable=False),
         sa.Column("content", sa.Text(), nullable=False),
         sa.Column("like_count", sa.Integer(), nullable=False, server_default="0"),
@@ -58,14 +66,26 @@ def upgrade() -> None:
     )
     op.create_index("vote_discussion_replies_discussion_id_idx", "vote_discussion_replies", ["discussion_id"])
     op.create_index("vote_discussion_replies_player_id_idx", "vote_discussion_replies", ["player_id"])
-    op.create_index("vote_discussion_replies_discussion_created_idx", "vote_discussion_replies", ["discussion_id", "created_at"])
+    op.create_index(
+        "vote_discussion_replies_discussion_created_idx",
+        "vote_discussion_replies",
+        ["discussion_id", "created_at"],
+    )
 
     op.create_table(
         "vote_discussion_likes",
         sa.Column("like_id", sa.Uuid(), primary_key=True, server_default=sa.func.gen_random_uuid()),
         sa.Column("player_id", sa.Uuid(), nullable=False),
-        sa.Column("discussion_id", sa.Uuid(), sa.ForeignKey("vote_discussions.discussion_id", ondelete="CASCADE"), nullable=True),
-        sa.Column("reply_id", sa.Uuid(), sa.ForeignKey("vote_discussion_replies.reply_id", ondelete="CASCADE"), nullable=True),
+        sa.Column(
+            "discussion_id", sa.Uuid(),
+            sa.ForeignKey("vote_discussions.discussion_id", ondelete="CASCADE"),
+            nullable=True,
+        ),
+        sa.Column(
+            "reply_id", sa.Uuid(),
+            sa.ForeignKey("vote_discussion_replies.reply_id", ondelete="CASCADE"),
+            nullable=True,
+        ),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
         sa.UniqueConstraint("player_id", "discussion_id", name="vote_discussion_likes_player_discussion_uniq"),
         sa.UniqueConstraint("player_id", "reply_id", name="vote_discussion_likes_player_reply_uniq"),

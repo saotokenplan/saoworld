@@ -87,7 +87,8 @@ class SystemDesignerAgent:
         overview += "4. 发布事件通知相关服务\n"
 
         overview += "\n约束条件：\n"
-        overview += f"- 禁止标签：{', '.join(rules.constraints.forbidden_tags) if rules.constraints.forbidden_tags else '无'}\n"
+        tags = ', '.join(rules.constraints.forbidden_tags) if rules.constraints.forbidden_tags else '无'
+        overview += f"- 禁止标签：{tags}\n"
         overview += f"- 最大区域等级：{rules.world_rules.max_region_level}\n"
 
         self.analysis_cache["architecture"] = overview
@@ -95,7 +96,6 @@ class SystemDesignerAgent:
 
     def define_data_structures(self, task_input: TaskInput) -> List[DataStructure]:
         task = task_input.task
-        design_id = f"DESIGN-{uuid.uuid4().hex[:8].upper()}"
 
         data_structures = []
 
@@ -106,7 +106,10 @@ class SystemDesignerAgent:
                 fields=[
                     FieldDefinition(name="region_id", type="UUID", primary_key=True, default="uuid4()"),
                     FieldDefinition(name="name", type="VARCHAR(255)", nullable=False),
-                    FieldDefinition(name="status", type="VARCHAR(32)", nullable=False, default="locked", check=["locked", "active", "unstable", "archived"]),
+                    FieldDefinition(
+                        name="status", type="VARCHAR(32)", nullable=False,
+                        default="locked", check=["locked", "active", "unstable", "archived"],
+                    ),
                     FieldDefinition(name="region_scope", type="JSONB", nullable=False),
                     FieldDefinition(name="schema_version", type="INTEGER", default="1"),
                 ],

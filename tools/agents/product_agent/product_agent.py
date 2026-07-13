@@ -46,7 +46,11 @@ class ProductAgent:
         analysis: Dict[str, Any] = {}
 
         if self.version_status:
-            progress = (self.version_status.completed_tasks / self.version_status.total_tasks) * 100 if self.version_status.total_tasks > 0 else 0
+            progress = (
+                (self.version_status.completed_tasks / self.version_status.total_tasks) * 100
+                if self.version_status.total_tasks > 0
+                else 0
+            )
             analysis["version_progress"] = round(progress, 1)
             analysis["has_blockers"] = len(self.version_status.blockers) > 0
             analysis["blockers_count"] = len(self.version_status.blockers)

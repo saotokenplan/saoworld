@@ -127,7 +127,11 @@ def _extract_quest_difficulty_insights(summary: dict, details: dict) -> list[dic
                     "impact": "low",
                     "novelty": "low",
                     "feasibility": "high",
-                    "source_data_jsonb": {"quest_id": quest_id, "completion_rate": completion_rate, "duration": avg_duration},
+                    "source_data_jsonb": {
+                        "quest_id": quest_id,
+                        "completion_rate": completion_rate,
+                        "duration": avg_duration,
+                    },
                     "tags": ["quest", "difficulty", "low"],
                 })
 

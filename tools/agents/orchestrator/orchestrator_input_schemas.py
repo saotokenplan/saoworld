@@ -10,7 +10,13 @@ class Milestone(BaseModel):
 
 class InsightExtractionParams(BaseModel):
     analytics_report_id: str = Field(default="", description="分析报告ID")
-    insight_types: List[str] = Field(default_factory=lambda: ["player_behavior", "region_heat", "quest_completion", "vote_tendency", "economy"], description="洞察类型")
+    insight_types: List[str] = Field(
+        default_factory=lambda: [
+            "player_behavior", "region_heat", "quest_completion",
+            "vote_tendency", "economy",
+        ],
+        description="洞察类型",
+    )
     min_quality_score: float = Field(default=0.6, description="最小质量评分阈值")
     max_insights: int = Field(default=10, description="最大洞察数量")
 
@@ -33,7 +39,10 @@ class TaskInput(BaseModel):
     title: str = Field(description="任务标题")
     priority: str = Field(description="优先级：P0/P1/P2/P3")
     assignee: str = Field(description="指派代理")
-    type: str = Field(description="任务类型：design/implementation/test/build/ops/insight_extraction/requirement_generation/content_generation")
+    type: str = Field(
+        description="任务类型：design/implementation/test/build/ops/"
+                    "insight_extraction/requirement_generation/content_generation",
+    )
     inputs: List[str] = Field(default_factory=list, description="输入文件列表")
     outputs: List[str] = Field(default_factory=list, description="输出文件列表")
     dependencies: List[str] = Field(default_factory=list, description="依赖任务ID列表")

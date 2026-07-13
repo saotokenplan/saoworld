@@ -13,7 +13,7 @@ async def test_load_json_file():
     test_path = Path("/tmp/test_seed.json")
     with open(test_path, "w", encoding="utf-8") as f:
         json.dump(test_data, f)
-    
+
     from scripts.seed_initial_packages import load_json_file
     result = load_json_file(test_path)
     assert result == test_data
@@ -24,14 +24,14 @@ async def test_load_json_file():
 async def test_create_ironward_package():
     from scripts.seed_initial_packages import create_ironward_package
     from app.repositories.content_repo import ContentRepository
-    
+
     mock_repo = AsyncMock(spec=ContentRepository)
     mock_repo.create_package.return_value = AsyncMock(content_package_id="test_package_id")
-    
+
     with patch.object(ContentRepository, "__new__", return_value=mock_repo):
         async with TestSessionLocal() as session:
             await create_ironward_package(session)
-    
+
     mock_repo.create_package.assert_called_once()
     call_args = mock_repo.create_package.call_args
     assert call_args.kwargs["chapter_id"] == "chapter_01"
@@ -44,14 +44,14 @@ async def test_create_ironward_package():
 async def test_create_grayvalley_package():
     from scripts.seed_initial_packages import create_grayvalley_package
     from app.repositories.content_repo import ContentRepository
-    
+
     mock_repo = AsyncMock(spec=ContentRepository)
     mock_repo.create_package.return_value = AsyncMock(content_package_id="test_package_id")
-    
+
     with patch.object(ContentRepository, "__new__", return_value=mock_repo):
         async with TestSessionLocal() as session:
             await create_grayvalley_package(session)
-    
+
     mock_repo.create_package.assert_called_once()
     call_args = mock_repo.create_package.call_args
     assert call_args.kwargs["chapter_id"] == "chapter_02"
@@ -64,17 +64,17 @@ async def test_create_grayvalley_package():
 async def test_package_payload_contains_required_fields():
     from scripts.seed_initial_packages import create_ironward_package
     from app.repositories.content_repo import ContentRepository
-    
+
     mock_repo = AsyncMock(spec=ContentRepository)
     mock_repo.create_package.return_value = AsyncMock(content_package_id="test_package_id")
-    
+
     with patch.object(ContentRepository, "__new__", return_value=mock_repo):
         async with TestSessionLocal() as session:
             await create_ironward_package(session)
-    
+
     call_args = mock_repo.create_package.call_args
     payload = call_args.kwargs["payload"]
-    
+
     assert "schema_version" in payload
     assert "region" in payload
     assert "factions" in payload

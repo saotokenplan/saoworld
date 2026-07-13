@@ -3,7 +3,10 @@ import json
 from datetime import datetime, timezone
 
 from .orchestrator import Orchestrator
-from .orchestrator_input_schemas import VersionBrief, GateResults, AgentStatus, Milestone, TaskInput, GateResult, ServiceGateResults, AgentStatusItem
+from .orchestrator_input_schemas import (
+    VersionBrief, GateResults, AgentStatus, Milestone, TaskInput,
+    GateResult, ServiceGateResults, AgentStatusItem,
+)
 
 
 def _create_sample_version_brief() -> VersionBrief:
@@ -92,7 +95,7 @@ def main():
     workflow_parser = subparsers.add_parser("execute-workflow", help="执行完整工作流")
     workflow_parser.add_argument("--brief-id", required=True, help="版本简报ID")
 
-    gates_parser = subparsers.add_parser("check-gates", help="检查门禁状态")
+    gates_parser = subparsers.add_parser("check-gates", help="检查门禁状态")  # noqa: F841
 
     report_parser = subparsers.add_parser("generate-report", help="生成进度报告")
     report_parser.add_argument("--brief-id", default="VB-001", help="版本简报ID")

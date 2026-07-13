@@ -14,7 +14,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 TEST_CONTENT_DATABASE_URL = "sqlite+aiosqlite:///file:playtest_content.db?mode=memory&cache=shared&uri=true"
 
-content_test_engine = create_async_engine(TEST_CONTENT_DATABASE_URL, echo=False, connect_args={"check_same_thread": False})
+content_test_engine = create_async_engine(
+    TEST_CONTENT_DATABASE_URL,
+    echo=False,
+    connect_args={"check_same_thread": False},
+)
 content_test_session = async_sessionmaker(content_test_engine, class_=AsyncSession, expire_on_commit=False)
 
 

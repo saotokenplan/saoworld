@@ -1,7 +1,7 @@
 """init ops tables
 
 Revision ID: e1f2a3b4c5d6
-Revises: 
+Revises:
 Create Date: 2026-07-04 02:11:00.000000
 
 """

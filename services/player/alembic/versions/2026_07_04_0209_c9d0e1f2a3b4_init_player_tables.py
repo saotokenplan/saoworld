@@ -1,7 +1,7 @@
 """init player tables
 
 Revision ID: c9d0e1f2a3b4
-Revises: 
+Revises:
 Create Date: 2026-07-04 02:09:00.000000
 
 """

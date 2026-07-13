@@ -26,17 +26,27 @@ class TestContentGenerator:
             "region_key": "region_core",
             "role": "blacksmith",
             "location_key": "loc_test",
-            "description": "A skilled blacksmith who has worked in the forge for over 20 years. He is known for his exceptional craftsmanship and gruff but honest demeanor.",
+            "description": (
+                "A skilled blacksmith who has worked in the forge for over 20 years. "
+                "He is known for his exceptional craftsmanship and gruff but honest demeanor."
+            ),
             "personality": ["gruff", "skilled", "honest"],
             "traits": ["strong", "meticulous"],
             "voice": "deep and gruff",
-            "backstory": "Test NPC was born into a family of skilled craftsmen. From a young age, he showed exceptional talent for working with metal, spending countless hours in the forge alongside his father.",
+            "backstory": (
+                "Test NPC was born into a family of skilled craftsmen. From a young age, "
+                "he showed exceptional talent for working with metal, spending countless hours "
+                "in the forge alongside his father."
+            ),
             "motivation": "To craft the finest weapons and armor.",
             "relationship_map": {},
             "dialog_style": "direct",
             "dialog_nodes": {
                 "first_meet": {"id": "first_meet", "text": "Hello!", "speaker": "npc", "choices": []},
-                "about_work": {"id": "about_work", "text": "I've been forging for years.", "speaker": "npc", "choices": []},
+                "about_work": {
+                    "id": "about_work", "text": "I've been forging for years.",
+                    "speaker": "npc", "choices": [],
+                },
                 "has_quest": {"id": "has_quest", "text": "I need materials.", "speaker": "npc", "choices": []},
                 "quest_accepted": {"id": "quest_accepted", "text": "Great!", "speaker": "npc", "choices": []},
                 "quest_completed": {"id": "quest_completed", "text": "Thank you!", "speaker": "npc", "choices": []},

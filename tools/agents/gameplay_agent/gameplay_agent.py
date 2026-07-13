@@ -88,7 +88,7 @@ class GameplayAgent:
         scene_path = f"scenes/{design_task.target_module}/{scene_config.scene_name}.tscn"
         script_path = f"scripts/{design_task.target_module}/{scene_config.scene_name}.gd"
 
-        tscn_content = self._generate_tscn_content(scene_config)
+        self._generate_tscn_content(scene_config)
 
         scene_output = SceneOutput(
             scene_id=f"SCENE-{uuid4().hex[:8].upper()}",
@@ -164,7 +164,7 @@ script = ExtResource("1")
             raise IncompleteDesignError("缺少脚本接口定义")
 
         script_path = f"scripts/{design_task.target_module}/{script_interface.script_name}.gd"
-        gdscript_content = self._generate_gdscript_content(script_interface)
+        self._generate_gdscript_content(script_interface)
 
         script_output = ScriptOutput(
             script_id=f"SCRIPT-{uuid4().hex[:8].upper()}",

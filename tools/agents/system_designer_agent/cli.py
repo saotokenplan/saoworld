@@ -17,7 +17,10 @@ def cli():
 @click.option("--requirement", multiple=True, help="需求项（可多次指定）")
 @click.option("--assignee", required=True, help="负责代理：world/backend/gameplay/qa")
 @click.option("--output", default="design-note.json", help="输出文件路径")
-def design_system(task_id: str, title: str, priority: str, description: str, requirement: tuple, assignee: str, output: str):
+def design_system(
+    task_id: str, title: str, priority: str,
+    description: str, requirement: tuple, assignee: str, output: str,
+):
     agent = SystemDesignerAgent()
 
     task = Task(

@@ -244,9 +244,18 @@ class TestProductAgent:
     def test_generate_milestone_plan(self):
         agent = ProductAgent()
         tasks = [
-            Task(id="TASK-001", title="P0任务", priority="P0", size="small", dependencies=[], estimated_hours=4.0, assignee="backend"),
-            Task(id="TASK-002", title="P1任务", priority="P1", size="medium", dependencies=[], estimated_hours=8.0, assignee="world"),
-            Task(id="TASK-003", title="P2任务", priority="P2", size="small", dependencies=[], estimated_hours=4.0, assignee="qa"),
+            Task(
+                id="TASK-001", title="P0任务", priority="P0", size="small",
+                dependencies=[], estimated_hours=4.0, assignee="backend",
+            ),
+            Task(
+                id="TASK-002", title="P1任务", priority="P1", size="medium",
+                dependencies=[], estimated_hours=8.0, assignee="world",
+            ),
+            Task(
+                id="TASK-003", title="P2任务", priority="P2", size="small",
+                dependencies=[], estimated_hours=4.0, assignee="qa",
+            ),
         ]
         plan = agent.generate_milestone_plan("0.2.0", tasks)
         assert len(plan.milestones) == 3

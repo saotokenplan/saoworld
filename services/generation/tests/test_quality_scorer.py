@@ -15,20 +15,36 @@ class TestQualityScorer:
             "region_key": "region_core",
             "role": "blacksmith",
             "location_key": "loc_forge",
-            "description": "这是一位勇敢的铁匠，在铁卫城工作多年，为冒险者打造各种精良的武器和护甲。他技艺精湛，为人正直，深受城中居民的尊敬。",
+            "description": (
+                "这是一位勇敢的铁匠，在铁卫城工作多年，为冒险者打造各种精良的武器和护甲。"
+                "他技艺精湛，为人正直，深受城中居民的尊敬。"
+            ),
             "personality": ["勇敢", "正直", "热情"],
             "traits": ["强壮", "专注"],
             "voice": "洪亮有力",
-            "backstory": "艾瑞尔·铁盾出生在铁匠世家，从小就跟随父亲学习锻造技艺。他年轻时曾参与多次战斗，见证了许多冒险者用他打造的武器战胜强敌。如今他在铁卫城开设了自己的铁匠铺，继续为新一代冒险者提供装备支持。",
+            "backstory": (
+                "艾瑞尔·铁盾出生在铁匠世家，从小就跟随父亲学习锻造技艺。"
+                "他年轻时曾参与多次战斗，见证了许多冒险者用他打造的武器战胜强敌。"
+                "如今他在铁卫城开设了自己的铁匠铺，继续为新一代冒险者提供装备支持。"
+            ),
             "motivation": "为冒险者打造最强武器",
             "relationship_map": {},
             "dialog_style": "热情豪爽",
             "dialog_nodes": {
-                "first_meet": {"id": "first_meet", "text": "欢迎来到铁卫城，旅行者。需要武器吗？", "speaker": "npc", "choices": []},
-                "about_work": {"id": "about_work", "text": "我在这里锻造了二十年，每件作品都是我的心血。", "speaker": "npc", "choices": []},
+                "first_meet": {
+                    "id": "first_meet", "text": "欢迎来到铁卫城，旅行者。需要武器吗？",
+                    "speaker": "npc", "choices": [],
+                },
+                "about_work": {
+                    "id": "about_work", "text": "我在这里锻造了二十年，每件作品都是我的心血。",
+                    "speaker": "npc", "choices": [],
+                },
                 "has_quest": {"id": "has_quest", "text": "我需要一些稀有材料。", "speaker": "npc", "choices": []},
                 "quest_accepted": {"id": "quest_accepted", "text": "太好了，谢谢你！", "speaker": "npc", "choices": []},
-                "quest_completed": {"id": "quest_completed", "text": "完美！这正是我需要的。", "speaker": "npc", "choices": []},
+                "quest_completed": {
+                    "id": "quest_completed", "text": "完美！这正是我需要的。",
+                    "speaker": "npc", "choices": [],
+                },
                 "default": {"id": "default", "text": "有什么需要帮助的吗？", "speaker": "npc", "choices": []},
                 "goodbye": {"id": "goodbye", "text": "", "speaker": "npc", "choices": [], "is_end": True},
             },
@@ -219,7 +235,10 @@ class TestQualityScorer:
 
     def test_score_generic(self):
         scorer = QualityScorer()
-        payload = {"key": "value", "data": "test data", "description": "This is a longer payload that should pass quality check"}
+        payload = {
+            "key": "value", "data": "test data",
+            "description": "This is a longer payload that should pass quality check",
+        }
         result = scorer.score_generic(payload)
         assert result.is_acceptable()
 
@@ -305,16 +324,29 @@ class TestQualityScorer:
     def test_score_method_dispatch(self):
         scorer = QualityScorer()
 
-        npc_result = scorer.score("npc", {"name": "Test", "description": "Test", "dialogue": "Test", "faction_id": "f1"})
+        npc_result = scorer.score(
+            "npc", {"name": "Test", "description": "Test", "dialogue": "Test", "faction_id": "f1"}
+        )
         assert isinstance(npc_result, QualityScoreResult)
 
-        quest_result = scorer.score("quest", {"title": "Test", "description": "Test", "objectives": ["Test"], "rewards": {}})
+        quest_result = scorer.score(
+            "quest", {"title": "Test", "description": "Test", "objectives": ["Test"], "rewards": {}}
+        )
         assert isinstance(quest_result, QualityScoreResult)
 
-        region_result = scorer.score("region", {"name": "Test", "description": "Test", "difficulty": "normal", "features": ["Test"]})
+        region_result = scorer.score(
+            "region", {"name": "Test", "description": "Test", "difficulty": "normal", "features": ["Test"]}
+        )
         assert isinstance(region_result, QualityScoreResult)
 
-        settlement_result = scorer.score("settlement", {"settlement_key": "settlement_test", "name": "Test", "settlement_type": "village", "region_key": "region_core", "chapter_id": "chapter_01", "description": "Test", "population": 100, "main_resources": ["Test"], "economy_type": "agriculture", "status": "peaceful"})
+        settlement_result = scorer.score(
+            "settlement", {
+                "settlement_key": "settlement_test", "name": "Test",
+                "settlement_type": "village", "region_key": "region_core",
+                "chapter_id": "chapter_01", "description": "Test", "population": 100,
+                "main_resources": ["Test"], "economy_type": "agriculture", "status": "peaceful",
+            }
+        )
         assert isinstance(settlement_result, QualityScoreResult)
 
         generic_result = scorer.score("unknown", {"key": "value"})

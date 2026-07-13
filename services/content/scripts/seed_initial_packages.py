@@ -74,7 +74,9 @@ async def create_ironward_package(db_session) -> None:
 async def create_grayvalley_package(db_session) -> None:
     repo = ContentRepository(db_session)
 
-    expansion_region = load_json_file(Path(__file__).parent.parent.parent.parent / "game/data/regions/expansion_region.json")
+    expansion_region = load_json_file(
+        Path(__file__).parent.parent.parent.parent / "game/data/regions/expansion_region.json"
+    )
     faction_list = load_json_file(Path(__file__).parent.parent.parent.parent / "game/data/factions/faction_list.json")
     npc_list = load_json_file(Path(__file__).parent.parent.parent.parent / "game/data/npcs/npc_list.json")
     quest_list = load_json_file(Path(__file__).parent.parent.parent.parent / "game/data/quests/quest_list.json")

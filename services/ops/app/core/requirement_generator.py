@@ -115,7 +115,10 @@ def _generate_region_heat_requirements(summary: str, insight_data: dict) -> list
     return [
         {
             "title": f"扩展热门区域 {region_id} 内容",
-            "description": f"根据数据分析，区域 {region_id} 访问量显著高于平均水平。建议在该区域增加更多支线任务、NPC互动和探索点，以满足玩家需求。",
+            "description": (
+                f"根据数据分析，区域 {region_id} 访问量显著高于平均水平。"
+                f"建议在该区域增加更多支线任务、NPC互动和探索点，以满足玩家需求。"
+            ),
             "acceptance_criteria_jsonb": {
                 "新增支线任务数量": 3,
                 "新增NPC数量": 2,
@@ -137,7 +140,10 @@ def _generate_content_gap_requirements(summary: str, insight_data: dict) -> list
     return [
         {
             "title": f"填充区域 {region_id} 内容缺口",
-            "description": f"根据数据分析，区域 {region_id} 访问量显著低于平均水平，可能存在内容缺口。建议分析该区域现有内容，增加吸引玩家的任务和活动。",
+            "description": (
+                f"根据数据分析，区域 {region_id} 访问量显著低于平均水平，可能存在内容缺口。"
+                f"建议分析该区域现有内容，增加吸引玩家的任务和活动。"
+            ),
             "acceptance_criteria_jsonb": {
                 "内容缺口分析报告": "completed",
                 "新增任务数量": 2,
@@ -160,7 +166,10 @@ def _generate_difficulty_requirements(summary: str, insight_data: dict) -> list[
         return [
             {
                 "title": f"调整任务 {quest_id} 难度",
-                "description": f"任务 {quest_id} 完成率较低({completion_rate:.1%})，玩家反馈难度偏高。建议降低敌人强度、增加引导提示或提供难度选择。",
+                "description": (
+                    f"任务 {quest_id} 完成率较低({completion_rate:.1%})，玩家反馈难度偏高。"
+                    f"建议降低敌人强度、增加引导提示或提供难度选择。"
+                ),
                 "acceptance_criteria_jsonb": {
                     "任务难度评估": "completed",
                     "难度调整方案": "approved",
@@ -176,7 +185,10 @@ def _generate_difficulty_requirements(summary: str, insight_data: dict) -> list[
         return [
             {
                 "title": f"增加任务 {quest_id} 挑战性",
-                "description": f"任务 {quest_id} 完成率很高且用时短，玩家反馈难度偏低。建议增加敌人强度或添加额外挑战目标。",
+                "description": (
+                    f"任务 {quest_id} 完成率很高且用时短，玩家反馈难度偏低。"
+                    f"建议增加敌人强度或添加额外挑战目标。"
+                ),
                 "acceptance_criteria_jsonb": {
                     "任务难度评估": "completed",
                     "难度提升方案": "approved",
@@ -197,7 +209,10 @@ def _generate_preference_requirements(summary: str, insight_data: dict) -> list[
         return [
             {
                 "title": "增加探索型内容",
-                "description": "数据分析显示玩家更倾向于探索行为。建议在世界中增加更多隐藏区域、秘密宝藏和探索型支线任务。",
+                "description": (
+            "数据分析显示玩家更倾向于探索行为。"
+            "建议在世界中增加更多隐藏区域、秘密宝藏和探索型支线任务。"
+        ),
                 "acceptance_criteria_jsonb": {
                     "新增隐藏区域数量": 2,
                     "新增探索型支线": 3,
@@ -235,7 +250,10 @@ def _generate_vote_requirements(summary: str, insight_data: dict) -> list[dict]:
     return [
         {
             "title": f"实现投票结果 {winner} 的内容落地",
-            "description": f"投票周期 {cycle_id} 中候选项 {winner} 获得压倒性支持。建议根据该选项生成对应的游戏内容更新，包括新区域、新任务或世界变化。",
+            "description": (
+                f"投票周期 {cycle_id} 中候选项 {winner} 获得压倒性支持。"
+                f"建议根据该选项生成对应的游戏内容更新，包括新区域、新任务或世界变化。"
+            ),
             "acceptance_criteria_jsonb": {
                 "内容方案设计": "approved",
                 "内容包开发": "completed",

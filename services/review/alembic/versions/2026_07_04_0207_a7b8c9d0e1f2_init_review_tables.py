@@ -1,7 +1,7 @@
 """init review tables
 
 Revision ID: a7b8c9d0e1f2
-Revises: 
+Revises:
 Create Date: 2026-07-04 02:07:00.000000
 
 """

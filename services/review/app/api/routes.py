@@ -426,7 +426,12 @@ async def approve_review_object(
             trace_id=x_trace_id or "",
         )
     except Exception as exc:
-        logger.error("event_publish_failed", event_type="review_batch_completed", object_id=str(object_id), error=str(exc))
+        logger.error(
+            "event_publish_failed",
+            event_type="review_batch_completed",
+            object_id=str(object_id),
+            error=str(exc),
+        )
 
     return EnvelopeResponse(
         request_id=request_id,
@@ -530,7 +535,12 @@ async def reject_review_object(
             trace_id=x_trace_id or "",
         )
     except Exception as exc:
-        logger.error("event_publish_failed", event_type="review_batch_completed", object_id=str(object_id), error=str(exc))
+        logger.error(
+            "event_publish_failed",
+            event_type="review_batch_completed",
+            object_id=str(object_id),
+            error=str(exc),
+        )
 
     return EnvelopeResponse(
         request_id=request_id,

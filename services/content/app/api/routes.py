@@ -433,7 +433,12 @@ async def release_package(
             trace_id=x_trace_id or "",
         )
     except Exception as exc:
-        logger.error("event_publish_failed", event_type="content_package_released", content_package_id=str(updated_pkg.content_package_id), error=str(exc))
+        logger.error(
+            "event_publish_failed",
+            event_type="content_package_released",
+            content_package_id=str(updated_pkg.content_package_id),
+            error=str(exc),
+        )
 
     return EnvelopeResponse(
         request_id=request_id,
@@ -545,7 +550,12 @@ async def rollback_package(
             trace_id=x_trace_id or "",
         )
     except Exception as exc:
-        logger.error("event_publish_failed", event_type="content_package_rolled_back", content_package_id=str(updated_pkg.content_package_id), error=str(exc))
+        logger.error(
+            "event_publish_failed",
+            event_type="content_package_rolled_back",
+            content_package_id=str(updated_pkg.content_package_id),
+            error=str(exc),
+        )
 
     return EnvelopeResponse(
         request_id=request_id,

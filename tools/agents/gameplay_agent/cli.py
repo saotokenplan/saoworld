@@ -1,7 +1,10 @@
 import click
 import json
 from .gameplay_agent import GameplayAgent
-from .gameplay_input_schemas import DesignTask, SceneConfig, ScriptInterface, DataConfig, GameplayTaskInput, SceneNode, ScriptProperty, ScriptMethod, SignalDefinition
+from .gameplay_input_schemas import (
+    DesignTask, SceneConfig, ScriptInterface, DataConfig,
+    GameplayTaskInput, SceneNode, ScriptProperty, ScriptMethod, SignalDefinition,
+)
 
 
 @click.group()
@@ -33,7 +36,10 @@ def create_scene(design_id, task_id, title, type, target_module, requirement, da
     scene_config = SceneConfig(
         scene_name=title.lower().replace(" ", "_"),
         nodes=[
-            SceneNode(name="Background", type="Sprite2D", properties={"texture": f'"res://assets/tiles/{title.lower().replace(" ", "_")}.png"'})
+            SceneNode(
+                name="Background", type="Sprite2D",
+                properties={"texture": f'"res://assets/tiles/{title.lower().replace(" ", "_")}.png"'},
+            )
         ],
         signals=[
             SignalDefinition(name="region_selected", parameters=[{"name": "region_id", "type": "String"}])

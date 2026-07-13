@@ -168,7 +168,10 @@ def test_write_script_logic():
         ],
         methods=[
             ScriptMethod(name="_ready", return_type="void", parameters=[]),
-            ScriptMethod(name="on_region_click", return_type="void", parameters=[{"name": "event", "type": "InputEventMouseButton"}]),
+            ScriptMethod(
+                name="on_region_click", return_type="void",
+                parameters=[{"name": "event", "type": "InputEventMouseButton"}],
+            ),
         ],
     )
 
@@ -319,7 +322,10 @@ def test_deliver_output():
     scene_config = SceneConfig(scene_name="fog_forest", nodes=[], signals=[])
     script_interface = ScriptInterface(script_name="fog_forest", extends="Node2D")
 
-    task_input = GameplayTaskInput(design_task=design_task, scene_config=scene_config, script_interface=script_interface)
+    task_input = GameplayTaskInput(
+        design_task=design_task, scene_config=scene_config,
+        script_interface=script_interface,
+    )
 
     agent = GameplayAgent()
     agent.analyze_design_document(task_input)

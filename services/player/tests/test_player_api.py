@@ -342,7 +342,10 @@ async def test_fail_quest_not_active(client: AsyncClient, player_token: str, tes
 
 
 @pytest.mark.asyncio
-async def test_complete_quest_objectives_incomplete(client: AsyncClient, player_token: str, test_player, test_player_quest_incomplete):
+async def test_complete_quest_objectives_incomplete(
+    client: AsyncClient, player_token: str, test_player,
+    test_player_quest_incomplete,
+):
     response = await client.post(
         f"{settings.api_v1_prefix}/player/quests/quest_incomplete_01/complete",
         headers={"Authorization": f"Bearer {player_token}"},
@@ -396,7 +399,7 @@ async def test_get_player_profile_success(client: AsyncClient, player_token: str
     data = response.json()
     assert "request_id" in data
     assert "data" in data
-    
+
     profile = data["data"]
     assert profile["player_id"] is not None
     assert profile["display_name"] == "TestPlayer"
@@ -405,10 +408,10 @@ async def test_get_player_profile_success(client: AsyncClient, player_token: str
     assert "reputation_summary" in profile
     assert "achievements_unlocked" in profile
     assert "achievements_total" in profile
-    
+
     # 验证声望汇总
     assert isinstance(profile["reputation_summary"], list)
-    
+
     # 验证成就统计
     assert isinstance(profile["achievements_unlocked"], int)
     assert isinstance(profile["achievements_total"], int)

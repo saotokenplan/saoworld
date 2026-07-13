@@ -53,7 +53,9 @@ class TestQuestDataAdapter:
             "quest_type": "side",
             "chapter_id": "chapter_01",
             "region_key": "region_core",
-            "objectives": [{"id": "obj_1", "description": "目标1", "type": "npc", "target": "npc_test", "completed": False}],
+            "objectives": [
+                {"id": "obj_1", "description": "目标1", "type": "npc", "target": "npc_test", "completed": False},
+            ],
         }
 
         completeness, missing = adapter.validate_completeness(quest_data)
@@ -82,7 +84,9 @@ class TestQuestDataAdapter:
             "quest_type": "side",
             "chapter_id": "chapter_01",
             "region_key": "region_core",
-            "objectives": [{"id": "obj_1", "description": "目标1", "type": "npc", "target": "npc_test", "completed": False}],
+            "objectives": [
+                {"id": "obj_1", "description": "目标1", "type": "npc", "target": "npc_test", "completed": False},
+            ],
         }
 
         result = adapter.ensure_minimum_completeness(quest_data, min_completeness=0.95)

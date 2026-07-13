@@ -109,7 +109,11 @@ class RewardBoundaryChecker(BaseChecker):
                 result.add_issue(
                     issue_type="quest_level_above_region",
                     severity=IssueSeverity.MEDIUM,
-                    message=f"任务 {quest.get('title', quest.get('quest_id'))} 的预估等级 {estimated_level} 超出区域 {region_id} 的上限 {max_level}",
+                    message=(
+                        f"任务 {quest.get('title', quest.get('quest_id'))}"
+                        f" 的预估等级 {estimated_level}"
+                        f" 超出区域 {region_id} 的上限 {max_level}"
+                    ),
                     location=f"quests.{quest.get('quest_id', 'unknown')}",
                     details={
                         "quest_id": quest.get("quest_id"),
@@ -146,7 +150,11 @@ class RewardBoundaryChecker(BaseChecker):
                 result.add_issue(
                     issue_type="repeatable_reward_too_high",
                     severity=IssueSeverity.HIGH,
-                    message=f"可重复任务 {quest.get('title', quest.get('quest_id'))} 的经验奖励 {repeat_exp} 超过基础任务的 {multiplier_cap * 100}% 上限",
+                    message=(
+                        f"可重复任务 {quest.get('title', quest.get('quest_id'))}"
+                        f" 的经验奖励 {repeat_exp}"
+                        f" 超过基础任务的 {multiplier_cap * 100}% 上限"
+                    ),
                     location=f"quests.{quest.get('quest_id', 'unknown')}.rewards.experience",
                     details={
                         "quest_id": quest.get("quest_id"),
@@ -188,7 +196,12 @@ class RewardBoundaryChecker(BaseChecker):
                 result.add_issue(
                     issue_type="resource_refresh_too_fast",
                     severity=IssueSeverity.MEDIUM,
-                    message=f"资源点 {node.get('node_id', 'unknown')} 的刷新间隔 {refresh_rate} 分钟低于区域资源等级 {resource_level} 的建议下限 {min_refresh} 分钟",
+                    message=(
+                        f"资源点 {node.get('node_id', 'unknown')}"
+                        f" 的刷新间隔 {refresh_rate} 分钟"
+                        f" 低于区域资源等级 {resource_level}"
+                        f" 的建议下限 {min_refresh} 分钟"
+                    ),
                     location=f"resource_nodes.{node.get('node_id', 'unknown')}.refresh_rate",
                     details={
                         "node_id": node.get("node_id"),

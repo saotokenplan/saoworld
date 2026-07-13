@@ -270,10 +270,37 @@ class ContentGenerator:
     def _build_system_prompt(self, content_type: str) -> str:
         """构建系统提示。"""
         prompts = {
-            "npc": "你是一个游戏世界中的NPC设计专家。你需要根据世界观和区域设定，设计出符合背景的完整NPC角色。返回的JSON必须包含所有必需字段：npc_key、name、title、gender、age、race、faction_key、region_key、role、location_key、description、personality、traits、voice、backstory、motivation、relationship_map、dialog_style、dialog_nodes、quests_given、quests_related、shop_items、services_offered、location_x、location_y、interaction_radius。确保所有字段填写完整。",
-            "quest": "你是一个游戏任务设计专家。你需要根据世界观和区域设定，设计出有趣的任务。返回的JSON必须包含所有必需字段：quest_key、title、description、quest_type（类型main/side/event/daily）、chapter_id、region_key、start_npc_key、end_npc_key、prerequisites、objectives（目标列表，每个目标包含id、description、type、target、completed）、rewards（包含experience、gold、reputation、items）、failure_condition。确保所有字段填写完整。",
-            "region": "你是一个游戏区域设计专家。你需要根据世界观和章节进度，设计出有特色的区域。返回的JSON必须包含：name（名字）、difficulty（难度easy/normal/hard/extreme）、region_id（区域ID）、chapter_id（章节ID）、description（描述）、features（特色列表）。",
-            "settlement": "你是一个游戏聚落设计专家。你需要根据区域设定和世界观，设计出符合背景的完整聚落。返回的JSON必须包含所有必需字段：settlement_key、name、settlement_type（village/town/city/camp/fortress/market/outpost）、region_key、chapter_id、faction_key、description、population、main_resources、economy_type（agriculture/commerce/mining/hunting/fishing/trade）、status（peaceful/troubled/warring/thriving）、notable_locations、key_npcs、faction_influence、relationships、history、culture、defenses、services、special_features、location_x、location_y。确保所有字段填写完整。",
+            "npc": (
+                "你是一个游戏世界中的NPC设计专家。你需要根据世界观和区域设定，设计出符合背景的完整NPC角色。"
+                "返回的JSON必须包含所有必需字段：npc_key、name、title、gender、age、race、faction_key、"
+                "region_key、role、location_key、description、personality、traits、voice、backstory、"
+                "motivation、relationship_map、dialog_style、dialog_nodes、quests_given、quests_related、"
+                "shop_items、services_offered、location_x、location_y、interaction_radius。"
+                "确保所有字段填写完整。"
+            ),
+            "quest": (
+                "你是一个游戏任务设计专家。你需要根据世界观和区域设定，设计出有趣的任务。"
+                "返回的JSON必须包含所有必需字段：quest_key、title、description、"
+                "quest_type（类型main/side/event/daily）、chapter_id、region_key、start_npc_key、"
+                "end_npc_key、prerequisites、objectives（目标列表，每个目标包含id、description、"
+                "type、target、completed）、rewards（包含experience、gold、reputation、items）、"
+                "failure_condition。确保所有字段填写完整。"
+            ),
+            "region": (
+                "你是一个游戏区域设计专家。你需要根据世界观和章节进度，设计出有特色的区域。"
+                "返回的JSON必须包含：name（名字）、difficulty（难度easy/normal/hard/extreme）、"
+                "region_id（区域ID）、chapter_id（章节ID）、description（描述）、features（特色列表）。"
+            ),
+            "settlement": (
+                "你是一个游戏聚落设计专家。你需要根据区域设定和世界观，设计出符合背景的完整聚落。"
+                "返回的JSON必须包含所有必需字段：settlement_key、name、"
+                "settlement_type（village/town/city/camp/fortress/market/outpost）、region_key、"
+                "chapter_id、faction_key、description、population、main_resources、"
+                "economy_type（agriculture/commerce/mining/hunting/fishing/trade）、"
+                "status（peaceful/troubled/warring/thriving）、notable_locations、key_npcs、"
+                "faction_influence、relationships、history、culture、defenses、services、"
+                "special_features、location_x、location_y。确保所有字段填写完整。"
+            ),
         }
         return prompts.get(content_type, "你是一个游戏内容设计专家。请返回有效的JSON格式。")
 
@@ -371,7 +398,10 @@ class ContentGenerator:
         prompt_parts.append("- start_npc_key: 接取任务的NPC ID")
         prompt_parts.append("- end_npc_key: 交付任务的NPC ID")
         prompt_parts.append("- prerequisites: 前置任务ID列表")
-        prompt_parts.append("- objectives: 任务目标列表（每个目标包含id、description、type(story/location/npc/combat/explore/collect/rescue/travel/quest)、target、completed）")
+        prompt_parts.append(
+            "- objectives: 任务目标列表（每个目标包含id、description、"
+            "type(story/location/npc/combat/explore/collect/rescue/travel/quest)、target、completed）"
+        )
         prompt_parts.append("- rewards: 奖励对象（包含experience、gold、reputation、items）")
         prompt_parts.append("- failure_condition: 失败条件（如时间限制）")
 
