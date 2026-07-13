@@ -290,6 +290,48 @@ class Insight(Base):
     )
 
 
+class OpsEvent(Base):
+    __tablename__ = "ops_events"
+
+    event_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    event_name: Mapped[str] = mapped_column(String(256), nullable=False, unique=True, index=True)
+    event_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft", server_default="draft", index=True)
+    start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    end_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    target_scope: Mapped[str] = mapped_column(String(32), nullable=False, default="all", server_default="all")
+    target_scope_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    reward_config_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    multiplier_config_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rules_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    created_by: Mapped[str] = mapped_column(String(128), nullable=False)
+    schema_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "event_type IN ('double_reward', 'login_bonus', 'limited_time', 'sale', 'custom')",
+            name="ops_events_event_type_check",
+        ),
+        CheckConstraint(
+            "status IN ('draft', 'active', 'paused', 'ended', 'archived')",
+            name="ops_events_status_check",
+        ),
+        CheckConstraint(
+            "target_scope IN ('all', 'region', 'player_level', 'guild')",
+            name="ops_events_target_scope_check",
+        ),
+        Index("ops_events_status_time_idx", "status", "start_at", "end_at"),
+        Index("ops_events_type_idx", "event_type"),
+    )
+
+
 class Requirement(Base):
     __tablename__ = "requirements"
 
