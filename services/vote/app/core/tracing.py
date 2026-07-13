@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import os
-from typing import Callable
+from typing import Callable, Awaitable
 
 from fastapi import FastAPI, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -22,7 +22,9 @@ class TracingMiddleware(BaseHTTPMiddleware):
     - 在响应头中返回 trace_id
     """
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         trace_id = request.headers.get("X-Trace-Id", "")
         request_id = request.headers.get("X-Request-Id", "")
 
