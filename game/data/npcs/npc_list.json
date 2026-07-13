@@ -549,6 +549,602 @@
         {"id": "dia_warning", "text": "废墟深处有一些不该惹的东西，我劝你别去。", "condition": "warn_danger"},
         {"id": "dia_rescue", "text": "我的一个手下被困在东墙废墟了，如果你能救他出来，我会给你一份不错的报酬。", "condition": "ask_rescue"}
       ]
+    },
+    {
+      "npc_id": "npc_forest_leader",
+      "npc_key": "npc_forest_leader_01",
+      "name": "艾琳·绿风",
+      "title": "自由领地首领",
+      "faction": "faction_freehold",
+      "role": "leader",
+      "location": "loc_forest_camp",
+      "chapter": "chapter_02",
+      "description": "自由领地的年轻领袖，优雅而坚定，相信每个人都有选择自己道路的权利",
+      "personality": ["elegant", "firm", "idealistic"],
+      "related_quests": ["quest_forest_introduction", "quest_forest_guardian"],
+      "rewards": {"reputation": {"faction_freehold": 100}, "experience": 300},
+      "dialog_tree": {
+        "start": "first_meet",
+        "nodes": {
+          "first_meet": {
+            "id": "first_meet",
+            "text": "欢迎来到幽光森林，旅行者。在这里，每个人都是自由的。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "自由领地是什么？", "next": "about_faction"},
+              {"text": "有什么我可以帮忙的？", "next": "has_quest"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "about_faction": {
+            "id": "about_faction",
+            "text": "自由领地相信，真正的力量来自于每个人的自由意志，而不是铁卫的枷锁。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "有什么我可以帮忙的？", "next": "has_quest"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "has_quest": {
+            "id": "has_quest",
+            "text": "森林深处的精灵古树正在衰弱，我们需要有人去调查原因。你愿意帮忙吗？",
+            "speaker": "npc",
+            "quest_trigger": "quest_forest_guardian",
+            "choices": [
+              {"text": "我接受", "next": "quest_accepted", "action": "accept_quest"},
+              {"text": "让我考虑一下", "next": "goodbye"}
+            ]
+          },
+          "quest_accepted": {
+            "id": "quest_accepted",
+            "text": "太好了！精灵古树是森林的灵魂，如果它衰弱，整片森林都会受到影响。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "我会尽力的", "next": "goodbye"}
+            ]
+          },
+          "quest_completed": {
+            "id": "quest_completed",
+            "text": "你拯救了森林！自由领地永远感谢你的贡献。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "还有其他需要帮忙的吗？", "next": "default"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "default": {
+            "id": "default",
+            "text": "森林的和平需要每个人的守护。有什么需要，随时来找我。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "有什么我可以帮忙的？", "next": "has_quest"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "goodbye": {
+            "id": "goodbye",
+            "text": "",
+            "speaker": "npc",
+            "choices": [],
+            "is_end": true
+          }
+        }
+      },
+      "dialogues": [
+        {"id": "dia_intro", "text": "欢迎来到幽光森林，旅行者。在这里，每个人都是自由的。", "condition": "first_meet"},
+        {"id": "dia_faction", "text": "自由领地相信，真正的力量来自于每个人的自由意志，而不是铁卫的枷锁。", "condition": "talk_about_faction"},
+        {"id": "dia_quest", "text": "森林深处的精灵古树正在衰弱，我们需要有人去调查原因。你愿意帮忙吗？", "condition": "has_quest"}
+      ]
+    },
+    {
+      "npc_id": "npc_forest_guide",
+      "npc_key": "npc_forest_guide_01",
+      "name": "莱拉·迷雾",
+      "title": "森林向导",
+      "faction": "faction_freehold",
+      "role": "guide",
+      "location": "loc_forest_mist_path",
+      "chapter": "chapter_02",
+      "description": "熟悉森林每一条小路的向导，对森林充满敬畏，说话轻柔",
+      "personality": ["gentle", "knowledgeable", "cautious"],
+      "related_quests": ["quest_forest_introduction"],
+      "rewards": {"reputation": {"faction_freehold": 20}, "experience": 50},
+      "dialog_tree": {
+        "start": "first_meet",
+        "nodes": {
+          "first_meet": {
+            "id": "first_meet",
+            "text": "欢迎来到迷雾小径，陌生人。这片森林很神秘，请跟紧我。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "带我逛逛森林", "next": "show_forest"},
+              {"text": "这里有什么危险吗？", "next": "warn_danger"},
+              {"text": "谢谢，我自己探索", "next": "goodbye"}
+            ]
+          },
+          "show_forest": {
+            "id": "show_forest",
+            "text": "好的，跟我来。我会带你去看看月光湖和精灵古树。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "走吧", "next": "goodbye"}
+            ]
+          },
+          "warn_danger": {
+            "id": "warn_danger",
+            "text": "森林深处有一些古老的守护者，它们不喜欢陌生人。请小心行事。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "带我逛逛森林", "next": "show_forest"},
+              {"text": "谢谢提醒", "next": "goodbye"}
+            ]
+          },
+          "default": {
+            "id": "default",
+            "text": "需要向导的话，随时来找我。森林的秘密很多，但不是所有人都能发现。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "带我逛逛森林", "next": "show_forest"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "goodbye": {
+            "id": "goodbye",
+            "text": "",
+            "speaker": "npc",
+            "choices": [],
+            "is_end": true
+          }
+        }
+      },
+      "dialogues": [
+        {"id": "dia_intro", "text": "欢迎来到迷雾小径，陌生人。这片森林很神秘，请跟紧我。", "condition": "first_meet"},
+        {"id": "dia_warn", "text": "森林深处有一些古老的守护者，它们不喜欢陌生人。请小心行事。", "condition": "warn_danger"}
+      ]
+    },
+    {
+      "npc_id": "npc_forest_healer",
+      "npc_key": "npc_forest_healer_01",
+      "name": "梅拉·绿叶",
+      "title": "自然治愈师",
+      "faction": "faction_freehold",
+      "role": "healer",
+      "location": "loc_forest_moonlake",
+      "chapter": "chapter_02",
+      "description": "精通自然治愈术的治愈师，与森林有着深厚的联系",
+      "personality": ["peaceful", "wise", "compassionate"],
+      "related_quests": [],
+      "rewards": {"experience": 30},
+      "dialog_tree": {
+        "start": "first_meet",
+        "nodes": {
+          "first_meet": {
+            "id": "first_meet",
+            "text": "你好，旅行者。月光湖的水有治愈的力量，让我帮你恢复一下。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "谢谢", "next": "heal", "action": "heal_player"},
+              {"text": "说说这片森林", "next": "about_forest"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "heal": {
+            "id": "heal",
+            "text": "愿自然的力量保佑你。身体恢复了，心灵也会更加强大。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "多谢", "next": "default"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "about_forest": {
+            "id": "about_forest",
+            "text": "这片森林已经存在了数千年，它见证了天裂前后的世界。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "让我恢复一下", "next": "first_meet"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "default": {
+            "id": "default",
+            "text": "月光湖随时为受伤的旅人开放。需要治愈时，来找我。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "goodbye": {
+            "id": "goodbye",
+            "text": "",
+            "speaker": "npc",
+            "choices": [],
+            "is_end": true
+          }
+        }
+      },
+      "dialogues": [
+        {"id": "dia_intro", "text": "你好，旅行者。月光湖的水有治愈的力量，让我帮你恢复一下。", "condition": "first_meet"},
+        {"id": "dia_forest", "text": "这片森林已经存在了数千年，它见证了天裂前后的世界。", "condition": "talk_about_forest"}
+      ]
+    },
+    {
+      "npc_id": "npc_forest_guard",
+      "npc_key": "npc_forest_guard_01",
+      "name": "凯恩·铁矛",
+      "title": "森林守卫",
+      "faction": "faction_freehold",
+      "role": "guard",
+      "location": "loc_forest_ancient_tree",
+      "chapter": "chapter_02",
+      "description": "精灵古树的守护者，沉默寡言但无比忠诚",
+      "personality": ["silent", "loyal", "strong"],
+      "related_quests": ["quest_forest_guardian"],
+      "rewards": {"reputation": {"faction_freehold": 30}, "experience": 100},
+      "dialog_tree": {
+        "start": "first_meet",
+        "nodes": {
+          "first_meet": {
+            "id": "first_meet",
+            "text": "外人不得靠近精灵古树。除非你有正当的理由。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "我是来帮忙的", "next": "help_intent"},
+              {"text": "我只是路过", "next": "passing"},
+              {"text": "这棵树怎么了？", "next": "tree_condition"}
+            ]
+          },
+          "help_intent": {
+            "id": "help_intent",
+            "text": "首领派你来的？很好，古树正在衰弱，我们需要找到原因。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "告诉我更多", "next": "tree_condition"},
+              {"text": "我准备好了", "next": "goodbye"}
+            ]
+          },
+          "passing": {
+            "id": "passing",
+            "text": "好吧，但不要在这里停留太久。森林不喜欢陌生人。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "tree_condition": {
+            "id": "tree_condition",
+            "text": "精灵古树是森林的心脏。最近它的光芒在减弱，这是一个不祥的征兆。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "我来调查", "next": "help_intent"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "default": {
+            "id": "default",
+            "text": "精灵古树的安全是我的职责。不要在这里捣乱。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "goodbye": {
+            "id": "goodbye",
+            "text": "",
+            "speaker": "npc",
+            "choices": [],
+            "is_end": true
+          }
+        }
+      },
+      "dialogues": [
+        {"id": "dia_intro", "text": "外人不得靠近精灵古树。除非你有正当的理由。", "condition": "first_meet"},
+        {"id": "dia_tree", "text": "精灵古树是森林的心脏。最近它的光芒在减弱，这是一个不祥的征兆。", "condition": "talk_about_tree"}
+      ]
+    },
+    {
+      "npc_id": "npc_oasis_merchant",
+      "npc_key": "npc_oasis_merchant_01",
+      "name": "萨拉丁·金砂",
+      "title": "商会会长",
+      "faction": "faction_harvest",
+      "role": "leader",
+      "location": "loc_oasis_hq",
+      "chapter": "chapter_02",
+      "description": "丰收商会的会长，精明的商人，在沙漠中建立了庞大的贸易帝国",
+      "personality": ["shrewd", "charismatic", "ambitious"],
+      "related_quests": ["quest_oasis_trade", "quest_oasis_secret"],
+      "rewards": {"reputation": {"faction_harvest": 80}, "experience": 250},
+      "dialog_tree": {
+        "start": "first_meet",
+        "nodes": {
+          "first_meet": {
+            "id": "first_meet",
+            "text": "欢迎来到南部绿洲！这里是沙漠中的贸易枢纽，只要你有好货，就不愁卖不出去。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "说说商会的事", "next": "about_guild"},
+              {"text": "有什么商机？", "next": "business"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "about_guild": {
+            "id": "about_guild",
+            "text": "丰收商会的宗旨很简单：在废墟中寻找价值，在贸易中创造繁荣。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "有什么商机？", "next": "business"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "business": {
+            "id": "business",
+            "text": "商队在沙漠边缘遇到了麻烦，如果你能帮忙解决，商会会给予丰厚的报酬。",
+            "speaker": "npc",
+            "quest_trigger": "quest_oasis_caravan",
+            "choices": [
+              {"text": "我来帮忙", "next": "quest_accepted", "action": "accept_quest"},
+              {"text": "风险太大", "next": "default"}
+            ]
+          },
+          "quest_accepted": {
+            "id": "quest_accepted",
+            "text": "很好！商队被困在沙漠边缘，据说有强盗在附近出没。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "我会解决的", "next": "goodbye"}
+            ]
+          },
+          "quest_completed": {
+            "id": "quest_completed",
+            "text": "商队安全了！你是商会的朋友，以后有任何贸易优惠，你都能优先享受。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "还有其他任务吗？", "next": "default"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "default": {
+            "id": "default",
+            "text": "商会的大门永远向有能力的人敞开。有什么需要，随时来找我。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "有什么商机？", "next": "business"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "goodbye": {
+            "id": "goodbye",
+            "text": "",
+            "speaker": "npc",
+            "choices": [],
+            "is_end": true
+          }
+        }
+      },
+      "dialogues": [
+        {"id": "dia_intro", "text": "欢迎来到南部绿洲！这里是沙漠中的贸易枢纽，只要你有好货，就不愁卖不出去。", "condition": "first_meet"},
+        {"id": "dia_guild", "text": "丰收商会的宗旨很简单：在废墟中寻找价值，在贸易中创造繁荣。", "condition": "talk_about_guild"},
+        {"id": "dia_business", "text": "商队在沙漠边缘遇到了麻烦，如果你能帮忙解决，商会会给予丰厚的报酬。", "condition": "business_opportunity"}
+      ]
+    },
+    {
+      "npc_id": "npc_oasis_trader",
+      "npc_key": "npc_oasis_trader_01",
+      "name": "阿米尔·丝路",
+      "title": "旅行商人",
+      "faction": "faction_harvest",
+      "role": "merchant",
+      "location": "loc_oasis_market",
+      "chapter": "chapter_02",
+      "description": "来自远方的旅行商人，见识广博，总能找到珍稀的商品",
+      "personality": ["talkative", "knowledgeable", "friendly"],
+      "related_quests": [],
+      "rewards": {"experience": 20},
+      "dialog_tree": {
+        "start": "first_meet",
+        "nodes": {
+          "first_meet": {
+            "id": "first_meet",
+            "text": "看看我的货物！来自各地的珍稀物品，总有一件你会喜欢。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "你从哪里来？", "next": "about_travels"},
+              {"text": "有什么特别的？", "next": "special_items"},
+              {"text": "下次再来", "next": "goodbye"}
+            ]
+          },
+          "about_travels": {
+            "id": "about_travels",
+            "text": "我走过这片大陆的每一个角落，从北方的雪山到南方的沙漠。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "有什么特别的？", "next": "special_items"},
+              {"text": "下次再来", "next": "goodbye"}
+            ]
+          },
+          "special_items": {
+            "id": "special_items",
+            "text": "我这里有一些从旧世界遗迹中找到的稀有材料，也许对你有用。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "让我看看", "next": "goodbye"},
+              {"text": "下次再来", "next": "goodbye"}
+            ]
+          },
+          "default": {
+            "id": "default",
+            "text": "市场每天都有新货，有空常来看看。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "下次再来", "next": "goodbye"}
+            ]
+          },
+          "goodbye": {
+            "id": "goodbye",
+            "text": "",
+            "speaker": "npc",
+            "choices": [],
+            "is_end": true
+          }
+        }
+      },
+      "dialogues": [
+        {"id": "dia_intro", "text": "看看我的货物！来自各地的珍稀物品，总有一件你会喜欢。", "condition": "first_meet"},
+        {"id": "dia_travels", "text": "我走过这片大陆的每一个角落，从北方的雪山到南方的沙漠。", "condition": "talk_about_travels"}
+      ]
+    },
+    {
+      "npc_id": "npc_oasis_priest",
+      "npc_key": "npc_oasis_priest_01",
+      "name": "赛义德·圣光",
+      "title": "神庙祭司",
+      "faction": null,
+      "role": "priest",
+      "location": "loc_oasis_temple",
+      "chapter": "chapter_02",
+      "description": "绿洲神庙的祭司，虔诚的信仰者，守护着沙漠的秘密",
+      "personality": ["pious", "wise", "mysterious"],
+      "related_quests": ["quest_oasis_secret"],
+      "rewards": {"experience": 200},
+      "dialog_tree": {
+        "start": "first_meet",
+        "nodes": {
+          "first_meet": {
+            "id": "first_meet",
+            "text": "欢迎来到绿洲神庙，旅人。沙漠之神注视着每一个来到这里的人。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "说说沙漠之神", "next": "about_god"},
+              {"text": "神庙里有什么秘密？", "next": "secret"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "about_god": {
+            "id": "about_god",
+            "text": "沙漠之神创造了这片绿洲，保护着我们免受风沙侵袭。我们的信仰是沙漠中的灯塔。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "神庙里有什么秘密？", "next": "secret"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "secret": {
+            "id": "secret",
+            "text": "神庙地下有一条通往古老遗迹的通道，据说那里藏着沙漠之神留下的宝藏。",
+            "speaker": "npc",
+            "quest_trigger": "quest_oasis_secret",
+            "choices": [
+              {"text": "带我去看看", "next": "quest_accepted", "action": "accept_quest"},
+              {"text": "太危险了", "next": "default"}
+            ]
+          },
+          "quest_accepted": {
+            "id": "quest_accepted",
+            "text": "勇气可嘉！通道入口在神庙祭坛后面，小心里面的陷阱。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "我会小心的", "next": "goodbye"}
+            ]
+          },
+          "quest_completed": {
+            "id": "quest_completed",
+            "text": "你找到了宝藏！沙漠之神会保佑你的。这份礼物是对你勇气的奖励。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "谢谢", "next": "default"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "default": {
+            "id": "default",
+            "text": "神庙随时为虔诚的旅人开放。沙漠之神与你同在。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "goodbye": {
+            "id": "goodbye",
+            "text": "",
+            "speaker": "npc",
+            "choices": [],
+            "is_end": true
+          }
+        }
+      },
+      "dialogues": [
+        {"id": "dia_intro", "text": "欢迎来到绿洲神庙，旅人。沙漠之神注视着每一个来到这里的人。", "condition": "first_meet"},
+        {"id": "dia_god", "text": "沙漠之神创造了这片绿洲，保护着我们免受风沙侵袭。我们的信仰是沙漠中的灯塔。", "condition": "talk_about_god"},
+        {"id": "dia_secret", "text": "神庙地下有一条通往古老遗迹的通道，据说那里藏着沙漠之神留下的宝藏。", "condition": "reveal_secret"}
+      ]
+    },
+    {
+      "npc_id": "npc_oasis_scout",
+      "npc_key": "npc_oasis_scout_01",
+      "name": "哈立德·风沙",
+      "title": "沙漠侦察员",
+      "faction": "faction_harvest",
+      "role": "scout",
+      "location": "loc_oasis_desert_edge",
+      "chapter": "chapter_02",
+      "description": "熟悉沙漠每一寸土地的侦察员，商会的眼睛和耳朵",
+      "personality": ["alert", "experienced", "cautious"],
+      "related_quests": ["quest_oasis_caravan"],
+      "rewards": {"reputation": {"faction_harvest": 20}, "experience": 80},
+      "dialog_tree": {
+        "start": "first_meet",
+        "nodes": {
+          "first_meet": {
+            "id": "first_meet",
+            "text": "这里是沙漠的边缘，再往前就是无尽的沙海。你要小心。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "前面有什么？", "next": "about_desert"},
+              {"text": "商队怎么样了？", "next": "caravan_status"},
+              {"text": "我自己小心", "next": "goodbye"}
+            ]
+          },
+          "about_desert": {
+            "id": "about_desert",
+            "text": "沙漠里有沙暴、陷阱，还有一些不怀好意的强盗。没有向导，很容易迷失。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "商队怎么样了？", "next": "caravan_status"},
+              {"text": "我自己小心", "next": "goodbye"}
+            ]
+          },
+          "caravan_status": {
+            "id": "caravan_status",
+            "text": "商队被困在前面的峡谷里，强盗正在围攻他们。如果你能帮忙，商会会感激你的。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "我去救援", "next": "goodbye"},
+              {"text": "太危险了", "next": "default"}
+            ]
+          },
+          "default": {
+            "id": "default",
+            "text": "在沙漠里，信息就是生命。有什么需要知道的，来找我。",
+            "speaker": "npc",
+            "choices": [
+              {"text": "商队怎么样了？", "next": "caravan_status"},
+              {"text": "告辞", "next": "goodbye"}
+            ]
+          },
+          "goodbye": {
+            "id": "goodbye",
+            "text": "",
+            "speaker": "npc",
+            "choices": [],
+            "is_end": true
+          }
+        }
+      },
+      "dialogues": [
+        {"id": "dia_intro", "text": "这里是沙漠的边缘，再往前就是无尽的沙海。你要小心。", "condition": "first_meet"},
+        {"id": "dia_desert", "text": "沙漠里有沙暴、陷阱，还有一些不怀好意的强盗。没有向导，很容易迷失。", "condition": "warn_desert"}
+      ]
     }
   ]
 }
