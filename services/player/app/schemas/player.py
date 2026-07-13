@@ -490,3 +490,74 @@ class EnvelopeResponse(BaseModel, Generic[T]):
     data: T
     meta: PaginatedMeta | None = None
     trace_id: str | None = None
+
+
+class FriendshipStatus(str, Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    BLOCKED = "blocked"
+
+
+class SendFriendRequestRequest(BaseModel):
+    friend_id: uuid.UUID
+
+
+class AcceptFriendRequestRequest(BaseModel):
+    player_id: uuid.UUID
+
+
+class RejectFriendRequestRequest(BaseModel):
+    player_id: uuid.UUID
+
+
+class FriendshipResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    friendship_id: uuid.UUID
+    player_id: uuid.UUID
+    friend_id: uuid.UUID
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class FriendListItemResponse(BaseModel):
+    """好友列表中的单项，包含好友玩家信息"""
+
+    friendship_id: uuid.UUID
+    friend_id: uuid.UUID
+    friend_display_name: str
+    friend_level: int = 1
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class FriendListResponse(BaseModel):
+    friends: list[FriendListItemResponse]
+    total: int
+
+
+class FriendRequestItemResponse(BaseModel):
+    """待处理好友请求中的单项"""
+
+    friendship_id: uuid.UUID
+    player_id: uuid.UUID
+    player_display_name: str
+    player_level: int = 1
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class FriendRequestListResponse(BaseModel):
+    requests: list[FriendRequestItemResponse]
+    total: int
+
+
+class FriendStatusResponse(BaseModel):
+    friendship_id: uuid.UUID | None = None
+    player_id: uuid.UUID | None = None
+    friend_id: uuid.UUID | None = None
+    status: str = "none"

@@ -1,0 +1,62 @@
+[gd_scene load_steps=2 format=3 uid="uid://friendpanel001"]
+
+[ext_resource type="Script" path="res://scripts/ui/social/friend_panel.gd" id="1_fp"]
+
+[node name="FriendPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_fp")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="FriendListLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "好友列表"
+
+[node name="FriendList" type="ItemList" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 150)
+
+[node name="PendingLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "待处理请求"
+
+[node name="PendingList" type="ItemList" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 100)
+
+[node name="AddFriendBar" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="FriendIdInput" type="LineEdit" parent="VBoxContainer/AddFriendBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "输入好友ID"
+
+[node name="AddFriendButton" type="Button" parent="VBoxContainer/AddFriendBar"]
+layout_mode = 2
+text = "添加好友"
+
+[node name="CloseButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "关闭"

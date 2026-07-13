@@ -208,6 +208,36 @@ class PlayerRegion(Base):
     )
 
 
+class Friendship(Base):
+    __tablename__ = "friendships"
+
+    friendship_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    player_id: Mapped[uuid.UUID] = mapped_column(
+        UUIDType(), nullable=False, index=True,
+    )
+    friend_id: Mapped[uuid.UUID] = mapped_column(
+        UUIDType(), nullable=False, index=True,
+    )
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="pending", server_default="pending", index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'accepted', 'rejected', 'blocked')",
+            name="friendships_status_check",
+        ),
+        Index("friendships_player_friend_idx", "player_id", "friend_id", unique=True),
+        Index("friendships_friend_status_idx", "friend_id", "status"),
+    )
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 
