@@ -290,3 +290,71 @@ class AuditLog(Base):
         Index("audit_logs_resource_idx", "resource_type", "resource_id"),
         Index("audit_logs_action_idx", "action", "created_at"),
     )
+
+
+class Guild(Base):
+    """公会表。"""
+
+    __tablename__ = "guilds"
+
+    guild_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    leader_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    announcement: Mapped[str | None] = mapped_column(Text, nullable=True)
+    level: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    member_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    max_members: Mapped[int] = mapped_column(Integer, nullable=False, default=50, server_default="50")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "length(name) > 0 AND length(name) <= 64",
+            name="guilds_name_check",
+        ),
+        CheckConstraint(
+            "level >= 1",
+            name="guilds_level_check",
+        ),
+        CheckConstraint(
+            "member_count >= 1",
+            name="guilds_member_count_check",
+        ),
+        CheckConstraint(
+            "max_members >= 1",
+            name="guilds_max_members_check",
+        ),
+        CheckConstraint(
+            "member_count <= max_members",
+            name="guilds_capacity_check",
+        ),
+    )
+
+
+class GuildMember(Base):
+    """公会成员表。"""
+
+    __tablename__ = "guild_members"
+
+    guild_member_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    guild_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, unique=True)
+    role: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="member", server_default="member", index=True
+    )
+    joined_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "role IN ('leader', 'officer', 'member')",
+            name="guild_members_role_check",
+        ),
+        Index("guild_members_guild_joined_idx", "guild_id", "joined_at"),
+    )

@@ -256,3 +256,50 @@ def record_private_message_read(receiver_id: str) -> None:
         receiver_id: 接收者ID
     """
     PRIVATE_MESSAGES_READ_TOTAL.labels(receiver_id=receiver_id).inc()
+
+
+# 公会相关指标
+GUILDS_CREATED_TOTAL = Counter(
+    "guilds_created_total",
+    "公会创建次数",
+    labelnames=["leader_id"],
+)
+
+GUILD_MEMBERS_ADDED_TOTAL = Counter(
+    "guild_members_added_total",
+    "公会成员加入次数",
+    labelnames=["guild_id"],
+)
+
+GUILD_MEMBERS_REMOVED_TOTAL = Counter(
+    "guild_members_removed_total",
+    "公会成员移除次数",
+    labelnames=["guild_id"],
+)
+
+
+def record_guild_created(leader_id: str) -> None:
+    """记录一次公会创建。
+
+    Args:
+        leader_id: 会长ID
+    """
+    GUILDS_CREATED_TOTAL.labels(leader_id=leader_id).inc()
+
+
+def record_guild_member_added(guild_id: str) -> None:
+    """记录一次公会成员加入。
+
+    Args:
+        guild_id: 公会ID
+    """
+    GUILD_MEMBERS_ADDED_TOTAL.labels(guild_id=guild_id).inc()
+
+
+def record_guild_member_removed(guild_id: str) -> None:
+    """记录一次公会成员移除。
+
+    Args:
+        guild_id: 公会ID
+    """
+    GUILD_MEMBERS_REMOVED_TOTAL.labels(guild_id=guild_id).inc()

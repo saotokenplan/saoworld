@@ -12,6 +12,8 @@ from app.core.deps import (
     RequireFriendsWriteScope,
     RequireMessagesReadScope,
     RequireMessagesWriteScope,
+    RequireGuildReadScope,
+    RequireGuildWriteScope,
     RequireOpsAchievementsWriteScope,
     RequireOpsRole,
     RequirePlayerRole,
@@ -36,6 +38,9 @@ from app.core.metrics import (
     record_player_update,
     record_private_message_sent,
     record_private_message_read,
+    record_guild_created,
+    record_guild_member_added,
+    record_guild_member_removed,
     record_quest_accept,
     record_quest_complete,
     record_quest_fail,
@@ -71,6 +76,13 @@ from app.repositories.audit_repo import (
     ACTION_REPUTATION_UNLOCK,
     ACTION_PRIVATE_MESSAGE_SEND,
     ACTION_PRIVATE_MESSAGE_READ,
+    ACTION_GUILD_CREATE,
+    ACTION_GUILD_UPDATE,
+    ACTION_GUILD_DELETE,
+    ACTION_GUILD_MEMBER_ADD,
+    ACTION_GUILD_MEMBER_REMOVE,
+    ACTION_GUILD_MEMBER_LEAVE,
+    ACTION_GUILD_TRANSFER_LEADER,
     RESOURCE_ACHIEVEMENT,
     RESOURCE_CONTRIBUTION,
     RESOURCE_EXPERIENCE,
@@ -82,6 +94,8 @@ from app.repositories.audit_repo import (
     RESOURCE_REGION,
     RESOURCE_REPUTATION,
     RESOURCE_PRIVATE_MESSAGE,
+    RESOURCE_GUILD,
+    RESOURCE_GUILD_MEMBER,
     AuditRepository,
 )
 from app.repositories.achievement_repo import (
@@ -90,6 +104,7 @@ from app.repositories.achievement_repo import (
 )
 from app.repositories.contribution_repo import ContributionRepository
 from app.repositories.friend_repo import FriendRepository
+from app.repositories.guild_repo import GuildRepository
 from app.repositories.inventory_repo import InventoryRepository
 from app.repositories.private_message_repo import PrivateMessageRepository
 from app.repositories.player_quest_repo import PlayerQuestRepository
@@ -127,6 +142,14 @@ from app.schemas.player import (
     ConversationListResponse,
     MessageListResponse,
     UnreadCountResponse,
+    CreateGuildRequest,
+    UpdateGuildRequest,
+    AddGuildMemberRequest,
+    TransferLeaderRequest,
+    GuildResponse,
+    GuildMemberResponse,
+    GuildMemberListItemResponse,
+    GuildMemberListResponse,
     get_level_progress,
     HealthResponse,
     InventoryItemResponse,
@@ -161,8 +184,11 @@ def _make_request_id(prefix: str) -> str:
     return f"{prefix}_{uuid.uuid4().hex[:12]}"
 
 
-def _get_trace_id(request: Request) -> str | None:
-    return request.headers.get("X-Trace-Id")
+def _get_trace_id(request: Request) -> str:
+    trace_id = request.headers.get("X-Trace-Id")
+    if trace_id is None:
+        trace_id = f"trace_{uuid.uuid4().hex[:12]}"
+    return trace_id
 
 
 @router.get("/health", tags=["health"])
@@ -3079,5 +3105,724 @@ async def get_unread_count(
     return EnvelopeResponse(
         request_id=request_id,
         data=UnreadCountResponse(unread_count=count),
+        trace_id=trace_id,
+    )
+
+
+# === 公会相关 API ===
+
+
+@router.post(
+    "/player/guilds",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        401: {"description": "Unauthorized"},
+        409: {"description": "Guild name already exists or player already in guild"},
+    },
+    tags=["guilds"],
+)
+async def create_guild(
+    request: Request,
+    body: CreateGuildRequest,
+    current_user: UserPayload = RequireGuildWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildResponse]:
+    """创建公会"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_create")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    audit_repo = AuditRepository(db)
+
+    # 检查玩家是否已加入公会
+    existing_guild = await guild_repo.get_guild_by_player(player_uuid)
+    if existing_guild is not None:
+        raise_player_error(
+            PlayerErrorCodes.ALREADY_IN_GUILD,
+            "您已加入公会，无法创建新公会",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    # 检查公会名称是否存在
+    existing_name = await guild_repo.get_guild_by_name(body.name)
+    if existing_name is not None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NAME_EXISTS,
+            "公会名称已存在",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    # 创建公会
+    guild = await guild_repo.create_guild(
+        name=body.name,
+        leader_id=player_uuid,
+        description=body.description,
+        max_members=body.max_members,
+    )
+
+    # 记录审计日志
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_GUILD_CREATE,
+        resource_type=RESOURCE_GUILD,
+        resource_id=guild.guild_id,
+        request_payload_jsonb={"name": body.name},
+        result_status=201,
+    )
+
+    # 记录指标
+    record_guild_created(current_user.user_id)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildResponse.model_validate(guild),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/guilds/my",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Not in guild"},
+    },
+    tags=["guilds"],
+)
+async def get_my_guild(
+    request: Request,
+    current_user: UserPayload = RequireGuildReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildResponse]:
+    """获取我的公会"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_my")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    guild = await guild_repo.get_guild_by_player(player_uuid)
+
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.NOT_IN_GUILD,
+            "您未加入任何公会",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildResponse.model_validate(guild),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/guilds/{guild_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Guild not found"},
+    },
+    tags=["guilds"],
+)
+async def get_guild(
+    request: Request,
+    guild_id: uuid.UUID,
+    current_user: UserPayload = RequireGuildReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildResponse]:
+    """获取公会详情"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_get")
+
+    guild_repo = GuildRepository(db)
+    guild = await guild_repo.get_guild_by_id(guild_id)
+
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildResponse.model_validate(guild),
+        trace_id=trace_id,
+    )
+
+
+@router.put(
+    "/player/guilds/{guild_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not guild leader"},
+        404: {"description": "Guild not found"},
+    },
+    tags=["guilds"],
+)
+async def update_guild(
+    request: Request,
+    guild_id: uuid.UUID,
+    body: UpdateGuildRequest,
+    current_user: UserPayload = RequireGuildWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildResponse]:
+    """更新公会信息（仅会长）"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_update")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    audit_repo = AuditRepository(db)
+
+    # 检查是否为会长
+    if not await guild_repo.is_guild_leader(guild_id, player_uuid):
+        raise_player_error(
+            PlayerErrorCodes.NOT_GUILD_LEADER,
+            "只有会长可以更新公会信息",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    # 更新公会
+    guild = await guild_repo.update_guild(
+        guild_id=guild_id,
+        description=body.description,
+        announcement=body.announcement,
+    )
+
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    # 记录审计日志
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_GUILD_UPDATE,
+        resource_type=RESOURCE_GUILD,
+        resource_id=guild.guild_id,
+        request_payload_jsonb={"description": body.description, "announcement": body.announcement},
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildResponse.model_validate(guild),
+        trace_id=trace_id,
+    )
+
+
+@router.delete(
+    "/player/guilds/{guild_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not guild leader"},
+        404: {"description": "Guild not found"},
+    },
+    tags=["guilds"],
+)
+async def delete_guild(
+    request: Request,
+    guild_id: uuid.UUID,
+    current_user: UserPayload = RequireGuildWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[dict]:
+    """解散公会（仅会长）"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_delete")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    audit_repo = AuditRepository(db)
+
+    # 检查公会是否存在
+    guild = await guild_repo.get_guild_by_id(guild_id)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    # 检查是否为会长
+    if not await guild_repo.is_guild_leader(guild_id, player_uuid):
+        raise_player_error(
+            PlayerErrorCodes.NOT_GUILD_LEADER,
+            "只有会长可以解散公会",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    # 删除公会
+    await guild_repo.delete_guild(guild_id)
+
+    # 记录审计日志
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_GUILD_DELETE,
+        resource_type=RESOURCE_GUILD,
+        resource_id=guild_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data={"deleted": True},
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/guilds/{guild_id}/members",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not guild officer"},
+        404: {"description": "Guild not found"},
+        409: {"description": "Player already in guild or guild full"},
+    },
+    tags=["guilds"],
+)
+async def add_guild_member(
+    request: Request,
+    guild_id: uuid.UUID,
+    body: AddGuildMemberRequest,
+    current_user: UserPayload = RequireGuildWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildMemberResponse]:
+    """邀请成员加入公会（会长/官员）"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_member_add")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    audit_repo = AuditRepository(db)
+
+    # 检查公会是否存在
+    guild = await guild_repo.get_guild_by_id(guild_id)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    # 检查是否为公会官员
+    if not await guild_repo.is_guild_officer(guild_id, player_uuid):
+        raise_player_error(
+            PlayerErrorCodes.NOT_GUILD_OFFICER,
+            "只有会长或官员可以邀请成员",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    # 添加成员
+    member = await guild_repo.add_member(guild_id, body.player_id)
+    if member is None:
+        # 检查是公会已满还是玩家已在公会
+        target_guild = await guild_repo.get_guild_by_player(body.player_id)
+        if target_guild is not None:
+            raise_player_error(
+                PlayerErrorCodes.ALREADY_IN_GUILD,
+                "该玩家已加入其他公会",
+                request_id,
+                status_code=status.HTTP_409_CONFLICT,
+            )
+        raise_player_error(
+            PlayerErrorCodes.GUILD_FULL,
+            "公会成员已满",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    # 记录审计日志
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_GUILD_MEMBER_ADD,
+        resource_type=RESOURCE_GUILD_MEMBER,
+        resource_id=member.guild_member_id,
+        request_payload_jsonb={"player_id": str(body.player_id)},
+        result_status=201,
+    )
+
+    # 记录指标
+    record_guild_member_added(str(guild_id))
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildMemberResponse.model_validate(member),
+        trace_id=trace_id,
+    )
+
+
+@router.delete(
+    "/player/guilds/{guild_id}/members/{player_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not guild officer or cannot remove leader"},
+        404: {"description": "Guild or member not found"},
+    },
+    tags=["guilds"],
+)
+async def remove_guild_member(
+    request: Request,
+    guild_id: uuid.UUID,
+    player_id: uuid.UUID,
+    current_user: UserPayload = RequireGuildWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[dict]:
+    """移除公会成员（会长/官员）"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_member_remove")
+
+    try:
+        operator_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    audit_repo = AuditRepository(db)
+
+    # 检查公会是否存在
+    guild = await guild_repo.get_guild_by_id(guild_id)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    # 检查是否为公会官员
+    if not await guild_repo.is_guild_officer(guild_id, operator_uuid):
+        raise_player_error(
+            PlayerErrorCodes.NOT_GUILD_OFFICER,
+            "只有会长或官员可以移除成员",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    # 移除成员
+    success = await guild_repo.remove_member(guild_id, player_id)
+    if not success:
+        member = await guild_repo.get_member(guild_id, player_id)
+        if member is None:
+            raise_player_error(
+                PlayerErrorCodes.NOT_IN_GUILD,
+                "该玩家不是公会成员",
+                request_id,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        raise_player_error(
+            PlayerErrorCodes.CANNOT_REMOVE_LEADER,
+            "不能移除会长",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    # 记录审计日志
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_GUILD_MEMBER_REMOVE,
+        resource_type=RESOURCE_GUILD_MEMBER,
+        resource_id=player_id,
+        request_payload_jsonb={"player_id": str(player_id)},
+        result_status=200,
+    )
+
+    # 记录指标
+    record_guild_member_removed(str(guild_id))
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data={"removed": True},
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/guilds/{guild_id}/leave",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Cannot leave as leader"},
+        404: {"description": "Not in guild"},
+    },
+    tags=["guilds"],
+)
+async def leave_guild(
+    request: Request,
+    guild_id: uuid.UUID,
+    current_user: UserPayload = RequireGuildWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[dict]:
+    """退出公会"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_leave")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    audit_repo = AuditRepository(db)
+
+    # 检查公会是否存在
+    guild = await guild_repo.get_guild_by_id(guild_id)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    # 检查是否为会长
+    if await guild_repo.is_guild_leader(guild_id, player_uuid):
+        raise_player_error(
+            PlayerErrorCodes.CANNOT_LEAVE_AS_LEADER,
+            "会长不能直接退出公会，请先转让会长或解散公会",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    # 退出公会
+    success = await guild_repo.remove_member(guild_id, player_uuid)
+    if not success:
+        raise_player_error(
+            PlayerErrorCodes.NOT_IN_GUILD,
+            "您不是该公会成员",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    # 记录审计日志
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_GUILD_MEMBER_LEAVE,
+        resource_type=RESOURCE_GUILD_MEMBER,
+        resource_id=player_uuid,
+        result_status=200,
+    )
+
+    # 记录指标
+    record_guild_member_removed(str(guild_id))
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data={"left": True},
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/guilds/{guild_id}/transfer",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not guild leader"},
+        404: {"description": "Guild or member not found"},
+    },
+    tags=["guilds"],
+)
+async def transfer_guild_leader(
+    request: Request,
+    guild_id: uuid.UUID,
+    body: TransferLeaderRequest,
+    current_user: UserPayload = RequireGuildWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[dict]:
+    """转让会长"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_transfer")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    audit_repo = AuditRepository(db)
+
+    # 检查是否为会长
+    if not await guild_repo.is_guild_leader(guild_id, player_uuid):
+        raise_player_error(
+            PlayerErrorCodes.NOT_GUILD_LEADER,
+            "只有会长可以转让会长",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    # 转让会长
+    success = await guild_repo.transfer_leader(guild_id, body.new_leader_id)
+    if not success:
+        raise_player_error(
+            PlayerErrorCodes.NOT_IN_GUILD,
+            "新会长必须是本公会成员",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    # 记录审计日志
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_GUILD_TRANSFER_LEADER,
+        resource_type=RESOURCE_GUILD,
+        resource_id=guild_id,
+        request_payload_jsonb={"new_leader_id": str(body.new_leader_id)},
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data={"transferred": True},
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/guilds/{guild_id}/members",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Guild not found"},
+    },
+    tags=["guilds"],
+)
+async def get_guild_members(
+    request: Request,
+    guild_id: uuid.UUID,
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireGuildReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildMemberListResponse]:
+    """获取公会成员列表"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_members")
+
+    guild_repo = GuildRepository(db)
+    player_repo = PlayerRepository(db)
+
+    # 检查公会是否存在
+    guild = await guild_repo.get_guild_by_id(guild_id)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    # 获取成员列表
+    members, total = await guild_repo.get_members(guild_id, limit, offset)
+
+    # 查询玩家信息
+    member_items = []
+    for member in members:
+        player = await player_repo.get_player_by_id(member.player_id)
+        member_items.append(
+            GuildMemberListItemResponse(
+                guild_member_id=member.guild_member_id,
+                player_id=member.player_id,
+                player_display_name=player.display_name if player else "",
+                player_level=player.level if player else 1,
+                role=member.role,
+                joined_at=member.joined_at,
+            )
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildMemberListResponse(members=member_items, total=total),
         trace_id=trace_id,
     )

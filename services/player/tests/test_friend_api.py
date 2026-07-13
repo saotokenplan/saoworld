@@ -5,7 +5,6 @@ import uuid
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import create_test_token
 from app.core.errors import PlayerErrorCodes
