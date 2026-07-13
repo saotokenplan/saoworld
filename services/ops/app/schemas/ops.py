@@ -321,3 +321,75 @@ class EnvelopeResponse(BaseModel, Generic[T]):
     data: T
     meta: PaginatedMeta | None = None
     trace_id: str | None = None
+
+
+# ---- 投票管理 Schema ----
+
+
+class VoteCycleCreateRequest(BaseModel):
+    chapter_id: str
+    title: str
+    description: str | None = None
+    started_at: str | None = None
+    ended_at: str | None = None
+
+
+class VoteCycleTransitionRequest(BaseModel):
+    pass
+
+
+class VoteCycleResponse(BaseModel):
+    vote_cycle_id: uuid.UUID | None = None
+    chapter_id: str | None = None
+    title: str | None = None
+    status: str | None = None
+    started_at: datetime | None = None
+    ended_at: datetime | None = None
+    detail: dict | None = None
+
+
+# ---- 内容管理 Schema ----
+
+
+class ContentReleaseRequest(BaseModel):
+    release_mode: str = "gray"
+    gray_scope: dict | None = None
+
+
+class ContentRollbackRequest(BaseModel):
+    reason: str | None = None
+
+
+class ContentPackageResponse(BaseModel):
+    content_package_id: uuid.UUID | None = None
+    version: str | None = None
+    status: str | None = None
+    region_id: str | None = None
+    detail: dict | None = None
+
+
+# ---- 审核工作流 Schema ----
+
+
+class ReviewApproveRequest(BaseModel):
+    notes: str | None = None
+
+
+class ReviewRejectRequest(BaseModel):
+    reason: str
+
+
+class ReviewObjectResponse(BaseModel):
+    object_id: uuid.UUID | None = None
+    object_type: str | None = None
+    status: str | None = None
+    risk_level: str | None = None
+    detail: dict | None = None
+
+
+class ReviewStatsResponse(BaseModel):
+    total_pending: int = 0
+    total_approved: int = 0
+    total_rejected: int = 0
+    total_needs_revision: int = 0
+    by_risk_level: dict[str, int] | None = None
