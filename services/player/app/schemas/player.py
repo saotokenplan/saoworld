@@ -597,3 +597,72 @@ class FriendStatusResponse(BaseModel):
     player_id: uuid.UUID | None = None
     friend_id: uuid.UUID | None = None
     status: str = "none"
+
+
+# === 公会相关 Schema ===
+
+
+class GuildMemberRole(str, Enum):
+    LEADER = "leader"
+    OFFICER = "officer"
+    MEMBER = "member"
+
+
+class CreateGuildRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=64)
+    description: str | None = Field(default=None, max_length=500)
+    max_members: int = Field(default=50, ge=1, le=200)
+
+
+class UpdateGuildRequest(BaseModel):
+    description: str | None = Field(default=None, max_length=500)
+    announcement: str | None = Field(default=None, max_length=500)
+
+
+class AddGuildMemberRequest(BaseModel):
+    player_id: uuid.UUID
+
+
+class TransferLeaderRequest(BaseModel):
+    new_leader_id: uuid.UUID
+
+
+class GuildResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    guild_id: uuid.UUID
+    name: str
+    leader_id: uuid.UUID
+    description: str | None = None
+    announcement: str | None = None
+    level: int
+    member_count: int
+    max_members: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class GuildMemberResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    guild_member_id: uuid.UUID
+    guild_id: uuid.UUID
+    player_id: uuid.UUID
+    role: str
+    joined_at: datetime
+
+
+class GuildMemberListItemResponse(BaseModel):
+    """公会成员列表中的单项，包含玩家信息"""
+
+    guild_member_id: uuid.UUID
+    player_id: uuid.UUID
+    player_display_name: str = ""
+    player_level: int = 1
+    role: str
+    joined_at: datetime
+
+
+class GuildMemberListResponse(BaseModel):
+    members: list[GuildMemberListItemResponse]
+    total: int
