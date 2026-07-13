@@ -320,3 +320,55 @@ func test_create_reply_too_long() -> void:
 	assert_false(result, "回复超过500字应返回false")
 	assert_eq(vm.last_error.get("code", ""), "REPLY_CONTENT_TOO_LONG", "错误码应为 REPLY_CONTENT_TOO_LONG")
 	vm.reset_discussions()
+
+# --- 图表数据获取测试 ---
+
+func test_chart_data_cache_initial_state() -> void:
+	var vm := VoteManager
+	vm.reset()
+	assert_eq(vm._chart_data_cache, {}, "初始图表数据缓存应为空字典")
+	vm.reset()
+
+func test_clear_chart_data_cache() -> void:
+	var vm := VoteManager
+	vm.reset()
+	vm._chart_data_cache = {"vc_001_pie": {"chart_type": "pie"}}
+	vm.clear_chart_data_cache()
+	assert_eq(vm._chart_data_cache, {}, "清空后缓存应为空字典")
+	vm.reset()
+
+func test_get_cached_chart_data_empty() -> void:
+	var vm := VoteManager
+	vm.reset()
+	var result: Dictionary = vm.get_cached_chart_data("vc_001", "pie")
+	assert_eq(result, {}, "未缓存的图表数据应返回空字典")
+	vm.reset()
+
+func test_get_cached_chart_data_with_data() -> void:
+	var vm := VoteManager
+	vm.reset()
+	var chart_data: Dictionary = {
+		"chart_type": "pie",
+		"vote_cycle_id": "vc_001",
+		"total_votes": 100,
+		"items": []
+	}
+	vm._chart_data_cache = {"vc_001_pie": chart_data}
+	var result: Dictionary = vm.get_cached_chart_data("vc_001", "pie")
+	assert_eq(result["chart_type"], "pie", "应返回缓存的图表类型")
+	assert_eq(result["vote_cycle_id"], "vc_001", "应缓存的投票周期ID")
+	vm.reset()
+
+func test_fetch_vote_result_chart_data_method_exists() -> void:
+	var vm := VoteManager
+	assert_true(vm.has_method("fetch_vote_result_chart_data"), "VoteManager应有fetch_vote_result_chart_data方法")
+	vm.reset()
+
+func test_get_cached_chart_data_default_chart_type() -> void:
+	var vm := VoteManager
+	vm.reset()
+	var chart_data: Dictionary = {"chart_type": "pie", "vote_cycle_id": "vc_001"}
+	vm._chart_data_cache = {"vc_001_pie": chart_data}
+	var result: Dictionary = vm.get_cached_chart_data("vc_001")
+	assert_eq(result["chart_type"], "pie", "默认图表类型应为pie")
+	vm.reset()
