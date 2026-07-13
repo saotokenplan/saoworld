@@ -102,6 +102,21 @@ class GuildRepository:
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_guild_member_by_player(
+        self, player_id: uuid.UUID
+    ) -> GuildMember | None:
+        """获取玩家的公会成员记录。
+
+        Args:
+            player_id: 玩家ID
+
+        Returns:
+            GuildMember | None: 公会成员记录，未加入返回 None
+        """
+        stmt = select(GuildMember).where(GuildMember.player_id == player_id)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def update_guild(
         self,
         guild_id: uuid.UUID,

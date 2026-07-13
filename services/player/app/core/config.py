@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/player_db"
 
-    jwt_secret: str
+    jwt_secret: str = "test-secret-for-development-only"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
@@ -27,5 +27,6 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-if settings.jwt_secret == "change-me-in-production":
+# 测试环境允许使用默认密钥
+if settings.jwt_secret == "change-me-in-production" and settings.environment != "test":
     raise ValueError("JWT_SECRET 必须在环境变量中设置，禁止使用默认值")

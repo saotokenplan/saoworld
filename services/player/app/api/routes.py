@@ -19,6 +19,7 @@ from app.core.deps import (
     RequirePlayerRole,
     RequireQuestsReadScope,
     RequireQuestsWriteScope,
+    RequireSocialReadScope,
     UserPayload,
 )
 from app.core.errors import PlayerErrorCodes, raise_player_error
@@ -150,6 +151,9 @@ from app.schemas.player import (
     GuildMemberResponse,
     GuildMemberListItemResponse,
     GuildMemberListResponse,
+    SocialOverview,
+    GuildSummary,
+    FriendSummary,
     get_level_progress,
     HealthResponse,
     InventoryItemResponse,
@@ -3824,5 +3828,98 @@ async def get_guild_members(
     return EnvelopeResponse(
         request_id=request_id,
         data=GuildMemberListResponse(members=member_items, total=total),
+        trace_id=trace_id,
+    )
+
+
+# === 社交数据聚合 API ===
+
+
+@router.get(
+    "/player/social/overview",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["social"],
+)
+async def get_social_overview(
+    request: Request,
+    current_user: UserPayload = RequireSocialReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[SocialOverview]:
+    """获取社交概览数据（好友数、未读消息、公会信息、最近好友）"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_social_overview")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    friend_repo = FriendRepository(db)
+    message_repo = PrivateMessageRepository(db)
+    guild_repo = GuildRepository(db)
+    player_repo = PlayerRepository(db)
+
+    # 1. 获取好友总数
+    friends, friends_total = await friend_repo.get_friends(
+        player_uuid, limit=1000, offset=0
+    )
+
+    # 2. 获取待处理好友请求数
+    pending_requests, pending_total = await friend_repo.get_pending_requests(
+        player_uuid, limit=1000, offset=0
+    )
+
+    # 3. 获取未读消息数
+    unread_count = await message_repo.get_unread_count(player_uuid)
+
+    # 4. 获取公会信息
+    guild_member = await guild_repo.get_guild_member_by_player(player_uuid)
+    guild_info: GuildSummary | None = None
+    if guild_member:
+        guild = await guild_repo.get_guild_by_id(guild_member.guild_id)
+        if guild:
+            guild_info = GuildSummary(
+                guild_id=guild.guild_id,
+                name=guild.name,
+                level=guild.level,
+                member_count=guild.member_count,
+                my_role=guild_member.role,
+            )
+
+    # 5. 获取最近好友列表（最多5个）
+    recent_friends: list[FriendSummary] = []
+    if friends:
+        # 按创建时间倒序，取前5个
+        recent_friends_data = sorted(
+            friends, key=lambda f: f.created_at, reverse=True
+        )[:5]
+        for friendship in recent_friends_data:
+            friend_player = await player_repo.get_player_by_id(friendship.friend_id)
+            if friend_player:
+                recent_friends.append(
+                    FriendSummary(
+                        player_id=friendship.friend_id,
+                        player_name=friend_player.display_name,
+                        level=friend_player.level,
+                        online=False,  # 在线状态暂时硬编码为 False
+                    )
+                )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=SocialOverview(
+            friends_count=friends_total,
+            pending_requests=pending_total,
+            unread_messages=unread_count,
+            guild_info=guild_info,
+            recent_friends=recent_friends,
+        ),
         trace_id=trace_id,
     )
