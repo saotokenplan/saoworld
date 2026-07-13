@@ -180,3 +180,5 @@ RequireContributionReadScope = require_any_scope([Scope.QUESTS_READ, Scope.VOTES
 RequireAchievementsReadScope = require_scope(Scope.ACHIEVEMENTS_READ)
 RequireAchievementsUnlockScope = require_scope(Scope.ACHIEVEMENTS_UNLOCK)
 RequireOpsAchievementsWriteScope = require_scope(Scope.OPS_ACHIEVEMENTS_WRITE)
+RequireFriendsReadScope = require_scope(Scope.FRIENDS_READ)
+RequireFriendsWriteScope = require_scope(Scope.FRIENDS_WRITE)

@@ -193,3 +193,34 @@ def record_level_up(player_id: str, level: int) -> None:
         level: 达到的等级
     """
     LEVEL_UPS_TOTAL.labels(player_id=player_id, level=str(level)).inc()
+
+
+FRIEND_REQUESTS_SENT_TOTAL = Counter(
+    "friend_requests_sent_total",
+    "好友请求发送次数",
+    labelnames=["player_id"],
+)
+
+FRIEND_REQUESTS_ACCEPTED_TOTAL = Counter(
+    "friend_requests_accepted_total",
+    "好友请求接受次数",
+    labelnames=["player_id"],
+)
+
+
+def record_friend_request_sent(player_id: str) -> None:
+    """记录一次好友请求发送。
+
+    Args:
+        player_id: 发送者ID
+    """
+    FRIEND_REQUESTS_SENT_TOTAL.labels(player_id=player_id).inc()
+
+
+def record_friend_request_accepted(player_id: str) -> None:
+    """记录一次好友请求接受。
+
+    Args:
+        player_id: 接受者ID
+    """
+    FRIEND_REQUESTS_ACCEPTED_TOTAL.labels(player_id=player_id).inc()

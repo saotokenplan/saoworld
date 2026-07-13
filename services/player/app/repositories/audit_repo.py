@@ -28,6 +28,11 @@ ACTION_ACHIEVEMENT_UNLOCK = "achievement_unlock"
 ACTION_ACHIEVEMENT_REWARD_CLAIM = "achievement_reward_claim"
 ACTION_EXPERIENCE_ADD = "experience_add"
 ACTION_LEVEL_UP = "level_up"
+ACTION_FRIEND_REQUEST_SEND = "friend_request_send"
+ACTION_FRIEND_REQUEST_ACCEPT = "friend_request_accept"
+ACTION_FRIEND_REQUEST_REJECT = "friend_request_reject"
+ACTION_FRIEND_DELETE = "friend_delete"
+ACTION_FRIEND_BLOCK = "friend_block"
 
 RESOURCE_PLAYER = "player"
 RESOURCE_REGION = "region"
@@ -38,6 +43,7 @@ RESOURCE_CONTRIBUTION = "contribution"
 RESOURCE_ACHIEVEMENT = "achievement"
 RESOURCE_PLAYER_ACHIEVEMENT = "player_achievement"
 RESOURCE_EXPERIENCE = "experience"
+RESOURCE_FRIENDSHIP = "friendship"
 
 
 class AuditRepository:

@@ -8,6 +8,8 @@ from app.core.deps import (
     RequireAchievementsReadScope,
     RequireAchievementsUnlockScope,
     RequireContributionReadScope,
+    RequireFriendsReadScope,
+    RequireFriendsWriteScope,
     RequireOpsAchievementsWriteScope,
     RequireOpsRole,
     RequirePlayerRole,
@@ -21,6 +23,8 @@ from app.core.metrics import (
     record_achievement_unlocked,
     record_contribution_add,
     record_experience_gained,
+    record_friend_request_accepted,
+    record_friend_request_sent,
     record_level_up,
     record_inventory_add,
     record_inventory_remove,
@@ -42,6 +46,10 @@ from app.repositories.audit_repo import (
     ACTION_ACHIEVEMENT_UNLOCK,
     ACTION_CONTRIBUTION_ADD,
     ACTION_EXPERIENCE_ADD,
+    ACTION_FRIEND_DELETE,
+    ACTION_FRIEND_REQUEST_ACCEPT,
+    ACTION_FRIEND_REQUEST_REJECT,
+    ACTION_FRIEND_REQUEST_SEND,
     ACTION_LEVEL_UP,
     ACTION_INVENTORY_ADD,
     ACTION_INVENTORY_REMOVE,
@@ -60,6 +68,7 @@ from app.repositories.audit_repo import (
     RESOURCE_ACHIEVEMENT,
     RESOURCE_CONTRIBUTION,
     RESOURCE_EXPERIENCE,
+    RESOURCE_FRIENDSHIP,
     RESOURCE_INVENTORY,
     RESOURCE_PLAYER,
     RESOURCE_PLAYER_ACHIEVEMENT,
@@ -73,6 +82,7 @@ from app.repositories.achievement_repo import (
     PlayerAchievementRepository,
 )
 from app.repositories.contribution_repo import ContributionRepository
+from app.repositories.friend_repo import FriendRepository
 from app.repositories.inventory_repo import InventoryRepository
 from app.repositories.player_quest_repo import PlayerQuestRepository
 from app.repositories.player_region_repo import PlayerRegionRepository
@@ -83,6 +93,7 @@ from app.schemas.player import (
     AchievementDefinitionResponse,
     AchievementCategory,
     AchievementRarity,
+    AcceptFriendRequestRequest,
     AddContributionRequest,
     AddExperienceRequest,
     AddItemRequest,
@@ -96,6 +107,12 @@ from app.schemas.player import (
     EnvelopeResponse,
     ErrorDetail,
     FailQuestRequest,
+    FriendListResponse,
+    FriendListItemResponse,
+    FriendRequestListResponse,
+    FriendRequestItemResponse,
+    FriendStatusResponse,
+    FriendshipResponse,
     get_level_progress,
     HealthResponse,
     InventoryItemResponse,
@@ -110,7 +127,9 @@ from app.schemas.player import (
     PlayerResponse,
     QuestStatus,
     RegionReputationResponse,
+    RejectFriendRequestRequest,
     RemoveItemRequest,
+    SendFriendRequestRequest,
     UnlockAchievementRequest,
     UpdatePlayerRequest,
     UpdateQuestProgressRequest,
@@ -2257,4 +2276,482 @@ async def unlock_player_achievement(
         request_id=request_id,
         data=PlayerAchievementResponse.model_validate(achievement),
         trace_id=x_trace_id,
+    )
+
+
+# ============================================================
+# 好友系统 API
+# ============================================================
+
+
+@router.post(
+    "/player/friends/request",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"description": "不能添加自己为好友"},
+        403: {"description": "已被对方拉黑"},
+        409: {"description": "好友请求已发送或已是好友"},
+    },
+    tags=["friends"],
+)
+async def send_friend_request(
+    request: Request,
+    body: SendFriendRequestRequest,
+    current_user: UserPayload = RequireFriendsWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FriendshipResponse]:
+    """发送好友请求"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_friend_req")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if player_uuid == body.friend_id:
+        raise_player_error(
+            PlayerErrorCodes.CANNOT_FRIEND_SELF,
+            "不能添加自己为好友",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    friend_repo = FriendRepository(db)
+    player_repo = PlayerRepository(db)
+
+    friend_player = await player_repo.get_player_by_id(body.friend_id)
+    if friend_player is None:
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_NOT_FOUND,
+            "目标玩家不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if await friend_repo.is_blocked(player_uuid, body.friend_id):
+        raise_player_error(
+            PlayerErrorCodes.FRIEND_BLOCKED,
+            "已被对方拉黑",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    existing = await friend_repo.get_friendship(player_uuid, body.friend_id)
+    if existing is not None:
+        if existing.status == "accepted":
+            raise_player_error(
+                PlayerErrorCodes.ALREADY_FRIENDS,
+                "已经是好友",
+                request_id,
+                status_code=status.HTTP_409_CONFLICT,
+            )
+        if existing.status == "pending":
+            # 如果当前玩家是已有请求的发起者，说明已发过请求
+            if existing.player_id == player_uuid:
+                raise_player_error(
+                    PlayerErrorCodes.FRIEND_REQUEST_ALREADY_SENT,
+                    "好友请求已发送",
+                    request_id,
+                    status_code=status.HTTP_409_CONFLICT,
+                )
+            # 如果当前玩家是已有请求的接收者，继续走 repo 的自动接受逻辑
+        if existing.status == "blocked":
+            raise_player_error(
+                PlayerErrorCodes.FRIEND_BLOCKED,
+                "好友关系已被拉黑",
+                request_id,
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+    friendship = await friend_repo.send_friend_request(
+        player_uuid, body.friend_id
+    )
+
+    if friendship.status == "accepted":
+        record_friend_request_accepted(player_id=str(player_uuid))
+    else:
+        record_friend_request_sent(player_id=str(player_uuid))
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_FRIEND_REQUEST_SEND,
+        resource_type=RESOURCE_FRIENDSHIP,
+        resource_id=friendship.friendship_id,
+        request_payload_jsonb={
+            "friend_id": str(body.friend_id),
+        },
+        result_status=201,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=FriendshipResponse.model_validate(friendship),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/friends/accept",
+    responses={
+        404: {"description": "好友请求不存在"},
+        409: {"description": "好友请求非待处理状态"},
+    },
+    tags=["friends"],
+)
+async def accept_friend_request(
+    request: Request,
+    body: AcceptFriendRequestRequest,
+    current_user: UserPayload = RequireFriendsWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FriendshipResponse]:
+    """接受好友请求"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_friend_accept")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    friend_repo = FriendRepository(db)
+    friendship = await friend_repo.accept_friend_request(
+        body.player_id, player_uuid
+    )
+
+    if friendship is None:
+        raise_player_error(
+            PlayerErrorCodes.FRIEND_REQUEST_NOT_FOUND,
+            "好友请求不存在或非待处理状态",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    record_friend_request_accepted(player_id=str(player_uuid))
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_FRIEND_REQUEST_ACCEPT,
+        resource_type=RESOURCE_FRIENDSHIP,
+        resource_id=friendship.friendship_id,
+        request_payload_jsonb={
+            "player_id": str(body.player_id),
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=FriendshipResponse.model_validate(friendship),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/friends/reject",
+    responses={
+        404: {"description": "好友请求不存在"},
+        409: {"description": "好友请求非待处理状态"},
+    },
+    tags=["friends"],
+)
+async def reject_friend_request(
+    request: Request,
+    body: RejectFriendRequestRequest,
+    current_user: UserPayload = RequireFriendsWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FriendshipResponse]:
+    """拒绝好友请求"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_friend_reject")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    friend_repo = FriendRepository(db)
+    friendship = await friend_repo.reject_friend_request(
+        body.player_id, player_uuid
+    )
+
+    if friendship is None:
+        raise_player_error(
+            PlayerErrorCodes.FRIEND_REQUEST_NOT_FOUND,
+            "好友请求不存在或非待处理状态",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_FRIEND_REQUEST_REJECT,
+        resource_type=RESOURCE_FRIENDSHIP,
+        resource_id=friendship.friendship_id,
+        request_payload_jsonb={
+            "player_id": str(body.player_id),
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=FriendshipResponse.model_validate(friendship),
+        trace_id=trace_id,
+    )
+
+
+@router.delete(
+    "/player/friends/{friend_id}",
+    responses={
+        404: {"description": "好友关系不存在"},
+    },
+    tags=["friends"],
+)
+async def delete_friend(
+    friend_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireFriendsWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[dict[str, bool]]:
+    """删除好友"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_friend_del")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    friend_repo = FriendRepository(db)
+    deleted = await friend_repo.delete_friend(player_uuid, friend_id)
+
+    if not deleted:
+        raise_player_error(
+            PlayerErrorCodes.FRIEND_NOT_FOUND,
+            "好友关系不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_FRIEND_DELETE,
+        resource_type=RESOURCE_FRIENDSHIP,
+        resource_id=friend_id,
+        request_payload_jsonb={
+            "friend_id": str(friend_id),
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data={"deleted": True},
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/friends",
+    tags=["friends"],
+)
+async def get_friends(
+    request: Request,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireFriendsReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FriendListResponse]:
+    """获取好友列表"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_friend_list")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    friend_repo = FriendRepository(db)
+    player_repo = PlayerRepository(db)
+    friendships, total = await friend_repo.get_friends(
+        player_uuid, limit=limit, offset=offset
+    )
+
+    friends_list: list[FriendListItemResponse] = []
+    for fs in friendships:
+        if fs.player_id == player_uuid:
+            friend_uuid = fs.friend_id
+        else:
+            friend_uuid = fs.player_id
+
+        friend_player = await player_repo.get_player_by_id(friend_uuid)
+        friend_name = friend_player.display_name if friend_player else "Unknown"
+        friend_level = friend_player.level if friend_player else 1
+
+        friends_list.append(
+            FriendListItemResponse(
+                friendship_id=fs.friendship_id,
+                friend_id=friend_uuid,
+                friend_display_name=friend_name,
+                friend_level=friend_level,
+                status=fs.status,
+                created_at=fs.created_at,
+                updated_at=fs.updated_at,
+            )
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=FriendListResponse(friends=friends_list, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/friends/requests",
+    tags=["friends"],
+)
+async def get_pending_friend_requests(
+    request: Request,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireFriendsReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FriendRequestListResponse]:
+    """获取待处理的好友请求"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_friend_pending")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    friend_repo = FriendRepository(db)
+    player_repo = PlayerRepository(db)
+    friendships, total = await friend_repo.get_pending_requests(
+        player_uuid, limit=limit, offset=offset
+    )
+
+    requests_list: list[FriendRequestItemResponse] = []
+    for fs in friendships:
+        requester_player = await player_repo.get_player_by_id(fs.player_id)
+        requester_name = (
+            requester_player.display_name
+            if requester_player
+            else "Unknown"
+        )
+        requester_level = requester_player.level if requester_player else 1
+
+        requests_list.append(
+            FriendRequestItemResponse(
+                friendship_id=fs.friendship_id,
+                player_id=fs.player_id,
+                player_display_name=requester_name,
+                player_level=requester_level,
+                status=fs.status,
+                created_at=fs.created_at,
+                updated_at=fs.updated_at,
+            )
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=FriendRequestListResponse(requests=requests_list, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/friends/{friend_id}/status",
+    tags=["friends"],
+)
+async def get_friend_status(
+    friend_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireFriendsReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FriendStatusResponse]:
+    """查询好友关系状态"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_friend_status")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    friend_repo = FriendRepository(db)
+    friendship = await friend_repo.get_friendship(player_uuid, friend_id)
+
+    if friendship is None:
+        return EnvelopeResponse(
+            request_id=request_id,
+            data=FriendStatusResponse(status="none"),
+            trace_id=trace_id,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=FriendStatusResponse(
+            friendship_id=friendship.friendship_id,
+            player_id=friendship.player_id,
+            friend_id=friendship.friend_id,
+            status=friendship.status,
+        ),
+        trace_id=trace_id,
     )

@@ -27,6 +27,9 @@ class Scope(str, Enum):
     CONTENT_RELEASE = "content:release"
     CONTENT_ROLLBACK = "content:rollback"
 
+    FRIENDS_READ = "friends:read"
+    FRIENDS_WRITE = "friends:write"
+
     REVIEW_APPROVE = "review:approve"
 
 
@@ -40,6 +43,8 @@ ROLE_SCOPES: dict[Role, list[Scope]] = {
         Scope.VOTES_HISTORY_READ,
         Scope.CONTENT_READ,
         Scope.ACHIEVEMENTS_READ,
+        Scope.FRIENDS_READ,
+        Scope.FRIENDS_WRITE,
     ],
     Role.OPS: [
         Scope.VOTES_HISTORY_READ,
