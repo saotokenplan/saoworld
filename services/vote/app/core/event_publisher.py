@@ -35,10 +35,19 @@ class EventPublisher:
         message = json.dumps(event)
 
         if self._redis is None:
-            await self.connect()
+            try:
+                await self.connect()
+            except Exception:
+                return str(event["event_id"])
 
-        assert self._redis is not None
-        await self._redis.publish(channel, message)
+        if self._redis is None:
+            return str(event["event_id"])
+
+        try:
+            await self._redis.publish(channel, message)
+        except Exception:
+            pass
+
         return str(event["event_id"])
 
     async def publish_vote_cycle_closed(
@@ -81,6 +90,29 @@ class EventPublisher:
         return await self.publish(
             "vote.result.finalized",
             payload,
+            trace_id=trace_id,
+        )
+
+    async def publish_vote_progress_updated(
+        self,
+        vote_cycle_id: str,
+        chapter_id: str,
+        total_votes: int,
+        total_weighted_votes: float,
+        leading_candidate_id: str,
+        candidates: list[dict],
+        trace_id: str = "",
+    ) -> str:
+        return await self.publish(
+            "vote.progress.updated",
+            {
+                "vote_cycle_id": vote_cycle_id,
+                "chapter_id": chapter_id,
+                "total_votes": total_votes,
+                "total_weighted_votes": total_weighted_votes,
+                "leading_candidate_id": leading_candidate_id,
+                "candidates": candidates,
+            },
             trace_id=trace_id,
         )
 

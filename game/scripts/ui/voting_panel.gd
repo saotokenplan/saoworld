@@ -12,11 +12,14 @@ signal open_discussion_pressed
 @onready var submit_button: Button = $Content/VBox/SubmitButton
 @onready var status_label: Label = $Content/VBox/StatusLabel
 @onready var discussion_button: Button = $Content/VBox/DiscussionButton
+@onready var progress_label: Label = $Content/VBox/ProgressLabel
+@onready var leading_label: Label = $Content/VBox/LeadingLabel
 
 var selected_candidate_id: String = ""
 var candidate_buttons: Array[Button] = []
 var is_loading: bool = false
 var has_voted: bool = false
+var candidate_id_to_button: Dictionary = {}
 
 func _ready() -> void:
 	back_button.pressed.connect(_on_back_pressed)
@@ -26,11 +29,14 @@ func _ready() -> void:
 	submit_button.text = "提交投票"
 	discussion_button.text = "进入讨论区"
 	status_label.text = "请选择一个候选项"
+	progress_label.text = ""
+	leading_label.text = ""
 	
 	VoteManager.current_vote_loaded.connect(_on_current_vote_loaded)
 	VoteManager.vote_submitted.connect(_on_vote_submitted)
 	VoteManager.vote_error.connect(_on_vote_error)
 	VoteManager.loading_changed.connect(_on_loading_changed)
+	VoteManager.vote_progress_updated.connect(_on_vote_progress_updated)
 	
 	if VoteManager.current_cycle.is_empty():
 		refresh()
@@ -48,6 +54,7 @@ func _clear_candidates() -> void:
 		if is_instance_valid(btn):
 			btn.queue_free()
 	candidate_buttons.clear()
+	candidate_id_to_button.clear()
 	selected_candidate_id = ""
 	_update_submit_button()
 
@@ -55,11 +62,8 @@ func _add_candidates(candidate_list: Array[Dictionary]) -> void:
 	for candidate in candidate_list:
 		var btn := Button.new()
 		var vote_count: int = candidate.get("vote_count", 0)
-		var percentage: float = 0.0
-		var total_votes: int = VoteManager.get_total_votes()
-		if total_votes > 0:
-			percentage = float(vote_count) / float(total_votes) * 100.0
-		if has_voted and total_votes > 0:
+		var percentage: float = candidate.get("percentage", 0.0)
+		if has_voted and vote_count > 0:
 			btn.text = "%s\n%s\n票数：%d (%.1f%%)" % [
 				candidate.get("title", ""),
 				candidate.get("description", ""),
@@ -74,6 +78,7 @@ func _add_candidates(candidate_list: Array[Dictionary]) -> void:
 		btn.pressed.connect(func(): _on_candidate_selected(cid, btn))
 		candidates_container.add_child(btn)
 		candidate_buttons.append(btn)
+		candidate_id_to_button[cid] = btn
 
 func _on_candidate_selected(candidate_id: String, button: Button) -> void:
 	if has_voted or is_loading:
@@ -142,6 +147,45 @@ func show_vote_from_manager() -> void:
 		status_label.text = "您已投票，以下是当前投票结果预览"
 		submit_button.disabled = true
 		submit_button.text = "您已投票"
+		VoteManager.start_progress_polling()
 	else:
 		status_label.text = "请选择一个候选项"
 		_update_submit_button()
+
+func _on_vote_progress_updated(progress: Dictionary) -> void:
+	var total_votes: int = progress.get("total_votes", 0)
+	progress_label.text = "当前总票数：%d" % total_votes
+	
+	var leading_id: String = str(progress.get("leading_candidate_id", ""))
+	var leading_title: String = ""
+	for candidate in progress.get("candidates", []):
+		if str(candidate.get("candidate_id", "")) == leading_id:
+			leading_title = candidate.get("title", "")
+			break
+	
+	if leading_title != "":
+		leading_label.text = "领先候选：%s" % leading_title
+	else:
+		leading_label.text = ""
+	
+	if has_voted:
+		for candidate in progress.get("candidates", []):
+			var cid: String = str(candidate.get("candidate_id", ""))
+			if cid in candidate_id_to_button:
+				var btn: Button = candidate_id_to_button[cid]
+				var vote_count: int = candidate.get("vote_count", 0)
+				var percentage: float = candidate.get("percentage", 0.0)
+				btn.text = "%s\n%s\n票数：%d (%.1f%%)" % [
+					candidate.get("title", ""),
+					candidate.get("description", ""),
+					vote_count,
+					percentage
+				]
+
+func _enter_tree() -> void:
+	VoteManager.fetch_vote_progress()
+	if has_voted or VoteManager.has_voted:
+		VoteManager.start_progress_polling()
+
+func _exit_tree() -> void:
+	VoteManager.stop_progress_polling()

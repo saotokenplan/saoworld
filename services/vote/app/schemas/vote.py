@@ -254,6 +254,29 @@ class PaginatedMeta(BaseModel):
     offset: int
 
 
+class VoteProgressCandidate(BaseModel):
+    """投票进度中的候选项数据。"""
+
+    candidate_id: uuid.UUID
+    title: str
+    vote_count: int
+    weighted_score: float
+    status: VoteCandidateStatus
+    percentage: float = 0.0
+
+
+class VoteProgressResponse(BaseModel):
+    """投票进度响应。"""
+
+    vote_cycle_id: uuid.UUID
+    chapter_id: str
+    status: VoteCycleStatus
+    total_votes: int
+    total_weighted_votes: float
+    leading_candidate_id: uuid.UUID | None = None
+    candidates: list[VoteProgressCandidate]
+
+
 class EnvelopeResponse(BaseModel, Generic[T]):
     """统一响应 envelope，所有成功响应必须使用此格式。"""
 

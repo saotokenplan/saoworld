@@ -30,6 +30,7 @@ from app.core.metrics import (
     record_reply_liked,
     record_vote_cycle_transition,
     record_vote_eligibility_rejected,
+    record_vote_progress_query,
     record_vote_submission,
 )
 from app.core.player_client import PlayerContributionClient
@@ -67,11 +68,14 @@ from app.schemas.vote import (
     ReplyListData,
     TransitionVoteCycleRequest,
     TransitionVoteCycleResponse,
+    VoteCandidateStatus,
     VoteCycleStatus,
     VoteDiscussionReplyResponse,
     VoteDiscussionResponse,
     VoteHistoryItem,
     VoteHistoryResponse,
+    VoteProgressCandidate,
+    VoteProgressResponse,
     VoteSubmitRequest,
     VoteSubmitResponse,
 )
@@ -193,6 +197,74 @@ async def get_current_vote(
             candidates=candidate_responses,
             has_voted=has_voted,
             my_vote_candidate_id=my_vote_candidate_id,
+        ),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/votes/current/progress",
+    status_code=status.HTTP_200_OK,
+    responses={
+        404: {"description": "Vote cycle not found"},
+    },
+    tags=["votes"],
+)
+async def get_vote_progress(
+    request: Request,
+    current_user: UserPayload = RequireVotesReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[VoteProgressResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_vote_progress")
+
+    repo = VoteRepository(db)
+    cycle = await repo.get_current_open_cycle()
+
+    if cycle is None:
+        raise_vote_error(
+            VoteErrorCodes.NO_OPEN_VOTE_CYCLE,
+            "当前没有开放的投票周期",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    progress_data = await repo.get_vote_progress(cycle.vote_cycle_id)
+    if progress_data is None:
+        raise_vote_error(
+            VoteErrorCodes.INTERNAL_ERROR,
+            "获取投票进度失败",
+            request_id=request_id,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    candidates = []
+    for candidate_data in progress_data["candidates"]:
+        percentage = 0.0
+        if progress_data["total_weighted_votes"] > 0:
+            percentage = (candidate_data["weighted_score"] / progress_data["total_weighted_votes"]) * 100
+
+        candidates.append(VoteProgressCandidate(
+            candidate_id=candidate_data["candidate_id"],
+            title=candidate_data["title"],
+            vote_count=candidate_data["vote_count"],
+            weighted_score=candidate_data["weighted_score"],
+            status=VoteCandidateStatus(candidate_data["status"]),
+            percentage=round(percentage, 2),
+        ))
+
+    record_vote_progress_query()
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=VoteProgressResponse(
+            vote_cycle_id=progress_data["vote_cycle_id"],
+            chapter_id=progress_data["chapter_id"],
+            status=VoteCycleStatus(progress_data["status"]),
+            total_votes=progress_data["total_votes"],
+            total_weighted_votes=progress_data["total_weighted_votes"],
+            leading_candidate_id=progress_data["leading_candidate_id"],
+            candidates=candidates,
         ),
         trace_id=trace_id,
     )
@@ -363,6 +435,16 @@ async def submit_vote(
             "contribution_points": contribution_points,
         },
         result_status=201,
+    )
+
+    await event_publisher.publish_vote_progress_updated(
+        vote_cycle_id=str(cycle.vote_cycle_id),
+        chapter_id=cycle.chapter_id,
+        total_votes=0,
+        total_weighted_votes=0.0,
+        leading_candidate_id="",
+        candidates=[],
+        trace_id=x_trace_id,
     )
 
     return EnvelopeResponse(

@@ -360,3 +360,205 @@ async def test_vote_history_missing_token_returns_401(client: AsyncClient):
         f"{settings.api_v1_prefix}/votes/history",
     )
     assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_get_vote_progress_returns_open_cycle(
+    client: AsyncClient, open_vote_cycle: VoteCycle
+):
+    """测试获取投票进度返回开放周期的进度数据。"""
+    player_id = str(uuid.uuid4())
+    response = await client.get(
+        f"{settings.api_v1_prefix}/votes/current/progress",
+        headers=_player_headers(player_id),
+    )
+    assert response.status_code == 200
+    body = response.json()
+    data = body["data"]
+    assert body["request_id"]
+    assert data["vote_cycle_id"] == str(open_vote_cycle.vote_cycle_id)
+    assert data["chapter_id"] == "ch_prologue_01"
+    assert data["status"] == "open"
+    assert data["total_votes"] == 0
+    assert data["total_weighted_votes"] == 0.0
+    assert data["leading_candidate_id"] is None
+    assert len(data["candidates"]) == 3
+
+
+@pytest.mark.asyncio
+async def test_get_vote_progress_after_votes_submitted(
+    client: AsyncClient, open_vote_cycle: VoteCycle
+):
+    """测试提交投票后获取进度数据。"""
+    player_id1 = str(uuid.uuid4())
+    player_id2 = str(uuid.uuid4())
+    candidate1 = open_vote_cycle.candidates[0]
+    candidate2 = open_vote_cycle.candidates[1]
+
+    await client.post(
+        f"{settings.api_v1_prefix}/votes/submit",
+        headers={
+            **_player_headers(player_id1),
+            "Idempotency-Key": "test-progress-1",
+        },
+        json={
+            "candidate_id": str(candidate1.candidate_id),
+            "device_fingerprint_hash": "hash_progress_1",
+            "weight": 1.0,
+        },
+    )
+
+    await client.post(
+        f"{settings.api_v1_prefix}/votes/submit",
+        headers={
+            **_player_headers(player_id2),
+            "Idempotency-Key": "test-progress-2",
+        },
+        json={
+            "candidate_id": str(candidate2.candidate_id),
+            "device_fingerprint_hash": "hash_progress_2",
+            "weight": 2.0,
+        },
+    )
+
+    response = await client.get(
+        f"{settings.api_v1_prefix}/votes/current/progress",
+        headers=_player_headers(player_id1),
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["total_votes"] == 2
+    assert data["total_weighted_votes"] > 0.0
+    assert data["leading_candidate_id"] is not None
+
+
+@pytest.mark.asyncio
+async def test_get_vote_progress_no_open_cycle(client: AsyncClient):
+    """测试没有开放投票周期时返回 404。"""
+    player_id = str(uuid.uuid4())
+    response = await client.get(
+        f"{settings.api_v1_prefix}/votes/current/progress",
+        headers=_player_headers(player_id),
+    )
+    assert response.status_code == 404
+    data = response.json()
+    assert data["code"] == VoteErrorCodes.NO_OPEN_VOTE_CYCLE
+
+
+@pytest.mark.asyncio
+async def test_get_vote_progress_missing_token_returns_401(client: AsyncClient):
+    """测试投票进度接口缺少 JWT Token 返回 401。"""
+    response = await client.get(
+        f"{settings.api_v1_prefix}/votes/current/progress",
+    )
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_get_vote_progress_candidates_sorted_by_weighted_score(
+    client: AsyncClient, open_vote_cycle: VoteCycle
+):
+    """测试候选人按加权分数降序排列。"""
+    player_id1 = str(uuid.uuid4())
+    player_id2 = str(uuid.uuid4())
+    player_id3 = str(uuid.uuid4())
+    candidate1 = open_vote_cycle.candidates[0]
+    candidate2 = open_vote_cycle.candidates[1]
+    candidate3 = open_vote_cycle.candidates[2]
+
+    await client.post(
+        f"{settings.api_v1_prefix}/votes/submit",
+        headers={
+            **_player_headers(player_id1),
+            "Idempotency-Key": "test-sort-1",
+        },
+        json={
+            "candidate_id": str(candidate1.candidate_id),
+            "device_fingerprint_hash": "hash_sort_1",
+            "weight": 1.0,
+        },
+    )
+
+    await client.post(
+        f"{settings.api_v1_prefix}/votes/submit",
+        headers={
+            **_player_headers(player_id2),
+            "Idempotency-Key": "test-sort-2",
+        },
+        json={
+            "candidate_id": str(candidate2.candidate_id),
+            "device_fingerprint_hash": "hash_sort_2",
+            "weight": 3.0,
+        },
+    )
+
+    await client.post(
+        f"{settings.api_v1_prefix}/votes/submit",
+        headers={
+            **_player_headers(player_id3),
+            "Idempotency-Key": "test-sort-3",
+        },
+        json={
+            "candidate_id": str(candidate3.candidate_id),
+            "device_fingerprint_hash": "hash_sort_3",
+            "weight": 2.0,
+        },
+    )
+
+    response = await client.get(
+        f"{settings.api_v1_prefix}/votes/current/progress",
+        headers=_player_headers(player_id1),
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    candidates = data["candidates"]
+
+    scores = [c["weighted_score"] for c in candidates]
+    assert scores == sorted(scores, reverse=True)
+
+
+@pytest.mark.asyncio
+async def test_get_vote_progress_percentage_calculated_correctly(
+    client: AsyncClient, open_vote_cycle: VoteCycle
+):
+    """测试百分比计算正确。"""
+    player_id1 = str(uuid.uuid4())
+    player_id2 = str(uuid.uuid4())
+    candidate1 = open_vote_cycle.candidates[0]
+    candidate2 = open_vote_cycle.candidates[1]
+
+    await client.post(
+        f"{settings.api_v1_prefix}/votes/submit",
+        headers={
+            **_player_headers(player_id1),
+            "Idempotency-Key": "test-percent-1",
+        },
+        json={
+            "candidate_id": str(candidate1.candidate_id),
+            "device_fingerprint_hash": "hash_percent_1",
+            "weight": 1.0,
+        },
+    )
+
+    await client.post(
+        f"{settings.api_v1_prefix}/votes/submit",
+        headers={
+            **_player_headers(player_id2),
+            "Idempotency-Key": "test-percent-2",
+        },
+        json={
+            "candidate_id": str(candidate2.candidate_id),
+            "device_fingerprint_hash": "hash_percent_2",
+            "weight": 1.0,
+        },
+    )
+
+    response = await client.get(
+        f"{settings.api_v1_prefix}/votes/current/progress",
+        headers=_player_headers(player_id1),
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+
+    percentages = [c["percentage"] for c in data["candidates"] if c["vote_count"] > 0]
+    assert abs(sum(percentages) - 100.0) < 0.01
