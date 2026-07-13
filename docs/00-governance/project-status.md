@@ -532,6 +532,7 @@
 42. ~~Sprint 4 S4-06「vote-service 扩展」~~ 已完成（2026-07-14 08:05）：验证讨论区和实时票数接口实现完整性，确认 vote-service 所有 97 个测试全部通过，讨论区相关 30 个测试通过，投票进度相关 6 个测试通过；Sprint 4 全部完成（100%）。
 43. ~~灰度发布前安全审计~~ 已完成（2026-07-14 07:00）：对 vote-service、gateway-service、player-service、content-service 进行全面安全审计，发现并修复 4 类安全问题：1）移除硬编码 JWT 密钥（强制环境变量配置）；2）限制 CORS 配置（白名单替代通配符）；3）网关鉴权中间件添加 Scope 校验（路径-权限映射）；4）投票权重边界校验（最终权重不超过 10.0）。修复后 vote-service 52 个测试全部通过，项目持续保持灰度发布就绪状态。
 44. ~~Sprint 5 S5-01「好友系统」~~ 已完成（2026-07-14 09:00）：player-service 新增好友系统完整能力，包括 friendships 表（pending/accepted/rejected/blocked 四种状态，双向关系，唯一索引防重复）、FriendRepository 仓储层（11 个方法，支持双向自动接受）、7 个 API 端点、7 个错误码、2 个 Scope（friends:read、friends:write）、2 类业务指标、5 个审计动作常量；Alembic 迁移脚本 + 14 个测试用例；客户端 FriendManager 自动加载单例 + FriendPanel 好友面板 + 12 个 GUT 测试；ruff 检查通过。
+45. ~~Sprint 5 S5-02「私聊系统」~~ 已完成（2026-07-14 10:00）：player-service 新增私聊消息完整能力，包括 private_messages 表（message_id/sender_id/receiver_id/content/is_read，500 字符限制，复合索引支持对话查询）、PrivateMessageRepository 仓储层（7 个方法：send_message、get_conversation、get_recent_conversations、mark_as_read、get_unread_count、get_unread_messages、delete_message）、6 个 API 端点（发送消息、对话列表、对话历史、标记已读、未读列表、未读数）、5 个错误码（NOT_FRIENDS、MESSAGE_TOO_LONG、MESSAGE_EMPTY、MESSAGE_NOT_FOUND、CANNOT_DELETE_OTHER_MESSAGE）、2 类业务指标（private_messages_sent_total、private_messages_read_total）、2 个 Scope（messages:read、messages:write）、3 个审计动作常量；Alembic 迁移脚本 + 测试骨架；客户端 PrivateChatManager 自动加载单例（6 个信号、6 个 API 方法、缓存机制）+ GUT 测试骨架；ruff 检查通过。为 S5-03 公会系统和 S5-04 公会聊天奠定基础。
 
 ## 进入实施前的建议门槛
 

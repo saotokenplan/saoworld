@@ -499,6 +499,42 @@ class FriendshipStatus(str, Enum):
     BLOCKED = "blocked"
 
 
+# === 私聊消息相关 Schema ===
+
+
+class SendMessageRequest(BaseModel):
+    receiver_id: uuid.UUID
+    content: str = Field(min_length=1, max_length=500)
+
+
+class PrivateMessageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    message_id: uuid.UUID
+    sender_id: uuid.UUID
+    receiver_id: uuid.UUID
+    content: str
+    is_read: bool
+    created_at: datetime
+
+
+class ConversationResponse(BaseModel):
+    friend_id: uuid.UUID
+    latest_message: PrivateMessageResponse | None = None
+
+
+class ConversationListResponse(BaseModel):
+    conversations: list[ConversationResponse]
+
+
+class MessageListResponse(BaseModel):
+    messages: list[PrivateMessageResponse]
+
+
+class UnreadCountResponse(BaseModel):
+    unread_count: int
+
+
 class SendFriendRequestRequest(BaseModel):
     friend_id: uuid.UUID
 

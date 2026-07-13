@@ -224,3 +224,35 @@ def record_friend_request_accepted(player_id: str) -> None:
         player_id: 接受者ID
     """
     FRIEND_REQUESTS_ACCEPTED_TOTAL.labels(player_id=player_id).inc()
+
+
+PRIVATE_MESSAGES_SENT_TOTAL = Counter(
+    "private_messages_sent_total",
+    "私聊消息发送次数",
+    labelnames=["sender_id", "receiver_id"],
+)
+
+PRIVATE_MESSAGES_READ_TOTAL = Counter(
+    "private_messages_read_total",
+    "私聊消息已读次数",
+    labelnames=["receiver_id"],
+)
+
+
+def record_private_message_sent(sender_id: str, receiver_id: str) -> None:
+    """记录一次私聊消息发送。
+
+    Args:
+        sender_id: 发送者ID
+        receiver_id: 接收者ID
+    """
+    PRIVATE_MESSAGES_SENT_TOTAL.labels(sender_id=sender_id, receiver_id=receiver_id).inc()
+
+
+def record_private_message_read(receiver_id: str) -> None:
+    """记录一次私聊消息已读。
+
+    Args:
+        receiver_id: 接收者ID
+    """
+    PRIVATE_MESSAGES_READ_TOTAL.labels(receiver_id=receiver_id).inc()

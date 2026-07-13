@@ -33,6 +33,9 @@ ACTION_FRIEND_REQUEST_ACCEPT = "friend_request_accept"
 ACTION_FRIEND_REQUEST_REJECT = "friend_request_reject"
 ACTION_FRIEND_DELETE = "friend_delete"
 ACTION_FRIEND_BLOCK = "friend_block"
+ACTION_PRIVATE_MESSAGE_SEND = "private_message_send"
+ACTION_PRIVATE_MESSAGE_READ = "private_message_read"
+ACTION_PRIVATE_MESSAGE_DELETE = "private_message_delete"
 
 RESOURCE_PLAYER = "player"
 RESOURCE_REGION = "region"
@@ -44,6 +47,7 @@ RESOURCE_ACHIEVEMENT = "achievement"
 RESOURCE_PLAYER_ACHIEVEMENT = "player_achievement"
 RESOURCE_EXPERIENCE = "experience"
 RESOURCE_FRIENDSHIP = "friendship"
+RESOURCE_PRIVATE_MESSAGE = "private_message"
 
 
 class AuditRepository:

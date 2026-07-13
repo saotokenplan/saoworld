@@ -238,6 +238,31 @@ class Friendship(Base):
     )
 
 
+class PrivateMessage(Base):
+    """私聊消息表。"""
+
+    __tablename__ = "private_messages"
+
+    message_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    sender_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    receiver_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    is_read: Mapped[bool] = mapped_column(nullable=False, default=False, server_default="false")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "length(content) > 0 AND length(content) <= 500",
+            name="private_messages_content_check",
+        ),
+        Index("private_messages_sender_created_idx", "sender_id", "created_at"),
+        Index("private_messages_receiver_created_idx", "receiver_id", "created_at"),
+        Index("private_messages_conversation_idx", "sender_id", "receiver_id"),
+    )
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 
