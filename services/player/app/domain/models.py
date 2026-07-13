@@ -358,3 +358,27 @@ class GuildMember(Base):
         ),
         Index("guild_members_guild_joined_idx", "guild_id", "joined_at"),
     )
+
+
+class GuildMessage(Base):
+    """公会消息表。"""
+
+    __tablename__ = "guild_messages"
+
+    message_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    guild_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    sender_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    is_read: Mapped[bool] = mapped_column(nullable=False, default=False, server_default="false")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "length(content) > 0 AND length(content) <= 500",
+            name="guild_messages_content_check",
+        ),
+        Index("guild_messages_guild_created_idx", "guild_id", "created_at"),
+        Index("guild_messages_sender_created_idx", "sender_id", "created_at"),
+    )
