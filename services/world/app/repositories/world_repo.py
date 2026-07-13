@@ -4,7 +4,7 @@ from typing import Any, Sequence
 from sqlalchemy import Select, func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domain.models import NPC, QuestDefinition, Region, WorldSkeleton
+from app.domain.models import NPC, ItemDefinition, QuestDefinition, Region, WorldSkeleton
 
 VALID_STATUS_TRANSITIONS: dict[str, set[str]] = {
     "locked": {"active"},
@@ -369,3 +369,118 @@ class QuestDefinitionRepository:
         self.db.add(quest)
         await self.db.flush()
         return quest
+
+
+class ItemDefinitionRepository:
+    def __init__(self, db: AsyncSession) -> None:
+        self.db = db
+
+    async def list_items(
+        self,
+        item_type: str | None = None,
+        rarity: str | None = None,
+        chapter_id: str | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> tuple[Sequence[ItemDefinition], int]:
+        count_stmt = select(sa_func.count(ItemDefinition.item_id))
+        if item_type:
+            count_stmt = count_stmt.where(ItemDefinition.item_type == item_type)
+        if rarity:
+            count_stmt = count_stmt.where(ItemDefinition.rarity == rarity)
+        if chapter_id:
+            count_stmt = count_stmt.where(ItemDefinition.chapter_id == chapter_id)
+        count_result = await self.db.execute(count_stmt)
+        total = count_result.scalar_one()
+
+        stmt: Select[tuple[ItemDefinition]] = (
+            select(ItemDefinition)
+            .order_by(ItemDefinition.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        if item_type:
+            stmt = stmt.where(ItemDefinition.item_type == item_type)
+        if rarity:
+            stmt = stmt.where(ItemDefinition.rarity == rarity)
+        if chapter_id:
+            stmt = stmt.where(ItemDefinition.chapter_id == chapter_id)
+
+        result = await self.db.execute(stmt)
+        items = result.scalars().all()
+        return items, total
+
+    async def get_item_by_id(self, item_id: uuid.UUID) -> ItemDefinition | None:
+        stmt: Select[tuple[ItemDefinition]] = select(ItemDefinition).where(
+            ItemDefinition.item_id == item_id
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_item_by_key(self, item_key: str) -> ItemDefinition | None:
+        stmt: Select[tuple[ItemDefinition]] = select(ItemDefinition).where(
+            ItemDefinition.item_key == item_key
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def create_item(
+        self,
+        *,
+        item_key: str,
+        item_type: str,
+        name: str,
+        rarity: str,
+        chapter_id: str,
+        item_slot: str | None = None,
+        description: str | None = None,
+        level_requirement: int = 1,
+        stats: dict[str, Any] | None = None,
+        effects: dict[str, Any] | None = None,
+        sell_price: int = 0,
+        stackable: bool = False,
+    ) -> ItemDefinition:
+        item = ItemDefinition(
+            item_key=item_key,
+            item_type=item_type,
+            item_slot=item_slot,
+            name=name,
+            description=description,
+            rarity=rarity,
+            chapter_id=chapter_id,
+            level_requirement=level_requirement,
+            stats_jsonb=stats,
+            effects_jsonb=effects,
+            sell_price=sell_price,
+            stackable=stackable,
+        )
+        self.db.add(item)
+        await self.db.flush()
+        return item
+
+    async def update_item(
+        self, item_id: uuid.UUID, **kwargs: Any
+    ) -> ItemDefinition | None:
+        from sqlalchemy import update as sa_update
+
+        if not kwargs:
+            return await self.get_item_by_id(item_id)
+
+        stmt = (
+            sa_update(ItemDefinition)
+            .where(ItemDefinition.item_id == item_id)
+            .values(**kwargs)
+            .returning(ItemDefinition)
+        )
+        result = await self.db.execute(stmt)
+        updated = result.scalar_one_or_none()
+        await self.db.flush()
+        return updated
+
+    async def delete_item(self, item_id: uuid.UUID) -> bool:
+        item = await self.get_item_by_id(item_id)
+        if item is None:
+            return False
+        await self.db.delete(item)
+        await self.db.flush()
+        return True

@@ -91,3 +91,53 @@ def set_quests_by_type(type_counts: dict[str, int]) -> None:
     """设置按类型分组的 Quest 数。"""
     for quest_type, count in type_counts.items():
         WORLD_QUESTS_BY_TYPE.labels(quest_type=quest_type).set(count)
+
+
+WORLD_ITEM_OPERATIONS_TOTAL = Counter(
+    "world_item_operations_total",
+    "Item 操作次数（按动作类型）",
+    labelnames=["action"],
+)
+
+WORLD_ITEMS_BY_RARITY = Gauge(
+    "world_items_by_rarity",
+    "Item 数（按稀有度）",
+    labelnames=["rarity"],
+)
+
+WORLD_ITEMS_BY_TYPE = Gauge(
+    "world_items_by_type",
+    "Item 数（按类型）",
+    labelnames=["item_type"],
+)
+
+
+def record_item_create() -> None:
+    """记录一次 Item 创建。"""
+    WORLD_ITEM_OPERATIONS_TOTAL.labels(action="create").inc()
+
+
+def record_item_update() -> None:
+    """记录一次 Item 更新。"""
+    WORLD_ITEM_OPERATIONS_TOTAL.labels(action="update").inc()
+
+
+def record_item_delete() -> None:
+    """记录一次 Item 删除。"""
+    WORLD_ITEM_OPERATIONS_TOTAL.labels(action="delete").inc()
+
+
+def set_items_by_rarity(rarity_counts: dict[str, int]) -> None:
+    """设置按稀有度分组的 Item 数。"""
+    for rarity in ("common", "uncommon", "rare", "epic", "legendary"):
+        WORLD_ITEMS_BY_RARITY.labels(rarity=rarity).set(
+            rarity_counts.get(rarity, 0)
+        )
+
+
+def set_items_by_type(type_counts: dict[str, int]) -> None:
+    """设置按类型分组的 Item 数。"""
+    for item_type in ("weapon", "armor", "accessory", "consumable", "material"):
+        WORLD_ITEMS_BY_TYPE.labels(item_type=item_type).set(
+            type_counts.get(item_type, 0)
+        )
