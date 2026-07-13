@@ -517,4 +517,122 @@ async def test_get_package_by_vote_cycle_packaged_hidden_from_player(
         await test_engine.dispose()
 
 
+@pytest.mark.asyncio
+async def test_get_packages_by_vote_cycle_ids_batch(
+    client: AsyncClient, player_token: str
+):
+    """测试仓储层按多个 vote_cycle_id 批量查询内容包。"""
+    from app.core.db import get_db
+    from app.domain.models import ContentPackage
+    from datetime import datetime, timezone
+    import uuid
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    vote_cycle_id_1 = uuid.uuid4()
+    vote_cycle_id_2 = uuid.uuid4()
+    vote_cycle_id_3 = uuid.uuid4()
+
+    test_engine = create_async_engine(
+        "sqlite+aiosqlite:///file:testdb_vote_cycle_batch?mode=memory&cache=shared&uri=true",
+        echo=False,
+        connect_args={"check_same_thread": False},
+    )
+    TestSession = async_sessionmaker(
+        test_engine,
+        expire_on_commit=False,
+    )
+
+    from app.core.db import Base
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    async with TestSession() as session:
+        pkg1 = ContentPackage(
+            content_package_id=uuid.uuid4(),
+            chapter_id="chapter_01",
+            package_version="pkg_batch_01",
+            source_vote_cycle_id=vote_cycle_id_1,
+            title="批量查询包1",
+            summary="测试批量查询1",
+            status="live",
+            payload_jsonb={"test": 1},
+            released_at=datetime.now(timezone.utc),
+        )
+        pkg2 = ContentPackage(
+            content_package_id=uuid.uuid4(),
+            chapter_id="chapter_01",
+            package_version="pkg_batch_02",
+            source_vote_cycle_id=vote_cycle_id_2,
+            title="批量查询包2",
+            summary="测试批量查询2",
+            status="gray",
+            payload_jsonb={"test": 2},
+            released_at=datetime.now(timezone.utc),
+        )
+        session.add(pkg1)
+        session.add(pkg2)
+        await session.commit()
+
+    async def override_db():
+        async with TestSession() as s:
+            yield s
+
+    from app.main import app
+    app.dependency_overrides[get_db] = override_db
+
+    try:
+        from app.repositories.content_repo import ContentRepository
+        async with TestSession() as session:
+            repo = ContentRepository(session)
+            results = await repo.get_packages_by_vote_cycle_ids(
+                [vote_cycle_id_1, vote_cycle_id_2, vote_cycle_id_3]
+            )
+            assert len(results) == 2
+            result_ids = {pkg.source_vote_cycle_id for pkg in results}
+            assert vote_cycle_id_1 in result_ids
+            assert vote_cycle_id_2 in result_ids
+            assert vote_cycle_id_3 not in result_ids
+    finally:
+        app.dependency_overrides.clear()
+        await test_engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_get_packages_by_vote_cycle_ids_empty_input():
+    """测试批量查询空列表直接返回空结果。"""
+    from app.core.db import get_db
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    test_engine = create_async_engine(
+        "sqlite+aiosqlite:///file:testdb_vote_cycle_empty?mode=memory&cache=shared&uri=true",
+        echo=False,
+        connect_args={"check_same_thread": False},
+    )
+    TestSession = async_sessionmaker(
+        test_engine,
+        expire_on_commit=False,
+    )
+
+    from app.core.db import Base
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    async def override_db():
+        async with TestSession() as s:
+            yield s
+
+    from app.main import app
+    app.dependency_overrides[get_db] = override_db
+
+    try:
+        from app.repositories.content_repo import ContentRepository
+        async with TestSession() as session:
+            repo = ContentRepository(session)
+            results = await repo.get_packages_by_vote_cycle_ids([])
+            assert results == []
+    finally:
+        app.dependency_overrides.clear()
+        await test_engine.dispose()
+
+
 
