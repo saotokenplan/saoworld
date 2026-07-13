@@ -97,3 +97,40 @@ func test_calculate_percentage_with_float() -> void:
 	# 1/3*100 = 33.333...
 	assert_true(result > 33.0 and result < 34.0, "1/3 should be approximately 33.3%")
 	instance.queue_free()
+
+# --- 图表绘制测试 ---
+
+func test_draw_pie_chart_method_exists() -> void:
+	var instance: Control = result_panel_script.new()
+	assert_true(instance.has_method("_draw_pie_chart"), "VoteResultPanel应有_draw_pie_chart方法")
+	instance.queue_free()
+
+func test_draw_bar_chart_method_exists() -> void:
+	var instance: Control = result_panel_script.new()
+	assert_true(instance.has_method("_draw_bar_chart"), "VoteResultPanel应有_draw_bar_chart方法")
+	instance.queue_free()
+
+func test_on_pie_chart_button_pressed_method_exists() -> void:
+	var instance: Control = result_panel_script.new()
+	assert_true(instance.has_method("_on_pie_chart_button_pressed"), "VoteResultPanel应有_on_pie_chart_button_pressed方法")
+	instance.queue_free()
+
+func test_on_bar_chart_button_pressed_method_exists() -> void:
+	var instance: Control = result_panel_script.new()
+	assert_true(instance.has_method("_on_bar_chart_button_pressed"), "VoteResultPanel应有_on_bar_chart_button_pressed方法")
+	instance.queue_free()
+
+func test_on_chart_data_loaded_method_exists() -> void:
+	var instance: Control = result_panel_script.new()
+	assert_true(instance.has_method("_on_chart_data_loaded"), "VoteResultPanel应有_on_chart_data_loaded方法")
+	instance.queue_free()
+
+func test_chart_type_initial_value() -> void:
+	var instance: Control = result_panel_script.new()
+	assert_eq(instance.current_chart_type, "pie", "初始图表类型应为pie")
+	instance.queue_free()
+
+func test_chart_data_initial_empty() -> void:
+	var instance: Control = result_panel_script.new()
+	assert_eq(instance.chart_data, {}, "初始图表数据应为空字典")
+	instance.queue_free()

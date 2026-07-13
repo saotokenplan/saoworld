@@ -562,3 +562,162 @@ async def test_get_vote_progress_percentage_calculated_correctly(
 
     percentages = [c["percentage"] for c in data["candidates"] if c["vote_count"] > 0]
     assert abs(sum(percentages) - 100.0) < 0.01
+
+
+# --- 图表数据接口测试 ---
+
+
+@pytest.mark.asyncio
+async def test_get_vote_result_chart_data_pie_success(
+    client: AsyncClient, open_vote_cycle: VoteCycle
+):
+    """测试获取饼图数据成功。"""
+    player_id1 = str(uuid.uuid4())
+    player_id2 = str(uuid.uuid4())
+    candidate1 = open_vote_cycle.candidates[0]
+    candidate2 = open_vote_cycle.candidates[1]
+
+    # 提交投票
+    await client.post(
+        f"{settings.api_v1_prefix}/votes/submit",
+        headers={
+            **_player_headers(player_id1),
+            "Idempotency-Key": "test-chart-1",
+        },
+        json={
+            "candidate_id": str(candidate1.candidate_id),
+            "device_fingerprint_hash": "hash_chart_1",
+            "weight": 1.0,
+        },
+    )
+
+    await client.post(
+        f"{settings.api_v1_prefix}/votes/submit",
+        headers={
+            **_player_headers(player_id2),
+            "Idempotency-Key": "test-chart-2",
+        },
+        json={
+            "candidate_id": str(candidate2.candidate_id),
+            "device_fingerprint_hash": "hash_chart_2",
+            "weight": 2.0,
+        },
+    )
+
+    response = await client.get(
+        f"{settings.api_v1_prefix}/votes/history/{open_vote_cycle.vote_cycle_id}/chart-data",
+        headers=_player_headers(player_id1),
+    )
+    assert response.status_code == 200
+    body = response.json()
+    data = body["data"]
+
+    assert data["chart_type"] == "pie"
+    assert data["vote_cycle_id"] == str(open_vote_cycle.vote_cycle_id)
+    assert data["total_votes"] == 2
+    assert len(data["items"]) == 3  # 3个候选项
+
+    # 检查颜色分配
+    for item in data["items"]:
+        assert "candidate_id" in item
+        assert "candidate_name" in item
+        assert "votes" in item
+        assert "percentage" in item
+        assert "color" in item
+        assert item["color"].startswith("#")  # 颜色格式检查
+
+
+@pytest.mark.asyncio
+async def test_get_vote_result_chart_data_bar_success(
+    client: AsyncClient, open_vote_cycle: VoteCycle
+):
+    """测试获取柱状图数据成功。"""
+    player_id = str(uuid.uuid4())
+    candidate = open_vote_cycle.candidates[0]
+
+    await client.post(
+        f"{settings.api_v1_prefix}/votes/submit",
+        headers={
+            **_player_headers(player_id),
+            "Idempotency-Key": "test-chart-bar-1",
+        },
+        json={
+            "candidate_id": str(candidate.candidate_id),
+            "device_fingerprint_hash": "hash_chart_bar_1",
+            "weight": 1.0,
+        },
+    )
+
+    response = await client.get(
+        f"{settings.api_v1_prefix}/votes/history/{open_vote_cycle.vote_cycle_id}/chart-data?chart_type=bar",
+        headers=_player_headers(player_id),
+    )
+    assert response.status_code == 200
+    body = response.json()
+    data = body["data"]
+
+    assert data["chart_type"] == "bar"
+    assert data["total_votes"] == 1
+
+
+@pytest.mark.asyncio
+async def test_get_vote_result_chart_data_not_found(client: AsyncClient):
+    """测试投票周期不存在返回 404。"""
+    player_id = str(uuid.uuid4())
+    fake_cycle_id = uuid.uuid4()
+
+    response = await client.get(
+        f"{settings.api_v1_prefix}/votes/history/{fake_cycle_id}/chart-data",
+        headers=_player_headers(player_id),
+    )
+    assert response.status_code == 404
+    data = response.json()
+    assert data["code"] == VoteErrorCodes.VOTE_CYCLE_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_get_vote_result_chart_data_permission_denied(client: AsyncClient):
+    """测试权限校验失败返回 401。"""
+    fake_cycle_id = uuid.uuid4()
+
+    response = await client.get(
+        f"{settings.api_v1_prefix}/votes/history/{fake_cycle_id}/chart-data",
+    )
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_get_vote_result_chart_data_color_assignment(
+    client: AsyncClient, open_vote_cycle: VoteCycle
+):
+    """测试颜色数组正确分配。"""
+    player_id = str(uuid.uuid4())
+    candidate = open_vote_cycle.candidates[0]
+
+    await client.post(
+        f"{settings.api_v1_prefix}/votes/submit",
+        headers={
+            **_player_headers(player_id),
+            "Idempotency-Key": "test-chart-color-1",
+        },
+        json={
+            "candidate_id": str(candidate.candidate_id),
+            "device_fingerprint_hash": "hash_chart_color_1",
+            "weight": 1.0,
+        },
+    )
+
+    response = await client.get(
+        f"{settings.api_v1_prefix}/votes/history/{open_vote_cycle.vote_cycle_id}/chart-data",
+        headers=_player_headers(player_id),
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+
+    # 检查每个候选项都分配了颜色
+    colors = [item["color"] for item in data["items"]]
+    assert len(colors) == len(data["items"])
+    # 检查颜色格式正确
+    for color in colors:
+        assert color.startswith("#")
+        assert len(color) == 7  # #RRGGBB

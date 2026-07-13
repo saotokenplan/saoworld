@@ -270,16 +270,18 @@ class VoteRepository:
         candidates = await self.get_all_candidates_for_cycle(vote_cycle_id)
         candidate_map = {c.candidate_id: c for c in candidates}
 
-        total_votes = 0
-        total_weighted_votes = 0.0
-        max_weighted_score = -1.0
+        total_votes: int = 0
+        total_weighted_votes: float = 0.0
+        max_weighted_score: float = -1.0
         leading_candidate_id: uuid.UUID | None = None
 
         progress_items = []
         for row in tally_rows:
-            count = row.count
-            total_weight = float(row.total_weight) if row.total_weight else 0.0
-            total_votes += count
+            # SQLAlchemy Row 使用属性访问label列
+            # mypy 无法正确推断 Row.label() 的类型，需要 type: ignore
+            count = row.count  # type: ignore[operator]
+            total_weight = float(row.total_weight) if row.total_weight is not None else 0.0  # type: ignore[attr-defined]
+            total_votes += count  # type: ignore[operator]
             total_weighted_votes += total_weight
 
             candidate = candidate_map.get(row.candidate_id)

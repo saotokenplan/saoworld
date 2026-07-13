@@ -1,5 +1,5 @@
 extends Control
-## 投票结果面板脚本
+## 投票结果面板脚本（支持图表可视化）
 
 signal back_pressed
 signal view_details_pressed(candidate_id: String)
@@ -11,15 +11,26 @@ signal view_details_pressed(candidate_id: String)
 @onready var winner_label: Label = $Content/VBox/WinnerBanner/WinnerLabel
 @onready var impact_region_label: Label = $Content/VBox/ImpactSection/ImpactRegionLabel
 @onready var expected_launch_label: Label = $Content/VBox/ImpactSection/ExpectedLaunchLabel
+@onready var chart_draw: Control = $Content/VBox/ChartDraw
+@onready var pie_chart_button: Button = $Content/VBox/ChartToggleButtons/PieChartButton
+@onready var bar_chart_button: Button = $Content/VBox/ChartToggleButtons/BarChartButton
 
-var candidate_rows: Array<Control> = []
+var candidate_rows: Array[Control] = []
+var current_chart_type: String = "pie"
+var chart_data: Dictionary = {}
+var vote_cycle_id: String = ""
 
 func _ready() -> void:
 	back_button.pressed.connect(_on_back_pressed)
 	back_button.text = "返回"
+	pie_chart_button.pressed.connect(_on_pie_chart_button_pressed)
+	bar_chart_button.pressed.connect(_on_bar_chart_button_pressed)
+	VoteManager.chart_data_loaded.connect(_on_chart_data_loaded)
 
 func set_result_data(cycle_data: Dictionary, candidate_list: Array[Dictionary]) -> void:
 	cycle_title.text = cycle_data.get("title", "投票周期")
+	vote_cycle_id = str(cycle_data.get("vote_cycle_id", cycle_data.get("cycle_id", "")))
+
 	var total_votes: int = _calculate_total_votes(candidate_list)
 	total_votes_label.text = "总票数：%d" % total_votes
 
@@ -36,6 +47,10 @@ func set_result_data(cycle_data: Dictionary, candidate_list: Array[Dictionary]) 
 	for candidate in candidate_list:
 		var is_winner: bool = candidate.get("candidate_id", "") == winner.get("candidate_id", "")
 		_add_candidate_result(candidate, total_votes, is_winner)
+
+	# 获取图表数据
+	if vote_cycle_id != "":
+		VoteManager.fetch_vote_result_chart_data(vote_cycle_id, current_chart_type)
 
 func _clear_candidates() -> void:
 	for row in candidate_rows:
@@ -109,3 +124,20 @@ func _on_back_pressed() -> void:
 
 func _on_view_details_pressed(candidate_id: String) -> void:
 	view_details_pressed.emit(candidate_id)
+
+func _on_pie_chart_button_pressed() -> void:
+	current_chart_type = "pie"
+	if vote_cycle_id != "":
+		VoteManager.fetch_vote_result_chart_data(vote_cycle_id, "pie")
+
+func _on_bar_chart_button_pressed() -> void:
+	current_chart_type = "bar"
+	if vote_cycle_id != "":
+		VoteManager.fetch_vote_result_chart_data(vote_cycle_id, "bar")
+
+func _on_chart_data_loaded(data: Dictionary) -> void:
+	chart_data = data
+	if chart_data.get("chart_type", "") == current_chart_type:
+		# 将数据传递给 ChartDraw 控件
+		if chart_draw and chart_draw.has_method("set_chart_data"):
+			chart_draw.set_chart_data(chart_data)

@@ -53,6 +53,8 @@ from app.repositories.discussion_repo import DiscussionRepository
 from app.repositories.vote_repo import VoteRepository
 from app.schemas.vote import (
     CandidateResponse,
+    ChartDataItem,
+    ChartDataResponse,
     ContentPackageLandingInfo,
     CreateDiscussionRequest,
     CreateReplyRequest,
@@ -84,6 +86,18 @@ router = APIRouter()
 ops_router = APIRouter()
 
 logger = structlog.get_logger()
+
+# 预定义图表颜色数组（至少 8 种颜色）
+CHART_COLORS = [
+    "#FF6B6B",  # 红色
+    "#4ECDC4",  # 青色
+    "#45B7D1",  # 蓝色
+    "#FFA07A",  # 橙色
+    "#98D8C8",  # 绿色
+    "#F7DC6F",  # 黄色
+    "#BB8FCE",  # 紫色
+    "#85C1E2",  # 浅蓝
+]
 
 
 def _make_request_id(prefix: str) -> str:
@@ -444,7 +458,7 @@ async def submit_vote(
         total_weighted_votes=0.0,
         leading_candidate_id="",
         candidates=[],
-        trace_id=x_trace_id,
+        trace_id=x_trace_id or "",
     )
 
     return EnvelopeResponse(
@@ -564,6 +578,86 @@ async def get_vote_history(
             total=total,
         ),
         meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/votes/history/{vote_cycle_id}/chart-data",
+    responses={
+        404: {"description": "Vote cycle not found"},
+    },
+    tags=["votes"],
+)
+async def get_vote_result_chart_data(
+    vote_cycle_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireVotesHistoryReadScope,
+    chart_type: str = Query(default="pie", pattern="^(pie|bar)$"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[ChartDataResponse]:
+    """获取投票结果的图表数据。
+
+    支持饼图（pie）和柱状图（bar）两种图表类型。
+    返回候选项名称、票数、百分比和预定义颜色。
+    """
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_vote_chart")
+
+    repo = VoteRepository(db)
+    cycle = await repo.get_cycle_by_id(vote_cycle_id)
+
+    if cycle is None:
+        raise_vote_error(
+            VoteErrorCodes.VOTE_CYCLE_NOT_FOUND,
+            "投票周期不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    # 获取投票进度数据
+    progress_data = await repo.get_vote_progress(vote_cycle_id)
+    if progress_data is None:
+        raise_vote_error(
+            VoteErrorCodes.INTERNAL_ERROR,
+            "获取投票图表数据失败",
+            request_id=request_id,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    total_votes = progress_data["total_votes"]
+    total_weighted_votes = progress_data["total_weighted_votes"]
+
+    # 构建图表数据项
+    chart_items = []
+    for idx, candidate_data in enumerate(progress_data["candidates"]):
+        percentage = 0.0
+        if total_weighted_votes > 0:
+            percentage = round((candidate_data["weighted_score"] / total_weighted_votes) * 100, 2)
+
+        # 循环使用预定义颜色
+        color_index = idx % len(CHART_COLORS)
+        color = CHART_COLORS[color_index]
+
+        chart_items.append(
+            ChartDataItem(
+                candidate_id=candidate_data["candidate_id"],
+                candidate_name=candidate_data["title"],
+                votes=candidate_data["vote_count"],
+                percentage=percentage,
+                color=color,
+            )
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=ChartDataResponse(
+            chart_type=chart_type,
+            vote_cycle_id=vote_cycle_id,
+            total_votes=total_votes,
+            total_weighted_votes=total_weighted_votes,
+            items=chart_items,
+        ),
         trace_id=trace_id,
     )
 
