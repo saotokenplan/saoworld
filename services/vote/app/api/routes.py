@@ -423,6 +423,23 @@ async def submit_vote(
     weight_multiplier = calculate_vote_weight_multiplier(contribution_points)
     final_weight = round(body.weight * weight_multiplier, 2)
 
+    # 校验最终权重不超过上限
+    if final_weight > 10.0:
+        raise_vote_error(
+            VoteErrorCodes.INVALID_ARGUMENT,
+            f"投票权重超过上限，计算后权重 {final_weight}，最大允许 10.0",
+            request_id=request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            details=[
+                ErrorDetail(
+                    location="body",
+                    field="weight",
+                    issue="exceeds_max_weight",
+                    rejected_value=body.weight,
+                )
+            ],
+        )
+
     vote = await repo.create_vote(
         vote_cycle_id=cycle.vote_cycle_id,
         player_id=player_uuid,

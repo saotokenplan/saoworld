@@ -527,6 +527,7 @@
 40. ~~perf_test 接入 CI 流水线 + 扩展压测场景 + P4 可观测性基础设施~~ 已完成（2026-07-13 12:00）：1）perf_test 接入 CI 流水线：ci.yml 的 lint/type-check/test 矩阵添加 perf_test，新建 `.github/workflows/perf.yml` 夜间性能测试 workflow（cron 每日3点UTC + workflow_dispatch + on_release 触发），G-NONFUNC-001/002/003 门禁触发方式从 manual 改为 nightly；2）扩展 3 个压测场景：world_region_query（GET /api/v1/world/regions，p95 < 100ms）、player_profile_query（GET /api/v1/player/profile，p95 < 200ms）、content_package_detail（GET /api/v1/content/packages/{id}，p95 < 100ms），perf_test 测试从 63 个增加到 68 个（+5），新增 G-NONFUNC-004/005/006 门禁；3）P4 可观测性基础设施：8 个后端服务新增 OpenTelemetry 分布式追踪中间件（TracingMiddleware + setup_tracing，通过环境变量控制启用），创建 SLO 定义文件（telemetry/slo/slo-definitions.yaml，8 个核心 SLO 涵盖投票/内容/世界/玩家/网关服务的延迟与可用性），创建分布式追踪 Runbook。项目持续保持灰度发布就绪状态。
 41. ~~Sprint 4 S4-05「投票复盘报告」~~ 已完成（2026-07-14 05:00）：vote-service 新增 `GET /api/v1/votes/history/{vote_cycle_id}/review` 复盘报告接口，content-service 扩展按投票周期批量查询，客户端新增 VoteReviewPanel 面板与 VoteHistoryPanel「复盘」入口；vote-service 测试 +6、content-service 测试 +2、客户端 GUT 测试 +11；ruff 与 mypy 检查通过。
 42. ~~Sprint 4 S4-06「vote-service 扩展」~~ 已完成（2026-07-14 08:05）：验证讨论区和实时票数接口实现完整性，确认 vote-service 所有 97 个测试全部通过，讨论区相关 30 个测试通过，投票进度相关 6 个测试通过；Sprint 4 全部完成（100%）。
+43. ~~灰度发布前安全审计~~ 已完成（2026-07-14 07:00）：对 vote-service、gateway-service、player-service、content-service 进行全面安全审计，发现并修复 4 类安全问题：1）移除硬编码 JWT 密钥（强制环境变量配置）；2）限制 CORS 配置（白名单替代通配符）；3）网关鉴权中间件添加 Scope 校验（路径-权限映射）；4）投票权重边界校验（最终权重不超过 10.0）。修复后 vote-service 52 个测试全部通过，项目持续保持灰度发布就绪状态。
 
 ## 进入实施前的建议门槛
 
