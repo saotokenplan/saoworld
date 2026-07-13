@@ -3,7 +3,7 @@
 使用 prometheus_client 定义业务指标，由 routes 层在关键操作发生时更新。
 """
 
-from prometheus_client import Counter, Gauge
+from prometheus_client import Counter, Gauge, Histogram
 
 # 投票提交总数（成功提交后递增）
 VOTE_SUBMISSIONS_TOTAL = Counter(
@@ -127,3 +127,39 @@ VOTE_PROGRESS_QUERIES_TOTAL = Counter(
 def record_vote_progress_query() -> None:
     """记录一次投票进度查询。"""
     VOTE_PROGRESS_QUERIES_TOTAL.inc()
+
+
+VOTE_ANOMALIES_DETECTED_TOTAL = Counter(
+    "vote_anomalies_detected_total",
+    "检测到的投票异常总数",
+    labelnames=["anomaly_type", "severity"],
+)
+
+VOTE_ANOMALIES_RESOLVED_TOTAL = Counter(
+    "vote_anomalies_resolved_total",
+    "已解决的投票异常总数",
+    labelnames=["resolution_type"],
+)
+
+VOTE_ANOMALY_DETECTION_DURATION = Histogram(
+    "vote_anomaly_detection_duration_seconds",
+    "投票异常检测耗时",
+    buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0],
+)
+
+
+def record_anomaly_detected(anomaly_type: str, severity: str) -> None:
+    """记录一次检测到的投票异常。"""
+    VOTE_ANOMALIES_DETECTED_TOTAL.labels(
+        anomaly_type=anomaly_type, severity=severity
+    ).inc()
+
+
+def record_anomaly_resolved(resolution_type: str) -> None:
+    """记录一次已解决的投票异常。"""
+    VOTE_ANOMALIES_RESOLVED_TOTAL.labels(resolution_type=resolution_type).inc()
+
+
+def observe_anomaly_detection_duration(duration: float) -> None:
+    """记录异常检测耗时。"""
+    VOTE_ANOMALY_DETECTION_DURATION.observe(duration)

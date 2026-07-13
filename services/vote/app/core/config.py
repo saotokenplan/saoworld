@@ -34,6 +34,15 @@ class Settings(BaseSettings):
     # CORS 配置
     allowed_origins: list[str] = ["http://localhost:8080", "http://127.0.0.1:8080"]
 
+    # 异常检测配置
+    anomaly_frequency_window_seconds: int = 300
+    anomaly_frequency_threshold: int = 3
+    anomaly_device_multi_player_threshold: int = 2
+    anomaly_weight_high_threshold: float = 8.0
+    anomaly_weight_critical_threshold: float = 9.5
+    anomaly_time_window_seconds: int = 60
+    anomaly_time_surge_threshold: int = 10
+
 
 settings = Settings()
 

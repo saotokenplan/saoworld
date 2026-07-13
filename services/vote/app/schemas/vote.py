@@ -353,3 +353,61 @@ class VoteReviewResponse(BaseModel):
     generated_params: dict[str, object] | None = None
     region_scope: list[str] = Field(default_factory=list)
     content_package: VoteReviewContentPackage | None = None
+
+
+# --- 异常检测相关 Schema ---
+
+
+class AnomalyType(str, Enum):
+    FREQUENCY = "frequency"
+    DEVICE = "device"
+    WEIGHT = "weight"
+    TIME_DISTRIBUTION = "time_distribution"
+    SUSPICIOUS_PATTERN = "suspicious_pattern"
+
+
+class AnomalySeverity(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+class AnomalyStatus(str, Enum):
+    DETECTED = "detected"
+    REVIEWED = "reviewed"
+    RESOLVED = "resolved"
+    FALSE_POSITIVE = "false_positive"
+
+
+class VoteAnomalyResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    anomaly_id: uuid.UUID
+    vote_cycle_id: uuid.UUID
+    player_id: uuid.UUID
+    vote_id: uuid.UUID | None = None
+    anomaly_type: AnomalyType
+    severity: AnomalySeverity
+    status: AnomalyStatus
+    description: str
+    detail: dict[str, object] | None = None
+    detected_at: datetime
+    resolved_at: datetime | None = None
+    resolver_id: str | None = None
+    created_at: datetime
+
+
+class AnomalyListData(BaseModel):
+    anomalies: list[VoteAnomalyResponse]
+
+
+class AnomalyUpdateRequest(BaseModel):
+    reason: str | None = None
+
+
+class AnomalyStatsResponse(BaseModel):
+    total: int
+    by_type: dict[str, int]
+    by_severity: dict[str, int]
+    by_status: dict[str, int]

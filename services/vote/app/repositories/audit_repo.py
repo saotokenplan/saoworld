@@ -16,12 +16,16 @@ ACTION_DISCUSSION_LIKE = "discussion_like"
 ACTION_REPLY_CREATE = "reply_create"
 ACTION_DISCUSSION_DELETE = "discussion_delete"
 ACTION_REPLY_DELETE = "reply_delete"
+ACTION_ANOMALY_DETECTED = "anomaly_detected"
+ACTION_ANOMALY_RESOLVED = "anomaly_resolved"
+ACTION_ANOMALY_FALSE_POSITIVE = "anomaly_false_positive"
 
 # 资源类型常量
 RESOURCE_VOTE = "vote"
 RESOURCE_VOTE_CYCLE = "vote_cycle"
 RESOURCE_DISCUSSION = "discussion"
 RESOURCE_DISCUSSION_REPLY = "discussion_reply"
+RESOURCE_VOTE_ANOMALY = "vote_anomaly"
 
 
 class AuditRepository:
