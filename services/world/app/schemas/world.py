@@ -254,3 +254,116 @@ class CreateQuestResponse(BaseModel):
     quest_type: QuestType
     request_id: str
     trace_id: str | None = None
+
+
+class ItemType(str, Enum):
+    WEAPON = "weapon"
+    ARMOR = "armor"
+    ACCESSORY = "accessory"
+    CONSUMABLE = "consumable"
+    MATERIAL = "material"
+
+
+class ItemSlot(str, Enum):
+    HEAD = "head"
+    CHEST = "chest"
+    LEGS = "legs"
+    FEET = "feet"
+    WEAPON = "weapon"
+    OFF_HAND = "off_hand"
+    RING = "ring"
+    NECKLACE = "necklace"
+
+
+class ItemRarity(str, Enum):
+    COMMON = "common"
+    UNCOMMON = "uncommon"
+    RARE = "rare"
+    EPIC = "epic"
+    LEGENDARY = "legendary"
+
+
+class ItemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    item_id: uuid.UUID
+    item_key: str
+    item_type: ItemType
+    item_slot: ItemSlot | None = None
+    name: str
+    description: str | None = None
+    rarity: ItemRarity
+    chapter_id: str
+    level_requirement: int = 1
+    stats: dict[str, object] | None = None
+    effects: dict[str, object] | None = None
+    sell_price: int = 0
+    stackable: bool = False
+    schema_version: int = 1
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    def model_validate(cls, obj: Any, *args: Any, **kwargs: Any) -> "ItemResponse":
+        if hasattr(obj, "stats_jsonb") and hasattr(obj, "effects_jsonb"):
+            obj_dict = {
+                "item_id": obj.item_id,
+                "item_key": obj.item_key,
+                "item_type": obj.item_type,
+                "item_slot": obj.item_slot,
+                "name": obj.name,
+                "description": obj.description,
+                "rarity": obj.rarity,
+                "chapter_id": obj.chapter_id,
+                "level_requirement": obj.level_requirement,
+                "stats": obj.stats_jsonb,
+                "effects": obj.effects_jsonb,
+                "sell_price": obj.sell_price,
+                "stackable": obj.stackable,
+                "schema_version": obj.schema_version,
+                "created_at": obj.created_at,
+                "updated_at": obj.updated_at,
+            }
+            return super().model_validate(obj_dict, *args, **kwargs)
+        return super().model_validate(obj, *args, **kwargs)
+
+
+class ItemListResponse(BaseModel):
+    items: list[ItemResponse]
+    total: int
+
+
+class CreateItemRequest(BaseModel):
+    item_key: str = Field(min_length=1, max_length=128, pattern=r"^[a-zA-Z0-9_\-]+$")
+    item_type: ItemType
+    item_slot: ItemSlot | None = None
+    name: str = Field(min_length=1, max_length=256)
+    description: str | None = None
+    rarity: ItemRarity
+    chapter_id: str = Field(min_length=1, max_length=64)
+    level_requirement: int = Field(default=1, ge=1)
+    stats: dict[str, object] | None = None
+    effects: dict[str, object] | None = None
+    sell_price: int = Field(default=0, ge=0)
+    stackable: bool = False
+
+
+class UpdateItemRequest(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=256)
+    description: str | None = None
+    rarity: ItemRarity | None = None
+    level_requirement: int | None = Field(default=None, ge=1)
+    stats: dict[str, object] | None = None
+    effects: dict[str, object] | None = None
+    sell_price: int | None = Field(default=None, ge=0)
+    stackable: bool | None = None
+
+
+class CreateItemResponse(BaseModel):
+    item_id: uuid.UUID
+    item_key: str
+    item_type: ItemType
+    name: str
+    rarity: ItemRarity
+    request_id: str
+    trace_id: str | None = None

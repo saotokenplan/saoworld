@@ -11,19 +11,33 @@ from app.core.metrics import (
     record_quest_create,
     record_region_create,
     record_region_status_transition,
+    record_item_create,
+    record_item_update,
+    record_item_delete,
 )
 from app.repositories.audit_repo import (
     ACTION_NPC_CREATE,
     ACTION_QUEST_CREATE,
     ACTION_REGION_CREATE,
     ACTION_REGION_STATUS_UPDATE,
+    ACTION_ITEM_CREATE,
+    ACTION_ITEM_UPDATE,
+    ACTION_ITEM_DELETE,
     RESOURCE_NPC,
     RESOURCE_QUEST,
     RESOURCE_REGION,
+    RESOURCE_ITEM_DEFINITION,
     AuditRepository,
 )
-from app.repositories.world_repo import NpcRepository, QuestDefinitionRepository, WorldRepository
+from app.repositories.world_repo import (
+    ItemDefinitionRepository,
+    NpcRepository,
+    QuestDefinitionRepository,
+    WorldRepository,
+)
 from app.schemas.world import (
+    CreateItemRequest,
+    CreateItemResponse,
     CreateNpcRequest,
     CreateNpcResponse,
     CreateQuestRequest,
@@ -35,6 +49,10 @@ from app.schemas.world import (
     EnvelopeResponse,
     ErrorDetail,
     HealthResponse,
+    ItemListResponse,
+    ItemResponse,
+    ItemRarity,
+    ItemType,
     NpcListResponse,
     NpcResponse,
     PaginatedMeta,
@@ -44,6 +62,7 @@ from app.schemas.world import (
     RegionListResponse,
     RegionResponse,
     RegionStatus,
+    UpdateItemRequest,
     UpdateRegionStatusRequest,
     UpdateRegionStatusResponse,
     WorldSkeletonResponse,
@@ -1046,5 +1065,380 @@ async def create_quest(
             request_id=request_id,
             trace_id=x_trace_id,
         ),
+        trace_id=x_trace_id,
+    )
+
+
+# ============================================================
+# Item 接口
+# ============================================================
+
+
+@router.get(
+    "/world/items",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["world"],
+)
+async def list_items(
+    request: Request,
+    item_type: ItemType | None = Query(default=None),
+    rarity: ItemRarity | None = Query(default=None),
+    chapter_id: str | None = Query(default=None, max_length=64),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireWorldReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[ItemListResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_world_items")
+
+    repo = ItemDefinitionRepository(db)
+    items, total = await repo.list_items(
+        item_type=item_type.value if item_type else None,
+        rarity=rarity.value if rarity else None,
+        chapter_id=chapter_id,
+        limit=limit,
+        offset=offset,
+    )
+
+    item_responses = [ItemResponse.model_validate(item) for item in items]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=ItemListResponse(items=item_responses, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/world/items/{item_key}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Item not found"},
+    },
+    tags=["world"],
+)
+async def get_item_detail(
+    item_key: str,
+    request: Request,
+    current_user: UserPayload = RequireWorldReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[ItemResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_world_item_detail")
+
+    if not item_key or len(item_key) > 128:
+        raise_world_error(
+            WorldErrorCodes.INVALID_ARGUMENT,
+            "item_key 长度必须在 1-128 之间",
+            request_id=request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="item_key",
+                    issue="invalid_length",
+                    rejected_value=item_key,
+                )
+            ],
+        )
+
+    repo = ItemDefinitionRepository(db)
+    item = await repo.get_item_by_key(item_key)
+
+    if item is None:
+        raise_world_error(
+            WorldErrorCodes.ITEM_NOT_FOUND,
+            "物品不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="item_key",
+                    issue="not_found",
+                    rejected_value=item_key,
+                )
+            ],
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=ItemResponse.model_validate(item),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.post(
+    "/world/items",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"description": "Invalid request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        409: {"description": "item_key already exists"},
+    },
+    tags=["ops"],
+)
+async def create_item(
+    body: CreateItemRequest,
+    request: Request,
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[ItemResponse]:
+    request_id = _make_request_id("req_ops_item")
+
+    repo = ItemDefinitionRepository(db)
+    existing = await repo.get_item_by_key(body.item_key)
+    if existing is not None:
+        raise_world_error(
+            WorldErrorCodes.ITEM_KEY_EXISTS,
+            f"item_key {body.item_key} 已存在",
+            request_id=request_id,
+            status_code=status.HTTP_409_CONFLICT,
+            details=[
+                ErrorDetail(
+                    location="body",
+                    field="item_key",
+                    issue="already_exists",
+                    rejected_value=body.item_key,
+                )
+            ],
+        )
+
+    valid_equip_types = {"weapon", "armor", "accessory"}
+    if body.item_type.value in valid_equip_types and body.item_slot is None:
+        raise_world_error(
+            WorldErrorCodes.INVALID_ITEM_SLOT,
+            "装备类型物品必须指定装备槽位",
+            request_id=request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            details=[
+                ErrorDetail(
+                    location="body",
+                    field="item_slot",
+                    issue="required_for_equipment",
+                    rejected_value=None,
+                )
+            ],
+        )
+
+    if body.item_type.value not in valid_equip_types and body.item_slot is not None:
+        raise_world_error(
+            WorldErrorCodes.INVALID_ITEM_SLOT,
+            "非装备类型物品不能有装备槽位",
+            request_id=request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            details=[
+                ErrorDetail(
+                    location="body",
+                    field="item_slot",
+                    issue="not_allowed_for_non_equipment",
+                    rejected_value=body.item_slot.value,
+                )
+            ],
+        )
+
+    item = await repo.create_item(
+        item_key=body.item_key,
+        item_type=body.item_type.value,
+        item_slot=body.item_slot.value if body.item_slot else None,
+        name=body.name,
+        description=body.description,
+        rarity=body.rarity.value,
+        chapter_id=body.chapter_id,
+        level_requirement=body.level_requirement,
+        stats=body.stats,
+        effects=body.effects,
+        sell_price=body.sell_price,
+        stackable=body.stackable,
+    )
+
+    record_item_create()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ITEM_CREATE,
+        resource_type=RESOURCE_ITEM_DEFINITION,
+        resource_id=item.item_id,
+        request_payload_jsonb=body.model_dump(mode="json"),
+        result_status=201,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=ItemResponse.model_validate(item),
+        trace_id=x_trace_id,
+    )
+
+
+@ops_router.put(
+    "/world/items/{item_id}",
+    responses={
+        400: {"description": "Invalid request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Item not found"},
+    },
+    tags=["ops"],
+)
+async def update_item(
+    item_id: uuid.UUID,
+    body: UpdateItemRequest,
+    request: Request,
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[ItemResponse]:
+    request_id = _make_request_id("req_ops_item_update")
+
+    repo = ItemDefinitionRepository(db)
+    item = await repo.get_item_by_id(item_id)
+
+    if item is None:
+        raise_world_error(
+            WorldErrorCodes.ITEM_NOT_FOUND,
+            "物品不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="item_id",
+                    issue="not_found",
+                    rejected_value=str(item_id),
+                )
+            ],
+        )
+
+    update_data: dict[str, Any] = {}
+    if body.name is not None:
+        update_data["name"] = body.name
+    if body.description is not None:
+        update_data["description"] = body.description
+    if body.rarity is not None:
+        update_data["rarity"] = body.rarity.value
+    if body.level_requirement is not None:
+        update_data["level_requirement"] = body.level_requirement
+    if body.stats is not None:
+        update_data["stats_jsonb"] = body.stats
+    if body.effects is not None:
+        update_data["effects_jsonb"] = body.effects
+    if body.sell_price is not None:
+        update_data["sell_price"] = body.sell_price
+    if body.stackable is not None:
+        update_data["stackable"] = body.stackable
+
+    updated_item = await repo.update_item(item_id, **update_data)
+    assert updated_item is not None
+
+    item_dict = {
+        "item_id": updated_item.item_id,
+        "item_key": updated_item.item_key,
+        "item_type": updated_item.item_type,
+        "item_slot": updated_item.item_slot,
+        "name": updated_item.name,
+        "description": updated_item.description,
+        "rarity": updated_item.rarity,
+        "chapter_id": updated_item.chapter_id,
+        "level_requirement": updated_item.level_requirement,
+        "stats": updated_item.stats_jsonb,
+        "effects": updated_item.effects_jsonb,
+        "sell_price": updated_item.sell_price,
+        "stackable": updated_item.stackable,
+        "schema_version": updated_item.schema_version,
+        "created_at": updated_item.created_at,
+        "updated_at": updated_item.updated_at,
+    }
+
+    record_item_update()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ITEM_UPDATE,
+        resource_type=RESOURCE_ITEM_DEFINITION,
+        resource_id=item_id,
+        request_payload_jsonb=body.model_dump(mode="json"),
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=ItemResponse(**item_dict),
+        trace_id=x_trace_id,
+    )
+
+
+@ops_router.delete(
+    "/world/items/{item_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Item not found"},
+    },
+    tags=["ops"],
+)
+async def delete_item(
+    item_id: uuid.UUID,
+    request: Request,
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[dict[str, object]]:
+    request_id = _make_request_id("req_ops_item_delete")
+
+    repo = ItemDefinitionRepository(db)
+    item = await repo.get_item_by_id(item_id)
+
+    if item is None:
+        raise_world_error(
+            WorldErrorCodes.ITEM_NOT_FOUND,
+            "物品不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+            details=[
+                ErrorDetail(
+                    location="path",
+                    field="item_id",
+                    issue="not_found",
+                    rejected_value=str(item_id),
+                )
+            ],
+        )
+
+    success = await repo.delete_item(item_id)
+    assert success
+
+    record_item_delete()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ITEM_DELETE,
+        resource_type=RESOURCE_ITEM_DEFINITION,
+        resource_id=item_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data={"success": True, "item_id": str(item_id)},
         trace_id=x_trace_id,
     )

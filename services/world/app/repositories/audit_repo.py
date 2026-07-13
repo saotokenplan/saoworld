@@ -8,10 +8,14 @@ ACTION_REGION_CREATE = "region_create"
 ACTION_REGION_STATUS_UPDATE = "region_status_update"
 ACTION_NPC_CREATE = "npc_create"
 ACTION_QUEST_CREATE = "quest_create"
+ACTION_ITEM_CREATE = "item_create"
+ACTION_ITEM_UPDATE = "item_update"
+ACTION_ITEM_DELETE = "item_delete"
 
 RESOURCE_REGION = "region"
 RESOURCE_NPC = "npc"
 RESOURCE_QUEST = "quest"
+RESOURCE_ITEM_DEFINITION = "item_definition"
 
 
 class AuditRepository:

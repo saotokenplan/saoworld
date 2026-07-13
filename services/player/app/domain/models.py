@@ -191,6 +191,40 @@ class PlayerInventory(Base):
     )
 
 
+class PlayerEquipment(Base):
+    __tablename__ = "player_equipment"
+
+    equipment_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    slot: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    item_key: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    item_instance_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, default=uuid.uuid4)
+    level: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    stats_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    equipped_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "slot IN ('head', 'chest', 'legs', 'feet', 'weapon', 'off_hand', 'ring', 'necklace')",
+            name="player_equipment_slot_check",
+        ),
+        CheckConstraint(
+            "level >= 0",
+            name="player_equipment_level_check",
+        ),
+        Index("player_equipment_player_slot_idx", "player_id", "slot", unique=True),
+        Index("player_equipment_item_key_idx", "item_key"),
+    )
+
+
 class PlayerRegion(Base):
     __tablename__ = "player_regions"
 

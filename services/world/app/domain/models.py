@@ -148,6 +148,58 @@ class QuestDefinition(Base):
     )
 
 
+class ItemDefinition(Base):
+    __tablename__ = "item_definitions"
+
+    item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    item_key: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True)
+    item_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    item_slot: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    name: Mapped[str] = mapped_column(String(256), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rarity: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    chapter_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    level_requirement: Mapped[int] = mapped_column(nullable=False, default=1, server_default="1")
+    stats_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    effects_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    sell_price: Mapped[int] = mapped_column(nullable=False, default=0, server_default="0")
+    stackable: Mapped[bool] = mapped_column(nullable=False, default=False, server_default="false")
+    schema_version: Mapped[int] = mapped_column(nullable=False, default=1, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "item_type IN ('weapon', 'armor', 'accessory', 'consumable', 'material')",
+            name="item_definitions_item_type_check",
+        ),
+        CheckConstraint(
+            "item_slot IN ('head', 'chest', 'legs', 'feet', 'weapon', 'off_hand', 'ring', 'necklace')",
+            name="item_definitions_item_slot_check",
+        ),
+        CheckConstraint(
+            "rarity IN ('common', 'uncommon', 'rare', 'epic', 'legendary')",
+            name="item_definitions_rarity_check",
+        ),
+        CheckConstraint(
+            "level_requirement >= 1",
+            name="item_definitions_level_requirement_check",
+        ),
+        CheckConstraint(
+            "sell_price >= 0",
+            name="item_definitions_sell_price_check",
+        ),
+        Index("item_definitions_item_type_idx", "item_type"),
+        Index("item_definitions_rarity_idx", "rarity"),
+        Index("item_definitions_chapter_id_idx", "chapter_id"),
+        Index("item_definitions_item_slot_idx", "item_slot"),
+    )
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 
