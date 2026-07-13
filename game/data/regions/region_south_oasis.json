@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "region_id": "region_south_oasis",
+  "name": "南部绿洲",
+  "description": "丰收商会的所在地，沙漠中的一片绿洲。这里是南北贸易的枢纽，来自各地的商人汇聚于此。虽然表面繁荣，但绿洲之下隐藏着古老的秘密。",
+  "type": "expansion",
+  "terrain": ["oasis", "desert", "ruins"],
+  "climate": "arid",
+  "resource_level": "medium",
+  "risk_level": "low",
+  "status": "active",
+  "factions": [
+    {"faction_id": "faction_harvest", "influence": 0.7, "presence": "strong"},
+    {"faction_id": "faction_freehold", "influence": 0.2, "presence": "trading"},
+    {"faction_id": "faction_ironward", "influence": 0.1, "presence": "diplomatic"}
+  ],
+  "key_locations": [
+    {"location_id": "loc_oasis_market", "name": "绿洲市场", "type": "market", "description": "商会经营的大型市场，各类商品应有尽有"},
+    {"location_id": "loc_oasis_hq", "name": "商会总部", "type": "building", "description": "丰收商会的核心建筑，掌握着整个绿洲的经济命脉"},
+    {"location_id": "loc_oasis_temple", "name": "绿洲神庙", "type": "temple", "description": "供奉沙漠守护神的古老神庙"},
+    {"location_id": "loc_oasis_desert_edge", "name": "沙漠边缘", "type": "border", "description": "绿洲与沙漠的交界处，商队出发的起点"}
+  ],
+  "available_quests": ["quest_oasis_trade", "quest_oasis_secret", "quest_oasis_caravan"],
+  "npcs": ["npc_oasis_merchant", "npc_oasis_trader", "npc_oasis_priest", "npc_oasis_scout"]
+}

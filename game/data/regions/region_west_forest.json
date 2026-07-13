@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "region_id": "region_west_forest",
+  "name": "幽光森林",
+  "description": "自由领地的根据地，一片古老而茂密的原始森林。参天大树遮天蔽日，林间弥漫着神秘的蓝光，据说是旧世界魔法残留的痕迹。这里资源丰富，但也隐藏着不为人知的危险。",
+  "type": "expansion",
+  "terrain": ["forest", "hill", "river"],
+  "climate": "temperate",
+  "resource_level": "high",
+  "risk_level": "medium",
+  "status": "active",
+  "factions": [
+    {"faction_id": "faction_freehold", "influence": 0.6, "presence": "strong"},
+    {"faction_id": "faction_ironward", "influence": 0.2, "presence": "minor"},
+    {"faction_id": "faction_shadowveil", "influence": 0.1, "presence": "exploring"}
+  ],
+  "key_locations": [
+    {"location_id": "loc_forest_ancient_tree", "name": "精灵古树", "type": "landmark", "description": "森林中心的千年古树，据说蕴含强大的自然力量"},
+    {"location_id": "loc_forest_camp", "name": "自由领地营地", "type": "camp", "description": "自由领地在森林中的主要据点"},
+    {"location_id": "loc_forest_moonlake", "name": "月光湖", "type": "lake", "description": "森林深处的神秘湖泊，夜晚会发出银色光芒"},
+    {"location_id": "loc_forest_mist_path", "name": "迷雾小径", "type": "path", "description": "充满迷雾的危险小径，通往森林最深处"}
+  ],
+  "available_quests": ["quest_forest_introduction", "quest_forest_guardian", "quest_forest_resource"],
+  "npcs": ["npc_forest_leader", "npc_forest_guide", "npc_forest_healer", "npc_forest_guard"]
+}
