@@ -7,8 +7,8 @@ Helps ensure commit messages reflect actual changes rather than
 session summaries or vague descriptions.
 
 Usage:
-    python tools/generate-commit-msg.py              # Output suggestion for staged changes
-    python tools/generate-commit-msg.py --check-msg <msg-file>  # Check if message matches changes
+    python tools/generate-commit-msg.py  # Output suggestion for staged changes
+    python tools/generate-commit-msg.py --check-msg <msg-file>  # Check message
 """
 
 from __future__ import annotations
@@ -50,7 +50,10 @@ SCOPE_PATH_MAPPING = {
 TYPE_HINTS = {
     "docs": {".md", ".yaml", ".yml", ".txt", ".rst"},
     "test": {"tests/", "test_", "_test.", "conftest."},
-    "chore": {"pyproject.toml", "requirements.txt", "Dockerfile", "docker-compose", ".gitignore", "Makefile"},
+    "chore": {
+        "pyproject.toml", "requirements.txt", "Dockerfile",
+        "docker-compose", ".gitignore", "Makefile",
+    },
 }
 
 VAGUE_SUMMARIES = {
@@ -170,7 +173,9 @@ def infer_type(files: list[dict], diff_stat: str) -> str:
         or any(p.endswith(ext) for ext in {".toml", ".txt", ".yml", ".yaml"})
         for p in paths
     )
-    if has_chore_only and not any(p.startswith("services/") or p.startswith("game/") for p in paths):
+    if has_chore_only and not any(
+        p.startswith("services/") or p.startswith("game/") for p in paths
+    ):
         return "chore"
 
     added = 0
@@ -345,7 +350,8 @@ def generate_suggestion() -> dict:
         )
         if has_app and not has_tests:
             new_service_warnings.append(
-                f"⚠️  新服务 '{service}' 新增了 app/ 代码但未包含 tests/ 测试文件，请补充基础测试"
+                f"⚠️  新服务 '{service}' 新增了 app/ 代码"
+                f"但未包含 tests/ 测试文件，请补充基础测试"
             )
 
     warning_lines = []
@@ -357,7 +363,9 @@ def generate_suggestion() -> dict:
     hint_parts = []
     hint_parts.append("# === 暂存改动分析 ===")
     hint_parts.append(f"# 检测到 {len(files)} 个文件待提交")
-    hint_parts.append(f"# 新增 {added} 行，删除 {deleted} 行，总变更 {added + deleted} 行")
+    hint_parts.append(
+        f"# 新增 {added} 行，删除 {deleted} 行，总变更 {added + deleted} 行"
+    )
     hint_parts.append(f"# 推断 type: {commit_type}")
     hint_parts.append(f"# 推断 scope: {scope or '(未识别，请手动补充)'}")
     hint_parts.append(f"# 建议消息: {suggested}")
@@ -415,7 +423,8 @@ def check_message_matches_changes(message: str) -> list[str]:
     inferred_scope = result["scope"]
     if msg_scope and inferred_scope and msg_scope != inferred_scope:
         errors.append(
-            f"你指定的 scope 是 '{msg_scope}'，但根据改动文件推断应为 '{inferred_scope}'。\n"
+            f"你指定的 scope 是 '{msg_scope}'，"
+            f"但根据改动文件推断应为 '{inferred_scope}'。\n"
             f"请确认 scope 是否准确反映实际改动模块。"
         )
 
@@ -433,7 +442,8 @@ def check_message_matches_changes(message: str) -> list[str]:
 
     if msg_type == "docs" and code_ratio > 0.3:
         errors.append(
-            f"type 为 'docs' 但代码文件占比达 {code_ratio:.0%}（{code_count}/{total} 个文件），\n"
+            f"type 为 'docs' 但代码文件占比达"
+            f" {code_ratio:.0%}（{code_count}/{total} 个文件），\n"
             f"提交 type 与实际变更性质严重不符。\n"
             f"若主要为代码变更，请使用 'feat'/'fix'/'refactor' 等 type。"
         )
@@ -457,7 +467,10 @@ def main():
                 for i, err in enumerate(errors, 1):
                     print(f"  {i}. {err}", file=sys.stderr)
                 print(file=sys.stderr)
-                print("提交信息应基于本次实际改动生成，而不是会话总结。", file=sys.stderr)
+                print(
+                    "提交信息应基于本次实际改动生成，而不是会话总结。",
+                    file=sys.stderr,
+                )
                 print("=" * 60, file=sys.stderr)
                 return 1
         return 0

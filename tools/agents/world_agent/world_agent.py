@@ -85,7 +85,6 @@ class WorldAgent:
             if task_input.template.schema_version < 1:
                 errors.append("模板版本不兼容")
 
-        region_ids = [r.region_id for r in world_rules.regions]
         if task_input.vote_result:
             pass
 
@@ -180,8 +179,6 @@ class WorldAgent:
         return templates.get(content_type, templates["npc"])
 
     def generate_content(self, task_input: WorldTaskInput, content_type: str = "npc") -> List[Any]:
-        world_rules = task_input.world_rules
-
         if content_type == "npc":
             return self._generate_npcs(task_input)
         elif content_type == "quest":
@@ -197,10 +194,6 @@ class WorldAgent:
         world_rules = task_input.world_rules
         region_id = world_rules.regions[0].region_id if world_rules.regions else "region_unknown"
         faction_id = world_rules.factions[0].faction_id if world_rules.factions else "faction_unknown"
-
-        direction = ""
-        if task_input.vote_result:
-            direction = task_input.vote_result.winning_direction
 
         npc = NPCConfig(
             npc_id=f"npc_{uuid4().hex[:8]}",
@@ -242,10 +235,6 @@ class WorldAgent:
         return [quest]
 
     def _generate_regions(self, task_input: WorldTaskInput) -> List[RegionConfig]:
-        direction = ""
-        if task_input.vote_result:
-            direction = task_input.vote_result.winning_direction
-
         region = RegionConfig(
             region_id=f"region_{uuid4().hex[:8]}",
             name="待定区域",

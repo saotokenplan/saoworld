@@ -130,7 +130,12 @@ def cmd_scan(args: argparse.Namespace) -> None:
     clusterer = FailureClusterer()
     clusters = clusterer.cluster(all_failures)
 
-    existing_gate_ids = ["G-STATIC-001", "G-STATIC-002", "G-UNIT-001", "G-UNIT-002", "G-UNIT-003", "G-UNIT-004", "G-UNIT-005", "G-UNIT-006", "G-UNIT-007", "G-UNIT-008", "G-UNIT-009", "G-CONTENT-001", "G-CONTENT-002", "G-CONTENT-003", "G-CONTENT-004", "G-E2E-001"]
+    existing_gate_ids = [
+        "G-STATIC-001", "G-STATIC-002", "G-UNIT-001", "G-UNIT-002",
+        "G-UNIT-003", "G-UNIT-004", "G-UNIT-005", "G-UNIT-006",
+        "G-UNIT-007", "G-UNIT-008", "G-UNIT-009", "G-CONTENT-001",
+        "G-CONTENT-002", "G-CONTENT-003", "G-CONTENT-004", "G-E2E-001",
+    ]
 
     classified_gaps = GapClassifier.batch_classify(clusters, existing_gate_ids)
 
@@ -242,14 +247,22 @@ def main() -> int:
 
     rule_evaluate = rule_improvement_sub.add_parser("evaluate", help="Evaluate all rules")
     rule_evaluate.add_argument("--patterns-dir", default="tools/loop_logging/patterns", help="Patterns directory")
-    rule_evaluate.add_argument("--thresholds-file", default="tools/loop_logging/thresholds.yaml", help="Thresholds file")
-    rule_evaluate.add_argument("--golden-cases-dir", default="tools/loop_logging/golden_cases", help="Golden cases directory")
+    rule_evaluate.add_argument(
+        "--thresholds-file", default="tools/loop_logging/thresholds.yaml", help="Thresholds file"
+    )
+    rule_evaluate.add_argument(
+        "--golden-cases-dir", default="tools/loop_logging/golden_cases", help="Golden cases directory"
+    )
     rule_evaluate.add_argument("--feedback-dir", default=".trae/loop-log/feedback", help="Feedback directory")
 
     rule_generate = rule_improvement_sub.add_parser("generate", help="Generate rule improvement issues")
     rule_generate.add_argument("--patterns-dir", default="tools/loop_logging/patterns", help="Patterns directory")
-    rule_generate.add_argument("--thresholds-file", default="tools/loop_logging/thresholds.yaml", help="Thresholds file")
-    rule_generate.add_argument("--golden-cases-dir", default="tools/loop_logging/golden_cases", help="Golden cases directory")
+    rule_generate.add_argument(
+        "--thresholds-file", default="tools/loop_logging/thresholds.yaml", help="Thresholds file"
+    )
+    rule_generate.add_argument(
+        "--golden-cases-dir", default="tools/loop_logging/golden_cases", help="Golden cases directory"
+    )
     rule_generate.add_argument("--feedback-dir", default=".trae/loop-log/feedback", help="Feedback directory")
     rule_generate.add_argument("--output-dir", default=".trae/loop-log", help="Output directory for issues")
 

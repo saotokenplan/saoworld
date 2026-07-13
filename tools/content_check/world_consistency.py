@@ -155,7 +155,11 @@ class WorldConsistencyChecker(BaseChecker):
                 result.add_issue(
                     issue_type="exp_reward_mismatch",
                     severity=IssueSeverity.MEDIUM,
-                    message=f"任务 {quest.get('title', quest.get('quest_id'))} 的经验奖励 {exp} 与区域等级 {level_range} 不匹配",
+                    message=(
+                        f"任务 {quest.get('title', quest.get('quest_id'))}"
+                        f" 的经验奖励 {exp}"
+                        f" 与区域等级 {level_range} 不匹配"
+                    ),
                     location=f"quests.{quest.get('quest_id', 'unknown')}.rewards.experience",
                     details={
                         "quest_id": quest.get("quest_id"),
@@ -179,7 +183,12 @@ class WorldConsistencyChecker(BaseChecker):
                 result.add_issue(
                     issue_type="gold_reward_mismatch",
                     severity=IssueSeverity.LOW,
-                    message=f"任务 {quest.get('title', quest.get('quest_id'))} 的金币奖励 {gold} 超过区域风险等级 {risk_level} 的建议上限 {max_gold}",
+                    message=(
+                        f"任务 {quest.get('title', quest.get('quest_id'))}"
+                        f" 的金币奖励 {gold}"
+                        f" 超过区域风险等级 {risk_level}"
+                        f" 的建议上限 {max_gold}"
+                    ),
                     location=f"quests.{quest.get('quest_id', 'unknown')}.rewards.gold",
                     details={
                         "quest_id": quest.get("quest_id"),

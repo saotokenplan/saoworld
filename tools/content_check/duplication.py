@@ -51,7 +51,11 @@ class DuplicationChecker(BaseChecker):
                     result.add_issue(
                         issue_type="npc_similarity_too_high",
                         severity=IssueSeverity.MEDIUM,
-                        message=f"NPC {npc1.get('name', npc1_id)} 与 {npc2.get('name', npc2_id)} 的设定相似度 {similarity:.2f} 超过阈值 {threshold}",
+                        message=(
+                            f"NPC {npc1.get('name', npc1_id)} 与"
+                            f" {npc2.get('name', npc2_id)} 的设定相似度"
+                            f" {similarity:.2f} 超过阈值 {threshold}"
+                        ),
                         location=f"npcs.{npc1_id} <-> npcs.{npc2_id}",
                         details={
                             "npc1_id": npc1_id,
@@ -86,7 +90,11 @@ class DuplicationChecker(BaseChecker):
                     result.add_issue(
                         issue_type="quest_skeleton_reuse_too_high",
                         severity=IssueSeverity.MEDIUM,
-                        message=f"任务 {quest1.get('title', quest1_id)} 与 {quest2.get('title', quest2_id)} 的骨架复用率 {similarity:.2f} 超过阈值 {threshold}",
+                        message=(
+                            f"任务 {quest1.get('title', quest1_id)} 与"
+                            f" {quest2.get('title', quest2_id)} 的骨架复用率"
+                            f" {similarity:.2f} 超过阈值 {threshold}"
+                        ),
                         location=f"quests.{quest1_id} <-> quests.{quest2_id}",
                         details={
                             "quest1_id": quest1_id,

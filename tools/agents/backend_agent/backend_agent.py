@@ -695,10 +695,10 @@ class BackendAgent:
             Backend Agent 输出结果
         """
         # 步骤 1：分析设计文档
-        analysis = self.analyze_design_document(input_data.design_task)
+        self.analyze_design_document(input_data.design_task)
 
         # 步骤 2：检查现有代码
-        code_status = self.check_existing_code(input_data.existing_code)
+        self.check_existing_code(input_data.existing_code)
 
         service_name = input_data.design_task.target_service
 

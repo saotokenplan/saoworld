@@ -106,7 +106,9 @@ def validate_commit_message(message):
 
     if len(title) > MAX_SUMMARY_LENGTH:
         errors.append(
-            "提交标题过长（{} 字符），最大允许 {} 字符".format(len(title), MAX_SUMMARY_LENGTH)
+            "提交标题过长（{} 字符），最大允许 {} 字符".format(
+                len(title), MAX_SUMMARY_LENGTH
+            )
         )
 
     if title.endswith("."):
@@ -128,13 +130,16 @@ def validate_commit_message(message):
 
     if commit_type not in VALID_TYPES:
         errors.append(
-            "无效的 type '{}'。允许的类型: {}".format(commit_type, ", ".join(sorted(VALID_TYPES)))
+            "无效的 type '{}'。允许的类型: {}".format(
+                commit_type, ", ".join(sorted(VALID_TYPES))
+            )
         )
 
     if scope is not None and scope not in VALID_SCOPES:
         errors.append(
             "scope '{}' 不在推荐列表中。推荐 scope: {}\n"
-            "（若确实需要新 scope，请先更新 engineering-conventions.md 和本脚本）".format(
+            "（若确实需要新 scope，请先更新 "
+            "engineering-conventions.md 和本脚本）".format(
                 scope, ", ".join(sorted(VALID_SCOPES))
             )
         )
@@ -147,22 +152,32 @@ def validate_commit_message(message):
     for banned in BANNED_PREFIXES:
         if lower_summary.startswith(banned):
             errors.append(
-                "summary 不应以 '{}' 开头，请使用明确的动作动词（新增/补充/调整/修复/重构）".format(banned)
+                "summary 不应以 '{}' 开头，"
+                "请使用明确的动作动词（新增/补充/调整/修复/重构）".format(banned)
             )
             break
 
     for banned_phrase in BANNED_PHRASES:
         if banned_phrase in summary:
-            errors.append("summary 包含模糊表述 '{}'，请更具体地描述改动内容".format(banned_phrase))
+            errors.append(
+                "summary 包含模糊表述 '{}'，"
+                "请更具体地描述改动内容".format(banned_phrase)
+            )
 
     if len(lines) > 1 and lines[1].strip() != "":
         errors.append("提交标题与正文之间需要保留一个空行")
 
     if len(lines) > 2:
-        body_lines = [line for line in lines[2:] if line.strip() and not line.startswith("#")]
+        body_lines = [
+            line for line in lines[2:]
+            if line.strip() and not line.startswith("#")
+        ]
         for line in body_lines:
             if len(line) > 200:
-                errors.append("正文中存在过长的行（{} 字符），建议每行不超过 200 字符".format(len(line)))
+                errors.append(
+                    "正文中存在过长的行（{} 字符），"
+                    "建议每行不超过 200 字符".format(len(line))
+                )
                 break
 
     return errors
@@ -322,7 +337,8 @@ def check_type_consistency(commit_type: str) -> tuple[list[str], list[str]]:
         )
     elif commit_type == "docs" and code_ratio > 0.1:
         warnings.append(
-            "type 为 'docs' 但代码文件占比达 {:.0%}，请注意 type 是否准确。".format(code_ratio)
+            "type 为 'docs' 但代码文件占比达 {:.0%}，"
+            "请注意 type 是否准确。".format(code_ratio)
         )
 
     if commit_type == "test" and code_ratio > 0.5 and test_count / total < 0.6:
@@ -332,7 +348,8 @@ def check_type_consistency(commit_type: str) -> tuple[list[str], list[str]]:
 
     if commit_type == "chore" and code_ratio > 0.3:
         warnings.append(
-            "type 为 'chore' 但包含较多代码文件（{:.0%}），请确认是否应使用 'feat' 或 'fix'。".format(
+            "type 为 'chore' 但包含较多代码文件（{:.0%}），"
+            "请确认是否应使用 'feat' 或 'fix'。".format(
                 code_ratio
             )
         )

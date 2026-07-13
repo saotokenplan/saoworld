@@ -32,7 +32,11 @@ def mock_db_session():
     session.delete = AsyncMock()
     session.flush = AsyncMock()
     session.refresh = AsyncMock()
-    session.execute = AsyncMock(return_value=AsyncMock(scalar=AsyncMock(return_value=None), scalars=AsyncMock(return_value=[]), fetchall=AsyncMock(return_value=[])))
+    session.execute = AsyncMock(return_value=AsyncMock(
+        scalar=AsyncMock(return_value=None),
+        scalars=AsyncMock(return_value=[]),
+        fetchall=AsyncMock(return_value=[]),
+    ))
     return session
 
 

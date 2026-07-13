@@ -13,9 +13,21 @@ def test_rule_evaluator_basic_evaluation():
     with tempfile.TemporaryDirectory() as tmpdir:
         feedback_file = os.path.join(tmpdir, "issue_feedback.jsonl")
         with open(feedback_file, "w") as f:
-            f.write('{"issue_id": "ISSUE-001", "rule_id": "test_rule", "issue_type": "gate_improvement", "status": "completed", "acceptance": "accepted"}\n')
-            f.write('{"issue_id": "ISSUE-002", "rule_id": "test_rule", "issue_type": "gate_improvement", "status": "completed", "acceptance": "accepted"}\n')
-            f.write('{"issue_id": "ISSUE-003", "rule_id": "test_rule", "issue_type": "gate_improvement", "status": "completed", "acceptance": "rejected"}\n')
+            f.write(
+                '{"issue_id": "ISSUE-001", "rule_id": "test_rule", '
+                '"issue_type": "gate_improvement", "status": "completed", '
+                '"acceptance": "accepted"}\n'
+            )
+            f.write(
+                '{"issue_id": "ISSUE-002", "rule_id": "test_rule", '
+                '"issue_type": "gate_improvement", "status": "completed", '
+                '"acceptance": "accepted"}\n'
+            )
+            f.write(
+                '{"issue_id": "ISSUE-003", "rule_id": "test_rule", '
+                '"issue_type": "gate_improvement", "status": "completed", '
+                '"acceptance": "rejected"}\n'
+            )
 
         feedback_collector = IssueFeedbackCollector(tmpdir)
         golden_case_manager = GoldenCaseManager(tmpdir)
@@ -42,9 +54,21 @@ def test_rule_evaluator_needs_improvement_high_false_positive():
     with tempfile.TemporaryDirectory() as tmpdir:
         feedback_file = os.path.join(tmpdir, "issue_feedback.jsonl")
         with open(feedback_file, "w") as f:
-            f.write('{"issue_id": "ISSUE-001", "rule_id": "bad_rule", "issue_type": "gate_improvement", "status": "completed", "acceptance": "accepted"}\n')
-            f.write('{"issue_id": "ISSUE-002", "rule_id": "bad_rule", "issue_type": "gate_improvement", "status": "completed", "acceptance": "rejected"}\n')
-            f.write('{"issue_id": "ISSUE-003", "rule_id": "bad_rule", "issue_type": "gate_improvement", "status": "completed", "acceptance": "rejected"}\n')
+            f.write(
+                '{"issue_id": "ISSUE-001", "rule_id": "bad_rule", '
+                '"issue_type": "gate_improvement", "status": "completed", '
+                '"acceptance": "accepted"}\n'
+            )
+            f.write(
+                '{"issue_id": "ISSUE-002", "rule_id": "bad_rule", '
+                '"issue_type": "gate_improvement", "status": "completed", '
+                '"acceptance": "rejected"}\n'
+            )
+            f.write(
+                '{"issue_id": "ISSUE-003", "rule_id": "bad_rule", '
+                '"issue_type": "gate_improvement", "status": "completed", '
+                '"acceptance": "rejected"}\n'
+            )
 
         feedback_collector = IssueFeedbackCollector(tmpdir)
         golden_case_manager = GoldenCaseManager(tmpdir)
@@ -68,12 +92,26 @@ def test_rule_evaluator_false_negatives():
     with tempfile.TemporaryDirectory() as tmpdir:
         feedback_file = os.path.join(tmpdir, "issue_feedback.jsonl")
         with open(feedback_file, "w") as f:
-            f.write('{"issue_id": "ISSUE-001", "rule_id": "test_rule", "issue_type": "gate_improvement", "status": "completed", "acceptance": "accepted"}\n')
+            f.write(
+                '{"issue_id": "ISSUE-001", "rule_id": "test_rule", '
+                '"issue_type": "gate_improvement", "status": "completed", '
+                '"acceptance": "accepted"}\n'
+            )
 
         golden_cases_file = os.path.join(tmpdir, "missing_gate_cases.jsonl")
         with open(golden_cases_file, "w") as f:
-            f.write('{"case_id": "case1", "case_type": "positive", "gap_type": "missing_gate", "rule_id": "test_rule", "failure_signature": "sig1", "description": "Test", "expected_outcome": "test"}\n')
-            f.write('{"case_id": "case2", "case_type": "positive", "gap_type": "missing_gate", "rule_id": "test_rule", "failure_signature": "sig2", "description": "Test", "expected_outcome": "test"}\n')
+            f.write(
+                '{"case_id": "case1", "case_type": "positive", '
+                '"gap_type": "missing_gate", "rule_id": "test_rule", '
+                '"failure_signature": "sig1", "description": "Test", '
+                '"expected_outcome": "test"}\n'
+            )
+            f.write(
+                '{"case_id": "case2", "case_type": "positive", '
+                '"gap_type": "missing_gate", "rule_id": "test_rule", '
+                '"failure_signature": "sig2", "description": "Test", '
+                '"expected_outcome": "test"}\n'
+            )
 
         feedback_collector = IssueFeedbackCollector(tmpdir)
         golden_case_manager = GoldenCaseManager(tmpdir)
