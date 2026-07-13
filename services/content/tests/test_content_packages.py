@@ -464,7 +464,6 @@ async def test_get_package_by_vote_cycle_packaged_hidden_from_player(
 ):
     from app.core.db import get_db
     from app.domain.models import ContentPackage
-    from datetime import datetime, timezone
     import uuid
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 

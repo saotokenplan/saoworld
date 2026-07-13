@@ -100,7 +100,6 @@ from app.schemas.player import (
     HealthResponse,
     InventoryItemResponse,
     ItemType,
-    MAX_PLAYER_LEVEL,
     PaginatedMeta,
     PlayerAchievementListResponse,
     PlayerAchievementResponse,
@@ -684,7 +683,7 @@ async def complete_quest(
                 operator_role=current_user.role.value,
                 action=ACTION_LEVEL_UP,
                 resource_type=RESOURCE_EXPERIENCE,
-                resource_id=str(player.player_id),
+                resource_id=player.player_id,
                 reason="quest_completion",
                 request_payload_jsonb={
                     "quest_id": quest_id,
@@ -1766,7 +1765,7 @@ async def add_player_experience(
         operator_role=current_user.role.value,
         action=ACTION_EXPERIENCE_ADD,
         resource_type=RESOURCE_EXPERIENCE,
-        resource_id=str(player_id),
+        resource_id=player_id,
         reason=body.reason,
         request_payload_jsonb={
             "player_id": str(player_id),
@@ -1786,7 +1785,7 @@ async def add_player_experience(
             operator_role=current_user.role.value,
             action=ACTION_LEVEL_UP,
             resource_type=RESOURCE_EXPERIENCE,
-            resource_id=str(player_id),
+            resource_id=player_id,
             reason=body.reason or "ops_adjustment",
             request_payload_jsonb={
                 "player_id": str(player_id),

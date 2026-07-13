@@ -11,7 +11,6 @@ from app.core.metrics import (
     record_dashboard_view,
     record_ops_action,
 )
-from app.core.insight_extractor import calculate_quality_score, extract_insights_from_report
 from app.core.requirement_generator import generate_requirements_from_insight
 from app.repositories.audit_repo import (
     ACTION_DASHBOARD_VIEW,
@@ -785,8 +784,10 @@ async def get_vote_analytics(
         if m.candidate_votes_jsonb:
             if vote_map[m.vote_cycle_id].candidate_votes is None:
                 vote_map[m.vote_cycle_id].candidate_votes = {}
+            cv = vote_map[m.vote_cycle_id].candidate_votes
+            assert cv is not None
             for candidate, votes in m.candidate_votes_jsonb.items():
-                vote_map[m.vote_cycle_id].candidate_votes[candidate] = vote_map[m.vote_cycle_id].candidate_votes.get(candidate, 0) + votes
+                cv[candidate] = cv.get(candidate, 0) + votes
 
     response_data = list(vote_map.values())
 
@@ -938,6 +939,7 @@ async def generate_requirement_from_insight(
             request_id,
             status_code=status.HTTP_404_NOT_FOUND,
         )
+    assert insight is not None
 
     insight_data = {
         "category": insight.category,

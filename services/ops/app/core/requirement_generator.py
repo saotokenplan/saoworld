@@ -33,9 +33,9 @@ PRIORITY_MAP: dict[str, int] = {
 
 
 def generate_requirements_from_insight(insight_data: dict[str, Any]) -> list[dict]:
-    requirements = []
+    requirements: list[dict] = []
 
-    category = insight_data.get("category")
+    category: str = insight_data.get("category") or ""
     summary = insight_data.get("summary", "")
     confidence = insight_data.get("confidence", "medium")
     impact = insight_data.get("impact", "medium")
@@ -55,7 +55,7 @@ def generate_requirements_from_insight(insight_data: dict[str, Any]) -> list[dic
     elif category == "vote_preference":
         requirements.extend(_generate_vote_requirements(summary, insight_data))
     else:
-        requirements.append(_generate_generic_requirement(summary, insight_data))
+        requirements.extend(_generate_generic_requirement(summary, insight_data))
 
     for req in requirements:
         req["priority"] = priority
@@ -191,7 +191,7 @@ def _generate_difficulty_requirements(summary: str, insight_data: dict) -> list[
 
 
 def _generate_preference_requirements(summary: str, insight_data: dict) -> list[dict]:
-    source_data = insight_data.get("source_data_jsonb", {})
+    _source_data = insight_data.get("source_data_jsonb", {})
 
     if "exploration" in summary:
         return [
