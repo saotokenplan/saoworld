@@ -666,3 +666,35 @@ class GuildMemberListItemResponse(BaseModel):
 class GuildMemberListResponse(BaseModel):
     members: list[GuildMemberListItemResponse]
     total: int
+
+
+# === 社交数据聚合 Schema ===
+
+
+class GuildSummary(BaseModel):
+    """公会摘要信息"""
+
+    guild_id: uuid.UUID
+    name: str
+    level: int
+    member_count: int
+    my_role: str  # leader/officer/member
+
+
+class FriendSummary(BaseModel):
+    """好友摘要信息"""
+
+    player_id: uuid.UUID
+    player_name: str
+    level: int
+    online: bool = False
+
+
+class SocialOverview(BaseModel):
+    """社交概览响应"""
+
+    friends_count: int  # 好友总数
+    pending_requests: int  # 待处理好友请求数
+    unread_messages: int  # 未读消息数
+    guild_info: GuildSummary | None = None  # 公会信息（如果已加入）
+    recent_friends: list[FriendSummary] = []  # 最近好友列表（最多5个）
