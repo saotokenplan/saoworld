@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import os
-from typing import Callable
+from typing import Callable, cast
 
 from fastapi import FastAPI, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -33,7 +33,7 @@ class TracingMiddleware(BaseHTTPMiddleware):
         if request_id:
             response.headers["X-Request-Id"] = request_id
 
-        return response
+        return cast(Response, response)
 
 
 def setup_tracing(app: FastAPI, service_name: str) -> None:

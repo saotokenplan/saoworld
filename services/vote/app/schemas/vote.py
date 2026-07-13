@@ -307,3 +307,49 @@ class ChartDataResponse(BaseModel):
     total_votes: int
     total_weighted_votes: float = 0.0
     items: list[ChartDataItem]
+
+
+# --- 复盘报告相关 Schema ---
+
+
+class VoteReviewCandidateResult(BaseModel):
+    """投票复盘报告中的候选项结果。"""
+
+    candidate_id: uuid.UUID
+    title: str
+    vote_count: int
+    weighted_score: float
+    status: VoteCandidateStatus
+    percentage: float = 0.0
+
+
+class VoteReviewContentPackage(BaseModel):
+    """投票复盘报告中的落地内容包摘要。"""
+
+    content_package_id: uuid.UUID
+    chapter_id: str
+    title: str
+    summary: str | None = None
+    package_version: str
+    status: str
+    affected_regions: list[str] = Field(default_factory=list)
+    payload: dict[str, object] = Field(default_factory=dict)
+    landed_at: datetime | None = None
+
+
+class VoteReviewResponse(BaseModel):
+    """投票复盘报告响应。"""
+
+    vote_cycle_id: uuid.UUID
+    chapter_id: str
+    status: VoteCycleStatus
+    starts_at: datetime
+    ends_at: datetime
+    total_votes: int
+    total_weighted_votes: float
+    participation_rate: float = 0.0
+    winning_candidate: VoteReviewCandidateResult | None = None
+    candidates: list[VoteReviewCandidateResult]
+    generated_params: dict[str, object] | None = None
+    region_scope: list[str] = Field(default_factory=list)
+    content_package: VoteReviewContentPackage | None = None

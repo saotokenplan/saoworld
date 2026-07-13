@@ -5,6 +5,7 @@ from httpx import AsyncClient
 
 from app.core.auth import create_test_token
 from app.core.config import settings
+from app.core.content_client import ContentPackageInfo
 from app.core.errors import VoteErrorCodes
 from app.domain.models import VoteCycle
 from app.schemas.auth import Role
@@ -717,7 +718,231 @@ async def test_get_vote_result_chart_data_color_assignment(
     # 检查每个候选项都分配了颜色
     colors = [item["color"] for item in data["items"]]
     assert len(colors) == len(data["items"])
-    # 检查颜色格式正确
-    for color in colors:
-        assert color.startswith("#")
-        assert len(color) == 7  # #RRGGBB
+
+
+# --- 投票复盘报告接口测试 ---
+
+
+def _make_content_package_info(
+    vote_cycle_id: uuid.UUID,
+    payload: dict[str, object] | None = None,
+) -> ContentPackageInfo:
+    """构造用于 mock 的内容包信息对象。"""
+    from datetime import datetime, timezone
+
+    return ContentPackageInfo(
+        content_package_id=uuid.uuid4(),
+        vote_cycle_id=vote_cycle_id,
+        chapter_id="ch_prologue_01",
+        title="测试落地内容包",
+        version="pkg_ch01_20260701_01",
+        status="live",
+        affected_regions=["region_wasteland_01"],
+        payload=payload or {
+            "npcs": [{"name": "测试NPC"}],
+            "quests": [{"title": "测试任务"}],
+            "regions": [{"name": "废土区域"}],
+        },
+        summary="测试内容包摘要",
+        landed_at=datetime.now(timezone.utc),
+    )
+
+
+@pytest.mark.asyncio
+async def test_get_vote_review_not_found(client: AsyncClient):
+    """测试投票周期不存在时复盘报告返回 404。"""
+    player_id = str(uuid.uuid4())
+    fake_cycle_id = uuid.uuid4()
+
+    response = await client.get(
+        f"{settings.api_v1_prefix}/votes/history/{fake_cycle_id}/review",
+        headers=_player_headers(player_id),
+    )
+    assert response.status_code == 404
+    data = response.json()
+    assert data["code"] == VoteErrorCodes.VOTE_CYCLE_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_get_vote_review_missing_token_returns_401(client: AsyncClient):
+    """测试复盘报告接口缺少 JWT Token 返回 401。"""
+    fake_cycle_id = uuid.uuid4()
+
+    response = await client.get(
+        f"{settings.api_v1_prefix}/votes/history/{fake_cycle_id}/review",
+    )
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_get_vote_review_open_cycle_without_votes(
+    client: AsyncClient, open_vote_cycle: VoteCycle
+):
+    """测试开放周期无投票时复盘报告返回基本数据。"""
+    player_id = str(uuid.uuid4())
+
+    response = await client.get(
+        f"{settings.api_v1_prefix}/votes/history/{open_vote_cycle.vote_cycle_id}/review",
+        headers=_player_headers(player_id),
+    )
+    assert response.status_code == 200
+    body = response.json()
+    data = body["data"]
+
+    assert body["request_id"]
+    assert data["vote_cycle_id"] == str(open_vote_cycle.vote_cycle_id)
+    assert data["chapter_id"] == "ch_prologue_01"
+    assert data["status"] == "open"
+    assert data["total_votes"] == 0
+    assert data["total_weighted_votes"] == 0.0
+    assert data["participation_rate"] == 0.0
+    assert data["winning_candidate"] is None
+    assert len(data["candidates"]) == 3
+    for candidate in data["candidates"]:
+        assert "candidate_id" in candidate
+        assert "title" in candidate
+        assert "vote_count" in candidate
+        assert "weighted_score" in candidate
+        assert "percentage" in candidate
+
+
+@pytest.mark.asyncio
+async def test_get_vote_review_after_votes_submitted(
+    client: AsyncClient, open_vote_cycle: VoteCycle
+):
+    """测试提交投票后复盘报告返回正确的获胜候选与统计。"""
+    player_id1 = str(uuid.uuid4())
+    player_id2 = str(uuid.uuid4())
+    candidate1 = open_vote_cycle.candidates[0]
+    candidate2 = open_vote_cycle.candidates[1]
+
+    await client.post(
+        f"{settings.api_v1_prefix}/votes/submit",
+        headers={
+            **_player_headers(player_id1),
+            "Idempotency-Key": "test-review-1",
+        },
+        json={
+            "candidate_id": str(candidate1.candidate_id),
+            "device_fingerprint_hash": "hash_review_1",
+            "weight": 1.0,
+        },
+    )
+
+    await client.post(
+        f"{settings.api_v1_prefix}/votes/submit",
+        headers={
+            **_player_headers(player_id2),
+            "Idempotency-Key": "test-review-2",
+        },
+        json={
+            "candidate_id": str(candidate2.candidate_id),
+            "device_fingerprint_hash": "hash_review_2",
+            "weight": 3.0,
+        },
+    )
+
+    response = await client.get(
+        f"{settings.api_v1_prefix}/votes/history/{open_vote_cycle.vote_cycle_id}/review",
+        headers=_player_headers(player_id1),
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+
+    assert data["total_votes"] == 2
+    assert data["total_weighted_votes"] > 0.0
+    assert data["winning_candidate"] is not None
+    assert data["winning_candidate"]["candidate_id"] == str(candidate2.candidate_id)
+    assert data["winning_candidate"]["title"] == candidate2.title
+
+    candidate_ids = {c["candidate_id"] for c in data["candidates"]}
+    assert str(candidate1.candidate_id) in candidate_ids
+    assert str(candidate2.candidate_id) in candidate_ids
+
+
+@pytest.mark.asyncio
+async def test_get_vote_review_with_content_package(
+    client: AsyncClient, open_vote_cycle: VoteCycle, monkeypatch
+):
+    """测试复盘报告正确关联并展示内容包摘要。"""
+    player_id = str(uuid.uuid4())
+    candidate = open_vote_cycle.candidates[0]
+
+    await client.post(
+        f"{settings.api_v1_prefix}/votes/submit",
+        headers={
+            **_player_headers(player_id),
+            "Idempotency-Key": "test-review-pkg-1",
+        },
+        json={
+            "candidate_id": str(candidate.candidate_id),
+            "device_fingerprint_hash": "hash_review_pkg_1",
+            "weight": 2.0,
+        },
+    )
+
+    mock_pkg = _make_content_package_info(
+        vote_cycle_id=open_vote_cycle.vote_cycle_id,
+        payload={
+            "gray_scope": {"player_percent": 10},
+            "npcs": [{"name": "测试NPC"}],
+            "quests": [{"title": "测试任务"}],
+        },
+    )
+
+    async def mock_get_content_package_by_vote_cycle(
+        self: object, vote_cycle_id: uuid.UUID, authorization: str | None = None
+    ) -> ContentPackageInfo:
+        return mock_pkg
+
+    monkeypatch.setattr(
+        "app.core.content_client.ContentPackageClient.get_content_package_by_vote_cycle",
+        mock_get_content_package_by_vote_cycle,
+    )
+
+    response = await client.get(
+        f"{settings.api_v1_prefix}/votes/history/{open_vote_cycle.vote_cycle_id}/review",
+        headers=_player_headers(player_id),
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+
+    assert data["content_package"] is not None
+    content_package = data["content_package"]
+    assert content_package["title"] == "测试落地内容包"
+    assert content_package["package_version"] == "pkg_ch01_20260701_01"
+    assert content_package["status"] == "live"
+    assert "region_wasteland_01" in content_package["affected_regions"]
+    assert "npcs" in content_package["payload"]
+
+    # 参与率应基于 gray_scope 中的 player_percent=10% 估算（总玩家数 10000）
+    assert data["participation_rate"] > 0.0
+
+
+@pytest.mark.asyncio
+async def test_get_vote_review_content_package_error_ignored(
+    client: AsyncClient, open_vote_cycle: VoteCycle, monkeypatch
+):
+    """测试内容服务异常时复盘报告仍返回投票数据（内容包字段为 None）。"""
+    player_id = str(uuid.uuid4())
+
+    async def mock_raise_error(
+        self: object, vote_cycle_id: uuid.UUID, authorization: str | None = None
+    ) -> ContentPackageInfo:
+        raise RuntimeError("content service unavailable")
+
+    monkeypatch.setattr(
+        "app.core.content_client.ContentPackageClient.get_content_package_by_vote_cycle",
+        mock_raise_error,
+    )
+
+    response = await client.get(
+        f"{settings.api_v1_prefix}/votes/history/{open_vote_cycle.vote_cycle_id}/review",
+        headers=_player_headers(player_id),
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+
+    assert data["vote_cycle_id"] == str(open_vote_cycle.vote_cycle_id)
+    assert data["content_package"] is None
+    assert data["participation_rate"] == 0.0

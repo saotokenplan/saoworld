@@ -5,6 +5,7 @@ signal back_pressed
 signal item_selected(cycle_id: String)
 signal load_more_pressed
 signal view_content_package(cycle_id: String)
+signal view_review(cycle_id: String)
 
 @onready var back_button: Button = $TopBar/BackButton
 @onready var title_label: Label = $TopBar/TitleLabel
@@ -132,16 +133,25 @@ func _create_history_item(item: Dictionary) -> Control:
 	hbox_main.add_child(vbox)
 	
 	if is_landed:
+		var cycle_id: String = item.get("vote_cycle_id", item.get("cycle_id", ""))
+		
+		var review_button: Button = Button.new()
+		review_button.text = "复盘"
+		review_button.add_theme_font_size_override("font_size", 12)
+		review_button.custom_minimum_size = Vector2(60, 24)
+		review_button.pressed.connect(func():
+			view_review.emit(cycle_id)
+		)
+		hbox_main.add_child(review_button)
+		
 		var view_button: Button = Button.new()
 		view_button.text = "查看内容"
 		view_button.add_theme_font_size_override("font_size", 12)
 		view_button.custom_minimum_size = Vector2(80, 24)
-		hbox_main.add_child(view_button)
-		
-		var cycle_id: String = item.get("vote_cycle_id", item.get("cycle_id", ""))
 		view_button.pressed.connect(func():
 			view_content_package.emit(cycle_id)
 		)
+		hbox_main.add_child(view_button)
 	
 	panel.add_child(hbox_main)
 	panel.custom_minimum_size = Vector2(0, 100)

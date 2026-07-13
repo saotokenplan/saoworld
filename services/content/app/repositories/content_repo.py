@@ -61,6 +61,27 @@ class ContentRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_packages_by_vote_cycle_ids(
+        self, vote_cycle_ids: list[uuid.UUID]
+    ) -> list[ContentPackage]:
+        """根据多个投票周期 ID 批量查询内容包。
+
+        Args:
+            vote_cycle_ids: 投票周期 ID 列表
+
+        Returns:
+            匹配的内容包列表（保持输入顺序无关，由数据库排序）
+        """
+        if not vote_cycle_ids:
+            return []
+
+        result = await self.db.execute(
+            select(ContentPackage)
+            .where(ContentPackage.source_vote_cycle_id.in_(vote_cycle_ids))
+            .order_by(ContentPackage.created_at.desc())
+        )
+        return list(result.scalars().all())
+
     async def list_visible_packages(
         self,
         chapter_id: str | None = None,

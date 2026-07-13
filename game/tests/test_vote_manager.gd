@@ -372,3 +372,55 @@ func test_get_cached_chart_data_default_chart_type() -> void:
 	var result: Dictionary = vm.get_cached_chart_data("vc_001")
 	assert_eq(result["chart_type"], "pie", "默认图表类型应为pie")
 	vm.reset()
+
+# --- 投票复盘报告测试 ---
+
+func test_vote_review_cache_initial_state() -> void:
+	var vm := VoteManager
+	vm.reset()
+	assert_eq(vm._vote_review_cache, {}, "初始复盘报告缓存应为空字典")
+	vm.reset()
+
+func test_clear_vote_review_cache() -> void:
+	var vm := VoteManager
+	vm.reset()
+	vm._vote_review_cache = {"vc_001": {"vote_cycle_id": "vc_001"}}
+	vm.clear_vote_review_cache()
+	assert_eq(vm._vote_review_cache, {}, "清空后复盘报告缓存应为空字典")
+	vm.reset()
+
+func test_get_vote_review_empty() -> void:
+	var vm := VoteManager
+	vm.reset()
+	var result: Dictionary = vm.get_vote_review("vc_001")
+	assert_eq(result, {}, "未缓存的复盘报告应返回空字典")
+	vm.reset()
+
+func test_get_vote_review_with_data() -> void:
+	var vm := VoteManager
+	vm.reset()
+	var review_data: Dictionary = {
+		"vote_cycle_id": "vc_001",
+		"total_votes": 100,
+		"winning_candidate": {"title": "方向A"}
+	}
+	vm._vote_review_cache = {"vc_001": review_data}
+	var result: Dictionary = vm.get_vote_review("vc_001")
+	assert_eq(result["vote_cycle_id"], "vc_001", "应返回缓存的复盘报告")
+	assert_eq(result["total_votes"], 100, "总票数应匹配")
+	assert_eq(result["winning_candidate"]["title"], "方向A", "获胜候选标题应匹配")
+	vm.reset()
+
+func test_fetch_vote_review_method_exists() -> void:
+	var vm := VoteManager
+	assert_true(vm.has_method("fetch_vote_review"), "VoteManager 应有 fetch_vote_review 方法")
+	assert_true(vm.has_method("get_vote_review"), "VoteManager 应有 get_vote_review 方法")
+	assert_true(vm.has_method("clear_vote_review_cache"), "VoteManager 应有 clear_vote_review_cache 方法")
+	vm.reset()
+
+func test_fetch_vote_review_empty_cycle_id() -> void:
+	var vm := VoteManager
+	vm.reset()
+	vm.fetch_vote_review("")
+	assert_eq(vm.last_error.get("code", ""), "INVALID_VOTE_CYCLE_ID", "空周期ID应返回 INVALID_VOTE_CYCLE_ID")
+	vm.reset()

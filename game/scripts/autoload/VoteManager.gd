@@ -14,6 +14,7 @@ signal reply_created(reply: Dictionary)
 signal discussion_like_changed(discussion_id: String, liked: bool, like_count: int)
 signal vote_progress_updated(progress: Dictionary)
 signal chart_data_loaded(chart_data: Dictionary)
+signal vote_review_loaded(review_data: Dictionary)
 
 var current_cycle: Dictionary = {}
 var candidates: Array[Dictionary] = []
@@ -32,6 +33,7 @@ var progress_poll_timer: Timer = null
 var progress_poll_interval: int = 10
 var is_polling_progress: bool = false
 var _chart_data_cache: Dictionary = {}
+var _vote_review_cache: Dictionary = {}
 
 func _ready() -> void:
 	APIManager.auth_error.connect(_on_auth_error)
@@ -221,6 +223,7 @@ func reset() -> void:
 	last_error.clear()
 	current_progress.clear()
 	_chart_data_cache.clear()
+	_vote_review_cache.clear()
 	stop_progress_polling()
 
 func get_vote_history_with_landing() -> Array[Dictionary]:
@@ -256,6 +259,32 @@ func get_affected_regions(vote_item: Dictionary) -> Array[String]:
 		else:
 			result.append(str(region))
 	return result
+
+func fetch_vote_review(vote_cycle_id: String) -> void:
+	if vote_cycle_id == "":
+		last_error = {"code": "INVALID_VOTE_CYCLE_ID", "message": "投票周期ID不能为空"}
+		vote_error.emit("INVALID_VOTE_CYCLE_ID", "投票周期ID不能为空")
+		return
+	
+	_set_loading(true)
+	var endpoint: String = "/votes/history/%s/review" % vote_cycle_id
+	var result: Dictionary = APIManager.get(endpoint)
+	
+	if result.get("success", false):
+		var data: Dictionary = result.get("data", {})
+		_vote_review_cache[vote_cycle_id] = data
+		last_error.clear()
+		vote_review_loaded.emit(data)
+	else:
+		_handle_vote_error(result)
+	
+	_set_loading(false)
+
+func get_vote_review(vote_cycle_id: String) -> Dictionary:
+	return _vote_review_cache.get(vote_cycle_id, {})
+
+func clear_vote_review_cache() -> void:
+	_vote_review_cache.clear()
 
 func fetch_discussions(vote_cycle_id: String, sort_by: String = "time", limit: int = 20, offset: int = 0) -> void:
 	_set_loading(true)
