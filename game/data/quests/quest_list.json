@@ -140,6 +140,110 @@
       "start_npc": "npc_scavenger_leader",
       "end_npc": "npc_scavenger_leader",
       "region": "region_expansion_grayvalley"
+    },
+    {
+      "quest_id": "quest_forest_introduction",
+      "title": "森林向导",
+      "description": "跟随莱拉·迷雾熟悉幽光森林的环境",
+      "type": "side",
+      "chapter": "chapter_02",
+      "status": "available",
+      "prerequisites": ["quest_main_ch01_start"],
+      "objectives": [
+        {"id": "obj_talk_guide", "description": "找到莱拉·迷雾", "type": "npc", "target": "npc_forest_guide"},
+        {"id": "obj_follow_guide", "description": "跟随莱拉游览森林", "type": "travel", "target": "loc_forest_moonlake"},
+        {"id": "obj_visit_ancient_tree", "description": "参观精灵古树", "type": "location", "target": "loc_forest_ancient_tree"},
+        {"id": "obj_return_camp", "description": "返回自由领地营地", "type": "location", "target": "loc_forest_camp"}
+      ],
+      "rewards": {"experience": 100, "reputation": {"faction_freehold": 20}},
+      "failure_condition": null,
+      "start_npc": "npc_forest_guide",
+      "end_npc": "npc_forest_leader",
+      "region": "region_expansion_westforest"
+    },
+    {
+      "quest_id": "quest_forest_guardian",
+      "title": "古树的守护者",
+      "description": "调查精灵古树衰弱的原因，帮助恢复森林的生机",
+      "type": "side",
+      "chapter": "chapter_02",
+      "status": "available",
+      "prerequisites": ["quest_main_ch01_start"],
+      "objectives": [
+        {"id": "obj_talk_forest_leader", "description": "与艾琳·绿风交谈", "type": "npc", "target": "npc_forest_leader"},
+        {"id": "obj_investigate_tree", "description": "调查精灵古树的状况", "type": "explore", "target": "loc_forest_ancient_tree"},
+        {"id": "obj_find_source", "description": "找到古树衰弱的源头", "type": "explore", "target": "loc_forest_deep"},
+        {"id": "obj_defeat_corruption", "description": "清除侵蚀古树的腐化力量", "type": "combat", "target": 6},
+        {"id": "obj_restore_tree", "description": "帮助古树恢复生机", "type": "story", "target": "restore_tree"}
+      ],
+      "rewards": {"experience": 400, "reputation": {"faction_freehold": 100}, "gold": 150},
+      "failure_condition": null,
+      "start_npc": "npc_forest_leader",
+      "end_npc": "npc_forest_leader",
+      "region": "region_expansion_westforest"
+    },
+    {
+      "quest_id": "quest_oasis_caravan",
+      "title": "商队救援",
+      "description": "帮助丰收商会救援被困在沙漠边缘的商队",
+      "type": "side",
+      "chapter": "chapter_02",
+      "status": "available",
+      "prerequisites": ["quest_main_ch01_start"],
+      "objectives": [
+        {"id": "obj_talk_merchant", "description": "与萨拉丁·金砂交谈", "type": "npc", "target": "npc_oasis_merchant"},
+        {"id": "obj_reach_desert_edge", "description": "前往沙漠边缘", "type": "travel", "target": "loc_oasis_desert_edge"},
+        {"id": "obj_defeat_bandits", "description": "击败围攻商队的强盗", "type": "combat", "target": 5},
+        {"id": "obj_rescue_caravan", "description": "解救被困的商队", "type": "rescue", "target": "npc_caravan_master"},
+        {"id": "obj_return_oasis", "description": "返回绿洲向萨拉丁报告", "type": "npc", "target": "npc_oasis_merchant"}
+      ],
+      "rewards": {"experience": 350, "reputation": {"faction_harvest": 80}, "gold": 200},
+      "failure_condition": {"type": "time_limit", "minutes": 25},
+      "start_npc": "npc_oasis_merchant",
+      "end_npc": "npc_oasis_merchant",
+      "region": "region_expansion_southoasis"
+    },
+    {
+      "quest_id": "quest_oasis_secret",
+      "title": "神庙的秘密",
+      "description": "探索绿洲神庙地下的古老遗迹，寻找沙漠之神留下的宝藏",
+      "type": "side",
+      "chapter": "chapter_02",
+      "status": "available",
+      "prerequisites": ["quest_main_ch01_start"],
+      "objectives": [
+        {"id": "obj_talk_priest", "description": "与赛义德·圣光交谈", "type": "npc", "target": "npc_oasis_priest"},
+        {"id": "obj_find_secret_entrance", "description": "找到神庙地下的秘密入口", "type": "explore", "target": "loc_oasis_temple"},
+        {"id": "obj_explore_ruins", "description": "探索古老遗迹", "type": "explore", "target": "loc_oasis_underground"},
+        {"id": "obj_defeat_guardian", "description": "击败遗迹守护者", "type": "combat", "target": 1},
+        {"id": "obj_retrieve_treasure", "description": "获取沙漠之神的宝藏", "type": "collect", "target": 1},
+        {"id": "obj_return_temple", "description": "返回神庙向祭司报告", "type": "npc", "target": "npc_oasis_priest"}
+      ],
+      "rewards": {"experience": 500, "gold": 300},
+      "failure_condition": null,
+      "start_npc": "npc_oasis_priest",
+      "end_npc": "npc_oasis_priest",
+      "region": "region_expansion_southoasis"
+    },
+    {
+      "quest_id": "quest_oasis_trade",
+      "title": "绿洲商人",
+      "description": "帮助阿米尔·丝路完成一笔特殊的交易",
+      "type": "side",
+      "chapter": "chapter_02",
+      "status": "available",
+      "prerequisites": ["quest_main_ch01_start"],
+      "objectives": [
+        {"id": "obj_talk_trader", "description": "与阿米尔·丝路交谈", "type": "npc", "target": "npc_oasis_trader"},
+        {"id": "obj_collect_items", "description": "收集交易所需的物品", "type": "collect", "target": 3},
+        {"id": "obj_deliver_items", "description": "将物品交付给买家", "type": "npc", "target": "npc_oasis_merchant"},
+        {"id": "obj_return_trader", "description": "向阿米尔报告交易完成", "type": "npc", "target": "npc_oasis_trader"}
+      ],
+      "rewards": {"experience": 150, "reputation": {"faction_harvest": 30}, "gold": 100},
+      "failure_condition": null,
+      "start_npc": "npc_oasis_trader",
+      "end_npc": "npc_oasis_trader",
+      "region": "region_expansion_southoasis"
     }
   ]
 }
