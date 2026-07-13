@@ -45,6 +45,15 @@ tools/
 │   ├── schema.py                # 数据结构定义
 │   ├── tests/                   # 测试用例（36 个）
 │   └── pyproject.toml           # 项目配置
+├── perf_test/          # 性能压测工具
+│   ├── stats.py             # 延迟统计（p50/p95/p99/qps）
+│   ├── load_runner.py       # 异步负载执行器（httpx + asyncio）
+│   ├── threshold.py         # 阈值校验（blocker/warn）
+│   ├── report.py            # Markdown/JSON 报告生成
+│   ├── scenarios.py         # 核心接口场景（vote_submit/vote_query/content_query）
+│   ├── cli.py               # 命令行入口
+│   ├── tests/               # 测试用例（63 个）
+│   └── pyproject.toml       # 项目配置
 ├── playtest/           # 端到端集成测试框架
 │   ├── conftest.py         # 测试夹具
 │   ├── test_vote_flow.py   # 投票流程集成测试
@@ -170,6 +179,38 @@ cd tools/playtest
 # 运行测试
 pip install -e .
 python -m pytest -q  # 15 个端到端测试通过
+```
+
+### 5. Perf Test - 性能压测工具
+
+针对核心接口的异步压测工具，验证 `docs/20-specs/backend-data-spec.md` 等规范中的响应时间要求。
+
+**核心能力**：
+- 异步负载执行（`httpx` + `asyncio.Semaphore` 控制并发）
+- 延迟统计（min / avg / p50 / p95 / p99 / max / qps / error_rate）
+- 阈值校验（blocker / warn 级别）
+- Markdown / JSON 报告生成
+- 内置核心场景：`vote_submit`（p95 < 300ms）、`vote_query`（p95 < 100ms）、`content_query`（p95 < 100ms）
+
+```bash
+# 进入 perf_test 目录
+cd tools/perf_test
+
+# 运行全部默认场景
+pip install -e ".[dev]"
+python -m perf_test.cli --base-url http://localhost:8001
+
+# 仅运行投票查询场景
+python -m perf_test.cli --base-url http://localhost:8001 --scenario vote_query
+
+# 携带请求头（JWT Token 等）运行
+python -m perf_test.cli --base-url http://localhost:8001 \\
+  --header "Authorization: Bearer $TOKEN" \\
+  --format markdown \\
+  --output perf-report.md
+
+# 运行测试
+python -m pytest -q  # 63 个测试全部通过
 ```
 
 ## 运维脚本
