@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, Header, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
-from app.core.deps import RequireOpsScope, UserPayload
+from app.core.deps import RequireOpsScope, UserPayload, require_scope
+from app.schemas.auth import Scope
 from app.core.errors import OpsErrorCodes, raise_ops_error
 from app.core.metrics import (
     record_dashboard_view,
@@ -13,6 +14,9 @@ from app.core.metrics import (
     record_vote_cycle_op,
     record_content_op,
     record_review_op,
+    record_event_created,
+    record_event_trigger,
+    set_active_events_count,
 )
 from app.core.requirement_generator import generate_requirements_from_insight
 from app.core.vote_service_client import VoteServiceClient
@@ -35,6 +39,13 @@ from app.repositories.audit_repo import (
     ACTION_CONTENT_ROLLBACK,
     ACTION_REVIEW_APPROVE,
     ACTION_REVIEW_REJECT,
+    ACTION_EVENT_CREATE,
+    ACTION_EVENT_UPDATE,
+    ACTION_EVENT_ACTIVATE,
+    ACTION_EVENT_PAUSE,
+    ACTION_EVENT_END,
+    ACTION_EVENT_DELETE,
+    ACTION_EVENT_QUERY,
     RESOURCE_ANALYTICS,
     RESOURCE_DASHBOARD,
     RESOURCE_OPS_ACTION,
@@ -44,6 +55,7 @@ from app.repositories.audit_repo import (
     RESOURCE_VOTE_CYCLE,
     RESOURCE_CONTENT_PACKAGE,
     RESOURCE_REVIEW_OBJECT,
+    RESOURCE_OPS_EVENT,
     AuditRepository,
 )
 from app.repositories.analytics_repo import AnalyticsRepository
@@ -51,6 +63,7 @@ from app.repositories.dashboard_repo import DashboardRepository
 from app.repositories.insight_repo import InsightRepository
 from app.repositories.ops_action_repo import OpsActionRepository
 from app.repositories.requirement_repo import RequirementRepository
+from app.repositories.event_repo import EventRepository
 from app.schemas.ops import (
     AnalyticsOverview,
     AnalyticsReportItem,
@@ -80,6 +93,9 @@ from app.schemas.ops import (
     VoteAnalyticsItem,
     VoteCycleCreateRequest,
     VoteCycleResponse,
+    EventCreateRequest,
+    EventUpdateRequest,
+    EventResponse,
 )
 
 router = APIRouter()
@@ -1986,6 +2002,561 @@ async def get_review_stats(
     response_data = ReviewStatsResponse(**stats_data) if isinstance(stats_data, dict) else ReviewStatsResponse()
 
     record_review_op("stats")
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+# ============================================================
+# 运营事件 API
+# ============================================================
+
+
+@router.post(
+    "/ops/events",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        409: {"description": "Event name exists or time overlap"},
+    },
+    tags=["ops-events"],
+)
+async def create_event(
+    body: EventCreateRequest,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[EventResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = EventRepository(db)
+
+    existing = await repo.get_event_by_name(body.event_name)
+    if existing is not None:
+        raise_ops_error(
+            OpsErrorCodes.EVENT_NAME_EXISTS,
+            f"事件名称已存在: {body.event_name}",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    from app.core.event_engine import EventEngine
+    valid, errors = EventEngine.validate_event_config(body.model_dump())
+    if not valid:
+        raise_ops_error(
+            OpsErrorCodes.INVALID_EVENT_CONFIG,
+            f"事件配置无效: {'; '.join(errors)}",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    event = await repo.create_event(
+        event_name=body.event_name,
+        event_type=body.event_type.value,
+        start_at=body.start_at,
+        end_at=body.end_at,
+        target_scope=body.target_scope.value,
+        target_scope_jsonb=body.target_scope_jsonb,
+        reward_config_jsonb=body.reward_config_jsonb,
+        multiplier_config_jsonb=body.multiplier_config_jsonb,
+        description=body.description,
+        rules_jsonb=body.rules_jsonb,
+        created_by=current_user.user_id,
+    )
+
+    response_data = EventResponse.model_validate(event)
+
+    record_event_created(body.event_type.value)
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_EVENT_CREATE,
+        resource_type=RESOURCE_OPS_EVENT,
+        resource_id=event.event_id,
+        request_payload_jsonb=body.model_dump(mode="json"),
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/events",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["ops-events"],
+)
+async def list_events(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    event_type: str | None = Query(default=None),
+    event_status: str | None = Query(default=None, alias="status"),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[EventResponse]]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = EventRepository(db)
+    events, total = await repo.list_events(
+        event_type=event_type,
+        status=event_status,
+        limit=limit,
+        offset=offset,
+    )
+
+    response_data = [EventResponse.model_validate(e) for e in events]
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_EVENT_QUERY,
+        resource_type=RESOURCE_OPS_EVENT,
+        request_payload_jsonb={
+            "event_type": event_type,
+            "status": event_status,
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/events/active",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["ops-events"],
+)
+async def get_active_events_ops(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[EventResponse]]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = EventRepository(db)
+    events = await repo.get_active_events()
+
+    response_data = [EventResponse.model_validate(e) for e in events]
+    set_active_events_count(len(response_data))
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/events/{event_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Event not found"},
+    },
+    tags=["ops-events"],
+)
+async def get_event_detail(
+    event_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[EventResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = EventRepository(db)
+    event = await repo.get_event_by_id(event_id)
+
+    if event is None:
+        raise_ops_error(
+            OpsErrorCodes.EVENT_NOT_FOUND,
+            "运营事件不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    response_data = EventResponse.model_validate(event)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.put(
+    "/ops/events/{event_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Event not found"},
+    },
+    tags=["ops-events"],
+)
+async def update_event(
+    event_id: uuid.UUID,
+    body: EventUpdateRequest,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[EventResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = EventRepository(db)
+    event = await repo.get_event_by_id(event_id)
+
+    if event is None:
+        raise_ops_error(
+            OpsErrorCodes.EVENT_NOT_FOUND,
+            "运营事件不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if body.event_name is not None and body.event_name != event.event_name:
+        existing = await repo.get_event_by_name(body.event_name)
+        if existing is not None:
+            raise_ops_error(
+                OpsErrorCodes.EVENT_NAME_EXISTS,
+                f"事件名称已存在: {body.event_name}",
+                request_id,
+                status_code=status.HTTP_409_CONFLICT,
+            )
+
+    updated = await repo.update_event(
+        event_id=event_id,
+        event_name=body.event_name,
+        event_type=body.event_type.value if body.event_type else None,
+        start_at=body.start_at,
+        end_at=body.end_at,
+        target_scope=body.target_scope.value if body.target_scope else None,
+        target_scope_jsonb=body.target_scope_jsonb,
+        reward_config_jsonb=body.reward_config_jsonb,
+        multiplier_config_jsonb=body.multiplier_config_jsonb,
+        description=body.description,
+        rules_jsonb=body.rules_jsonb,
+    )
+
+    assert updated is not None
+    response_data = EventResponse.model_validate(updated)
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_EVENT_UPDATE,
+        resource_type=RESOURCE_OPS_EVENT,
+        resource_id=event_id,
+        request_payload_jsonb=body.model_dump(exclude_unset=True, mode="json"),
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/ops/events/{event_id}/activate",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Event not found"},
+        409: {"description": "Invalid status transition"},
+    },
+    tags=["ops-events"],
+)
+async def activate_event(
+    event_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[EventResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = EventRepository(db)
+    event = await repo.get_event_by_id(event_id)
+
+    if event is None:
+        raise_ops_error(
+            OpsErrorCodes.EVENT_NOT_FOUND,
+            "运营事件不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if event.status not in ("draft", "paused"):
+        raise_ops_error(
+            OpsErrorCodes.INVALID_EVENT_STATUS,
+            f"当前状态 {event.status} 不允许激活",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    updated = await repo.update_event_status(event_id, "active")
+    assert updated is not None
+    response_data = EventResponse.model_validate(updated)
+
+    record_event_trigger(updated.event_type)
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_EVENT_ACTIVATE,
+        resource_type=RESOURCE_OPS_EVENT,
+        resource_id=event_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/ops/events/{event_id}/pause",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Event not found"},
+        409: {"description": "Invalid status transition"},
+    },
+    tags=["ops-events"],
+)
+async def pause_event(
+    event_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[EventResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = EventRepository(db)
+    event = await repo.get_event_by_id(event_id)
+
+    if event is None:
+        raise_ops_error(
+            OpsErrorCodes.EVENT_NOT_FOUND,
+            "运营事件不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if event.status != "active":
+        raise_ops_error(
+            OpsErrorCodes.INVALID_EVENT_STATUS,
+            f"当前状态 {event.status} 不允许暂停",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    updated = await repo.update_event_status(event_id, "paused")
+    assert updated is not None
+    response_data = EventResponse.model_validate(updated)
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_EVENT_PAUSE,
+        resource_type=RESOURCE_OPS_EVENT,
+        resource_id=event_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/ops/events/{event_id}/end",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Event not found"},
+        409: {"description": "Invalid status transition"},
+    },
+    tags=["ops-events"],
+)
+async def end_event(
+    event_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[EventResponse]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = EventRepository(db)
+    event = await repo.get_event_by_id(event_id)
+
+    if event is None:
+        raise_ops_error(
+            OpsErrorCodes.EVENT_NOT_FOUND,
+            "运营事件不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if event.status not in ("active", "paused"):
+        raise_ops_error(
+            OpsErrorCodes.INVALID_EVENT_STATUS,
+            f"当前状态 {event.status} 不允许结束",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    updated = await repo.update_event_status(event_id, "ended")
+    assert updated is not None
+    response_data = EventResponse.model_validate(updated)
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_EVENT_END,
+        resource_type=RESOURCE_OPS_EVENT,
+        resource_id=event_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.delete(
+    "/ops/events/{event_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Event not found"},
+    },
+    tags=["ops-events"],
+)
+async def delete_event(
+    event_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[dict]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = EventRepository(db)
+    deleted = await repo.delete_event(event_id)
+
+    if not deleted:
+        raise_ops_error(
+            OpsErrorCodes.EVENT_NOT_FOUND,
+            "运营事件不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_EVENT_DELETE,
+        resource_type=RESOURCE_OPS_EVENT,
+        resource_id=event_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data={"deleted": True, "event_id": event_id},
+        trace_id=trace_id,
+    )
+
+
+# ============================================================
+# 玩家侧事件 API
+# ============================================================
+
+
+@router.get(
+    "/player/events/active",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["player-events"],
+)
+async def get_player_active_events(
+    request: Request,
+    current_user: UserPayload = require_scope(Scope.EVENTS_READ),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[EventResponse]]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = EventRepository(db)
+    events = await repo.get_active_events()
+
+    response_data = [EventResponse.model_validate(e) for e in events]
 
     return EnvelopeResponse(
         request_id=request_id,

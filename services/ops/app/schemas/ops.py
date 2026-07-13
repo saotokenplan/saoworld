@@ -393,3 +393,76 @@ class ReviewStatsResponse(BaseModel):
     total_rejected: int = 0
     total_needs_revision: int = 0
     by_risk_level: dict[str, int] | None = None
+
+
+# ---- 运营事件 Schema ----
+
+
+class EventType(str, Enum):
+    DOUBLE_REWARD = "double_reward"
+    LOGIN_BONUS = "login_bonus"
+    LIMITED_TIME = "limited_time"
+    SALE = "sale"
+    CUSTOM = "custom"
+
+
+class EventStatus(str, Enum):
+    DRAFT = "draft"
+    ACTIVE = "active"
+    PAUSED = "paused"
+    ENDED = "ended"
+    ARCHIVED = "archived"
+
+
+class TargetScope(str, Enum):
+    ALL = "all"
+    REGION = "region"
+    PLAYER_LEVEL = "player_level"
+    GUILD = "guild"
+
+
+class EventCreateRequest(BaseModel):
+    event_name: str
+    event_type: EventType
+    start_at: datetime
+    end_at: datetime
+    target_scope: TargetScope = TargetScope.ALL
+    target_scope_jsonb: dict[str, object] | None = None
+    reward_config_jsonb: dict[str, object] | None = None
+    multiplier_config_jsonb: dict[str, object] | None = None
+    description: str | None = None
+    rules_jsonb: dict[str, object] | None = None
+
+
+class EventUpdateRequest(BaseModel):
+    event_name: str | None = None
+    event_type: EventType | None = None
+    start_at: datetime | None = None
+    end_at: datetime | None = None
+    target_scope: TargetScope | None = None
+    target_scope_jsonb: dict[str, object] | None = None
+    reward_config_jsonb: dict[str, object] | None = None
+    multiplier_config_jsonb: dict[str, object] | None = None
+    description: str | None = None
+    rules_jsonb: dict[str, object] | None = None
+
+
+class EventResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    event_id: uuid.UUID
+    event_name: str
+    event_type: str
+    status: str
+    start_at: datetime
+    end_at: datetime
+    target_scope: str
+    target_scope_jsonb: dict[str, object] | None = None
+    reward_config_jsonb: dict[str, object] | None = None
+    multiplier_config_jsonb: dict[str, object] | None = None
+    description: str | None = None
+    rules_jsonb: dict[str, object] | None = None
+    created_by: str
+    schema_version: int
+    created_at: datetime
+    updated_at: datetime
