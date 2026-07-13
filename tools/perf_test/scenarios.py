@@ -6,6 +6,9 @@
 - vote_submit_scenario：投票提交（POST /api/v1/votes/submit）
 - vote_query_scenario：投票查询（GET /api/v1/votes/current）
 - content_query_scenario：内容查询（GET /api/v1/content/updates）
+- world_region_query_scenario：世界区域查询（GET /api/v1/world/regions）
+- player_profile_query_scenario：玩家档案查询（GET /api/v1/player/profile）
+- content_package_detail_scenario：内容包详情查询（GET /api/v1/content/packages/{id}）
 """
 
 from __future__ import annotations
@@ -97,6 +100,55 @@ def content_query_scenario(
     )
 
 
+def world_region_query_scenario(
+    base_url: str,
+    headers: Mapping[str, str],
+) -> LoadConfig:
+    """世界区域查询场景（GET /api/v1/world/regions）。"""
+    return LoadConfig(
+        base_url=base_url,
+        method="GET",
+        path="/api/v1/world/regions",
+        concurrency=20,
+        total_requests=100,
+        timeout_seconds=5.0,
+        headers=dict(headers),
+    )
+
+
+def player_profile_query_scenario(
+    base_url: str,
+    headers: Mapping[str, str],
+) -> LoadConfig:
+    """玩家档案查询场景（GET /api/v1/player/profile）。"""
+    return LoadConfig(
+        base_url=base_url,
+        method="GET",
+        path="/api/v1/player/profile",
+        concurrency=10,
+        total_requests=50,
+        timeout_seconds=5.0,
+        headers=dict(headers),
+    )
+
+
+def content_package_detail_scenario(
+    base_url: str,
+    headers: Mapping[str, str],
+    package_id: str = "00000000-0000-0000-0000-000000000001",
+) -> LoadConfig:
+    """内容包详情查询场景（GET /api/v1/content/packages/{id}）。"""
+    return LoadConfig(
+        base_url=base_url,
+        method="GET",
+        path=f"/api/v1/content/packages/{package_id}",
+        concurrency=20,
+        total_requests=100,
+        timeout_seconds=5.0,
+        headers=dict(headers),
+    )
+
+
 VOTE_SUBMIT_SCENARIO = Scenario(
     name="vote_submit",
     description="投票提交接口：POST /api/v1/votes/submit，要求 p95 < 300ms",
@@ -118,6 +170,27 @@ CONTENT_QUERY_SCENARIO = Scenario(
     thresholds=get_default_thresholds("content_query"),
 )
 
+WORLD_REGION_QUERY_SCENARIO = Scenario(
+    name="world_region_query",
+    description="世界区域查询接口：GET /api/v1/world/regions，要求 p95 < 100ms",
+    config_factory=world_region_query_scenario,
+    thresholds=get_default_thresholds("world_region_query"),
+)
+
+PLAYER_PROFILE_QUERY_SCENARIO = Scenario(
+    name="player_profile_query",
+    description="玩家档案查询接口：GET /api/v1/player/profile，要求 p95 < 200ms",
+    config_factory=player_profile_query_scenario,
+    thresholds=get_default_thresholds("player_profile_query"),
+)
+
+CONTENT_PACKAGE_DETAIL_SCENARIO = Scenario(
+    name="content_package_detail",
+    description="内容包详情查询接口：GET /api/v1/content/packages/{id}，要求 p95 < 100ms",
+    config_factory=content_package_detail_scenario,
+    thresholds=get_default_thresholds("content_package_detail"),
+)
+
 
 def default_scenarios() -> list[Scenario]:
     """获取默认场景列表。"""
@@ -125,4 +198,7 @@ def default_scenarios() -> list[Scenario]:
         VOTE_SUBMIT_SCENARIO,
         VOTE_QUERY_SCENARIO,
         CONTENT_QUERY_SCENARIO,
+        WORLD_REGION_QUERY_SCENARIO,
+        PLAYER_PROFILE_QUERY_SCENARIO,
+        CONTENT_PACKAGE_DETAIL_SCENARIO,
     ]

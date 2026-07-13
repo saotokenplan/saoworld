@@ -1,0 +1,106 @@
+# SLO Definitions - Service Level Objectives
+# 基于 docs/20-specs/backend-data-spec.md 性能要求
+
+slo_version: 1
+updated_at: "2026-07-13"
+
+slos:
+  # 投票服务 SLO
+  - id: SLO-VOTE-001
+    name: Vote Submit Latency
+    service: vote
+    target: 0.99  # 99% 的请求
+    indicator:
+      metric: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service="vote",method="POST",path="/api/v1/votes/submit"}[5m]))
+      threshold_ms: 300
+    window: 30d
+    owner: Backend Agent
+    severity: blocker
+
+  - id: SLO-VOTE-002
+    name: Vote Query Latency
+    service: vote
+    target: 0.99
+    indicator:
+      metric: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service="vote",method="GET",path="/api/v1/votes/current"}[5m]))
+      threshold_ms: 100
+    window: 30d
+    owner: Backend Agent
+    severity: blocker
+
+  - id: SLO-VOTE-003
+    name: Vote Availability
+    service: vote
+    target: 0.999  # 99.9% 可用性
+    indicator:
+      metric: rate(http_requests_total{service="vote",status=~"5.."}[5m]) / rate(http_requests_total{service="vote"}[5m])
+      threshold: 0.001
+    window: 30d
+    owner: Backend Agent
+    severity: blocker
+
+  # 内容服务 SLO
+  - id: SLO-CONTENT-001
+    name: Content Query Latency
+    service: content
+    target: 0.99
+    indicator:
+      metric: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service="content",method="GET"}[5m]))
+      threshold_ms: 100
+    window: 30d
+    owner: Backend Agent
+    severity: blocker
+
+  - id: SLO-CONTENT-002
+    name: Content Availability
+    service: content
+    target: 0.999
+    indicator:
+      metric: rate(http_requests_total{service="content",status=~"5.."}[5m]) / rate(http_requests_total{service="content"}[5m])
+      threshold: 0.001
+    window: 30d
+    owner: Backend Agent
+    severity: blocker
+
+  # 世界服务 SLO
+  - id: SLO-WORLD-001
+    name: World Region Query Latency
+    service: world
+    target: 0.99
+    indicator:
+      metric: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service="world",method="GET"}[5m]))
+      threshold_ms: 100
+    window: 30d
+    owner: Backend Agent
+    severity: blocker
+
+  # 玩家服务 SLO
+  - id: SLO-PLAYER-001
+    name: Player Profile Query Latency
+    service: player
+    target: 0.99
+    indicator:
+      metric: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service="player",method="GET",path="/api/v1/player/profile"}[5m]))
+      threshold_ms: 200
+    window: 30d
+    owner: Backend Agent
+    severity: blocker
+
+  # 网关服务 SLO
+  - id: SLO-GATEWAY-001
+    name: Gateway Availability
+    service: gateway
+    target: 0.9999  # 99.99% 可用性（网关必须高可用）
+    indicator:
+      metric: rate(http_requests_total{service="gateway",status=~"5.."}[5m]) / rate(http_requests_total{service="gateway"}[5m])
+      threshold: 0.0001
+    window: 30d
+    owner: Backend Agent
+    severity: blocker
+
+  # 错误预算策略
+error_budget_policy:
+  fast_burn_rate: 14.4  # 1小时内消耗超过 14.4x 预算速率
+  slow_burn_rate: 6.0   # 6小时内消耗超过 6x 预算速率
+  fast_window: 1h
+  slow_window: 6h

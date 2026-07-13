@@ -135,6 +135,21 @@ DEFAULT_THRESHOLDS: dict[str, list[Threshold]] = {
         Threshold(name="content_query_p99", metric="p99_ms", max_value=200.0, severity="warn"),
         Threshold(name="content_query_error_rate", metric="error_rate", max_value=0.01, severity="blocker"),
     ],
+    "world_region_query": [
+        Threshold(name="world_region_query_p95", metric="p95_ms", max_value=100.0, severity="blocker"),
+        Threshold(name="world_region_query_p99", metric="p99_ms", max_value=200.0, severity="warn"),
+        Threshold(name="world_region_query_error_rate", metric="error_rate", max_value=0.01, severity="blocker"),
+    ],
+    "player_profile_query": [
+        Threshold(name="player_profile_query_p95", metric="p95_ms", max_value=200.0, severity="blocker"),
+        Threshold(name="player_profile_query_p99", metric="p99_ms", max_value=400.0, severity="warn"),
+        Threshold(name="player_profile_query_error_rate", metric="error_rate", max_value=0.01, severity="blocker"),
+    ],
+    "content_package_detail": [
+        Threshold(name="content_package_detail_p95", metric="p95_ms", max_value=100.0, severity="blocker"),
+        Threshold(name="content_package_detail_p99", metric="p99_ms", max_value=200.0, severity="warn"),
+        Threshold(name="content_package_detail_error_rate", metric="error_rate", max_value=0.01, severity="blocker"),
+    ],
 }
 
 

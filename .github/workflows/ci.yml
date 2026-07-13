@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [vote, world, content, generation, review, gateway, player, ops, workers, content_check, loop_logging, agents, playtest]
+        service: [vote, world, content, generation, review, gateway, player, ops, workers, content_check, loop_logging, agents, playtest, perf_test]
     steps:
       - uses: actions/checkout@v4
 
@@ -29,7 +29,7 @@ jobs:
         run: |
           if [ "${{ matrix.service }}" = "workers" ]; then
             cd workers
-          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging|agents|playtest)$ ]]; then
+          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging|agents|playtest|perf_test)$ ]]; then
             cd tools/${{ matrix.service }}
           else
             cd services/${{ matrix.service }}
@@ -40,7 +40,7 @@ jobs:
         run: |
           if [ "${{ matrix.service }}" = "workers" ]; then
             cd workers
-          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging|agents|playtest)$ ]]; then
+          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging|agents|playtest|perf_test)$ ]]; then
             cd tools/${{ matrix.service }}
           else
             cd services/${{ matrix.service }}
@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [vote, world, content, generation, review, gateway, player, ops, workers, content_check, loop_logging, agents, playtest]
+        service: [vote, world, content, generation, review, gateway, player, ops, workers, content_check, loop_logging, agents, playtest, perf_test]
     steps:
       - uses: actions/checkout@v4
 
@@ -65,7 +65,7 @@ jobs:
         run: |
           if [ "${{ matrix.service }}" = "workers" ]; then
             cd workers
-          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging|agents|playtest)$ ]]; then
+          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging|agents|playtest|perf_test)$ ]]; then
             cd tools/${{ matrix.service }}
           else
             cd services/${{ matrix.service }}
@@ -76,7 +76,7 @@ jobs:
         run: |
           if [ "${{ matrix.service }}" = "workers" ]; then
             cd workers && mypy .
-          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging|agents|playtest)$ ]]; then
+          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging|agents|playtest|perf_test)$ ]]; then
             cd tools/${{ matrix.service }} && mypy .
           else
             cd services/${{ matrix.service }} && mypy app
@@ -87,7 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [vote, world, content, generation, review, gateway, player, ops, workers, content_check, loop_logging, agents]
+        service: [vote, world, content, generation, review, gateway, player, ops, workers, content_check, loop_logging, agents, perf_test]
     steps:
       - uses: actions/checkout@v4
 
@@ -100,7 +100,7 @@ jobs:
         run: |
           if [ "${{ matrix.service }}" = "workers" ]; then
             cd workers
-          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging|agents)$ ]]; then
+          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging|agents|perf_test)$ ]]; then
             cd tools/${{ matrix.service }}
           else
             cd services/${{ matrix.service }}
@@ -111,7 +111,7 @@ jobs:
         run: |
           if [ "${{ matrix.service }}" = "workers" ]; then
             cd workers && pytest -v --tb=short
-          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging)$ ]]; then
+          elif [[ "${{ matrix.service }}" =~ ^(content_check|loop_logging|perf_test)$ ]]; then
             cd tools/${{ matrix.service }} && pytest -v --tb=short
           elif [ "${{ matrix.service }}" = "agents" ]; then
             cd tools/agents
