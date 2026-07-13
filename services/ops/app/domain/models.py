@@ -297,7 +297,9 @@ class Requirement(Base):
     insight_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     title: Mapped[str] = mapped_column(String(256), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending_review", server_default="pending_review")
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="pending_review", server_default="pending_review"
+    )
     priority: Mapped[str] = mapped_column(String(16), nullable=False, default="medium")
     target_scope: Mapped[str] = mapped_column(String(64), nullable=False, default="content")
     estimated_effort: Mapped[int] = mapped_column(Integer, nullable=False, default=1)

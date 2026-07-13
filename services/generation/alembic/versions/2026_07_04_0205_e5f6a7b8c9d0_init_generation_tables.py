@@ -1,7 +1,7 @@
 """init generation tables
 
 Revision ID: e5f6a7b8c9d0
-Revises: 
+Revises:
 Create Date: 2026-07-04 02:05:00.000000
 
 """
@@ -59,7 +59,11 @@ def upgrade() -> None:
     op.create_table(
         "generated_objects",
         sa.Column("object_id", sa.Uuid(), primary_key=True, server_default=sa.func.gen_random_uuid()),
-        sa.Column("request_id", sa.Uuid(), sa.ForeignKey("generation_requests.request_id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "request_id", sa.Uuid(),
+            sa.ForeignKey("generation_requests.request_id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("object_type", sa.String(length=64), nullable=False),
         sa.Column("schema_version", sa.Integer(), nullable=False, server_default="1"),
         sa.Column("object_payload_jsonb", sa.JSON(), nullable=False),

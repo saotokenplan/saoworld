@@ -21,17 +21,30 @@ class TestNPCGenerationIntegration:
             "region_key": "region_core",
             "role": "blacksmith",
             "location_key": "loc_test",
-            "description": "A skilled blacksmith who has worked in the forge for over 20 years. He is known for his exceptional craftsmanship and gruff but honest demeanor.",
+            "description": (
+                "A skilled blacksmith who has worked in the forge for over 20 years. "
+                "He is known for his exceptional craftsmanship and gruff but honest demeanor."
+            ),
             "personality": ["gruff", "skilled", "honest", "proud"],
             "traits": ["strong", "meticulous", "traditional"],
             "voice": "deep and gruff, with a metallic resonance",
-            "backstory": "Test Smith was born into a family of skilled craftsmen in the Ironward Alliance. From a young age, he showed exceptional talent for working with metal, spending countless hours in the forge alongside his father. Over the years, he honed his skills and became known throughout the region for creating weapons and armor of unmatched quality. His dedication to his craft is unmatched, and he takes great pride in providing adventurers with the tools they need to succeed.",
+            "backstory": (
+                "Test Smith was born into a family of skilled craftsmen in the Ironward Alliance. "
+                "From a young age, he showed exceptional talent for working with metal, "
+                "spending countless hours in the forge alongside his father. Over the years, "
+                "he honed his skills and became known throughout the region for creating weapons "
+                "and armor of unmatched quality. His dedication to his craft is unmatched, "
+                "and he takes great pride in providing adventurers with the tools they need to succeed."
+            ),
             "motivation": "To craft the finest weapons and armor for the Ironward Alliance.",
             "relationship_map": {"weapon_merchant": "supplier"},
             "dialog_style": "direct and to the point, often using forging metaphors",
             "dialog_nodes": {
                 "first_meet": {"id": "first_meet", "text": "Need a weapon or armor?", "speaker": "npc", "choices": []},
-                "about_work": {"id": "about_work", "text": "I've been forging for 20 years.", "speaker": "npc", "choices": []},
+                "about_work": {
+                    "id": "about_work", "text": "I've been forging for 20 years.",
+                    "speaker": "npc", "choices": [],
+                },
                 "has_quest": {"id": "has_quest", "text": "I need materials.", "speaker": "npc", "choices": []},
                 "quest_accepted": {"id": "quest_accepted", "text": "Great!", "speaker": "npc", "choices": []},
                 "quest_completed": {"id": "quest_completed", "text": "Thank you!", "speaker": "npc", "choices": []},

@@ -1793,11 +1793,20 @@ async def close_vote_cycle(
         await event_publisher.publish_vote_cycle_closed(
             vote_cycle_id=str(vote_cycle_id),
             chapter_id=cycle.chapter_id,
-            closed_at=updated_cycle.updated_at.isoformat() if updated_cycle.updated_at else datetime.now(timezone.utc).isoformat(),
+            closed_at=(
+                updated_cycle.updated_at.isoformat()
+                if updated_cycle.updated_at
+                else datetime.now(timezone.utc).isoformat()
+            ),
             trace_id=x_trace_id or "",
         )
     except Exception as exc:
-        logger.error("event_publish_failed", event_type="vote_cycle_closed", vote_cycle_id=str(vote_cycle_id), error=str(exc))
+        logger.error(
+            "event_publish_failed",
+            event_type="vote_cycle_closed",
+            vote_cycle_id=str(vote_cycle_id),
+            error=str(exc),
+        )
 
     return EnvelopeResponse(
         request_id=request_id,
@@ -1893,13 +1902,22 @@ async def finalize_vote_cycle(
             winning_candidate_id=str(updated_cycle.winning_candidate_id) if updated_cycle.winning_candidate_id else "",
             winning_candidate_name=winning_candidate_name,
             total_votes=total_votes,
-            finalized_at=updated_cycle.finalized_at.isoformat() if updated_cycle.finalized_at else datetime.now(timezone.utc).isoformat(),
+            finalized_at=(
+                updated_cycle.finalized_at.isoformat()
+                if updated_cycle.finalized_at
+                else datetime.now(timezone.utc).isoformat()
+            ),
             generated_params=generated_params,
             region_scope=region_scope,
             trace_id=x_trace_id or "",
         )
     except Exception as exc:
-        logger.error("event_publish_failed", event_type="vote_result_finalized", vote_cycle_id=str(vote_cycle_id), error=str(exc))
+        logger.error(
+            "event_publish_failed",
+            event_type="vote_result_finalized",
+            vote_cycle_id=str(vote_cycle_id),
+            error=str(exc),
+        )
 
     return EnvelopeResponse(
         request_id=request_id,

@@ -243,7 +243,9 @@ async def test_ops_create_player_quest_success(client: AsyncClient, ops_token: s
 
 
 @pytest.mark.asyncio
-async def test_ops_create_player_quest_already_exists(client: AsyncClient, ops_token: str, test_player, test_player_quest):
+async def test_ops_create_player_quest_already_exists(
+    client: AsyncClient, ops_token: str, test_player, test_player_quest,
+):
     response = await client.post(
         f"{settings.api_v1_prefix}/ops/players/{test_player.player_id}/quests",
         headers={

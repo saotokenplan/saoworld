@@ -1,7 +1,7 @@
 """Initialize gateway service tables
 
 Revision ID: 2026_07_08_2200_init_gateway_tables
-Revises: 
+Revises:
 Create Date: 2026-07-08 22:00:00
 
 """

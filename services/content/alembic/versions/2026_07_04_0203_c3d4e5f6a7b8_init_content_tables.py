@@ -1,7 +1,7 @@
 """init content tables
 
 Revision ID: c3d4e5f6a7b8
-Revises: 
+Revises:
 Create Date: 2026-07-04 02:03:00.000000
 
 """
@@ -74,7 +74,11 @@ def upgrade() -> None:
     op.create_table(
         "release_records",
         sa.Column("release_id", sa.Uuid(), primary_key=True, server_default=sa.func.gen_random_uuid()),
-        sa.Column("content_package_id", sa.Uuid(), sa.ForeignKey("content_packages.content_package_id"), nullable=False, index=True),
+        sa.Column(
+            "content_package_id", sa.Uuid(),
+            sa.ForeignKey("content_packages.content_package_id"),
+            nullable=False, index=True,
+        ),
         sa.Column("release_mode", sa.String(length=16), nullable=False),
         sa.Column("status", sa.String(length=16), nullable=False, server_default="queued"),
         sa.Column("gray_scope_jsonb", sa.JSON(), nullable=True),
@@ -97,7 +101,11 @@ def upgrade() -> None:
     op.create_table(
         "rollback_records",
         sa.Column("rollback_id", sa.Uuid(), primary_key=True, server_default=sa.func.gen_random_uuid()),
-        sa.Column("content_package_id", sa.Uuid(), sa.ForeignKey("content_packages.content_package_id"), nullable=False, index=True),
+        sa.Column(
+            "content_package_id", sa.Uuid(),
+            sa.ForeignKey("content_packages.content_package_id"),
+            nullable=False, index=True,
+        ),
         sa.Column("target_version", sa.String(length=32), nullable=False),
         sa.Column("rollback_reason", sa.Text(), nullable=False),
         sa.Column("operator_type", sa.String(length=16), nullable=False, server_default="ops"),

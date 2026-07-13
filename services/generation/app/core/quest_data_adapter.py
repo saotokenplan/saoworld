@@ -132,7 +132,10 @@ class QuestDataAdapter:
         for key, default in defaults.items():
             if quest_data.get(key) is None:
                 if key == "objectives":
-                    quest_data[key] = [{"id": "obj_1", "description": "Complete the objective", "type": "story", "target": "", "completed": False}]
+                    quest_data[key] = [
+                        {"id": "obj_1", "description": "Complete the objective",
+                         "type": "story", "target": "", "completed": False}
+                    ]
                 elif key == "rewards":
                     quest_data[key] = {"experience": 100, "gold": 50, "reputation": {}, "items": []}
                 else:
@@ -141,7 +144,10 @@ class QuestDataAdapter:
                 quest_data[key] = default
             elif isinstance(quest_data[key], (list, dict)) and len(quest_data[key]) == 0:
                 if key == "objectives":
-                    quest_data[key] = [{"id": "obj_1", "description": "Complete the objective", "type": "story", "target": "", "completed": False}]
+                    quest_data[key] = [
+                        {"id": "obj_1", "description": "Complete the objective",
+                         "type": "story", "target": "", "completed": False}
+                    ]
                 elif key == "rewards":
                     quest_data[key] = {"experience": 100, "gold": 50, "reputation": {}, "items": []}
                 else:

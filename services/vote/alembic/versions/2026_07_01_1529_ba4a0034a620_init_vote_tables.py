@@ -1,7 +1,7 @@
 """init vote tables
 
 Revision ID: ba4a0034a620
-Revises: 
+Revises:
 Create Date: 2026-07-01 15:29:07.060905
 
 """
@@ -46,7 +46,11 @@ def upgrade() -> None:
     op.create_table(
         "vote_candidates",
         sa.Column("candidate_id", sa.Uuid(), primary_key=True, server_default=sa.func.gen_random_uuid()),
-        sa.Column("vote_cycle_id", sa.Uuid(), sa.ForeignKey("vote_cycles.vote_cycle_id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "vote_cycle_id", sa.Uuid(),
+            sa.ForeignKey("vote_cycles.vote_cycle_id", ondelete="CASCADE"),
+            nullable=False, index=True,
+        ),
         sa.Column("title", sa.String(length=512), nullable=False),
         sa.Column("summary", sa.Text(), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),

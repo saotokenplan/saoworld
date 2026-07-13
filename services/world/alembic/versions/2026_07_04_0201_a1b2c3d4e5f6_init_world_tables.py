@@ -1,7 +1,7 @@
 """init world tables
 
 Revision ID: a1b2c3d4e5f6
-Revises: 
+Revises:
 Create Date: 2026-07-04 02:01:00.000000
 
 """

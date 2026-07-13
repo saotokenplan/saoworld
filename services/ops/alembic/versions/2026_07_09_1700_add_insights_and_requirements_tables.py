@@ -64,7 +64,10 @@ def upgrade() -> None:
         sa.Column("approved_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("trace_id", sa.String(length=128), nullable=True),
         sa.Column("schema_version", sa.Integer(), nullable=False, server_default="1"),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()"), index=True),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), nullable=False,
+            server_default=sa.text("now()"), index=True,
+        ),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
         sa.PrimaryKeyConstraint("requirement_id"),
         sa.CheckConstraint(
@@ -72,7 +75,10 @@ def upgrade() -> None:
             name="requirements_status_check",
         ),
         sa.CheckConstraint("priority IN ('low', 'medium', 'high', 'critical')", name="requirements_priority_check"),
-        sa.CheckConstraint("target_scope IN ('content', 'gameplay', 'system', 'world')", name="requirements_scope_check"),
+        sa.CheckConstraint(
+            "target_scope IN ('content', 'gameplay', 'system', 'world')",
+            name="requirements_scope_check",
+        ),
     )
     op.create_index("requirements_insight_idx", "requirements", ["insight_id"])
     op.create_index("requirements_status_idx", "requirements", ["status"])

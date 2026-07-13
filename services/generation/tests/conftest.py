@@ -52,7 +52,7 @@ async def setup_db():
 @pytest_asyncio.fixture
 async def client() -> AsyncGenerator[AsyncClient, None]:
     app.dependency_overrides[get_db] = override_get_db
-    
+
     mock_skeleton = {
         "skeleton_id": "skel_test_001",
         "world_version": "v1.0",
@@ -67,10 +67,10 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
         "reward_limits": {},
         "is_active": True,
     }
-    
+
     app.dependency_overrides.clear()
     app.dependency_overrides[get_db] = override_get_db
-    
+
     with patch("app.api.routes.skeleton_validator") as mock_validator:
         mock_validator.validate_generation_request = AsyncMock(return_value=mock_skeleton)
         transport = ASGITransport(app=app)

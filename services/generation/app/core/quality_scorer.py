@@ -86,7 +86,10 @@ class QualityScorer:
             reasons.append("Faction key should start with 'faction_'")
 
         role = payload.get("role", "")
-        valid_roles = ["blacksmith", "merchant", "guard", "healer", "quest_giver", "leader", "researcher", "farmer", "scavenger"]
+        valid_roles = [
+            "blacksmith", "merchant", "guard", "healer", "quest_giver",
+            "leader", "researcher", "farmer", "scavenger",
+        ]
         if role and role not in valid_roles:
             score -= 0.03
             reasons.append(f"Role '{role}' is not in valid roles list")
@@ -159,7 +162,10 @@ class QualityScorer:
                 if len(obj_desc) < 10:
                     score -= 0.02
                     reasons.append(f"Objective {idx} description is too short")
-                if obj_type and obj_type not in {"story", "location", "npc", "combat", "explore", "collect", "rescue", "travel", "quest"}:
+                if obj_type and obj_type not in {
+                    "story", "location", "npc", "combat", "explore",
+                    "collect", "rescue", "travel", "quest",
+                }:
                     score -= 0.02
                     reasons.append(f"Objective {idx} has invalid type: {obj_type}")
         else:
