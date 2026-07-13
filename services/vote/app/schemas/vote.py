@@ -284,3 +284,26 @@ class EnvelopeResponse(BaseModel, Generic[T]):
     data: T
     meta: PaginatedMeta | None = None
     trace_id: str | None = None
+
+
+# --- 图表数据相关 Schema ---
+
+
+class ChartDataItem(BaseModel):
+    """图表数据项。"""
+
+    candidate_id: uuid.UUID
+    candidate_name: str
+    votes: int
+    percentage: float = 0.0
+    color: str
+
+
+class ChartDataResponse(BaseModel):
+    """图表数据响应。"""
+
+    chart_type: str
+    vote_cycle_id: uuid.UUID
+    total_votes: int
+    total_weighted_votes: float = 0.0
+    items: list[ChartDataItem]
