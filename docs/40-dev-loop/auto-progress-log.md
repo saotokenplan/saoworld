@@ -25,3 +25,4 @@
 | 2026-07-13 20:00 | auto-20260713-2000 | Sprint 4 S4-02 投票讨论区（客户端与迁移脚本）- Alembic 迁移脚本 + VoteManager 讨论区扩展 + VoteDiscussionPanel 界面 + VotingPanel 集成 + 13 个 GUT 测试 | ✅ 已完成 |
 | 2026-07-13 21:00 | auto-20260713-2100 | S4-02 投票讨论区客户端测试补全 - VoteDiscussionPanel GUT 测试（30个用例）+ game/tests/README.md 测试清单同步更新 | ✅ 已完成 |
 | 2026-07-13 22:00 | auto-20260713-2200 | 代码质量修复 - 8处ruff未使用导入/变量 + player 3个mypy类型错误 + ops 14个mypy类型错误 + playtest 2个集成测试失败 + workers弃用API | ✅ 已完成 |
+| 2026-07-14 01:00 | auto-20260714-0100 | 客户端GUT测试补全 - 9个缺少测试的模块新增67个用例（ContentManager 22 + AudioManager 17 + VoteResultPanel 12 + VoteHistoryPanel 7 + CombatHUD 7 + VotingPanel 5 + NPCPanel 4 + MainMenu 2 + PersonalCenter 1） | ✅ 已完成 |
