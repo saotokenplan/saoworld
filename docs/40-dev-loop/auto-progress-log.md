@@ -2,6 +2,21 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-14 13:00 — auto-20260714-1300
+
+- 任务：S5-04 公会聊天系统实现
+- 分支：auto/auto-20260714-1300
+- 状态：✅ 已完成
+- 工作内容：
+  - player-service 新增 GuildMessage 数据模型（guild_messages 表，message_id/guild_id/sender_id/content/is_read/created_at，CHECK约束 1-500 字符）
+  - 新增 GuildMessageRepository 仓储层（7 个方法：send_message、get_guild_messages、mark_messages_as_read、get_unread_count、delete_message、get_recent_messages、get_message_by_id）
+  - 新增 5 个公会消息 API 端点（发送消息、消息列表、标记已读、未读计数、删除消息）
+  - 新增 6 个错误码（GUILD_MESSAGE_ERROR、MESSAGE_TOO_LONG、MESSAGE_EMPTY、MESSAGE_NOT_FOUND、CANNOT_DELETE_OTHER_MESSAGE）、2 类业务指标、3 个审计动作
+  - 新增 Alembic 迁移脚本、10 个测试用例（全部通过）
+  - ruff 检查通过
+- 修改文件：11 个
+- 合并状态：待合并到 feature-prd
+
 ## 2026-07-14 10:00 — auto-20260714-1000
 
 - 任务：S5-02 私聊系统实现
