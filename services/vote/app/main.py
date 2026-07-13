@@ -8,6 +8,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.api.routes import ops_router, router as vote_router
 from app.core.config import settings
+from app.core.tracing import setup_tracing
 
 structlog.configure(
     processors=[
@@ -56,6 +57,8 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=[settings.request_id_header, settings.trace_id_header],
 )
+
+setup_tracing(app, "vote")
 
 
 @app.exception_handler(HTTPException)
