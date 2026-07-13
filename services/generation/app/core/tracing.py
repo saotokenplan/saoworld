@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Callable
+from typing import Callable
 
 from fastapi import FastAPI, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware

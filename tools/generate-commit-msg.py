@@ -217,7 +217,6 @@ def summarize_changes(files: list[dict], scope: Optional[str]) -> str:
 
     if scope == "vote":
         new_files = [f for f in files if f["status"] == "A"]
-        mod_files = [f for f in files if f["status"] == "M"]
         if new_files and any("test" in f["path"] for f in new_files):
             return "新增投票服务测试用例"
         if any("routes" in f["path"] or "api" in f["path"] for f in files):
@@ -415,7 +414,6 @@ def check_message_matches_changes(message: str) -> list[str]:
     msg_scope = match.group("scope")
     inferred_scope = result["scope"]
     if msg_scope and inferred_scope and msg_scope != inferred_scope:
-        scope_counts = Counter(f["path"].split("/")[0] for f in result["files"])
         errors.append(
             f"你指定的 scope 是 '{msg_scope}'，但根据改动文件推断应为 '{inferred_scope}'。\n"
             f"请确认 scope 是否准确反映实际改动模块。"
