@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/player_db"
 
-    jwt_secret: str = "change-me-in-production"
+    jwt_secret: str
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
@@ -22,5 +22,10 @@ class Settings(BaseSettings):
 
     api_v1_prefix: str = "/api/v1"
 
+    allowed_origins: list[str] = ["http://localhost:8080", "http://127.0.0.1:8080"]
+
 
 settings = Settings()
+
+if settings.jwt_secret == "change-me-in-production":
+    raise ValueError("JWT_SECRET 必须在环境变量中设置，禁止使用默认值")
