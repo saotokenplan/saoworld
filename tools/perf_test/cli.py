@@ -31,9 +31,12 @@ from typing import Mapping
 
 from .report import ReportFormat, ScenarioReport, generate_report
 from .scenarios import (
+    CONTENT_PACKAGE_DETAIL_SCENARIO,
     CONTENT_QUERY_SCENARIO,
+    PLAYER_PROFILE_QUERY_SCENARIO,
     VOTE_QUERY_SCENARIO,
     VOTE_SUBMIT_SCENARIO,
+    WORLD_REGION_QUERY_SCENARIO,
     Scenario,
     default_scenarios,
 )
@@ -44,6 +47,9 @@ SCENARIO_MAP: dict[str, Scenario] = {
     "vote_submit": VOTE_SUBMIT_SCENARIO,
     "vote_query": VOTE_QUERY_SCENARIO,
     "content_query": CONTENT_QUERY_SCENARIO,
+    "world_region_query": WORLD_REGION_QUERY_SCENARIO,
+    "player_profile_query": PLAYER_PROFILE_QUERY_SCENARIO,
+    "content_package_detail": CONTENT_PACKAGE_DETAIL_SCENARIO,
 }
 
 

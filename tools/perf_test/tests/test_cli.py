@@ -36,11 +36,11 @@ class TestSelectScenarios:
 
     def test_none_returns_default(self) -> None:
         scenarios = _select_scenarios(None)
-        assert len(scenarios) == 3
+        assert len(scenarios) == 6
 
     def test_all_returns_default(self) -> None:
         scenarios = _select_scenarios("all")
-        assert len(scenarios) == 3
+        assert len(scenarios) == 6
 
     def test_specific_scenario(self) -> None:
         scenarios = _select_scenarios("vote_query")
