@@ -586,3 +586,107 @@ gates:
       docs: "docs/40-dev-loop/"
       runbook: "docs/runbook/gates/playtest_e2e.md"
       issues: []
+
+  - id: G-UNIT-013
+    name: Tools Unit Tests (perf_test)
+    type: unit
+    owner: QA Agent
+    command: "cd tools/perf_test && pytest"
+    scope:
+      paths: ["tools/perf_test/**"]
+      trigger: "on_pr"
+    risk_coverage: ["regression", "data-integrity"]
+    cost:
+      expected_seconds: 30
+      flakiness_budget: 0.01
+    signal:
+      severity: blocker
+      precision_target: 0.95
+    lifecycle:
+      status: active
+      created_at: "2026-07-13"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/20-specs/backend-data-spec.md"
+      runbook: "docs/runbook/gates/perf-test.md"
+      issues: []
+
+  - id: G-NONFUNC-001
+    name: Vote Submit Latency (perf_test)
+    type: nonfunctional
+    owner: QA Agent
+    command: "cd tools/perf_test && python -m perf_test.cli --base-url $VOTE_BASE_URL --scenario vote_submit"
+    scope:
+      paths: ["services/vote/**", "tools/perf_test/**"]
+      trigger: "manual"
+    risk_coverage: ["performance", "regression"]
+    cost:
+      expected_seconds: 60
+      flakiness_budget: 0.02
+    signal:
+      severity: blocker
+      precision_target: 0.90
+    lifecycle:
+      status: active
+      created_at: "2026-07-13"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/20-specs/backend-data-spec.md"
+      runbook: "docs/runbook/gates/perf-test.md"
+      issues: []
+
+  - id: G-NONFUNC-002
+    name: Vote Query Latency (perf_test)
+    type: nonfunctional
+    owner: QA Agent
+    command: "cd tools/perf_test && python -m perf_test.cli --base-url $VOTE_BASE_URL --scenario vote_query"
+    scope:
+      paths: ["services/vote/**", "tools/perf_test/**"]
+      trigger: "manual"
+    risk_coverage: ["performance", "regression"]
+    cost:
+      expected_seconds: 30
+      flakiness_budget: 0.02
+    signal:
+      severity: blocker
+      precision_target: 0.90
+    lifecycle:
+      status: active
+      created_at: "2026-07-13"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/20-specs/backend-data-spec.md"
+      runbook: "docs/runbook/gates/perf-test.md"
+      issues: []
+
+  - id: G-NONFUNC-003
+    name: Content Query Latency (perf_test)
+    type: nonfunctional
+    owner: QA Agent
+    command: "cd tools/perf_test && python -m perf_test.cli --base-url $CONTENT_BASE_URL --scenario content_query"
+    scope:
+      paths: ["services/content/**", "tools/perf_test/**"]
+      trigger: "manual"
+    risk_coverage: ["performance", "regression"]
+    cost:
+      expected_seconds: 30
+      flakiness_budget: 0.02
+    signal:
+      severity: blocker
+      precision_target: 0.90
+    lifecycle:
+      status: active
+      created_at: "2026-07-13"
+      last_hit_at: null
+      hit_30d: 0
+      false_positive_30d: 0
+    links:
+      docs: "docs/20-specs/backend-data-spec.md"
+      runbook: "docs/runbook/gates/perf-test.md"
+      issues: []
