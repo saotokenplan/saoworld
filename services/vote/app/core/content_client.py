@@ -19,28 +19,42 @@ class ContentPackageInfo:
         self,
         content_package_id: uuid.UUID,
         vote_cycle_id: uuid.UUID,
+        chapter_id: str,
+        title: str,
         version: str,
         status: str,
         affected_regions: list[str],
+        payload: dict[str, Any],
+        summary: str | None = None,
         landed_at: datetime | None = None,
     ) -> None:
         self.content_package_id = content_package_id
         self.vote_cycle_id = vote_cycle_id
+        self.chapter_id = chapter_id
+        self.title = title
         self.version = version
         self.status = status
         self.affected_regions = affected_regions
+        self.payload = payload
+        self.summary = summary
         self.landed_at = landed_at
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ContentPackageInfo":
         """从字典解析内容包信息。"""
+        vote_cycle_id_raw = data.get("source_vote_cycle_id") or data.get("vote_cycle_id")
+        landed_at_raw = data.get("landed_at") or data.get("released_at")
         return cls(
             content_package_id=uuid.UUID(data["content_package_id"]),
-            vote_cycle_id=uuid.UUID(data["vote_cycle_id"]),
-            version=data["version"],
+            vote_cycle_id=uuid.UUID(vote_cycle_id_raw) if vote_cycle_id_raw else uuid.uuid4(),
+            chapter_id=data.get("chapter_id", ""),
+            title=data.get("title", ""),
+            version=data.get("package_version", data.get("version", "")),
             status=data["status"],
             affected_regions=data.get("affected_regions", []),
-            landed_at=datetime.fromisoformat(data["landed_at"]) if data.get("landed_at") else None,
+            payload=data.get("payload", {}),
+            summary=data.get("summary"),
+            landed_at=datetime.fromisoformat(landed_at_raw) if landed_at_raw else None,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -48,9 +62,13 @@ class ContentPackageInfo:
         return {
             "content_package_id": str(self.content_package_id),
             "vote_cycle_id": str(self.vote_cycle_id),
+            "chapter_id": self.chapter_id,
+            "title": self.title,
             "version": self.version,
             "status": self.status,
             "affected_regions": self.affected_regions,
+            "payload": self.payload,
+            "summary": self.summary,
             "landed_at": self.landed_at.isoformat() if self.landed_at else None,
         }
 

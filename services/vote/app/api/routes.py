@@ -78,6 +78,9 @@ from app.schemas.vote import (
     VoteHistoryResponse,
     VoteProgressCandidate,
     VoteProgressResponse,
+    VoteReviewCandidateResult,
+    VoteReviewContentPackage,
+    VoteReviewResponse,
     VoteSubmitRequest,
     VoteSubmitResponse,
 )
@@ -657,6 +660,173 @@ async def get_vote_result_chart_data(
             total_votes=total_votes,
             total_weighted_votes=total_weighted_votes,
             items=chart_items,
+        ),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/votes/history/{vote_cycle_id}/review",
+    responses={
+        404: {"description": "Vote cycle not found"},
+    },
+    tags=["votes"],
+)
+async def get_vote_review(
+    vote_cycle_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireVotesHistoryReadScope,
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[VoteReviewResponse]:
+    """获取投票复盘报告。
+
+    返回单轮投票周期的完整复盘数据，包括投票统计、候选结果、生成参数和落地内容包摘要。
+    """
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_vote_review")
+
+    repo = VoteRepository(db)
+    cycle = await repo.get_cycle_by_id(vote_cycle_id)
+
+    if cycle is None:
+        raise_vote_error(
+            VoteErrorCodes.VOTE_CYCLE_NOT_FOUND,
+            "投票周期不存在",
+            request_id=request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    progress_data = await repo.get_vote_progress(vote_cycle_id)
+    if progress_data is None:
+        raise_vote_error(
+            VoteErrorCodes.INTERNAL_ERROR,
+            "获取投票复盘数据失败",
+            request_id=request_id,
+            status_code=status.HTTP_500_INTERNAL_ERROR,
+        )
+
+    total_votes = progress_data["total_votes"]
+    total_weighted_votes = progress_data["total_weighted_votes"]
+
+    # 构建候选结果列表并标记获胜候选
+    candidate_results: list[VoteReviewCandidateResult] = []
+    winning_candidate: VoteReviewCandidateResult | None = None
+    leading_candidate: VoteReviewCandidateResult | None = None
+    max_weighted_score = -1.0
+    for candidate_data in progress_data["candidates"]:
+        percentage = 0.0
+        if total_weighted_votes > 0:
+            percentage = round(
+                (candidate_data["weighted_score"] / total_weighted_votes) * 100, 2
+            )
+
+        result_item = VoteReviewCandidateResult(
+            candidate_id=candidate_data["candidate_id"],
+            title=candidate_data["title"],
+            vote_count=candidate_data["vote_count"],
+            weighted_score=candidate_data["weighted_score"],
+            status=VoteCandidateStatus(candidate_data["status"]),
+            percentage=percentage,
+        )
+        candidate_results.append(result_item)
+
+        if candidate_data["candidate_id"] == cycle.winning_candidate_id:
+            winning_candidate = result_item
+
+        # 当数据库尚未写入获胜者时，使用当前加权分最高的候选作为获胜候选展示
+        if (
+            candidate_data["weighted_score"] > max_weighted_score
+            and candidate_data["status"] == "active"
+        ):
+            max_weighted_score = candidate_data["weighted_score"]
+            leading_candidate = result_item
+
+    # 当数据库未写入获胜者且已有实际投票时，使用当前领先候选作为获胜候选展示
+    if winning_candidate is None and leading_candidate is not None and total_votes > 0:
+        winning_candidate = leading_candidate
+
+    # 获胜候选的生成参数与影响范围
+    generated_params: dict[str, object] | None = None
+    region_scope: list[str] = []
+    winner_candidate_id = cycle.winning_candidate_id
+    if winner_candidate_id is None and winning_candidate is not None:
+        winner_candidate_id = winning_candidate.candidate_id
+
+    if winner_candidate_id is not None:
+        winner = next(
+            (c for c in cycle.candidates if c.candidate_id == winner_candidate_id),
+            None,
+        )
+        if winner:
+            generated_params = winner.generated_params
+            region_scope = winner.region_scope or []
+
+    # 查询关联内容包
+    content_package_data: VoteReviewContentPackage | None = None
+    try:
+        from app.core.content_client import ContentPackageClient
+
+        content_client = ContentPackageClient()
+        content_package_info = await content_client.get_content_package_by_vote_cycle(
+            vote_cycle_id,
+            authorization=authorization,
+        )
+        if content_package_info is not None:
+            content_package_data = VoteReviewContentPackage(
+                content_package_id=content_package_info.content_package_id,
+                chapter_id=content_package_info.chapter_id,
+                title=content_package_info.title,
+                summary=content_package_info.summary,
+                package_version=content_package_info.version,
+                status=content_package_info.status,
+                affected_regions=content_package_info.affected_regions,
+                payload=content_package_info.payload,
+                landed_at=content_package_info.landed_at,
+            )
+    except Exception as exc:
+        logger.error(
+            "vote_review_content_package_query_failed",
+            vote_cycle_id=str(vote_cycle_id),
+            error=str(exc),
+        )
+    finally:
+        if "content_client" in locals():
+            await content_client.close()
+
+    # 参与率估算：优先使用 gray_scope 中的玩家百分比，否则使用默认基准
+    eligible_player_count = 1000
+    if (
+        content_package_data is not None
+        and content_package_data.payload
+    ):
+        gray_scope = content_package_data.payload.get("gray_scope") or {}
+        if isinstance(gray_scope, dict):
+            player_percent = gray_scope.get("player_percent")
+            if isinstance(player_percent, (int, float)) and player_percent > 0:
+                eligible_player_count = max(1, int(10000 * (player_percent / 100)))
+            player_ids = gray_scope.get("player_ids", [])
+            if isinstance(player_ids, list) and player_ids:
+                eligible_player_count = max(eligible_player_count, len(player_ids))
+
+    participation_rate = round((total_votes / eligible_player_count) * 100, 2) if eligible_player_count > 0 else 0.0
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=VoteReviewResponse(
+            vote_cycle_id=vote_cycle_id,
+            chapter_id=cycle.chapter_id,
+            status=VoteCycleStatus(cycle.status),
+            starts_at=cycle.starts_at,
+            ends_at=cycle.ends_at,
+            total_votes=total_votes,
+            total_weighted_votes=total_weighted_votes,
+            participation_rate=participation_rate,
+            winning_candidate=winning_candidate,
+            candidates=candidate_results,
+            generated_params=generated_params,
+            region_scope=region_scope,
+            content_package=content_package_data,
         ),
         trace_id=trace_id,
     )
