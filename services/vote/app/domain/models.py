@@ -266,3 +266,54 @@ class AuditLog(Base):
         Index("audit_logs_resource_idx", "resource_type", "resource_id"),
         Index("audit_logs_action_idx", "action", "created_at"),
     )
+
+
+class VoteAnomaly(Base):
+    __tablename__ = "vote_anomalies"
+
+    anomaly_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    vote_cycle_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("vote_cycles.vote_cycle_id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    player_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    vote_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("votes.vote_id", ondelete="RESTRICT"),
+        nullable=True,
+    )
+    anomaly_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    severity: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="detected", server_default="detected"
+    )
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    detail_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolver_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "anomaly_type IN ('frequency', 'device', 'weight', 'time_distribution', 'suspicious_pattern')",
+            name="vote_anomalies_anomaly_type_check",
+        ),
+        CheckConstraint(
+            "severity IN ('low', 'medium', 'high', 'critical')",
+            name="vote_anomalies_severity_check",
+        ),
+        CheckConstraint(
+            "status IN ('detected', 'reviewed', 'resolved', 'false_positive')",
+            name="vote_anomalies_status_check",
+        ),
+        Index("vote_anomalies_vote_cycle_id_idx", "vote_cycle_id"),
+        Index("vote_anomalies_player_id_idx", "player_id"),
+        Index("vote_anomalies_anomaly_type_idx", "anomaly_type"),
+        Index("vote_anomalies_severity_idx", "severity"),
+        Index("vote_anomalies_status_idx", "status"),
+        Index("vote_anomalies_detected_at_idx", "detected_at"),
+    )
