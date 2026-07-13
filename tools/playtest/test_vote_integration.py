@@ -74,14 +74,22 @@ class TestVoteServiceIntegration:
 
     @pytest.fixture
     def vote_client(self):
+        from unittest.mock import AsyncMock, patch
+
         old_path = sys.path.copy()
         _clean_app_modules()
         sys.path.insert(0, '/workspace/services/vote')
 
         try:
             from app.main import app as vote_app
-            with TestClient(vote_app) as client:
-                yield client
+
+            mock_get_contribution = AsyncMock(return_value=1000)
+            mock_close = AsyncMock()
+
+            with patch("app.core.player_client.PlayerContributionClient.get_contribution", mock_get_contribution), \
+                 patch("app.core.player_client.PlayerContributionClient.close", mock_close):
+                with TestClient(vote_app) as client:
+                    yield client
         finally:
             sys.path[:] = old_path
             _clean_app_modules()
