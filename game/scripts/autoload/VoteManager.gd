@@ -12,6 +12,7 @@ signal discussion_created(discussion: Dictionary)
 signal replies_loaded(discussion_id: String, replies: Array, meta: Dictionary)
 signal reply_created(reply: Dictionary)
 signal discussion_like_changed(discussion_id: String, liked: bool, like_count: int)
+signal vote_progress_updated(progress: Dictionary)
 
 var current_cycle: Dictionary = {}
 var candidates: Array[Dictionary] = []
@@ -25,9 +26,22 @@ var current_discussion_id: String = ""
 var replies: Array[Dictionary] = []
 var discussions_meta: Dictionary = {}
 var replies_meta: Dictionary = {}
+var current_progress: Dictionary = {}
+var progress_poll_timer: Timer = null
+var progress_poll_interval: int = 10
+var is_polling_progress: bool = false
 
 func _ready() -> void:
 	APIManager.auth_error.connect(_on_auth_error)
+	_setup_progress_poll_timer()
+
+func _setup_progress_poll_timer() -> void:
+	progress_poll_timer = Timer.new()
+	progress_poll_timer.wait_time = progress_poll_interval
+	progress_poll_timer.autostart = false
+	progress_poll_timer.one_shot = false
+	progress_poll_timer.timeout.connect(_poll_vote_progress)
+	add_child(progress_poll_timer)
 
 func _on_auth_error(request_id: String, message: String) -> void:
 	auth_error.emit(message)
@@ -203,6 +217,8 @@ func reset() -> void:
 	has_voted = false
 	is_loading = false
 	last_error.clear()
+	current_progress.clear()
+	stop_progress_polling()
 
 func get_vote_history_with_landing() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
@@ -430,3 +446,47 @@ func reset_discussions() -> void:
 	replies.clear()
 	discussions_meta.clear()
 	replies_meta.clear()
+
+func fetch_vote_progress() -> void:
+	var result: Dictionary = APIManager.get("/votes/current/progress")
+	if result.get("success", false):
+		_handle_progress_success(result)
+	else:
+		_handle_vote_error(result)
+
+func start_progress_polling() -> void:
+	if is_polling_progress:
+		return
+	is_polling_progress = true
+	if progress_poll_timer:
+		progress_poll_timer.start()
+		fetch_vote_progress()
+
+func stop_progress_polling() -> void:
+	is_polling_progress = false
+	if progress_poll_timer:
+		progress_poll_timer.stop()
+
+func _poll_vote_progress() -> void:
+	fetch_vote_progress()
+
+func _handle_progress_success(result: Dictionary) -> void:
+	var data: Dictionary = result.get("data", {})
+	current_progress = data
+	last_error.clear()
+	vote_progress_updated.emit(current_progress)
+
+func get_current_progress() -> Dictionary:
+	return current_progress.duplicate()
+
+func get_total_votes_from_progress() -> int:
+	return current_progress.get("total_votes", 0)
+
+func get_leading_candidate_id() -> String:
+	return str(current_progress.get("leading_candidate_id", ""))
+
+func get_candidate_progress(candidate_id: String) -> Dictionary:
+	for candidate in current_progress.get("candidates", []):
+		if str(candidate.get("candidate_id", "")) == candidate_id:
+			return candidate.duplicate()
+	return {}
