@@ -1,0 +1,63 @@
+name: Performance Tests
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Base URL for perf tests'
+        required: false
+        default: 'http://localhost:8001'
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  perf-test:
+    name: Run Performance Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install perf_test dependencies
+        run: |
+          cd tools/perf_test
+          pip install -e ".[dev]"
+
+      - name: Install vote-service dependencies
+        run: |
+          cd services/vote
+          pip install -e ".[dev]"
+
+      - name: Install content-service dependencies
+        run: |
+          cd services/content
+          pip install -e ".[dev]"
+
+      - name: Install world-service dependencies
+        run: |
+          cd services/world
+          pip install -e ".[dev]"
+
+      - name: Install player-service dependencies
+        run: |
+          cd services/player
+          pip install -e ".[dev]"
+
+      - name: Run perf_test scenarios
+        run: |
+          cd tools/perf_test
+          python -m perf_test.cli --base-url ${{ github.event.inputs.base_url || 'http://localhost:8001' }} --scenario all --format markdown --output perf-report.md
+
+      - name: Upload perf report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: perf-report
+          path: tools/perf_test/perf-report.md
