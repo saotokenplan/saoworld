@@ -22,7 +22,8 @@
 
 ## 当前阶段
 
-- 当前阶段：**灰度发布与监控优化阶段**（Sprint 1 P0/P1 全部完成，Sprint 2 AI生成接入全部完成，Sprint 3 玩家成长系统全部完成，Sprint 4 投票体验优化全部完成，全量代码质量修复完成，项目具备首期内容包灰度发布条件）
+- 当前阶段：**Sprint 5 社区基础功能阶段**（Sprint 1 P0/P1 全部完成，Sprint 2 AI生成接入全部完成，Sprint 3 玩家成长系统全部完成，Sprint 4 投票体验优化全部完成，Sprint 5 S5-01 好友系统完成，全量代码质量修复完成，项目具备首期内容包灰度发布条件）
+- **S5-01 好友系统完成（2026-07-14 09:00）**：player-service 新增好友系统完整能力，包括 `friendships` 表（支持 pending/accepted/rejected/blocked 四种状态，双向关系，唯一索引防重复请求）；实现 FriendRepository 仓储层（11 个方法：发送/接受/拒绝好友请求、删除好友、拉黑、好友列表分页、待处理请求、关系查询、好友判断、好友计数、拉黑检测，支持双向自动接受）；新增 7 个 API 端点（发送/接受/拒绝好友请求、删除好友、好友列表、待处理请求、关系状态查询）；新增 7 个好友相关错误码（FRIEND_REQUEST_ALREADY_SENT、FRIEND_REQUEST_NOT_FOUND、FRIEND_REQUEST_NOT_PENDING、ALREADY_FRIENDS、CANNOT_FRIEND_SELF、FRIEND_NOT_FOUND、FRIEND_BLOCKED）、2 个 Scope（friends:read、friends:write）、2 类业务指标（friend_requests_sent_total、friend_requests_accepted_total）、5 个审计动作常量；新增 Alembic 迁移脚本与 14 个测试用例。客户端新增 FriendManager 自动加载单例（7 个信号、8 个 API 方法、好友状态管理、缓存机制）和 FriendPanel 好友面板（好友列表、待处理请求、添加好友、删除好友），GUT 测试 12 个用例。player-service ruff 检查通过，为 S5-02 私聊系统和 S5-03 公会系统奠定基础。
 - **S4-04 投票结果可视化完成（2026-07-14 04:40）**：vote-service 新增 `GET /api/v1/votes/history/{vote_cycle_id}/chart-data` 图表数据接口，支持饼图和柱状图两种图表类型，返回候选项名称、票数、百分比和预定义颜色（8种）；客户端 VoteManager 新增 `fetch_vote_result_chart_data()` 方法和缓存机制；创建 ChartDraw 控件实现饼图和柱状图绘制，使用 `draw_polygon` 绘制饼图扇形，使用 `draw_rect` 绘制柱状图；支持图表切换按钮交互；vote-service 测试从 86 个增加到 91 个（+5），客户端新增 8 个测试用例，ruff 与 mypy 检查通过。修复 vote_repo.py、tracing.py 和 routes.py 的 mypy 类型错误。投票结果可视化能力完整就绪，增强玩家对投票结果的直观理解。
 - **S4-05 投票复盘报告完成（2026-07-14 05:00）**：vote-service 新增 `GET /api/v1/votes/history/{vote_cycle_id}/review` 投票复盘报告接口，返回单轮投票周期的投票统计、候选结果、获胜候选生成参数与影响范围，并通过 content-service 关联查询落地内容包摘要；新增 `VoteReviewResponse`/`VoteReviewCandidateResult`/`VoteReviewContentPackage` Schema；扩展 `ContentPackageClient` 以透传内容包完整 payload；content-service `ContentRepository` 新增 `get_packages_by_vote_cycle_ids` 批量查询方法；客户端 VoteManager 新增 `fetch_vote_review` 方法和 `_vote_review_cache` 缓存，创建 `VoteReviewPanel` 复盘面板，支持展示周期信息、投票统计、候选占比、生成参数、落地内容与返回导航；VoteHistoryPanel 为已落地周期新增「复盘」按钮。vote-service 测试从 91 个增加到 97 个（+6），content-service 测试从 65 个增加到 67 个（+2），客户端新增 11 个 GUT 测试用例（VoteManager 6 个 + VoteReviewPanel 5 个）。ruff 与 mypy 检查通过（同步修复 content-service `tracing.py` 的 `no-any-return` 类型错误）。投票复盘报告能力完整就绪，闭合「投票→结果→落地影响」叙事闭环。
 - **S4-03 投票进度实时更新完成（2026-07-14 03:00）**：vote-service 新增 `GET /api/v1/votes/current/progress` 投票进度查询 API，返回投票周期状态、总票数、加权总票数、领先候选、各候选人票数与百分比；新增 VoteProgressCandidate/VoteProgressResponse Schema；新增 VOTE_PROGRESS_QUERIES_TOTAL 指标；新增 vote.progress.updated 事件发布；投票提交后自动发布进度更新事件；客户端 VoteManager 实现进度轮询机制（Timer + 10秒间隔）、vote_progress_updated 信号通知；客户端 VotingPanel 实时展示投票进度（总票数、领先候选、各候选动态更新）。vote-service 测试从 56 个增加到 86 个（+30），全部通过，ruff 与 mypy 检查通过。
@@ -366,12 +367,14 @@
   - 结构化日志（structlog）
   - 测试用例 37 个全部通过（含认证 + 限流 + 代理 + 追踪 + 健康检查）
 - `player-service` 已完成骨架初始化与玩家管理接口：
-  - 数据模型：`Player`、`PlayerQuest`、`PlayerRegion`、`AuditLog`（对应 `backend-data-spec.md`）
+  - 数据模型：`Player`、`PlayerQuest`、`PlayerRegion`、`Friendship`、`AuditLog`（对应 `backend-data-spec.md`）
   - 玩家 API 路由：`GET /api/v1/health`、`GET /api/v1/player/info`、`GET /api/v1/player/quests`、`GET /api/v1/player/regions`
+  - 好友 API 路由：`POST /api/v1/player/friends/request`、`POST .../accept`、`POST .../reject`、`DELETE .../{friend_id}`、`GET .../friends`、`GET .../requests`、`GET .../{friend_id}/status`
   - 运营 API 路由：`POST /api/v1/ops/players`（创建玩家）、`GET /api/v1/ops/players`（列表）、`GET /api/v1/ops/players/{player_id}`（详情）、`PUT /api/v1/ops/players/{player_id}`（更新）、`POST /api/v1/ops/players/{player_id}/regions/{region_id}/unlock`（解锁区域）
   - 任务状态机：available → active → completed / failed
+  - 好友请求状态机：pending → accepted / rejected / blocked
   - 统一响应 envelope（对齐 `12-api-design.md` 规范）
-  - JWT 认证（`world:read`、`quests:read` scope、ops 角色权限）
+  - JWT 认证（`world:read`、`quests:read`、`friends:read`、`friends:write` scope、ops 角色权限）
   - 审计日志持久化
   - 自定义 UUID 类型兼容 SQLite 测试环境
   - 测试用例 37 个全部通过（含玩家接口 + 运营接口 + 审计日志 + 鉴权 + envelope 格式 + 分页测试 + 指标测试）
@@ -399,7 +402,7 @@
 - **Godot 客户端工程**：
   - Godot 4 项目骨架已初始化（`project.godot`、`icon.svg`）
   - 标准目录结构：`scenes/`、`scripts/`、`data/`、`assets/`、`tests/`
-  - 5 个核心 Autoload 单例：GameState、APIManager、VoteManager、ContentManager、AudioManager
+  - 6 个核心 Autoload 单例：GameState、APIManager、VoteManager、ContentManager、AudioManager、FriendManager
   - 完整场景实现：Main（主入口）、MainMenu（主菜单）、VotingPanel（投票面板）、VoteResultPanel（投票结果）、VoteHistoryPanel（投票历史）、WorldMap（世界地图）、NPCPanel（NPC列表）、QuestPanel（任务面板）；所有场景文件与脚本匹配，支持场景切换和信号通信
   - 数据配置：game_config.json、region_list.json、npc_list.json、quest_list.json（均带 schema_version）
   - GUT 测试框架与完整测试覆盖：11 个测试文件共 72 个测试用例，覆盖 GameState、APIManager、VoteManager、WorldManager、PlayerManager、WorldMap、QuestPanel、NPCDialog、Player、CoreRegion、WorldMapNavigation；测试文档 `game/tests/README.md` 包含完整测试清单和覆盖说明
@@ -528,6 +531,7 @@
 41. ~~Sprint 4 S4-05「投票复盘报告」~~ 已完成（2026-07-14 05:00）：vote-service 新增 `GET /api/v1/votes/history/{vote_cycle_id}/review` 复盘报告接口，content-service 扩展按投票周期批量查询，客户端新增 VoteReviewPanel 面板与 VoteHistoryPanel「复盘」入口；vote-service 测试 +6、content-service 测试 +2、客户端 GUT 测试 +11；ruff 与 mypy 检查通过。
 42. ~~Sprint 4 S4-06「vote-service 扩展」~~ 已完成（2026-07-14 08:05）：验证讨论区和实时票数接口实现完整性，确认 vote-service 所有 97 个测试全部通过，讨论区相关 30 个测试通过，投票进度相关 6 个测试通过；Sprint 4 全部完成（100%）。
 43. ~~灰度发布前安全审计~~ 已完成（2026-07-14 07:00）：对 vote-service、gateway-service、player-service、content-service 进行全面安全审计，发现并修复 4 类安全问题：1）移除硬编码 JWT 密钥（强制环境变量配置）；2）限制 CORS 配置（白名单替代通配符）；3）网关鉴权中间件添加 Scope 校验（路径-权限映射）；4）投票权重边界校验（最终权重不超过 10.0）。修复后 vote-service 52 个测试全部通过，项目持续保持灰度发布就绪状态。
+44. ~~Sprint 5 S5-01「好友系统」~~ 已完成（2026-07-14 09:00）：player-service 新增好友系统完整能力，包括 friendships 表（pending/accepted/rejected/blocked 四种状态，双向关系，唯一索引防重复）、FriendRepository 仓储层（11 个方法，支持双向自动接受）、7 个 API 端点、7 个错误码、2 个 Scope（friends:read、friends:write）、2 类业务指标、5 个审计动作常量；Alembic 迁移脚本 + 14 个测试用例；客户端 FriendManager 自动加载单例 + FriendPanel 好友面板 + 12 个 GUT 测试；ruff 检查通过。
 
 ## 进入实施前的建议门槛
 

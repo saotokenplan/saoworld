@@ -2,6 +2,23 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-14 09:00 — auto-20260714-0900
+
+- 任务：S5-01 好友系统实现
+- 分支：auto/auto-20260714-0900
+- 状态：✅ 已完成
+- 工作内容：
+  - player-service 新增 Friendship 数据模型（friendships 表，pending/accepted/rejected/blocked 四种状态，双向关系）
+  - 新增 FriendRepository 仓储层（11 个方法，含双向自动接受逻辑）
+  - 新增 7 个好友 API 端点（发送/接受/拒绝请求、删除好友、列表、待处理请求、状态查询）
+  - 新增 7 个错误码、2 个 Scope（friends:read、friends:write）、2 类业务指标、5 个审计动作
+  - 新增 Alembic 迁移脚本、14 个后端测试用例
+  - 客户端新增 FriendManager 自动加载单例 + FriendPanel 好友面板 + 12 个 GUT 测试
+  - 修复 send_friend_request 路由 pending 状态预检查逻辑过于宽泛问题
+  - ruff 检查通过
+- 修改文件：18 个
+- 合并状态：待合并到 feature-prd
+
 ## 2026-07-14 08:00 — auto-20260714-0800
 
 - 任务：项目稳定性验证与状态同步
