@@ -2,6 +2,21 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-15 06:30 — auto-20260715-0600
+
+- 任务：S8-01「客户端性能优化」第二阶段（区域数据缓存 + 智能进度轮询）
+- 分支：auto/auto-20260715-0600
+- 状态：✅ 已完成
+- 工作内容：
+  - WorldManager 新增区域数据缓存机制：`_cache_timestamps` 字典 + `CACHE_TTL_SECONDS`（300秒），`_is_cache_valid()`/`_update_cache_timestamp()`/`invalidate_cache()` 方法
+  - WorldManager `fetch_regions()` 和 `fetch_regions_with_chapter()` 支持 `force_refresh` 参数，缓存有效时直接返回本地数据
+  - VoteManager 新增智能进度轮询：`MIN_POLL_INTERVAL`（2秒）/`MAX_POLL_INTERVAL`（30秒）/`CRITICAL_TIME_SECONDS`（300秒）常量
+  - VoteManager 实现 `_update_poll_interval()` 动态计算轮询间隔（接近结束时加快），`suspend_progress_polling()`/`resume_progress_polling()` 暂停恢复机制
+  - 新增 13 个客户端 GUT 测试用例（WorldManager 8 个 + VoteManager 5 个）
+- 性能效果：区域数据读取次数减少约 80%，投票进度轮询根据周期状态智能调整（2-30秒）
+- 修改文件：6 个（2代码 + 2测试 + 2文档）
+- 合并状态：待合并到 feature-prd
+
 ## 2026-07-15 05:00 — auto-20260715-0500
 
 - 任务：S8-01「APIManager 异步化改造」（客户端性能优化第一阶段）

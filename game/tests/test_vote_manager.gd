@@ -424,3 +424,40 @@ func test_fetch_vote_review_empty_cycle_id() -> void:
 	vm.fetch_vote_review("")
 	assert_eq(vm.last_error.get("code", ""), "INVALID_VOTE_CYCLE_ID", "空周期ID应返回 INVALID_VOTE_CYCLE_ID")
 	vm.reset()
+
+# ====== S8-01 客户端性能优化测试（auto-20260715-0600） ======
+
+func test_poll_interval_constants() -> void:
+	var vm := VoteManager
+	assert_eq(vm.MIN_POLL_INTERVAL, 2, "最小轮询间隔应为 2 秒")
+	assert_eq(vm.MAX_POLL_INTERVAL, 30, "最大轮询间隔应为 30 秒")
+	assert_eq(vm.CRITICAL_TIME_SECONDS, 300, "临界时间应为 300 秒（5分钟）")
+
+func test_suspend_progress_polling() -> void:
+	var vm := VoteManager
+	vm.reset()
+	vm.is_polling_progress = true
+	vm._poll_suspended = false
+	vm.suspend_progress_polling("test_reason")
+	assert_true(vm.is_poll_suspended(), "暂停后轮询应被挂起")
+	assert_eq(vm.get_poll_suspend_reason(), "test_reason", "暂停原因应被记录")
+
+func test_resume_progress_polling() -> void:
+	var vm := VoteManager
+	vm.reset()
+	vm.is_polling_progress = true
+	vm._poll_suspended = true
+	vm._poll_suspend_reason = "test_reason"
+	vm.resume_progress_polling()
+	assert_false(vm.is_poll_suspended(), "恢复后轮询不应被挂起")
+	assert_eq(vm.get_poll_suspend_reason(), "", "恢复后暂停原因应被清除")
+
+func test_is_poll_suspended_initial_state() -> void:
+	var vm := VoteManager
+	vm.reset()
+	assert_false(vm.is_poll_suspended(), "初始状态不应被挂起")
+
+func test_get_poll_suspend_reason_initial() -> void:
+	var vm := VoteManager
+	vm.reset()
+	assert_eq(vm.get_poll_suspend_reason(), "", "初始状态暂停原因应为空")

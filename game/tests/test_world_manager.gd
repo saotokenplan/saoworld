@@ -288,3 +288,44 @@ func test_is_region_locked_by_reputation() -> void:
 	world.region_cache["region_test_01"] = {"region_id": "region_test_01", "status": "active"}
 	assert_false(world.is_region_locked_by_reputation("region_test_01"), "活跃区域应返回 false")
 	assert_false(world.is_region_locked_by_reputation("nonexistent"), "不存在区域应返回 false")
+
+# ====== S8-01 客户端性能优化测试（auto-20260715-0600） ======
+
+func test_cache_ttl_constant() -> void:
+	var world := WorldManager
+	assert_eq(world.CACHE_TTL_SECONDS, 300, "缓存 TTL 应为 300 秒（5分钟）")
+
+func test_invalidate_cache_all() -> void:
+	var world := WorldManager
+	world._cache_timestamps["regions"] = 1000
+	world._cache_timestamps["npcs"] = 2000
+	world.invalidate_cache()
+	assert_eq(world._cache_timestamps.size(), 0, "清空所有缓存后时间戳应为空")
+
+func test_invalidate_cache_specific() -> void:
+	var world := WorldManager
+	world._cache_timestamps["regions"] = 1000
+	world._cache_timestamps["npcs"] = 2000
+	world.invalidate_cache("regions")
+	assert_false(world._cache_timestamps.has("regions"), "应清除指定缓存")
+	assert_true(world._cache_timestamps.has("npcs"), "不应清除其他缓存")
+
+func test_is_cache_valid_fresh() -> void:
+	var world := WorldManager
+	world._cache_timestamps["regions"] = Time.get_unix_time_from_system()
+	assert_true(world._is_cache_valid("regions"), "新鲜缓存应返回 true")
+
+func test_is_cache_valid_invalid() -> void:
+	var world := WorldManager
+	assert_false(world._is_cache_valid("nonexistent"), "不存在的缓存键应返回 false")
+
+func test_is_cache_valid_expired() -> void:
+	var world := WorldManager
+	world._cache_timestamps["regions"] = Time.get_unix_time_from_system() - 600
+	assert_false(world._is_cache_valid("regions"), "过期缓存应返回 false")
+
+func test_reset_clears_cache_timestamps() -> void:
+	var world := WorldManager
+	world._cache_timestamps["regions"] = 1000
+	world.reset()
+	assert_eq(world._cache_timestamps.size(), 0, "reset 应清除缓存时间戳")
