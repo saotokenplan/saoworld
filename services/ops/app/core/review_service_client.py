@@ -3,8 +3,10 @@
 为 ops-service 提供调用 review-service 审核工作流 API 的能力。
 """
 
-import structlog
+from typing import cast
+
 import httpx
+import structlog
 
 from app.core.config import settings
 
@@ -50,7 +52,7 @@ class ReviewServiceClient:
                 headers=headers,
             )
             resp.raise_for_status()
-            return resp.json()
+            return cast(dict, resp.json())
 
     async def approve_review_object(
         self,
@@ -81,7 +83,7 @@ class ReviewServiceClient:
                 headers=headers,
             )
             resp.raise_for_status()
-            return resp.json()
+            return cast(dict, resp.json())
 
     async def reject_review_object(
         self,
@@ -110,7 +112,7 @@ class ReviewServiceClient:
                 headers=headers,
             )
             resp.raise_for_status()
-            return resp.json()
+            return cast(dict, resp.json())
 
     async def get_review_stats(
         self,
@@ -131,4 +133,4 @@ class ReviewServiceClient:
                 headers=headers,
             )
             resp.raise_for_status()
-            return resp.json()
+            return cast(dict, resp.json())

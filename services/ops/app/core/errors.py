@@ -1,3 +1,5 @@
+from typing import NoReturn
+
 from fastapi import HTTPException, status
 
 from app.schemas.ops import ErrorDetail, ErrorResponse
@@ -34,7 +36,7 @@ def raise_ops_error(
     request_id: str,
     status_code: int = status.HTTP_400_BAD_REQUEST,
     details: list[ErrorDetail] | None = None,
-) -> None:
+) -> NoReturn:
     raise HTTPException(
         status_code=status_code,
         detail=ErrorResponse(
