@@ -109,3 +109,10 @@ layout_mode = 2
 layout_mode = 2
 size_flags_vertical = 3
 columns = 4
+
+[node name="装备" type="VBoxContainer" parent="MarginContainer/VBoxContainer/TabContainer"]
+layout_mode = 2
+
+[node name="EquipmentList" type="ItemList" parent="MarginContainer/VBoxContainer/TabContainer/装备"]
+layout_mode = 2
+size_flags_vertical = 3

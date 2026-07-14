@@ -7,8 +7,12 @@ signal item_used(item_key: String, quantity: int)
 signal item_added(item_key: String, quantity: int)
 signal item_removed(item_key: String, quantity: int)
 signal inventory_error(error_message: String)
+signal equipment_updated(equipment: Array[Dictionary], stats: Dictionary)
+signal equipment_error(error_message: String)
 
 var _items: Array[Dictionary] = []
+var _equipment: Array[Dictionary] = []
+var _equipment_stats: Dictionary = {}
 var _is_loading: bool = false
 var _last_error: String = ""
 
@@ -97,7 +101,70 @@ func serialize() -> Array:
 ## 清空背包缓存
 func clear_cache() -> void:
 	_items.clear()
+	_equipment.clear()
+	_equipment_stats.clear()
 	inventory_updated.emit()
+
+## 获取装备列表
+func get_equipment() -> Array[Dictionary]:
+	return _equipment
+
+## 获取装备属性统计
+func get_equipment_stats() -> Dictionary:
+	return _equipment_stats
+
+## 从服务器加载装备数据
+func load_equipment() -> void:
+	if _is_loading:
+		return
+	_is_loading = true
+	_last_error = ""
+	
+	var api_manager: Node = get_node_or_null("/root/APIManager")
+	if api_manager == null:
+		_is_loading = false
+		_last_error = "APIManager 不可用"
+		equipment_error.emit(_last_error)
+		return
+	
+	var callback: Callable = _on_equipment_loaded
+	api_manager.get("/api/v1/player/equipment", callback)
+
+## 装备物品
+func equip_item(slot: String, item_key: String) -> void:
+	if _is_loading:
+		return
+	_is_loading = true
+	_last_error = ""
+	
+	var api_manager: Node = get_node_or_null("/root/APIManager")
+	if api_manager == null:
+		_is_loading = false
+		_last_error = "APIManager 不可用"
+		equipment_error.emit(_last_error)
+		return
+	
+	var callback: Callable = _on_equip_item_completed.bind(slot)
+	var body: Dictionary = {"item_key": item_key}
+	api_manager.post("/api/v1/player/equipment/equip?slot=" + slot, body, callback)
+
+## 卸下装备
+func unequip_item(slot: String) -> void:
+	if _is_loading:
+		return
+	_is_loading = true
+	_last_error = ""
+	
+	var api_manager: Node = get_node_or_null("/root/APIManager")
+	if api_manager == null:
+		_is_loading = false
+		_last_error = "APIManager 不可用"
+		equipment_error.emit(_last_error)
+		return
+	
+	var callback: Callable = _on_unequip_item_completed.bind(slot)
+	var body: Dictionary = {}
+	api_manager.post("/api/v1/player/equipment/unequip?slot=" + slot, body, callback)
 
 ## 回调：背包加载完成
 func _on_inventory_loaded(response: Dictionary) -> void:
@@ -138,3 +205,39 @@ func _on_item_used(response: Dictionary, item_key: String, quantity: int) -> voi
 	
 	item_used.emit(item_key, quantity)
 	inventory_updated.emit()
+
+## 回调：装备加载完成
+func _on_equipment_loaded(response: Dictionary) -> void:
+	_is_loading = false
+	var code: int = response.get("code", 0)
+	if code >= 400:
+		_last_error = response.get("message", "加载装备失败")
+		equipment_error.emit(_last_error)
+		return
+	
+	var data: Dictionary = response.get("data", {})
+	_equipment = data.get("equipment", [])
+	_equipment_stats = data.get("stats", {})
+	equipment_updated.emit(_equipment, _equipment_stats)
+
+## 回调：装备物品完成
+func _on_equip_item_completed(response: Dictionary, slot: String) -> void:
+	_is_loading = false
+	var code: int = response.get("code", 0)
+	if code >= 400:
+		_last_error = response.get("message", "装备物品失败")
+		equipment_error.emit(_last_error)
+		return
+	
+	load_equipment()
+
+## 回调：卸下装备完成
+func _on_unequip_item_completed(response: Dictionary, slot: String) -> void:
+	_is_loading = false
+	var code: int = response.get("code", 0)
+	if code >= 400:
+		_last_error = response.get("message", "卸下装备失败")
+		equipment_error.emit(_last_error)
+		return
+	
+	load_equipment()
