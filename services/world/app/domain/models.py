@@ -44,6 +44,8 @@ class Region(Base):
         ),
         Index("regions_chapter_id_idx", "chapter_id"),
         Index("regions_status_idx", "status"),
+        Index("regions_visible_idx", "visible"),
+        Index("regions_chapter_visible_idx", "chapter_id", "visible"),
     )
 
 

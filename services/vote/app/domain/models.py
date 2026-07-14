@@ -62,6 +62,7 @@ class VoteCycle(Base):
             "status IN ('draft', 'scheduled', 'open', 'closed', 'finalized')",
             name="vote_cycles_status_check",
         ),
+        Index("vote_cycles_status_time_idx", "status", "starts_at", "ends_at"),
     )
 
 

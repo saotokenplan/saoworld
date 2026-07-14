@@ -113,25 +113,41 @@ class ContentRepository:
 
             return packages, total
 
-        query = select(ContentPackage).where(
-            ContentPackage.status.in_(["gray", "live"])
+        live_query = select(ContentPackage).where(ContentPackage.status == "live")
+        live_count_query = select(func.count(ContentPackage.content_package_id)).where(
+            ContentPackage.status == "live"
         )
+
         if chapter_id:
-            query = query.where(ContentPackage.chapter_id == chapter_id)
-        query = query.order_by(ContentPackage.released_at.desc().nullslast())
+            live_query = live_query.where(ContentPackage.chapter_id == chapter_id)
+            live_count_query = live_count_query.where(ContentPackage.chapter_id == chapter_id)
 
-        result = await self.db.execute(query)
-        all_packages = list(result.scalars().all())
+        live_query = live_query.order_by(ContentPackage.released_at.desc().nullslast())
+        live_result = await self.db.execute(live_query)
+        live_packages = list(live_result.scalars().all())
 
-        visible_packages: list[ContentPackage] = []
-        for pkg in all_packages:
-            if pkg.status == "live":
-                visible_packages.append(pkg)
-            elif pkg.status == "gray":
-                if is_player_in_gray_scope(
-                    pkg.gray_scope_jsonb, player_id, player_region_id
-                ):
-                    visible_packages.append(pkg)
+        live_count_result = await self.db.execute(live_count_query)
+        live_total = live_count_result.scalar_one()
+
+        gray_query = select(ContentPackage).where(ContentPackage.status == "gray")
+        if chapter_id:
+            gray_query = gray_query.where(ContentPackage.chapter_id == chapter_id)
+        gray_query = gray_query.order_by(ContentPackage.released_at.desc().nullslast())
+        gray_result = await self.db.execute(gray_query)
+        all_gray_packages = list(gray_result.scalars().all())
+
+        visible_gray_packages: list[ContentPackage] = []
+        for pkg in all_gray_packages:
+            if is_player_in_gray_scope(
+                pkg.gray_scope_jsonb, player_id, player_region_id
+            ):
+                visible_gray_packages.append(pkg)
+
+        visible_packages = sorted(
+            live_packages + visible_gray_packages,
+            key=lambda p: (p.released_at is None, p.released_at),
+            reverse=True,
+        )
 
         total = len(visible_packages)
         paginated = visible_packages[offset : offset + limit]

@@ -2,6 +2,21 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-15 01:00 — auto-20260715-0100
+
+- 任务：服务端性能优化（S8-02）
+- 分支：auto/auto-20260715-0100
+- 状态：✅ 已完成
+- 工作内容：
+  - 验证 perf_test 工具就绪（62 个单元测试通过）
+  - 静态代码分析识别 4 个性能瓶颈（VoteCycle 复合索引缺失、content-service 分页失效、Region visible 索引缺失、vote_repo 查询优化）
+  - vote-service：VoteCycle 新增 vote_cycles_status_time_idx 复合索引，get_vote_progress 方法优化
+  - content-service：list_visible_packages 方法分页修复
+  - world-service：Region 新增 regions_visible_idx 和 regions_chapter_visible_idx 索引
+- 测试结果：vote-service 112 测试通过、content-service 67 测试通过、world-service 120 测试通过、ruff 通过
+- 修改文件：6 个（4代码 + 2文档）
+- 合并状态：待合并到 feature-prd
+
 ## 2026-07-14 24:00 — auto-20260714-2400
 
 - 任务：S0-02 首期内容包初始化验证
