@@ -1389,7 +1389,7 @@ async def update_item(
 
     return EnvelopeResponse(
         request_id=request_id,
-        data=ItemResponse(**item_dict),
+        data=ItemResponse.model_validate(item_dict),
         trace_id=x_trace_id,
     )
 
@@ -1485,7 +1485,7 @@ async def list_monsters(
     return EnvelopeResponse(
         request_id="",
         data=MonsterListResponse(monsters=monster_responses, total=total).model_dump(),
-        meta=PaginatedMeta(total=total, limit=limit, offset=offset).model_dump(),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
     )
 
 
@@ -1628,7 +1628,7 @@ async def list_bosses(
     return EnvelopeResponse(
         request_id=_make_request_id("req_world_bosses"),
         data=BossListResponse(bosses=boss_responses, total=total).model_dump(),
-        meta=PaginatedMeta(total=total, limit=limit, offset=offset).model_dump(),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
     )
 
 

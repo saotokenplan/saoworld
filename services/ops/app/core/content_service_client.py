@@ -3,8 +3,10 @@
 为 ops-service 提供调用 content-service 运营 API 的能力。
 """
 
-import structlog
+from typing import cast
+
 import httpx
+import structlog
 
 from app.core.config import settings
 
@@ -47,7 +49,7 @@ class ContentServiceClient:
                 headers=headers,
             )
             resp.raise_for_status()
-            return resp.json()
+            return cast(dict, resp.json())
 
     async def rollback_content_package(
         self,
@@ -78,7 +80,7 @@ class ContentServiceClient:
                 headers=headers,
             )
             resp.raise_for_status()
-            return resp.json()
+            return cast(dict, resp.json())
 
     async def list_content_packages(
         self,
@@ -110,7 +112,7 @@ class ContentServiceClient:
                 headers=headers,
             )
             resp.raise_for_status()
-            return resp.json()
+            return cast(dict, resp.json())
 
     async def get_content_package_detail(
         self,
@@ -132,4 +134,4 @@ class ContentServiceClient:
                 headers=headers,
             )
             resp.raise_for_status()
-            return resp.json()
+            return cast(dict, resp.json())

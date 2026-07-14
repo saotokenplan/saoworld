@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Sequence
 
-from sqlalchemy import and_, select, func as sa_func
+from sqlalchemy import and_, delete, func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.models import Guild, GuildMember
@@ -171,7 +171,7 @@ class GuildRepository:
 
         for member_id in member_ids:
             await self.db.execute(
-                GuildMember.__table__.delete().where(
+                delete(GuildMember).where(
                     GuildMember.guild_member_id == member_id
                 )
             )

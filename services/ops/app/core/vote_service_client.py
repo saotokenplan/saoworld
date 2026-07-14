@@ -3,8 +3,10 @@
 为 ops-service 提供调用 vote-service 运营 API 的能力。
 """
 
-import structlog
+from typing import cast
+
 import httpx
+import structlog
 
 from app.core.config import settings
 
@@ -53,7 +55,7 @@ class VoteServiceClient:
                 headers=headers,
             )
             resp.raise_for_status()
-            return resp.json()
+            return cast(dict, resp.json())
 
     async def schedule_vote_cycle(
         self,
@@ -75,7 +77,7 @@ class VoteServiceClient:
                 headers=headers,
             )
             resp.raise_for_status()
-            return resp.json()
+            return cast(dict, resp.json())
 
     async def open_vote_cycle(
         self,
@@ -97,7 +99,7 @@ class VoteServiceClient:
                 headers=headers,
             )
             resp.raise_for_status()
-            return resp.json()
+            return cast(dict, resp.json())
 
     async def close_vote_cycle(
         self,
@@ -119,7 +121,7 @@ class VoteServiceClient:
                 headers=headers,
             )
             resp.raise_for_status()
-            return resp.json()
+            return cast(dict, resp.json())
 
     async def finalize_vote_cycle(
         self,
@@ -141,7 +143,7 @@ class VoteServiceClient:
                 headers=headers,
             )
             resp.raise_for_status()
-            return resp.json()
+            return cast(dict, resp.json())
 
     async def list_vote_cycles(
         self,
@@ -173,7 +175,7 @@ class VoteServiceClient:
                 headers=headers,
             )
             resp.raise_for_status()
-            return resp.json()
+            return cast(dict, resp.json())
 
     async def get_vote_cycle_detail(
         self,
@@ -195,4 +197,4 @@ class VoteServiceClient:
                 headers=headers,
             )
             resp.raise_for_status()
-            return resp.json()
+            return cast(dict, resp.json())
