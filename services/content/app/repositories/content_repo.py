@@ -126,9 +126,6 @@ class ContentRepository:
         live_result = await self.db.execute(live_query)
         live_packages = list(live_result.scalars().all())
 
-        live_count_result = await self.db.execute(live_count_query)
-        live_total = live_count_result.scalar_one()
-
         gray_query = select(ContentPackage).where(ContentPackage.status == "gray")
         if chapter_id:
             gray_query = gray_query.where(ContentPackage.chapter_id == chapter_id)

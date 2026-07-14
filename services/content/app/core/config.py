@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/content_db"
 
-    jwt_secret: str
+    jwt_secret: str = "test-secret-key-for-testing-only"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
