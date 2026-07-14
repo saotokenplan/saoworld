@@ -19,6 +19,8 @@ var quest_cache: Dictionary = {}
 var is_loading: bool = false
 var last_error: Dictionary = {}
 var schema_version: int = 1
+var _cache_timestamps: Dictionary = {}
+const CACHE_TTL_SECONDS: int = 300
 
 const REGION_STATUS: Dictionary = {
 	"locked": {"name": "锁定", "color": "#666666"},
@@ -38,7 +40,11 @@ func _ready() -> void:
 func _on_auth_error(request_id: String, message: String) -> void:
 	auth_error.emit(message)
 
-func fetch_regions(limit: int = 20, offset: int = 0, status_filter: String = "") -> void:
+func fetch_regions(limit: int = 20, offset: int = 0, status_filter: String = "", force_refresh: bool = false) -> void:
+	if not force_refresh and _is_cache_valid("regions") and regions.size() > 0:
+		regions_loaded.emit()
+		return
+	
 	_set_loading(true)
 	var params: Array[String] = []
 	params.append("limit=%d" % limit)
@@ -65,8 +71,25 @@ func _handle_regions_success(result: Dictionary) -> void:
 		if region_id != "":
 			region_cache[region_id] = region
 	
+	_cache_timestamps["regions"] = Time.get_unix_time_from_system()
 	last_error.clear()
 	regions_loaded.emit()
+
+func _is_cache_valid(cache_key: String) -> bool:
+	if not _cache_timestamps.has(cache_key):
+		return false
+	var last_time: int = _cache_timestamps[cache_key]
+	var now: int = Time.get_unix_time_from_system()
+	return now - last_time < CACHE_TTL_SECONDS
+
+func _update_cache_timestamp(cache_key: String) -> void:
+	_cache_timestamps[cache_key] = Time.get_unix_time_from_system()
+
+func invalidate_cache(cache_key: String = "") -> void:
+	if cache_key == "":
+		_cache_timestamps.clear()
+	else:
+		_cache_timestamps.erase(cache_key)
 
 func _handle_world_error(result: Dictionary) -> void:
 	var err_code: String = result.get("code", "UNKNOWN_ERROR")
@@ -156,10 +179,15 @@ func is_server_error() -> bool:
 func reset() -> void:
 	regions.clear()
 	region_cache.clear()
+	_cache_timestamps.clear()
 	is_loading = false
 	last_error.clear()
 
-func fetch_regions_with_chapter(chapter_id: String = "", limit: int = 20, offset: int = 0) -> void:
+func fetch_regions_with_chapter(chapter_id: String = "", limit: int = 20, offset: int = 0, force_refresh: bool = false) -> void:
+	if not force_refresh and _is_cache_valid("regions") and regions.size() > 0:
+		regions_loaded.emit()
+		return
+	
 	_set_loading(true)
 	var params: Array[String] = []
 	params.append("limit=%d" % limit)

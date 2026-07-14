@@ -34,6 +34,11 @@ var progress_poll_interval: int = 10
 var is_polling_progress: bool = false
 var _chart_data_cache: Dictionary = {}
 var _vote_review_cache: Dictionary = {}
+var _poll_suspended: bool = false
+var _poll_suspend_reason: String = ""
+const MIN_POLL_INTERVAL: int = 2
+const MAX_POLL_INTERVAL: int = 30
+const CRITICAL_TIME_SECONDS: int = 300
 
 func _ready() -> void:
 	APIManager.auth_error.connect(_on_auth_error)
@@ -500,13 +505,78 @@ func stop_progress_polling() -> void:
 		progress_poll_timer.stop()
 
 func _poll_vote_progress() -> void:
+	if _poll_suspended:
+		return
 	fetch_vote_progress()
+	_update_poll_interval()
 
 func _handle_progress_success(result: Dictionary) -> void:
 	var data: Dictionary = result.get("data", {})
 	current_progress = data
 	last_error.clear()
 	vote_progress_updated.emit(current_progress)
+	if _poll_suspended and is_cycle_open():
+		resume_progress_polling()
+
+func _update_poll_interval() -> void:
+	if not is_cycle_open():
+		suspend_progress_polling("cycle_not_open")
+		return
+	
+	var end_time_str: String = current_cycle.get("end_time", "")
+	if end_time_str == "":
+		return
+	
+	var end_time: float = 0.0
+	if end_time_str.is_valid_integer():
+		end_time = float(end_time_str)
+	else:
+		var dt: PackedStringArray = end_time_str.split("T")
+		if dt.size() >= 2:
+			var time_part: PackedStringArray = dt[1].split(":")
+			if time_part.size() >= 3:
+				var seconds: float = float(time_part[0]) * 3600 + float(time_part[1]) * 60 + float(time_part[2].split(".")[0])
+				end_time = seconds
+	
+	var now: float = float(Time.get_unix_time_from_system())
+	var remaining: float = end_time - now
+	
+	var new_interval: int = 10
+	if remaining <= 0:
+		new_interval = MAX_POLL_INTERVAL
+	elif remaining < CRITICAL_TIME_SECONDS:
+		new_interval = MAX(2, int(remaining / 30))
+	elif remaining < CRITICAL_TIME_SECONDS * 3:
+		new_interval = 5
+	else:
+		new_interval = 15
+	
+	new_interval = clamp(new_interval, MIN_POLL_INTERVAL, MAX_POLL_INTERVAL)
+	
+	if progress_poll_timer and progress_poll_timer.wait_time != new_interval:
+		progress_poll_interval = new_interval
+		progress_poll_timer.wait_time = new_interval
+
+func suspend_progress_polling(reason: String = "") -> void:
+	if not is_polling_progress:
+		return
+	_poll_suspended = true
+	_poll_suspend_reason = reason
+	progress_poll_timer.stop()
+
+func resume_progress_polling() -> void:
+	if not is_polling_progress:
+		return
+	_poll_suspended = false
+	_poll_suspend_reason = ""
+	_update_poll_interval()
+	progress_poll_timer.start()
+
+func is_poll_suspended() -> bool:
+	return _poll_suspended
+
+func get_poll_suspend_reason() -> String:
+	return _poll_suspend_reason
 
 func get_current_progress() -> Dictionary:
 	return current_progress.duplicate()
