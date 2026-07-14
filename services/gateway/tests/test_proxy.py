@@ -51,10 +51,10 @@ class TestProxyRouting:
         assert response.status_code == 503
 
     @pytest.mark.asyncio
-    async def test_ops_service_route(self, client, valid_token):
+    async def test_ops_service_route(self, client, ops_token):
         response = await client.get(
             "/api/v1/ops/dashboard",
-            headers={"Authorization": f"Bearer {valid_token}"},
+            headers={"Authorization": f"Bearer {ops_token}"},
         )
         assert response.status_code == 503
 

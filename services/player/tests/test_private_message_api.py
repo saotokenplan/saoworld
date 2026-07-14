@@ -18,9 +18,9 @@ def client() -> TestClient:
 @pytest.fixture
 def player_token_headers() -> dict[str, str]:
     """模拟玩家身份的请求头"""
-    from app.core.auth import create_jwt_token
+    from app.core.auth import create_test_token
 
-    token = create_jwt_token(
+    token = create_test_token(
         user_id=str(uuid.uuid4()),
         role=Role.PLAYER,
         scopes=[
