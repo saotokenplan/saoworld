@@ -80,4 +80,6 @@
 
 ## 合并结果
 
-- 待合并到 feature-prd 分支
+- ✅ 已成功合并到 feature-prd 分支
+- 合并提交 hash: 7cf21df
+- 工作分支 auto/auto-20260715-0000 已删除
