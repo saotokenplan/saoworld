@@ -2,6 +2,26 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-15 10:00 — auto-20260715-1000
+
+- 任务：mypy 类型检查门禁补全
+- 分支：auto/auto-20260715-1000
+- 状态：✅ 已完成
+- 工作内容：
+  - 为全部 8 个后端服务安装 dev 依赖（mypy、ruff、pytest 等），运行 mypy 收集到 46 个类型错误
+  - 修复 tracing.py 类型错误（6 个服务）：`call_next: Callable` 改为 `Callable[[Request], Awaitable[Response]]`
+  - 修复 ops-service 类型错误（23 个）：`raise_ops_error` 返回类型改为 `NoReturn`（修复 7 个 union-attr）；3 个客户端 `resp.json()` 添加 `cast(dict, ...)`（修复 15 个 no-any-return）
+  - 修复 vote_repo.py 排序键 cast 包装（4 个错误）
+  - 修复 world routes.py：`ItemResponse.model_validate` 替代 `**` 解包 + PaginatedMeta 直接传递（12 个错误）
+  - 修复 generation item_data_adapter.py：`defaults: dict[str, Any]` 类型注解（1 个错误）
+  - 修复 player guild_repo.py：使用 `delete(GuildMember)` 替代 `__table__.delete()`（1 个错误）
+- 测试结果：
+  - mypy 检查：所有 8 个服务 0 错误（修复前 46 个）
+  - ruff 检查：所有 8 个服务通过
+  - pytest 测试：913 个测试全部通过，无回归
+- 修改文件：18 个（14 代码 + 4 文档，其中 2 新建 + 16 修改）
+- 合并状态：待合并
+
 ## 2026-07-15 09:00 — auto-20260715-0900
 
 - 任务：灰度发布前全面验证与状态整理
