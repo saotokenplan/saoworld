@@ -11,6 +11,7 @@ from app.core.llm_adapter import (
     LLMTimeoutError,
     get_llm_adapter,
 )
+from app.core.boss_data_adapter import BossDataAdapter
 from app.core.npc_data_adapter import NPCDataAdapter
 from app.core.monster_data_adapter import MonsterDataAdapter
 from app.core.quality_scorer import QualityScorer
@@ -42,6 +43,7 @@ class ContentGenerator:
         quest_adapter: QuestDataAdapter | None = None,
         settlement_adapter: SettlementDataAdapter | None = None,
         monster_adapter: MonsterDataAdapter | None = None,
+        boss_adapter: BossDataAdapter | None = None,
     ):
         self.llm_adapter = llm_adapter or get_llm_adapter()
         self.template_manager = template_manager or TemplateManager(settings.template_dir)
@@ -52,6 +54,7 @@ class ContentGenerator:
         self.quest_adapter = quest_adapter or QuestDataAdapter()
         self.settlement_adapter = settlement_adapter or SettlementDataAdapter()
         self.monster_adapter = monster_adapter or MonsterDataAdapter()
+        self.boss_adapter = boss_adapter or BossDataAdapter()
 
     async def generate_npc(
         self,
@@ -327,6 +330,63 @@ class ContentGenerator:
         adapted = self.monster_adapter.adapt(response)
         return adapted
 
+    async def generate_boss(
+        self,
+        region_id: str | None = None,
+        chapter_id: str | None = None,
+        boss_rank: str = "legendary",
+        context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """生成Boss内容。
+
+        Args:
+            region_id: 区域 ID
+            chapter_id: 章节 ID
+            boss_rank: Boss等级（legendary/mythic）
+            context: 额外上下文信息
+
+        Returns:
+            生成的Boss数据（已转换为 world-service 兼容格式）
+
+        Raises:
+            ContentGenerationError: 生成失败或质量不达标
+        """
+        template_name = self.template_manager.get_monster_template_by_type("boss")
+        if not template_name:
+            template_name = "monster/monster_base.jinja2"
+
+        prompt = self._build_boss_prompt(region_id, chapter_id, boss_rank, context)
+        system_prompt = self._build_system_prompt("boss")
+
+        try:
+            response = await self.llm_adapter.generate_json(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                temperature=0.7,
+            )
+        except (LLMAPIError, LLMTimeoutError, LLMRateLimitError) as e:
+            logger.error(f"LLM generation failed: {e}")
+            raise ContentGenerationError(f"LLM generation failed: {e}")
+
+        try:
+            response = self.boss_adapter.ensure_minimum_completeness(response, min_completeness=0.95)
+        except ValueError as e:
+            logger.warning(f"Boss data completeness check failed: {e}")
+            raise ContentGenerationError(str(e))
+
+        score_result = self.quality_scorer.score_boss(response)
+        if not score_result.is_acceptable():
+            logger.warning(
+                f"Boss quality below threshold: {score_result.score:.2f}, reasons: {score_result.reasons}"
+            )
+            raise ContentGenerationError(
+                f"Quality score {score_result.score:.2f} below threshold {self.quality_threshold}",
+                quality_score=score_result.score,
+            )
+
+        adapted = self.boss_adapter.adapt(response)
+        return adapted
+
     def _build_system_prompt(self, content_type: str) -> str:
         """构建系统提示。"""
         prompts = {
@@ -369,6 +429,15 @@ class ContentGenerator:
                 "（包含aggression、attack_pattern、special_behaviors）、loot_table（掉落表）、"
                 "skills（技能列表，每个包含skill_key、name、description、damage_multiplier、cooldown）。"
                 "确保所有数值与等级和怪物类型匹配。"
+            ),
+            "boss": (
+                "你是一个游戏Boss设计专家。你需要根据世界观和区域设定，设计出具有挑战性的区域Boss。"
+                "返回的JSON必须包含所有必需字段：monster_key、name、chapter_id、region_key、"
+                "level、hp、attack、defense、speed、description、behavior_pattern、loot_table、"
+                "skills、is_boss(true)、boss_rank(legendary/mythic)、phase_count、"
+                "special_skills（特殊技能列表，每个包含skill_key、name、description、cooldown）、"
+                "enrage_threshold（0-1之间的浮点数）、reward（包含experience、items）。"
+                "确保Boss具有多个阶段、独特的特殊技能和丰富的奖励。"
             ),
         }
         return prompts.get(content_type, "你是一个游戏内容设计专家。请返回有效的JSON格式。")
@@ -596,6 +665,59 @@ class ContentGenerator:
         prompt_parts.append("  - special_behaviors: 特殊行为列表")
         prompt_parts.append("- loot_table: 掉落表数组（每个元素包含item_key、drop_rate、quantity_min、quantity_max）")
         prompt_parts.append("- skills: 技能数组（每个技能包含skill_key、name、description、damage_multiplier、cooldown）")
+
+        return "\n".join(prompt_parts)
+
+    def _build_boss_prompt(
+        self,
+        region_id: str | None,
+        chapter_id: str | None,
+        boss_rank: str,
+        context: dict[str, Any] | None,
+    ) -> str:
+        """构建Boss生成提示。"""
+        prompt_parts = [f"请设计一个{boss_rank}等级的区域Boss。"]
+
+        if chapter_id:
+            prompt_parts.append(f"章节：{chapter_id}")
+        if region_id:
+            prompt_parts.append(f"区域：{region_id}")
+        if context:
+            if "region_key" in context:
+                prompt_parts.append(f"区域ID：{context['region_key']}")
+            if "world_rules" in context:
+                prompt_parts.append(f"世界规则：{context['world_rules']}")
+            if "theme" in context:
+                prompt_parts.append(f"主题：{context['theme']}")
+            if "difficulty" in context:
+                prompt_parts.append(f"难度：{context['difficulty']}")
+
+        prompt_parts.append("\n请返回包含以下所有字段的完整JSON：")
+        prompt_parts.append("- monster_key: Boss唯一标识（格式：boss_xxx）")
+        prompt_parts.append("- name: Boss名称（富有史诗感）")
+        prompt_parts.append("- chapter_id: 所属章节ID")
+        prompt_parts.append("- region_key: 所在区域ID（格式：region_xxx）")
+        prompt_parts.append("- level: 等级（5-60的整数，Boss应高于区域普通怪物）")
+        prompt_parts.append("- hp: 生命值（至少100，Boss应显著高于普通怪物）")
+        prompt_parts.append("- attack: 攻击力（至少10）")
+        prompt_parts.append("- defense: 防御力（至少5）")
+        prompt_parts.append("- speed: 速度（1-20的整数）")
+        prompt_parts.append("- description: Boss描述（100-300字，包含背景故事）")
+        prompt_parts.append("- behavior_pattern: 行为模式对象")
+        prompt_parts.append("  - aggression: 攻击性（aggressive/berserker）")
+        prompt_parts.append("  - attack_pattern: 攻击模式（melee/ranged/magic/mixed）")
+        prompt_parts.append("  - special_behaviors: 特殊行为列表（如enrage、phase_change）")
+        prompt_parts.append("- loot_table: 掉落表数组（每个元素包含item_key、drop_rate、quantity_min、quantity_max）")
+        prompt_parts.append("- skills: 普通技能数组（至少2个，每个技能包含skill_key、name、description、damage_multiplier、cooldown）")
+        prompt_parts.append("- is_boss: 是否为Boss（固定为true）")
+        prompt_parts.append("- boss_rank: Boss等级（legendary/mythic）")
+        prompt_parts.append("- phase_count: 阶段数量（1-5的整数）")
+        prompt_parts.append("- special_skills: 特殊技能数组（每个阶段至少1个，包含skill_key、name、description、cooldown）")
+        prompt_parts.append("- enrage_threshold: 狂暴阈值（0-1之间的浮点数，生命值低于此值时狂暴）")
+        prompt_parts.append("- reward: 击杀奖励对象")
+        prompt_parts.append("  - experience: 经验值（应高于同等级普通怪物的3-5倍）")
+        prompt_parts.append("  - items: 物品奖励列表（包含稀有装备或材料）")
+        prompt_parts.append("- min_reputation: 最低声望要求（0或正数）")
 
         return "\n".join(prompt_parts)
 

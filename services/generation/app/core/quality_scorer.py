@@ -365,6 +365,183 @@ class QualityScorer:
 
         return QualityScoreResult(max(0.0, min(1.0, score)), reasons)
 
+    def score_boss(self, payload: dict[str, Any]) -> QualityScoreResult:
+        reasons: list[str] = []
+        score = 1.0
+
+        required_fields = [
+            "monster_key", "name", "chapter_id", "region_key",
+            "level", "hp", "attack", "defense", "speed",
+            "description", "behavior_pattern", "loot_table", "skills",
+            "is_boss", "boss_rank", "phase_count", "special_skills",
+            "enrage_threshold", "reward",
+        ]
+
+        for field in required_fields:
+            value = payload.get(field)
+            if value is None:
+                score -= 0.03
+                reasons.append(f"Missing field: {field}")
+            elif isinstance(value, str) and not value.strip():
+                score -= 0.02
+                reasons.append(f"Empty field: {field}")
+            elif isinstance(value, (list, dict)) and len(value) == 0:
+                score -= 0.03
+                reasons.append(f"Empty list/dict: {field}")
+
+        name = payload.get("name", "")
+        if len(name) < 3:
+            score -= 0.1
+            reasons.append("Boss name is too short")
+        elif len(name) > 50:
+            score -= 0.05
+            reasons.append("Boss name is too long")
+
+        description = payload.get("description", "")
+        if len(description) < 100:
+            score -= 0.15
+            reasons.append("Boss description is too short")
+        elif len(description) > 800:
+            score -= 0.05
+            reasons.append("Boss description is too long")
+
+        boss_rank = payload.get("boss_rank", "")
+        valid_ranks = {"legendary", "mythic"}
+        if boss_rank and boss_rank not in valid_ranks:
+            score -= 0.1
+            reasons.append(f"Invalid boss rank: {boss_rank}")
+
+        phase_count = payload.get("phase_count", 0)
+        if isinstance(phase_count, (int, float)):
+            if phase_count < 1:
+                score -= 0.15
+                reasons.append("Boss must have at least 1 phase")
+            elif phase_count > 5:
+                score -= 0.05
+                reasons.append("Boss phase count exceeds maximum (5)")
+
+        level = payload.get("level", 0)
+        if isinstance(level, (int, float)):
+            if level < 5 or level > 60:
+                score -= 0.08
+                reasons.append(f"Boss level out of range (5-60): {level}")
+
+        hp = payload.get("hp", 0)
+        if isinstance(hp, (int, float)):
+            if hp < 100:
+                score -= 0.15
+                reasons.append("Boss HP must be at least 100")
+
+        attack = payload.get("attack", 0)
+        if isinstance(attack, (int, float)) and attack < 10:
+            score -= 0.08
+            reasons.append("Boss attack must be at least 10")
+
+        defense = payload.get("defense", 0)
+        if isinstance(defense, (int, float)) and defense < 5:
+            score -= 0.05
+            reasons.append("Boss defense must be at least 5")
+
+        speed = payload.get("speed", 0)
+        if isinstance(speed, (int, float)) and speed < 1:
+            score -= 0.05
+            reasons.append("Boss speed must be at least 1")
+
+        enrage_threshold = payload.get("enrage_threshold", 0)
+        if isinstance(enrage_threshold, (int, float)):
+            if enrage_threshold < 0 or enrage_threshold > 1:
+                score -= 0.1
+                reasons.append("Enrage threshold must be between 0 and 1")
+
+        special_skills = payload.get("special_skills", [])
+        if isinstance(special_skills, list):
+            if phase_count >= 2 and len(special_skills) < phase_count:
+                score -= 0.1
+                reasons.append(f"Boss needs at least {phase_count} special skills for {phase_count} phases")
+            for idx, skill in enumerate(special_skills):
+                if not isinstance(skill, dict):
+                    score -= 0.03
+                    reasons.append(f"Special skill {idx} is not a dictionary")
+                    continue
+                skill_key = skill.get("skill_key")
+                skill_name = skill.get("name", "")
+                cooldown = skill.get("cooldown", 0)
+                if not skill_key:
+                    score -= 0.02
+                    reasons.append(f"Special skill {idx} missing skill_key")
+                if len(skill_name) < 2:
+                    score -= 0.02
+                    reasons.append(f"Special skill {idx} name is too short")
+                if isinstance(cooldown, (int, float)) and cooldown < 5:
+                    score -= 0.02
+                    reasons.append(f"Special skill {idx} cooldown too short (min 5)")
+        else:
+            score -= 0.15
+            reasons.append("Special skills must be a list")
+
+        skills = payload.get("skills", [])
+        if isinstance(skills, list):
+            if len(skills) < 2:
+                score -= 0.08
+                reasons.append("Boss needs at least 2 skills")
+            for idx, skill in enumerate(skills):
+                if not isinstance(skill, dict):
+                    score -= 0.03
+                    reasons.append(f"Skill {idx} is not a dictionary")
+        else:
+            score -= 0.15
+            reasons.append("Skills must be a list")
+
+        loot_table = payload.get("loot_table", [])
+        if isinstance(loot_table, list):
+            if len(loot_table) < 1:
+                score -= 0.08
+                reasons.append("Boss needs at least 1 loot entry")
+            for idx, loot in enumerate(loot_table):
+                if not isinstance(loot, dict):
+                    score -= 0.02
+                    reasons.append(f"Loot entry {idx} is not a dictionary")
+                    continue
+                drop_rate = loot.get("drop_rate", 1.0)
+                if isinstance(drop_rate, (int, float)) and (drop_rate < 0 or drop_rate > 1.0):
+                    score -= 0.02
+                    reasons.append(f"Loot entry {idx} drop_rate out of range")
+        else:
+            score -= 0.1
+            reasons.append("Loot table must be a list")
+
+        reward = payload.get("reward", {})
+        if isinstance(reward, dict):
+            experience = reward.get("experience", 0)
+            if isinstance(experience, (int, float)):
+                level = payload.get("level", 10)
+                expected_exp = level * 100
+                if experience < expected_exp:
+                    score -= 0.1
+                    reasons.append(f"Boss experience reward below expected ({expected_exp})")
+                elif experience > expected_exp * 5:
+                    score -= 0.05
+                    reasons.append("Boss experience reward exceeds 5x expected")
+            items = reward.get("items", [])
+            if isinstance(items, list) and len(items) == 0:
+                score -= 0.05
+                reasons.append("Boss reward should include at least 1 item")
+        else:
+            score -= 0.15
+            reasons.append("Boss reward must be a dictionary")
+
+        monster_key = payload.get("monster_key", "")
+        if monster_key and not monster_key.startswith("boss_"):
+            score -= 0.03
+            reasons.append("Boss key should start with 'boss_'")
+
+        region_key = payload.get("region_key", "")
+        if region_key and not region_key.startswith("region_"):
+            score -= 0.02
+            reasons.append("Region key should start with 'region_'")
+
+        return QualityScoreResult(max(0.0, min(1.0, score)), reasons)
+
     def score_settlement(self, payload: dict[str, Any]) -> QualityScoreResult:
         reasons: list[str] = []
         score = 1.0
@@ -505,6 +682,8 @@ class QualityScorer:
                 return self.score_settlement(payload)
             case "monster":
                 return self.score_monster(payload)
+            case "boss":
+                return self.score_boss(payload)
             case _:
                 return self.score_generic(payload)
 
