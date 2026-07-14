@@ -38,14 +38,14 @@
 | test_vote_result_panel.gd | VoteResultPanel 投票结果展示 | 12 |
 | test_vote_history_panel.gd | VoteHistoryPanel 投票历史面板 | 7 |
 | test_audio_manager.gd | AudioManager 音频管理 | 17 |
-| test_player_manager.gd | PlayerManager 玩家信息管理 | 15 |
+| test_player_manager.gd | PlayerManager 玩家信息管理（含索引优化、声望预排序、并行请求） | 41 |
 | test_player.gd | Player 玩家移动与状态 | 15 |
 | test_api_manager.gd | APIManager API 请求管理 | 11 |
 | test_game_state.gd | GameState 全局状态管理 | 11 |
 | test_voting_panel.gd | VotingPanel 投票界面 | 5 |
 | test_content_package_detail.gd | ContentPackageDetail 内容包详情弹窗 | 9 |
 | test_inventory_manager.gd | InventoryManager 背包系统管理 | 9 |
-| test_save_manager.gd | SaveManager 存档系统管理 | 9 |
+| test_save_manager.gd | SaveManager 存档系统管理（含异步存档、缓存机制） | 24 |
 | test_quest_panel.gd | QuestPanel 任务面板组件 | 9 |
 | test_npc_panel.gd | NPCPanel NPC 列表 | 4 |
 | test_combat_hud.gd | CombatHUD 战斗 HUD | 7 |
@@ -67,10 +67,10 @@
 - **ContentManager**：内容更新管理、包安装/卸载、更新检测、状态查询、错误分类
 - **AudioManager**：音量控制（音乐/音效）、静音切换、音量边界值、信号发射
 - **WorldManager**：区域列表管理、区域详情、缓存机制
-- **PlayerManager**：玩家信息、任务列表、区域状态
+- **PlayerManager**：玩家信息、任务列表、区域状态、索引字典（O(1) 查询）、预排序声望级别、并行 API 请求追踪
 - **CombatManager**：战斗状态机、伤害计算、胜负判定
 - **InventoryManager**：背包数据管理、物品添加/移除/使用
-- **SaveManager**：存档读写、自动保存、备份管理
+- **SaveManager**：存档读写、自动保存、备份管理、异步存档（Thread）、存档信息缓存（TTL）、缓存失效机制
 
 ### UI 组件测试
 - **VotingPanel**：信号声明、候选项选择状态、投票状态、提交按钮逻辑

@@ -501,8 +501,17 @@ func reset() -> void:
 	player_info.clear()
 	player_quests.clear()
 	player_regions.clear()
+	quest_index.clear()
+	region_index.clear()
+	reputation_cache.clear()
+	reputation_list.clear()
+	profile_data.clear()
+	contribution_data.clear()
+	achievements_data.clear()
 	is_loading = false
 	last_error.clear()
+	pending_requests = 0
+	refresh_all_completed = false
 
 func accept_quest(quest_id: String) -> void:
 	var existing: Dictionary = get_player_quest_by_id(quest_id)
