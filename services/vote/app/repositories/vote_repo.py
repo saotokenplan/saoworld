@@ -255,6 +255,20 @@ class VoteRepository:
         if cycle is None:
             return None
 
+        candidates = await self.get_all_candidates_for_cycle(vote_cycle_id)
+        candidate_map = {c.candidate_id: c for c in candidates}
+
+        if not candidate_map:
+            return {
+                "vote_cycle_id": vote_cycle_id,
+                "chapter_id": cycle.chapter_id,
+                "status": cycle.status,
+                "total_votes": 0,
+                "total_weighted_votes": 0.0,
+                "leading_candidate_id": None,
+                "candidates": [],
+            }
+
         stmt = (
             select(
                 Vote.candidate_id,
@@ -267,46 +281,33 @@ class VoteRepository:
         result = await self.db.execute(stmt)
         tally_rows = result.all()
 
-        candidates = await self.get_all_candidates_for_cycle(vote_cycle_id)
-        candidate_map = {c.candidate_id: c for c in candidates}
-
+        tally_map: dict[uuid.UUID, tuple[int, float]] = {}
         total_votes: int = 0
         total_weighted_votes: float = 0.0
         max_weighted_score: float = -1.0
         leading_candidate_id: uuid.UUID | None = None
 
-        progress_items = []
         for row in tally_rows:
-            # SQLAlchemy Row 使用属性访问label列
-            # mypy 无法正确推断 Row.label() 的类型，需要 type: ignore
             count = row.count  # type: ignore[operator]
             total_weight = float(row.total_weight) if row.total_weight is not None else 0.0  # type: ignore[attr-defined]
+            tally_map[row.candidate_id] = (count, total_weight)
             total_votes += count  # type: ignore[operator]
             total_weighted_votes += total_weight
 
-            candidate = candidate_map.get(row.candidate_id)
-            if candidate:
-                if total_weight > max_weighted_score and candidate.status == "active":
-                    max_weighted_score = total_weight
-                    leading_candidate_id = row.candidate_id
-
-                progress_items.append({
-                    "candidate_id": row.candidate_id,
-                    "title": candidate.title,
-                    "vote_count": count,
-                    "weighted_score": total_weight,
-                    "status": candidate.status,
-                })
-
+        progress_items = []
         for candidate_id, candidate in candidate_map.items():
-            if candidate_id not in {row.candidate_id for row in tally_rows}:
-                progress_items.append({
-                    "candidate_id": candidate_id,
-                    "title": candidate.title,
-                    "vote_count": 0,
-                    "weighted_score": 0.0,
-                    "status": candidate.status,
-                })
+            count, total_weight = tally_map.get(candidate_id, (0, 0.0))
+            if total_votes > 0 and total_weight > max_weighted_score and candidate.status == "active":
+                max_weighted_score = total_weight
+                leading_candidate_id = candidate_id
+
+            progress_items.append({
+                "candidate_id": candidate_id,
+                "title": candidate.title,
+                "vote_count": count,
+                "weighted_score": total_weight,
+                "status": candidate.status,
+            })
 
         progress_items.sort(key=lambda x: x["weighted_score"], reverse=True)
 
