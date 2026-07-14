@@ -2,6 +2,22 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-15 05:00 — auto-20260715-0500
+
+- 任务：S8-01「APIManager 异步化改造」（客户端性能优化第一阶段）
+- 分支：auto/auto-20260715-0500
+- 状态：✅ 已完成
+- 工作内容：
+  - APIManager.gd 新增 HTTP 请求连接池（最大 5 个复用），实现 `_get_request_from_pool()` 和 `_return_request_to_pool()` 方法
+  - 新增异步回调模式：`get_async()`、`post_async()`、`put_async()`、`delete_async()` 方法，支持 Callable 回调
+  - 实现智能重试策略：`_calculate_retry_delay()` 带 ±25% 抖动的指数退避，最大间隔 30 秒
+  - 请求超时控制：独立 Timer 管理，自动清理资源
+  - 同步方法优化：现有 get/post/put/delete 方法迁移到连接池，重试策略更新
+  - 事件提交优化：`_submit_events_batch()` 使用新的异步方法
+  - 新增 9 个 GUT 测试用例（异步方法存在性、连接池配置、重试延迟计算、抖动范围、边界值校验）
+- 修改文件：3 个（APIManager.gd + test_api_manager.gd + project-status.md）
+- 合并状态：待合并到 feature-prd
+
 ## 2026-07-15 04:00 — auto-20260715-0400
 
 - 任务：S8-01「客户端性能优化分析」
