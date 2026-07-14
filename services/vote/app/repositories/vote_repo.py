@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Sequence
+from typing import Any, Sequence, cast
 
 from sqlalchemy import Row, Select, func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -288,7 +288,7 @@ class VoteRepository:
         leading_candidate_id: uuid.UUID | None = None
 
         for row in tally_rows:
-            count = row.count  # type: ignore[operator]
+            count = cast(int, row.count)  # type: ignore[operator]
             total_weight = float(row.total_weight) if row.total_weight is not None else 0.0  # type: ignore[attr-defined]
             tally_map[row.candidate_id] = (count, total_weight)
             total_votes += count  # type: ignore[operator]
@@ -309,7 +309,7 @@ class VoteRepository:
                 "status": candidate.status,
             })
 
-        progress_items.sort(key=lambda x: x["weighted_score"], reverse=True)
+        progress_items.sort(key=lambda x: cast(float, x["weighted_score"]), reverse=True)
 
         return {
             "vote_cycle_id": vote_cycle_id,
