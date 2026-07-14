@@ -4,7 +4,6 @@ from typing import Any
 
 from sqlalchemy import (
     JSON,
-    UUID,
     CheckConstraint,
     DateTime,
     Float,
@@ -20,6 +19,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base
+from app.domain.uuid_type import UUIDType
 
 
 def _default_json_list():
@@ -29,7 +29,7 @@ def _default_json_list():
 class VoteCycle(Base):
     __tablename__ = "vote_cycles"
 
-    vote_cycle_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    vote_cycle_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
     chapter_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     status: Mapped[str] = mapped_column(
         String(32), nullable=False, default="draft", server_default="draft", index=True
@@ -40,7 +40,7 @@ class VoteCycle(Base):
     created_reason: Mapped[str] = mapped_column(Text, nullable=False)
     finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     winning_candidate_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
+        UUIDType(),
         ForeignKey("vote_candidates.candidate_id", use_alter=True, name="fk_vote_cycles_winning_candidate"),
         nullable=True,
     )
@@ -69,9 +69,9 @@ class VoteCycle(Base):
 class VoteCandidate(Base):
     __tablename__ = "vote_candidates"
 
-    candidate_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    candidate_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
     vote_cycle_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        UUIDType(),
         ForeignKey("vote_cycles.vote_cycle_id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -109,13 +109,13 @@ class VoteCandidate(Base):
 class Vote(Base):
     __tablename__ = "votes"
 
-    vote_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    vote_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
     vote_cycle_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("vote_cycles.vote_cycle_id"), nullable=False
+        UUIDType(), ForeignKey("vote_cycles.vote_cycle_id"), nullable=False
     )
-    player_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False)
     candidate_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("vote_candidates.candidate_id"), nullable=False
+        UUIDType(), ForeignKey("vote_candidates.candidate_id"), nullable=False
     )
     weight: Mapped[float] = mapped_column(Float, nullable=False, default=1.0, server_default="1.0")
     device_fingerprint_hash: Mapped[str] = mapped_column(String(128), nullable=False)
@@ -134,14 +134,14 @@ class Vote(Base):
 class VoteDiscussion(Base):
     __tablename__ = "vote_discussions"
 
-    discussion_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    discussion_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
     vote_cycle_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        UUIDType(),
         ForeignKey("vote_cycles.vote_cycle_id", ondelete="RESTRICT"),
         nullable=False,
         index=True,
     )
-    player_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     like_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     reply_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
@@ -174,14 +174,14 @@ class VoteDiscussion(Base):
 class VoteDiscussionReply(Base):
     __tablename__ = "vote_discussion_replies"
 
-    reply_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    reply_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
     discussion_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        UUIDType(),
         ForeignKey("vote_discussions.discussion_id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-    player_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     like_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     status: Mapped[str] = mapped_column(
@@ -212,15 +212,15 @@ class VoteDiscussionReply(Base):
 class VoteDiscussionLike(Base):
     __tablename__ = "vote_discussion_likes"
 
-    like_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    player_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    like_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False)
     discussion_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
+        UUIDType(),
         ForeignKey("vote_discussions.discussion_id", ondelete="CASCADE"),
         nullable=True,
     )
     reply_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
+        UUIDType(),
         ForeignKey("vote_discussion_replies.reply_id", ondelete="CASCADE"),
         nullable=True,
     )
@@ -243,14 +243,14 @@ class VoteDiscussionLike(Base):
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 
-    audit_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    audit_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
     trace_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     request_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     operator_id: Mapped[str] = mapped_column(String(128), nullable=False)
     operator_role: Mapped[str] = mapped_column(String(16), nullable=False)
     action: Mapped[str] = mapped_column(String(64), nullable=False)
     resource_type: Mapped[str] = mapped_column(String(64), nullable=False)
-    resource_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    resource_id: Mapped[uuid.UUID | None] = mapped_column(UUIDType(), nullable=True)
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     request_payload_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     result_status: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
@@ -272,15 +272,15 @@ class AuditLog(Base):
 class VoteAnomaly(Base):
     __tablename__ = "vote_anomalies"
 
-    anomaly_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    anomaly_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
     vote_cycle_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+        UUIDType(),
         ForeignKey("vote_cycles.vote_cycle_id", ondelete="RESTRICT"),
         nullable=False,
     )
-    player_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
     vote_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
+        UUIDType(),
         ForeignKey("votes.vote_id", ondelete="RESTRICT"),
         nullable=True,
     )
