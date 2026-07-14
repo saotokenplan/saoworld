@@ -98,5 +98,12 @@
 
 - 合并方式：git merge --no-ff
 - 合并目标：feature-prd
-- 合并提交 hash：（待合并后填入）
+- 合并提交 hash：a0a4d65
 - 冲突情况：无（代码修改集中在 game/tests/ 与 game/scripts/autoload/，与近期 feature-prd 提交无重叠）
+- 推送状态：已推送到 origin/feature-prd
+- 本地工作分支：已删除（auto/auto-20260715-0800）
+- 提交历史：
+  - a0a4d65 Merge auto task: auto-20260715-0800 - S8-01 第三、四阶段测试补全
+  - f7e4f6a docs(dev-loop): 记录 S8-01 第三、四阶段测试补全任务完成
+  - 8475da5 test(game): 补充 S8-01 第三、四阶段客户端测试与索引断裂修复
+  - a806c1c fix(game): 修复 PlayerManager.reset() 遗漏清理新增状态字段
