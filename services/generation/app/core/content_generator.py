@@ -12,6 +12,7 @@ from app.core.llm_adapter import (
     get_llm_adapter,
 )
 from app.core.npc_data_adapter import NPCDataAdapter
+from app.core.monster_data_adapter import MonsterDataAdapter
 from app.core.quality_scorer import QualityScorer
 from app.core.quest_data_adapter import QuestDataAdapter
 from app.core.settlement_data_adapter import SettlementDataAdapter
@@ -40,6 +41,7 @@ class ContentGenerator:
         npc_adapter: NPCDataAdapter | None = None,
         quest_adapter: QuestDataAdapter | None = None,
         settlement_adapter: SettlementDataAdapter | None = None,
+        monster_adapter: MonsterDataAdapter | None = None,
     ):
         self.llm_adapter = llm_adapter or get_llm_adapter()
         self.template_manager = template_manager or TemplateManager(settings.template_dir)
@@ -49,6 +51,7 @@ class ContentGenerator:
         self.npc_adapter = npc_adapter or NPCDataAdapter()
         self.quest_adapter = quest_adapter or QuestDataAdapter()
         self.settlement_adapter = settlement_adapter or SettlementDataAdapter()
+        self.monster_adapter = monster_adapter or MonsterDataAdapter()
 
     async def generate_npc(
         self,
@@ -267,6 +270,63 @@ class ContentGenerator:
         adapted = self.settlement_adapter.adapt(response)
         return adapted
 
+    async def generate_monster(
+        self,
+        region_id: str | None = None,
+        chapter_id: str | None = None,
+        monster_type: str = "beast",
+        context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """生成怪物内容。
+
+        Args:
+            region_id: 区域 ID
+            chapter_id: 章节 ID
+            monster_type: 怪物类型（beast/humanoid/undead/mechanical/elemental/demon/dragon/boss）
+            context: 额外上下文信息
+
+        Returns:
+            生成的怪物数据（已转换为 world-service 兼容格式）
+
+        Raises:
+            ContentGenerationError: 生成失败或质量不达标
+        """
+        template_name = self.template_manager.get_monster_template_by_type(monster_type)
+        if not template_name:
+            template_name = "monster/monster_base.jinja2"
+
+        prompt = self._build_monster_prompt(region_id, chapter_id, monster_type, context)
+        system_prompt = self._build_system_prompt("monster")
+
+        try:
+            response = await self.llm_adapter.generate_json(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                temperature=0.7,
+            )
+        except (LLMAPIError, LLMTimeoutError, LLMRateLimitError) as e:
+            logger.error(f"LLM generation failed: {e}")
+            raise ContentGenerationError(f"LLM generation failed: {e}")
+
+        try:
+            response = self.monster_adapter.ensure_minimum_completeness(response, min_completeness=0.95)
+        except ValueError as e:
+            logger.warning(f"Monster data completeness check failed: {e}")
+            raise ContentGenerationError(str(e))
+
+        score_result = self.quality_scorer.score_monster(response)
+        if not score_result.is_acceptable():
+            logger.warning(
+                f"Monster quality below threshold: {score_result.score:.2f}, reasons: {score_result.reasons}"
+            )
+            raise ContentGenerationError(
+                f"Quality score {score_result.score:.2f} below threshold {self.quality_threshold}",
+                quality_score=score_result.score,
+            )
+
+        adapted = self.monster_adapter.adapt(response)
+        return adapted
+
     def _build_system_prompt(self, content_type: str) -> str:
         """构建系统提示。"""
         prompts = {
@@ -300,6 +360,15 @@ class ContentGenerator:
                 "status（peaceful/troubled/warring/thriving）、notable_locations、key_npcs、"
                 "faction_influence、relationships、history、culture、defenses、services、"
                 "special_features、location_x、location_y。确保所有字段填写完整。"
+            ),
+            "monster": (
+                "你是一个游戏怪物设计专家。你需要根据世界观和区域设定，设计出符合背景的怪物。"
+                "返回的JSON必须包含所有必需字段：monster_key、name、monster_type"
+                "（beast/humanoid/undead/mechanical/elemental/demon/dragon/boss）、chapter_id、"
+                "region_key、level、hp、attack、defense、speed、description、behavior_pattern"
+                "（包含aggression、attack_pattern、special_behaviors）、loot_table（掉落表）、"
+                "skills（技能列表，每个包含skill_key、name、description、damage_multiplier、cooldown）。"
+                "确保所有数值与等级和怪物类型匹配。"
             ),
         }
         return prompts.get(content_type, "你是一个游戏内容设计专家。请返回有效的JSON格式。")
@@ -482,6 +551,51 @@ class ContentGenerator:
         prompt_parts.append("- special_features: 特殊特色列表")
         prompt_parts.append("- location_x: 位置X坐标")
         prompt_parts.append("- location_y: 位置Y坐标")
+
+        return "\n".join(prompt_parts)
+
+    def _build_monster_prompt(
+        self,
+        region_id: str | None,
+        chapter_id: str | None,
+        monster_type: str,
+        context: dict[str, Any] | None,
+    ) -> str:
+        """构建怪物生成提示。"""
+        prompt_parts = [f"请设计一个{monster_type}类型的怪物。"]
+
+        if chapter_id:
+            prompt_parts.append(f"章节：{chapter_id}")
+        if region_id:
+            prompt_parts.append(f"区域：{region_id}")
+        if context:
+            if "region_key" in context:
+                prompt_parts.append(f"区域ID：{context['region_key']}")
+            if "world_rules" in context:
+                prompt_parts.append(f"世界规则：{context['world_rules']}")
+            if "theme" in context:
+                prompt_parts.append(f"主题：{context['theme']}")
+            if "difficulty" in context:
+                prompt_parts.append(f"难度：{context['difficulty']}")
+
+        prompt_parts.append("\n请返回包含以下所有字段的完整JSON：")
+        prompt_parts.append("- monster_key: 怪物唯一标识（格式：monster_xxx）")
+        prompt_parts.append("- name: 怪物名称")
+        prompt_parts.append("- monster_type: 怪物类型（beast/humanoid/undead/mechanical/elemental/demon/dragon/boss）")
+        prompt_parts.append("- chapter_id: 所属章节ID")
+        prompt_parts.append("- region_key: 所在区域ID（格式：region_xxx）")
+        prompt_parts.append("- level: 等级（1-60的整数）")
+        prompt_parts.append("- hp: 生命值（正整数）")
+        prompt_parts.append("- attack: 攻击力（非负整数）")
+        prompt_parts.append("- defense: 防御力（非负整数）")
+        prompt_parts.append("- speed: 速度（非负整数，1-20）")
+        prompt_parts.append("- description: 怪物描述（50-200字）")
+        prompt_parts.append("- behavior_pattern: 行为模式对象")
+        prompt_parts.append("  - aggression: 攻击性（passive/defensive/aggressive/berserker）")
+        prompt_parts.append("  - attack_pattern: 攻击模式（melee/ranged/magic/mixed）")
+        prompt_parts.append("  - special_behaviors: 特殊行为列表")
+        prompt_parts.append("- loot_table: 掉落表数组（每个元素包含item_key、drop_rate、quantity_min、quantity_max）")
+        prompt_parts.append("- skills: 技能数组（每个技能包含skill_key、name、description、damage_multiplier、cooldown）")
 
         return "\n".join(prompt_parts)
 

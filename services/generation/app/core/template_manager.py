@@ -43,6 +43,9 @@ class TemplateManager:
             settlement_dir = os.path.join(self.template_dir, "settlement")
             if os.path.exists(settlement_dir):
                 template_paths.append(settlement_dir)
+            monster_dir = os.path.join(self.template_dir, "monster")
+            if os.path.exists(monster_dir):
+                template_paths.append(monster_dir)
             self._jinja_env = Environment(
                 loader=FileSystemLoader(template_paths),
                 trim_blocks=True,
@@ -158,6 +161,12 @@ class TemplateManager:
             "outpost": "settlement/settlement_base.jinja2",
         }
         return type_map.get(settlement_type) or "settlement/settlement_base.jinja2"
+
+    def get_monster_template_by_type(self, monster_type: str) -> str | None:
+        type_map = {
+            "boss": "monster/monster_boss.jinja2",
+        }
+        return type_map.get(monster_type) or "monster/monster_base.jinja2"
 
 
 template_manager = TemplateManager()

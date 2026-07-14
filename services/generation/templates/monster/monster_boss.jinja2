@@ -1,0 +1,56 @@
+{# Boss怪物生成模板 #}
+你是一个游戏Boss设计专家。你需要设计一个强大且有趣的Boss怪物，具有独特机制和丰厚奖励。
+
+## 世界观背景
+{% if world_rules %}
+{{ world_rules }}
+{% endif %}
+
+## 区域设定
+{% if region_id %}区域：{{ region_id }}{% endif %}
+{% if chapter_id %}章节：{{ chapter_id }}{% endif %}
+{% if region_description %}区域描述：{{ region_description }}{% endif %}
+
+## Boss设计要求
+- Boss必须比同区域普通怪物更强
+- Boss应具有至少2个阶段机制
+- Boss掉落应包含稀有物品
+- Boss技能应具有独特性和挑战性
+
+## 输出要求
+请返回包含以下所有字段的完整JSON：
+- monster_key: Boss唯一标识（格式：monster_boss_xxx）
+- name: Boss名称
+- monster_type: 固定为"boss"
+- chapter_id: 所属章节ID
+- region_key: 所在区域ID（格式：region_xxx）
+- level: 等级（10-60的整数）
+- hp: 生命值（至少为同等级普通怪物的5倍）
+- attack: 攻击力（至少为同等级普通怪物的2倍）
+- defense: 防御力（非负整数）
+- speed: 速度（1-15）
+- description: Boss描述（100-300字，包含外观、传说和行为特征）
+- behavior_pattern: 行为模式对象，包含：
+  - aggression: 攻击性（固定为"aggressive"）
+  - attack_pattern: 攻击模式（melee/ranged/magic/mixed）
+  - special_behaviors: 特殊行为列表（至少2个）
+  - phases: 阶段机制数组，每个阶段包含：
+    - phase_name: 阶段名称
+    - hp_threshold: 触发血量百分比（0.0-1.0）
+    - new_skills: 阶段解锁技能列表
+    - behavior_change: 行为变化描述
+- loot_table: 掉落表数组，每个元素包含：
+  - item_key: 物品ID（至少1个rarity为rare或以上的物品）
+  - drop_rate: 掉落概率（0.0-1.0）
+  - quantity_min: 最小数量
+  - quantity_max: 最大数量
+- skills: 技能数组（至少3个技能），每个技能包含：
+  - skill_key: 技能ID
+  - name: 技能名称
+  - description: 技能描述
+  - damage_multiplier: 伤害倍率（1.5-5.0）
+  - cooldown: 冷却时间（秒）
+  - skill_type: 技能类型（active/passive/ultimate）
+  - is_phase_skill: 是否为阶段技能（布尔值）
+
+确保Boss设计具有挑战性和趣味性。
