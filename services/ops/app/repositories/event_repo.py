@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Sequence
 
-from sqlalchemy import and_, func as sa_func, or_, select
+from sqlalchemy import and_, func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.models import OpsEvent

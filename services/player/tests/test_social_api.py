@@ -7,7 +7,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.schemas.auth import Scope
 
 
 @pytest.fixture
@@ -39,7 +38,6 @@ class TestGetSocialOverview:
         self, client: TestClient, mock_db: AsyncMock, mock_user: MagicMock
     ):
         """测试获取社交概览成功（有公会、有好友、有未读消息）"""
-        player_uuid = uuid.UUID(mock_user.user_id)
         guild_uuid = uuid.uuid4()
         friend_uuid = uuid.uuid4()
 

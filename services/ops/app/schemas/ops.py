@@ -414,7 +414,7 @@ class EventStatus(str, Enum):
     ARCHIVED = "archived"
 
 
-class TargetScope(str, Enum):
+class EventTargetScope(str, Enum):
     ALL = "all"
     REGION = "region"
     PLAYER_LEVEL = "player_level"
@@ -426,7 +426,7 @@ class EventCreateRequest(BaseModel):
     event_type: EventType
     start_at: datetime
     end_at: datetime
-    target_scope: TargetScope = TargetScope.ALL
+    target_scope: EventTargetScope = EventTargetScope.ALL
     target_scope_jsonb: dict[str, object] | None = None
     reward_config_jsonb: dict[str, object] | None = None
     multiplier_config_jsonb: dict[str, object] | None = None

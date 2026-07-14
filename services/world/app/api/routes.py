@@ -1,6 +1,7 @@
 import uuid
+from typing import Any
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Header, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
@@ -43,7 +44,6 @@ from app.schemas.world import (
     BossListResponse,
     CreateBossRequest,
     CreateItemRequest,
-    CreateItemResponse,
     CreateMonsterRequest,
     CreateMonsterResponse,
     CreateNpcRequest,

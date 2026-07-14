@@ -10,11 +10,9 @@ from app.core.anomaly_detector import (
     AnomalySeverity,
     AnomalyType,
 )
-from app.core.auth import create_test_token
 from app.core.config import settings
 from app.core.errors import VoteErrorCodes
-from app.domain.models import Vote, VoteAnomaly, VoteCandidate, VoteCycle
-from app.schemas.auth import Role
+from app.domain.models import Vote, VoteAnomaly, VoteCycle
 
 
 def _ops_headers(ops_token: str) -> dict[str, str]:

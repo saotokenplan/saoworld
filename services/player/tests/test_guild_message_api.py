@@ -7,7 +7,6 @@ import pytest_asyncio
 from httpx import AsyncClient
 
 from app.domain.models import Guild, GuildMember, Player
-from app.main import app
 from app.schemas.auth import Role
 from tests.conftest import TestSessionLocal, create_test_token
 

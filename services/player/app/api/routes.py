@@ -192,7 +192,6 @@ from app.schemas.player import (
     UpdateQuestProgressRequest,
     UpdateQuestStatusRequest,
     UseItemRequest,
-    EquipmentSlot,
     EquipmentResponse,
     EquipItemRequest,
     UnequipItemRequest,

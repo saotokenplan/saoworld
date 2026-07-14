@@ -587,7 +587,7 @@ class MonsterDefinitionRepository:
         offset: int = 0,
     ) -> tuple[Sequence[MonsterDefinition], int]:
         count_stmt = select(sa_func.count(MonsterDefinition.monster_id)).where(
-            MonsterDefinition.is_boss == True
+            MonsterDefinition.is_boss.is_(True)
         )
         if region_key:
             count_stmt = count_stmt.where(MonsterDefinition.region_key == region_key)
@@ -598,7 +598,7 @@ class MonsterDefinitionRepository:
 
         stmt: Select[tuple[MonsterDefinition]] = (
             select(MonsterDefinition)
-            .where(MonsterDefinition.is_boss == True)
+            .where(MonsterDefinition.is_boss.is_(True))
             .order_by(MonsterDefinition.level.desc())
             .limit(limit)
             .offset(offset)
@@ -615,7 +615,7 @@ class MonsterDefinitionRepository:
     async def get_boss_by_key(self, monster_key: str) -> MonsterDefinition | None:
         stmt: Select[tuple[MonsterDefinition]] = select(MonsterDefinition).where(
             MonsterDefinition.monster_key == monster_key,
-            MonsterDefinition.is_boss == True,
+            MonsterDefinition.is_boss.is_(True),
         )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()

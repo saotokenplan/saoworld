@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Sequence
 
-from sqlalchemy import Select, func as sa_func, select
+from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import PlayerErrorCodes, raise_player_error
