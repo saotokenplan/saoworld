@@ -142,9 +142,11 @@ world/generation/review/player/ops/gateway 6 个服务的 `app/core/tracing.py` 
 
 ## 六、合并结果
 
-- **合并状态**：待合并（详见后续更新）
-- **工作分支**：auto/auto-20260715-1000
+- **合并状态**：✅ 成功合并到 feature-prd
+- **合并提交**：57e8979
+- **工作分支**：auto/auto-20260715-1000（已删除）
 - **合并方式**：--no-ff
+- **推送状态**：已推送到 origin/feature-prd
 
 ## 七、结论
 
