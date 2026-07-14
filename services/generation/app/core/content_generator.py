@@ -12,6 +12,7 @@ from app.core.llm_adapter import (
     get_llm_adapter,
 )
 from app.core.boss_data_adapter import BossDataAdapter
+from app.core.item_data_adapter import ItemDataAdapter
 from app.core.npc_data_adapter import NPCDataAdapter
 from app.core.monster_data_adapter import MonsterDataAdapter
 from app.core.quality_scorer import QualityScorer
@@ -44,6 +45,7 @@ class ContentGenerator:
         settlement_adapter: SettlementDataAdapter | None = None,
         monster_adapter: MonsterDataAdapter | None = None,
         boss_adapter: BossDataAdapter | None = None,
+        item_adapter: ItemDataAdapter | None = None,
     ):
         self.llm_adapter = llm_adapter or get_llm_adapter()
         self.template_manager = template_manager or TemplateManager(settings.template_dir)
@@ -55,6 +57,7 @@ class ContentGenerator:
         self.settlement_adapter = settlement_adapter or SettlementDataAdapter()
         self.monster_adapter = monster_adapter or MonsterDataAdapter()
         self.boss_adapter = boss_adapter or BossDataAdapter()
+        self.item_adapter = item_adapter or ItemDataAdapter()
 
     async def generate_npc(
         self,
@@ -387,6 +390,63 @@ class ContentGenerator:
         adapted = self.boss_adapter.adapt(response)
         return adapted
 
+    async def generate_item(
+        self,
+        region_id: str | None = None,
+        chapter_id: str | None = None,
+        item_type: str = "weapon",
+        context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """生成装备内容。
+
+        Args:
+            region_id: 区域 ID
+            chapter_id: 章节 ID
+            item_type: 装备类型（weapon/armor/accessory/consumable/material）
+            context: 额外上下文信息
+
+        Returns:
+            生成的装备数据（已转换为 world-service 兼容格式）
+
+        Raises:
+            ContentGenerationError: 生成失败或质量不达标
+        """
+        template_name = self.template_manager.get_item_template_by_type(item_type)
+        if not template_name:
+            template_name = "item/item_base.jinja2"
+
+        prompt = self._build_item_prompt(region_id, chapter_id, item_type, context)
+        system_prompt = self._build_system_prompt("item")
+
+        try:
+            response = await self.llm_adapter.generate_json(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                temperature=0.7,
+            )
+        except (LLMAPIError, LLMTimeoutError, LLMRateLimitError) as e:
+            logger.error(f"LLM generation failed: {e}")
+            raise ContentGenerationError(f"LLM generation failed: {e}")
+
+        try:
+            response = self.item_adapter.ensure_minimum_completeness(response, min_completeness=0.95)
+        except ValueError as e:
+            logger.warning(f"Item data completeness check failed: {e}")
+            raise ContentGenerationError(str(e))
+
+        score_result = self.quality_scorer.score_item(response)
+        if not score_result.is_acceptable():
+            logger.warning(
+                f"Item quality below threshold: {score_result.score:.2f}, reasons: {score_result.reasons}"
+            )
+            raise ContentGenerationError(
+                f"Quality score {score_result.score:.2f} below threshold {self.quality_threshold}",
+                quality_score=score_result.score,
+            )
+
+        adapted = self.item_adapter.adapt(response)
+        return adapted
+
     def _build_system_prompt(self, content_type: str) -> str:
         """构建系统提示。"""
         prompts = {
@@ -438,6 +498,14 @@ class ContentGenerator:
                 "special_skills（特殊技能列表，每个包含skill_key、name、description、cooldown）、"
                 "enrage_threshold（0-1之间的浮点数）、reward（包含experience、items）。"
                 "确保Boss具有多个阶段、独特的特殊技能和丰富的奖励。"
+            ),
+            "item": (
+                "你是一个游戏装备设计专家。你需要根据世界观和区域设定，设计出符合背景的装备物品。"
+                "返回的JSON必须包含所有必需字段：item_key、item_type（weapon/armor/accessory/consumable/material）、"
+                "item_slot（head/chest/legs/feet/weapon/off_hand/ring/necklace，consumable和material为null）、"
+                "name、description、rarity（common/uncommon/rare/epic/legendary）、chapter_id、"
+                "level_requirement、stats（属性对象）、effects（效果对象）、sell_price、stackable。"
+                "确保数值与等级要求和稀有度匹配。"
             ),
         }
         return prompts.get(content_type, "你是一个游戏内容设计专家。请返回有效的JSON格式。")
@@ -718,6 +786,48 @@ class ContentGenerator:
         prompt_parts.append("  - experience: 经验值（应高于同等级普通怪物的3-5倍）")
         prompt_parts.append("  - items: 物品奖励列表（包含稀有装备或材料）")
         prompt_parts.append("- min_reputation: 最低声望要求（0或正数）")
+
+        return "\n".join(prompt_parts)
+
+    def _build_item_prompt(
+        self,
+        region_id: str | None,
+        chapter_id: str | None,
+        item_type: str,
+        context: dict[str, Any] | None,
+    ) -> str:
+        """构建装备生成提示。"""
+        prompt_parts = [f"请设计一个{item_type}类型的装备。"]
+
+        if chapter_id:
+            prompt_parts.append(f"章节：{chapter_id}")
+        if region_id:
+            prompt_parts.append(f"区域：{region_id}")
+        if context:
+            if "region_key" in context:
+                prompt_parts.append(f"区域ID：{context['region_key']}")
+            if "world_rules" in context:
+                prompt_parts.append(f"世界规则：{context['world_rules']}")
+            if "theme" in context:
+                prompt_parts.append(f"主题：{context['theme']}")
+            if "rarity" in context:
+                prompt_parts.append(f"建议稀有度：{context['rarity']}")
+            if "level" in context:
+                prompt_parts.append(f"建议等级：{context['level']}")
+
+        prompt_parts.append("\n请返回包含以下所有字段的完整JSON：")
+        prompt_parts.append("- item_key: 装备唯一标识（格式：item_xxx）")
+        prompt_parts.append("- item_type: 装备类型（weapon/armor/accessory/consumable/material）")
+        prompt_parts.append("- item_slot: 装备槽位（head/chest/legs/feet/weapon/off_hand/ring/necklace，consumable和material为null）")
+        prompt_parts.append("- name: 装备名称（符合类型和稀有度的命名风格）")
+        prompt_parts.append("- description: 装备描述（30-100字，包含外观和背景故事）")
+        prompt_parts.append("- rarity: 稀有度（common/uncommon/rare/epic/legendary）")
+        prompt_parts.append("- chapter_id: 所属章节ID（格式：chapter_xxx）")
+        prompt_parts.append("- level_requirement: 等级要求（1-60的整数）")
+        prompt_parts.append("- stats: 属性对象（可包含attack、defense、max_hp、max_mp、speed、critical_rate、critical_damage）")
+        prompt_parts.append("- effects: 效果对象（包含effect_type、duration、cooldown、description）")
+        prompt_parts.append("- sell_price: 售卖价格（非负整数）")
+        prompt_parts.append("- stackable: 是否可堆叠（consumable和material为true，其他为false）")
 
         return "\n".join(prompt_parts)
 

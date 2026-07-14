@@ -46,6 +46,9 @@ class TemplateManager:
             monster_dir = os.path.join(self.template_dir, "monster")
             if os.path.exists(monster_dir):
                 template_paths.append(monster_dir)
+            item_dir = os.path.join(self.template_dir, "item")
+            if os.path.exists(item_dir):
+                template_paths.append(item_dir)
             self._jinja_env = Environment(
                 loader=FileSystemLoader(template_paths),
                 trim_blocks=True,
@@ -167,6 +170,9 @@ class TemplateManager:
             "boss": "monster/monster_boss.jinja2",
         }
         return type_map.get(monster_type) or "monster/monster_base.jinja2"
+
+    def get_item_template_by_type(self, item_type: str) -> str | None:
+        return "item/item_base.jinja2"
 
 
 template_manager = TemplateManager()

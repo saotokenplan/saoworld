@@ -542,6 +542,111 @@ class QualityScorer:
 
         return QualityScoreResult(max(0.0, min(1.0, score)), reasons)
 
+    def score_item(self, payload: dict[str, Any]) -> QualityScoreResult:
+        reasons: list[str] = []
+        score = 1.0
+
+        required_fields = [
+            "item_key", "item_type", "name", "rarity",
+            "chapter_id", "level_requirement", "sell_price", "stackable",
+        ]
+
+        for field in required_fields:
+            value = payload.get(field)
+            if value is None:
+                score -= 0.05
+                reasons.append(f"Missing field: {field}")
+            elif isinstance(value, str) and not value.strip():
+                score -= 0.03
+                reasons.append(f"Empty field: {field}")
+
+        name = payload.get("name", "")
+        if len(name) < 2:
+            score -= 0.1
+            reasons.append("Item name is too short")
+        elif len(name) > 100:
+            score -= 0.05
+            reasons.append("Item name is too long")
+
+        description = payload.get("description", "")
+        if len(description) < 20:
+            score -= 0.08
+            reasons.append("Item description is too short")
+        elif len(description) > 200:
+            score -= 0.03
+            reasons.append("Item description is too long")
+
+        item_type = payload.get("item_type", "")
+        valid_types = {"weapon", "armor", "accessory", "consumable", "material"}
+        if item_type and item_type not in valid_types:
+            score -= 0.05
+            reasons.append(f"Invalid item type: {item_type}")
+
+        item_slot = payload.get("item_slot")
+        valid_slots = {"head", "chest", "legs", "feet", "weapon", "off_hand", "ring", "necklace"}
+        if item_slot is not None and item_slot != "" and item_slot not in valid_slots:
+            score -= 0.03
+            reasons.append(f"Invalid item slot: {item_slot}")
+
+        rarity = payload.get("rarity", "")
+        valid_rarities = {"common", "uncommon", "rare", "epic", "legendary"}
+        if rarity and rarity not in valid_rarities:
+            score -= 0.05
+            reasons.append(f"Invalid rarity: {rarity}")
+
+        level_requirement = payload.get("level_requirement", 0)
+        if isinstance(level_requirement, (int, float)):
+            if level_requirement < 1 or level_requirement > 60:
+                score -= 0.08
+                reasons.append(f"Level requirement out of range (1-60): {level_requirement}")
+
+        sell_price = payload.get("sell_price", 0)
+        if isinstance(sell_price, (int, float)) and sell_price < 0:
+            score -= 0.05
+            reasons.append("Sell price must be non-negative")
+
+        stackable = payload.get("stackable", False)
+        item_type = payload.get("item_type", "")
+        if item_type in ["consumable", "material"] and not stackable:
+            score -= 0.03
+            reasons.append(f"{item_type} items should be stackable")
+        if item_type in ["weapon", "armor", "accessory"] and stackable:
+            score -= 0.03
+            reasons.append(f"{item_type} items should not be stackable")
+
+        stats = payload.get("stats", {})
+        if isinstance(stats, dict):
+            for stat_key, stat_value in stats.items():
+                if isinstance(stat_value, (int, float)) and stat_value < 0:
+                    score -= 0.02
+                    reasons.append(f"Stat {stat_key} must be non-negative")
+        else:
+            score -= 0.05
+            reasons.append("Stats must be a dictionary")
+
+        effects = payload.get("effects", {})
+        if isinstance(effects, dict):
+            effect_type = effects.get("effect_type", "")
+            valid_effect_types = {"buff", "debuff", "passive", "active"}
+            if effect_type and effect_type not in valid_effect_types:
+                score -= 0.02
+                reasons.append(f"Invalid effect type: {effect_type}")
+        else:
+            score -= 0.05
+            reasons.append("Effects must be a dictionary")
+
+        item_key = payload.get("item_key", "")
+        if item_key and not item_key.startswith("item_"):
+            score -= 0.03
+            reasons.append("Item key should start with 'item_'")
+
+        chapter_id = payload.get("chapter_id", "")
+        if chapter_id and not chapter_id.startswith("chapter_"):
+            score -= 0.02
+            reasons.append("Chapter id should start with 'chapter_'")
+
+        return QualityScoreResult(max(0.0, min(1.0, score)), reasons)
+
     def score_settlement(self, payload: dict[str, Any]) -> QualityScoreResult:
         reasons: list[str] = []
         score = 1.0
@@ -684,6 +789,8 @@ class QualityScorer:
                 return self.score_monster(payload)
             case "boss":
                 return self.score_boss(payload)
+            case "item":
+                return self.score_item(payload)
             case _:
                 return self.score_generic(payload)
 

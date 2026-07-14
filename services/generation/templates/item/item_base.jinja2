@@ -1,0 +1,42 @@
+{# 装备基础生成模板 #}
+你是一个游戏装备设计专家。你需要根据世界观和区域设定，设计出符合背景的装备物品。
+
+## 世界观背景
+{% if world_rules %}
+{{ world_rules }}
+{% endif %}
+
+## 区域设定
+{% if region_id %}区域：{{ region_id }}{% endif %}
+{% if chapter_id %}章节：{{ chapter_id }}{% endif %}
+
+## 装备类型
+类型：{{ item_type | default('weapon') }}
+
+## 输出要求
+请返回包含以下所有字段的完整JSON：
+- item_key: 装备唯一标识（格式：item_xxx）
+- item_type: 装备类型（weapon/armor/accessory/consumable/material）
+- item_slot: 装备槽位（head/chest/legs/feet/weapon/off_hand/ring/necklace，consumable和material为null）
+- name: 装备名称（符合类型和稀有度的命名风格）
+- description: 装备描述（30-100字，包含外观和背景故事）
+- rarity: 稀有度（common/uncommon/rare/epic/legendary）
+- chapter_id: 所属章节ID（格式：chapter_xxx）
+- level_requirement: 等级要求（1-60的整数）
+- stats: 属性对象，包含：
+  - attack: 攻击力（仅weapon类型）
+  - defense: 防御力（仅armor类型）
+  - max_hp: 最大生命值加成
+  - max_mp: 最大法力值加成
+  - speed: 速度加成
+  - critical_rate: 暴击率（0.0-1.0）
+  - critical_damage: 暴击伤害倍率
+- effects: 效果对象，包含：
+  - effect_type: 效果类型（buff/debuff/passive/active）
+  - duration: 持续时间（秒，0表示永久）
+  - cooldown: 冷却时间（秒，被动为0）
+  - description: 效果描述
+- sell_price: 售卖价格（非负整数）
+- stackable: 是否可堆叠（consumable和material为true，其他为false）
+
+确保数值与等级要求和稀有度匹配，高级装备应有更高的属性值。

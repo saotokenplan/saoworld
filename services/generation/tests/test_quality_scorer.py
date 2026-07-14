@@ -473,3 +473,184 @@ class TestQualityScorer:
         }
         result = scorer.score("boss", payload)
         assert isinstance(result, QualityScoreResult)
+
+    def test_score_item_valid(self):
+        scorer = QualityScorer()
+        payload = {
+            "item_key": "item_sword_steel",
+            "item_type": "weapon",
+            "item_slot": "weapon",
+            "name": "钢铁长剑",
+            "description": "一把普通的钢铁长剑，适合新手使用。",
+            "rarity": "common",
+            "chapter_id": "chapter_01",
+            "level_requirement": 1,
+            "stats": {"attack": 10, "speed": 5},
+            "effects": {"effect_type": "passive", "description": "普通攻击"},
+            "sell_price": 50,
+            "stackable": False,
+        }
+        result = scorer.score_item(payload)
+        assert result.is_acceptable()
+        assert result.score >= 0.75
+
+    def test_score_item_missing_required_fields(self):
+        scorer = QualityScorer()
+        payload = {"name": "测试装备"}
+        result = scorer.score_item(payload)
+        assert not result.is_acceptable()
+        assert len(result.reasons) > 0
+        assert any("item_key" in r.lower() for r in result.reasons)
+        assert any("item_type" in r.lower() for r in result.reasons)
+
+    def test_score_item_invalid_type(self):
+        scorer = QualityScorer()
+        payload = {
+            "item_key": "item_test",
+            "item_type": "invalid_type",
+            "name": "测试装备",
+            "rarity": "common",
+            "chapter_id": "chapter_01",
+            "level_requirement": 1,
+            "sell_price": 10,
+            "stackable": False,
+        }
+        result = scorer.score_item(payload)
+        assert any("Invalid item type" in r for r in result.reasons)
+
+    def test_score_item_invalid_rarity(self):
+        scorer = QualityScorer()
+        payload = {
+            "item_key": "item_test",
+            "item_type": "weapon",
+            "name": "测试装备",
+            "rarity": "invalid",
+            "chapter_id": "chapter_01",
+            "level_requirement": 1,
+            "sell_price": 10,
+            "stackable": False,
+        }
+        result = scorer.score_item(payload)
+        assert any("Invalid rarity" in r for r in result.reasons)
+
+    def test_score_item_level_out_of_range(self):
+        scorer = QualityScorer()
+        payload = {
+            "item_key": "item_test",
+            "item_type": "weapon",
+            "name": "测试装备",
+            "rarity": "common",
+            "chapter_id": "chapter_01",
+            "level_requirement": 100,
+            "sell_price": 10,
+            "stackable": False,
+        }
+        result = scorer.score_item(payload)
+        assert any("Level requirement out of range" in r for r in result.reasons)
+
+    def test_score_item_negative_sell_price(self):
+        scorer = QualityScorer()
+        payload = {
+            "item_key": "item_test",
+            "item_type": "weapon",
+            "name": "测试装备",
+            "rarity": "common",
+            "chapter_id": "chapter_01",
+            "level_requirement": 1,
+            "sell_price": -10,
+            "stackable": False,
+        }
+        result = scorer.score_item(payload)
+        assert any("Sell price must be non-negative" in r for r in result.reasons)
+
+    def test_score_item_weapon_stackable(self):
+        scorer = QualityScorer()
+        payload = {
+            "item_key": "item_test",
+            "item_type": "weapon",
+            "name": "测试装备",
+            "rarity": "common",
+            "chapter_id": "chapter_01",
+            "level_requirement": 1,
+            "sell_price": 10,
+            "stackable": True,
+        }
+        result = scorer.score_item(payload)
+        assert any("weapon items should not be stackable" in r.lower() for r in result.reasons)
+
+    def test_score_item_consumable_not_stackable(self):
+        scorer = QualityScorer()
+        payload = {
+            "item_key": "item_test",
+            "item_type": "consumable",
+            "name": "测试药水",
+            "rarity": "common",
+            "chapter_id": "chapter_01",
+            "level_requirement": 1,
+            "sell_price": 10,
+            "stackable": False,
+        }
+        result = scorer.score_item(payload)
+        assert any("consumable items should be stackable" in r.lower() for r in result.reasons)
+
+    def test_score_item_negative_stats(self):
+        scorer = QualityScorer()
+        payload = {
+            "item_key": "item_test",
+            "item_type": "weapon",
+            "name": "测试装备",
+            "rarity": "common",
+            "chapter_id": "chapter_01",
+            "level_requirement": 1,
+            "stats": {"attack": -5},
+            "sell_price": 10,
+            "stackable": False,
+        }
+        result = scorer.score_item(payload)
+        assert any("attack" in r.lower() and "negative" in r.lower() for r in result.reasons)
+
+    def test_score_item_invalid_effect_type(self):
+        scorer = QualityScorer()
+        payload = {
+            "item_key": "item_test",
+            "item_type": "weapon",
+            "name": "测试装备",
+            "rarity": "common",
+            "chapter_id": "chapter_01",
+            "level_requirement": 1,
+            "effects": {"effect_type": "invalid"},
+            "sell_price": 10,
+            "stackable": False,
+        }
+        result = scorer.score_item(payload)
+        assert any("Invalid effect type" in r for r in result.reasons)
+
+    def test_score_item_invalid_key_prefix(self):
+        scorer = QualityScorer()
+        payload = {
+            "item_key": "sword_test",
+            "item_type": "weapon",
+            "name": "测试装备",
+            "rarity": "common",
+            "chapter_id": "chapter_01",
+            "level_requirement": 1,
+            "sell_price": 10,
+            "stackable": False,
+        }
+        result = scorer.score_item(payload)
+        assert any("Item key should start with" in r for r in result.reasons)
+
+    def test_score_item_dispatch(self):
+        scorer = QualityScorer()
+        payload = {
+            "item_key": "item_test",
+            "item_type": "weapon",
+            "name": "测试装备",
+            "rarity": "common",
+            "chapter_id": "chapter_01",
+            "level_requirement": 1,
+            "sell_price": 10,
+            "stackable": False,
+        }
+        result = scorer.score("item", payload)
+        assert isinstance(result, QualityScoreResult)
