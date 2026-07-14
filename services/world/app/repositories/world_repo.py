@@ -578,3 +578,94 @@ class MonsterDefinitionRepository:
         self.db.add(monster)
         await self.db.flush()
         return monster
+
+    async def list_bosses(
+        self,
+        region_key: str | None = None,
+        chapter_id: str | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> tuple[Sequence[MonsterDefinition], int]:
+        count_stmt = select(sa_func.count(MonsterDefinition.monster_id)).where(
+            MonsterDefinition.is_boss == True
+        )
+        if region_key:
+            count_stmt = count_stmt.where(MonsterDefinition.region_key == region_key)
+        if chapter_id:
+            count_stmt = count_stmt.where(MonsterDefinition.chapter_id == chapter_id)
+        count_result = await self.db.execute(count_stmt)
+        total = count_result.scalar_one()
+
+        stmt: Select[tuple[MonsterDefinition]] = (
+            select(MonsterDefinition)
+            .where(MonsterDefinition.is_boss == True)
+            .order_by(MonsterDefinition.level.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        if region_key:
+            stmt = stmt.where(MonsterDefinition.region_key == region_key)
+        if chapter_id:
+            stmt = stmt.where(MonsterDefinition.chapter_id == chapter_id)
+
+        result = await self.db.execute(stmt)
+        bosses = result.scalars().all()
+        return bosses, total
+
+    async def get_boss_by_key(self, monster_key: str) -> MonsterDefinition | None:
+        stmt: Select[tuple[MonsterDefinition]] = select(MonsterDefinition).where(
+            MonsterDefinition.monster_key == monster_key,
+            MonsterDefinition.is_boss == True,
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def create_boss(
+        self,
+        *,
+        monster_key: str,
+        name: str,
+        chapter_id: str,
+        region_key: str,
+        level: int = 10,
+        hp: int = 500,
+        attack: int = 30,
+        defense: int = 10,
+        speed: int = 5,
+        description: str | None = None,
+        behavior_pattern: dict[str, Any] | None = None,
+        loot_table: list[dict[str, Any]] | None = None,
+        skills: list[dict[str, Any]] | None = None,
+        min_reputation: int = 0,
+        boss_rank: str = "legendary",
+        phase_count: int = 1,
+        special_skills: list[dict[str, Any]] | None = None,
+        enrage_threshold: float = 0.3,
+        reward: dict[str, Any] | None = None,
+    ) -> MonsterDefinition:
+        boss = MonsterDefinition(
+            monster_key=monster_key,
+            name=name,
+            monster_type="boss",
+            chapter_id=chapter_id,
+            region_key=region_key,
+            level=level,
+            hp=hp,
+            attack=attack,
+            defense=defense,
+            speed=speed,
+            description=description,
+            behavior_pattern_jsonb=behavior_pattern,
+            loot_table_jsonb=loot_table,
+            skills_jsonb=skills,
+            min_reputation=min_reputation,
+            is_boss=True,
+            boss_rank=boss_rank,
+            phase_count=phase_count,
+            special_skills_jsonb=special_skills,
+            enrage_threshold=enrage_threshold,
+            reward_jsonb=reward,
+        )
+        self.db.add(boss)
+        await self.db.flush()
+        return boss

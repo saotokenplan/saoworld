@@ -220,6 +220,12 @@ class MonsterDefinition(Base):
     skills_jsonb: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, nullable=True)
     min_reputation: Mapped[int] = mapped_column(nullable=False, default=0, server_default="0", index=True)
     schema_version: Mapped[int] = mapped_column(nullable=False, default=1, server_default="1")
+    is_boss: Mapped[bool] = mapped_column(nullable=False, default=False, server_default="false", index=True)
+    boss_rank: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    phase_count: Mapped[int] = mapped_column(nullable=False, default=1, server_default="1")
+    special_skills_jsonb: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, nullable=True)
+    enrage_threshold: Mapped[float] = mapped_column(nullable=False, default=0.0, server_default="0.0")
+    reward_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -256,11 +262,24 @@ class MonsterDefinition(Base):
             "min_reputation >= 0",
             name="monster_definitions_min_reputation_check",
         ),
+        CheckConstraint(
+            "boss_rank IN ('legendary', 'mythic')",
+            name="monster_definitions_boss_rank_check",
+        ),
+        CheckConstraint(
+            "phase_count >= 1",
+            name="monster_definitions_phase_count_check",
+        ),
+        CheckConstraint(
+            "enrage_threshold >= 0 AND enrage_threshold <= 1",
+            name="monster_definitions_enrage_threshold_check",
+        ),
         Index("monster_definitions_monster_type_idx", "monster_type"),
         Index("monster_definitions_chapter_id_idx", "chapter_id"),
         Index("monster_definitions_region_key_idx", "region_key"),
         Index("monster_definitions_level_idx", "level"),
         Index("monster_definitions_min_reputation_idx", "min_reputation"),
+        Index("monster_definitions_is_boss_region_idx", "is_boss", "region_key"),
     )
 
 

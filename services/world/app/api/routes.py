@@ -40,6 +40,8 @@ from app.repositories.world_repo import (
     WorldRepository,
 )
 from app.schemas.world import (
+    BossListResponse,
+    CreateBossRequest,
     CreateItemRequest,
     CreateItemResponse,
     CreateMonsterRequest,
@@ -1587,6 +1589,153 @@ async def create_monster(
         monster_type=MonsterType(monster.monster_type),
         name=monster.name,
         level=monster.level,
+        request_id=request_id,
+        trace_id=x_trace_id,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data.model_dump(),
+        trace_id=x_trace_id,
+    )
+
+
+# ==================== Boss API ====================
+
+
+@router.get(
+    "/world/bosses",
+    summary="获取区域Boss列表",
+    response_model=EnvelopeResponse,
+)
+async def list_bosses(
+    region_key: str | None = Query(None, description="按区域Key筛选"),
+    chapter_id: str | None = Query(None, description="按章节ID筛选"),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_user: UserPayload = RequireWorldReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse:
+    """获取区域Boss列表（公开接口，monsters:read Scope）。"""
+    repo = MonsterDefinitionRepository(db)
+    bosses, total = await repo.list_bosses(
+        region_key=region_key,
+        chapter_id=chapter_id,
+        limit=limit,
+        offset=offset,
+    )
+    boss_responses = [MonsterResponse.model_validate(b) for b in bosses]
+    return EnvelopeResponse(
+        request_id=_make_request_id("req_world_bosses"),
+        data=BossListResponse(bosses=boss_responses, total=total).model_dump(),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset).model_dump(),
+    )
+
+
+@router.get(
+    "/world/bosses/{monster_key}",
+    summary="获取Boss详情",
+    response_model=EnvelopeResponse,
+)
+async def get_boss(
+    monster_key: str,
+    current_user: UserPayload = RequireWorldReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse:
+    """获取单个Boss详情（公开接口，monsters:read Scope）。"""
+    repo = MonsterDefinitionRepository(db)
+    boss = await repo.get_boss_by_key(monster_key)
+    if boss is None:
+        raise_world_error(
+            WorldErrorCodes.MONSTER_NOT_FOUND,
+            f"Boss不存在: {monster_key}",
+            request_id=_make_request_id("req_world_boss"),
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+    return EnvelopeResponse(
+        request_id=_make_request_id("req_world_boss"),
+        data=MonsterResponse.model_validate(boss).model_dump(),
+    )
+
+
+@ops_router.post(
+    "/world/monsters/bosses",
+    summary="创建Boss定义",
+    response_model=EnvelopeResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_boss(
+    body: CreateBossRequest,
+    x_trace_id: str | None = Header(None, alias="X-Trace-Id"),
+    idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
+    x_request_id: str | None = Header(None, alias="X-Request-Id"),
+    current_user: UserPayload = RequireOpsRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse:
+    """创建Boss定义（运营接口，ops:monsters:write Scope）。"""
+    request_id = x_request_id or _make_request_id("req_ops_boss")
+
+    repo = MonsterDefinitionRepository(db)
+
+    existing = await repo.get_monster_by_key(body.monster_key)
+    if existing is not None:
+        raise_world_error(
+            WorldErrorCodes.MONSTER_KEY_EXISTS,
+            f"Boss Key已存在: {body.monster_key}",
+            request_id=request_id,
+            status_code=status.HTTP_409_CONFLICT,
+            details=[
+                ErrorDetail(
+                    location="body",
+                    field="monster_key",
+                    issue="already_exists",
+                    rejected_value=body.monster_key,
+                )
+            ],
+        )
+
+    boss = await repo.create_boss(
+        monster_key=body.monster_key,
+        name=body.name,
+        chapter_id=body.chapter_id,
+        region_key=body.region_key,
+        level=body.level,
+        hp=body.hp,
+        attack=body.attack,
+        defense=body.defense,
+        speed=body.speed,
+        description=body.description,
+        behavior_pattern=body.behavior_pattern,
+        loot_table=body.loot_table,
+        skills=body.skills,
+        min_reputation=body.min_reputation,
+        boss_rank=body.boss_rank.value,
+        phase_count=body.phase_count,
+        special_skills=body.special_skills,
+        enrage_threshold=body.enrage_threshold,
+        reward=body.reward,
+    )
+
+    record_monster_create()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_MONSTER_CREATE,
+        resource_type=RESOURCE_MONSTER_DEFINITION,
+        resource_id=boss.monster_id,
+        request_payload_jsonb=body.model_dump(mode="json"),
+        result_status=201,
+    )
+
+    response_data = CreateMonsterResponse(
+        monster_id=boss.monster_id,
+        monster_key=boss.monster_key,
+        monster_type=MonsterType(boss.monster_type),
+        name=boss.name,
+        level=boss.level,
         request_id=request_id,
         trace_id=x_trace_id,
     )

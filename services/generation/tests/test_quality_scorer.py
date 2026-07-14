@@ -351,3 +351,125 @@ class TestQualityScorer:
 
         generic_result = scorer.score("unknown", {"key": "value"})
         assert isinstance(generic_result, QualityScoreResult)
+
+    def test_score_boss_valid(self):
+        scorer = QualityScorer()
+        payload = {
+            "monster_key": "boss_ancient_tree",
+            "name": "古树守护者",
+            "monster_type": "boss",
+            "chapter_id": "chapter_02",
+            "region_key": "region_forest_01",
+            "level": 12,
+            "hp": 800,
+            "attack": 28,
+            "defense": 15,
+            "speed": 3,
+            "description": "幽光森林深处的千年古树，被自然之力赋予了意识。它守护着森林的秘密，任何闯入者都会遭受到它的愤怒攻击。古树拥有多个战斗阶段，随着战斗的进行会释放更强大的技能。",
+            "behavior_pattern": {
+                "aggression": "aggressive",
+                "attack_pattern": "magic",
+                "special_behaviors": ["enrage", "phase_change"],
+            },
+            "loot_table": [
+                {"item_key": "item_ancient_core", "drop_rate": 1.0, "quantity_min": 1, "quantity_max": 1},
+            ],
+            "skills": [
+                {"skill_key": "skill_root_strike", "name": "根系打击", "damage_multiplier": 1.0, "cooldown": 0},
+                {"skill_key": "skill_vine_whip", "name": "藤蔓鞭打", "damage_multiplier": 1.5, "cooldown": 3},
+            ],
+            "is_boss": True,
+            "boss_rank": "legendary",
+            "phase_count": 3,
+            "special_skills": [
+                {"skill_key": "skill_root_bind", "name": "根系缠绕", "description": "束缚玩家", "cooldown": 8},
+                {"skill_key": "skill_nature_force", "name": "自然之力", "description": "恢复生命", "cooldown": 15},
+                {"skill_key": "skill_ancient_rage", "name": "古树之怒", "description": "全屏攻击", "cooldown": 20},
+            ],
+            "enrage_threshold": 0.3,
+            "reward": {
+                "experience": 5000,
+                "items": [{"item_key": "item_ancient_core", "quantity": 1}],
+            },
+        }
+        result = scorer.score_boss(payload)
+        assert result.is_acceptable()
+        assert result.score >= 0.75
+
+    def test_score_boss_missing_boss_fields(self):
+        scorer = QualityScorer()
+        payload = {
+            "monster_key": "boss_test",
+            "name": "测试Boss",
+            "monster_type": "boss",
+            "chapter_id": "chapter_02",
+            "level": 10,
+            "hp": 500,
+            "attack": 25,
+            "defense": 10,
+            "speed": 4,
+            "description": "测试描述。",
+        }
+        result = scorer.score_boss(payload)
+        assert not result.is_acceptable()
+        assert len(result.reasons) > 0
+
+    def test_score_boss_invalid_boss_rank(self):
+        scorer = QualityScorer()
+        payload = {
+            "monster_key": "boss_test",
+            "name": "测试Boss",
+            "monster_type": "boss",
+            "boss_rank": "invalid",
+            "phase_count": 2,
+            "special_skills": [],
+            "enrage_threshold": 0.3,
+            "reward": {"experience": 3000, "items": []},
+        }
+        result = scorer.score_boss(payload)
+        assert any("Invalid boss rank" in r for r in result.reasons)
+
+    def test_score_boss_phase_count_zero(self):
+        scorer = QualityScorer()
+        payload = {
+            "monster_key": "boss_test",
+            "name": "测试Boss",
+            "monster_type": "boss",
+            "boss_rank": "legendary",
+            "phase_count": 0,
+            "special_skills": [],
+            "enrage_threshold": 0.3,
+            "reward": {"experience": 3000, "items": []},
+        }
+        result = scorer.score_boss(payload)
+        assert any("Boss must have at least 1 phase" in r for r in result.reasons)
+
+    def test_score_boss_enrage_threshold_out_of_range(self):
+        scorer = QualityScorer()
+        payload = {
+            "monster_key": "boss_test",
+            "name": "测试Boss",
+            "monster_type": "boss",
+            "boss_rank": "legendary",
+            "phase_count": 2,
+            "special_skills": [],
+            "enrage_threshold": 1.5,
+            "reward": {"experience": 3000, "items": []},
+        }
+        result = scorer.score_boss(payload)
+        assert any("Enrage threshold must be between 0 and 1" in r for r in result.reasons)
+
+    def test_score_boss_dispatch(self):
+        scorer = QualityScorer()
+        payload = {
+            "monster_key": "boss_test",
+            "name": "测试Boss",
+            "monster_type": "boss",
+            "boss_rank": "legendary",
+            "phase_count": 2,
+            "special_skills": [],
+            "enrage_threshold": 0.3,
+            "reward": {"experience": 3000, "items": []},
+        }
+        result = scorer.score("boss", payload)
+        assert isinstance(result, QualityScoreResult)
