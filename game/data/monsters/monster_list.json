@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "monsters": [
     {
       "monster_key": "monster_wasteland_wolf",
@@ -73,6 +73,102 @@
         {"skill_key": "skill_fireball", "name": "火球术", "damage_multiplier": 2.0, "cooldown": 3},
         {"skill_key": "skill_flame_shield", "name": "火焰护盾", "damage_multiplier": 0.0, "cooldown": 10}
       ]
+    },
+    {
+      "monster_key": "boss_ancient_tree",
+      "name": "古树守护者",
+      "monster_type": "boss",
+      "chapter_id": "chapter_02",
+      "region_key": "region_forest_01",
+      "level": 12,
+      "hp": 800,
+      "attack": 28,
+      "defense": 15,
+      "speed": 3,
+      "description": "幽光森林深处的千年古树，被自然之力赋予了意识。它守护着森林的秘密，任何闯入者都会遭受到它的愤怒攻击。古树拥有多个战斗阶段，随着战斗的进行会释放更强大的技能。",
+      "behavior_pattern": {
+        "aggression": "aggressive",
+        "attack_pattern": "magic",
+        "special_behaviors": ["enrage", "phase_change"]
+      },
+      "loot_table": [
+        {"item_key": "item_ancient_core", "drop_rate": 1.0, "quantity_min": 1, "quantity_max": 1},
+        {"item_key": "item_nature_essence", "drop_rate": 0.8, "quantity_min": 2, "quantity_max": 5},
+        {"item_key": "item_healing_potion", "drop_rate": 0.6, "quantity_min": 3, "quantity_max": 5}
+      ],
+      "skills": [
+        {"skill_key": "skill_root_strike", "name": "根系打击", "damage_multiplier": 1.0, "cooldown": 0},
+        {"skill_key": "skill_vine_whip", "name": "藤蔓鞭打", "damage_multiplier": 1.5, "cooldown": 3}
+      ],
+      "is_boss": true,
+      "boss_rank": "legendary",
+      "phase_count": 3,
+      "phase_names": ["沉睡阶段", "觉醒阶段", "狂暴阶段"],
+      "special_skills": [
+        {"skill_key": "skill_root_bind", "name": "根系缠绕", "description": "束缚玩家并造成持续伤害", "cooldown": 8},
+        {"skill_key": "skill_nature_force", "name": "自然之力", "description": "恢复自身10%生命值", "cooldown": 15},
+        {"skill_key": "skill_ancient_rage", "name": "古树之怒", "description": "全屏范围攻击，造成大量伤害", "cooldown": 20},
+        {"skill_key": "skill_thorn_barrier", "name": "荆棘屏障", "description": "召唤荆棘保护自身，反弹伤害", "cooldown": 12},
+        {"skill_key": "skill_entangle", "name": "自然纠缠", "description": "释放自然之力缠绕敌人", "cooldown": 10}
+      ],
+      "enrage_threshold": 0.3,
+      "reward": {
+        "experience": 5000,
+        "items": [
+          {"item_key": "item_ancient_core", "quantity": 1},
+          {"item_key": "item_nature_essence", "quantity": 3},
+          {"item_key": "item_forest_crystal", "quantity": 1}
+        ]
+      },
+      "min_reputation": 0
+    },
+    {
+      "monster_key": "boss_desert_emperor",
+      "name": "沙漠帝王",
+      "monster_type": "boss",
+      "chapter_id": "chapter_02",
+      "region_key": "region_oasis_01",
+      "level": 15,
+      "hp": 1200,
+      "attack": 35,
+      "defense": 12,
+      "speed": 6,
+      "description": "南部绿洲的统治者，一只巨大的沙漠蝎子王。它拥有强大的毒素攻击和快速的移动能力，能够在沙漠中快速穿梭。随着战斗的进行，它会变得更加狂暴，攻击速度大幅提升。",
+      "behavior_pattern": {
+        "aggression": "berserker",
+        "attack_pattern": "mixed",
+        "special_behaviors": ["enrage", "phase_change", "burrow"]
+      },
+      "loot_table": [
+        {"item_key": "item_desert_emperor_core", "drop_rate": 1.0, "quantity_min": 1, "quantity_max": 1},
+        {"item_key": "item_poison_essence", "drop_rate": 0.7, "quantity_min": 2, "quantity_max": 4},
+        {"item_key": "item_gold_coin", "drop_rate": 0.9, "quantity_min": 50, "quantity_max": 100}
+      ],
+      "skills": [
+        {"skill_key": "skill_scorpion_sting", "name": "蝎尾刺", "damage_multiplier": 1.2, "cooldown": 0},
+        {"skill_key": "skill_sand_strike", "name": "沙击", "damage_multiplier": 1.0, "cooldown": 2}
+      ],
+      "is_boss": true,
+      "boss_rank": "mythic",
+      "phase_count": 3,
+      "phase_names": ["潜伏阶段", "进攻阶段", "毁灭阶段"],
+      "special_skills": [
+        {"skill_key": "skill_sandstorm", "name": "沙尘暴", "description": "召唤沙尘暴遮蔽视野并造成持续伤害", "cooldown": 10},
+        {"skill_key": "skill_poison_spray", "name": "毒液喷射", "description": "释放强力毒素，造成持续伤害", "cooldown": 8},
+        {"skill_key": "skill_burrow_attack", "name": "地底突袭", "description": "潜入地下后突然攻击", "cooldown": 12},
+        {"skill_key": "skill_desert_rage", "name": "沙漠之怒", "description": "进入狂暴状态，攻击速度翻倍", "cooldown": 15},
+        {"skill_key": "skill_stinger_barrage", "name": "尾刺弹幕", "description": "连续发射多个毒刺", "cooldown": 18}
+      ],
+      "enrage_threshold": 0.25,
+      "reward": {
+        "experience": 8000,
+        "items": [
+          {"item_key": "item_desert_emperor_core", "quantity": 1},
+          {"item_key": "item_poison_essence", "quantity": 5},
+          {"item_key": "item_oasis_amulet", "quantity": 1}
+        ]
+      },
+      "min_reputation": 0
     }
   ]
 }
