@@ -40,17 +40,27 @@ def _clean_app_modules():
 
 
 class TestContentServiceIntegration:
-    @pytest_asyncio.fixture(autouse=True)
-    async def setup(self):
+    @pytest.fixture
+    def content_client(self):
         old_path = sys.path.copy()
         _clean_app_modules()
         sys.path.insert(0, '/workspace/services/content')
 
         try:
             from app.core.db import Base as ContentBase, get_db as content_get_db
+            from app.main import app as content_app
 
-            async with content_test_engine.begin() as conn:
-                await conn.run_sync(ContentBase.metadata.create_all)
+            import asyncio
+
+            async def _setup_db():
+                async with content_test_engine.begin() as conn:
+                    await conn.run_sync(ContentBase.metadata.create_all)
+
+            async def _teardown_db():
+                async with content_test_engine.begin() as conn:
+                    await conn.run_sync(ContentBase.metadata.drop_all)
+
+            asyncio.run(_setup_db())
 
             async def override_content_get_db() -> AsyncGenerator[AsyncSession, None]:
                 async with content_test_session() as session:
@@ -63,28 +73,13 @@ class TestContentServiceIntegration:
                     finally:
                         await session.close()
 
-            from app.main import app as content_app
             content_app.dependency_overrides[content_get_db] = override_content_get_db
 
-            yield
-
-            async with content_test_engine.begin() as conn:
-                await conn.run_sync(ContentBase.metadata.drop_all)
-            content_app.dependency_overrides.clear()
-        finally:
-            sys.path[:] = old_path
-            _clean_app_modules()
-
-    @pytest.fixture
-    def content_client(self):
-        old_path = sys.path.copy()
-        _clean_app_modules()
-        sys.path.insert(0, '/workspace/services/content')
-
-        try:
-            from app.main import app as content_app
             with TestClient(content_app) as client:
                 yield client
+
+            content_app.dependency_overrides.clear()
+            asyncio.run(_teardown_db())
         finally:
             sys.path[:] = old_path
             _clean_app_modules()
