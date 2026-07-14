@@ -65,4 +65,6 @@
 
 ## 合并结果
 
-- 待合并到 feature-prd 分支
+- ✅ 已成功合并到 feature-prd 分支
+- 合并提交 hash: e1c5c0e
+- 工作分支 auto/auto-20260714-2300 已删除
