@@ -11,11 +11,13 @@ ACTION_QUEST_CREATE = "quest_create"
 ACTION_ITEM_CREATE = "item_create"
 ACTION_ITEM_UPDATE = "item_update"
 ACTION_ITEM_DELETE = "item_delete"
+ACTION_MONSTER_CREATE = "monster_create"
 
 RESOURCE_REGION = "region"
 RESOURCE_NPC = "npc"
 RESOURCE_QUEST = "quest"
 RESOURCE_ITEM_DEFINITION = "item_definition"
+RESOURCE_MONSTER_DEFINITION = "monster_definition"
 
 
 class AuditRepository:
