@@ -26,6 +26,8 @@ signal flee_pressed
 @onready var boss_title_label: Label = $BossBanner/BossTitleLabel
 
 var is_in_combat: bool = false
+var current_phase: int = 1
+var total_phases: int = 1
 
 func _ready() -> void:
 	visible = false
@@ -239,3 +241,33 @@ func show_defeat() -> void:
 
 func hide_hud() -> void:
 	visible = false
+
+
+## ==================== Boss 战辅助方法 ====================
+
+func show_enrage_indicator() -> void:
+	"""显示狂暴状态指示器"""
+	if enrage_indicator:
+		enrage_indicator.visible = true
+
+func hide_enrage_indicator() -> void:
+	"""隐藏狂暴状态指示器"""
+	if enrage_indicator:
+		enrage_indicator.visible = false
+
+func show_boss_skill_alert(skill_name: String) -> void:
+	"""显示 Boss 技能提示"""
+	if skill_alert_label:
+		skill_alert_label.visible = true
+		skill_alert_label.text = "Boss使用技能: %s" % skill_name
+
+		await get_tree().create_timer(1.5).timeout
+
+		if skill_alert_label:
+			skill_alert_label.visible = false
+
+func set_boss_phase_info(current_phase: int, total_phases: int, phase_name: String) -> void:
+	"""设置 Boss 阶段信息（用于测试）"""
+	current_phase = current_phase
+	total_phases = total_phases
+	_update_phase_display(current_phase, total_phases, phase_name)
