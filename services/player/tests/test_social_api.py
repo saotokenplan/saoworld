@@ -4,15 +4,6 @@ import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from fastapi.testclient import TestClient
-
-from app.main import app
-
-
-@pytest.fixture
-def client():
-    """创建测试客户端"""
-    return TestClient(app)
 
 
 @pytest.fixture
@@ -35,13 +26,12 @@ class TestGetSocialOverview:
 
     @pytest.mark.asyncio
     async def test_get_social_overview_success_with_all_data(
-        self, client: TestClient, mock_db: AsyncMock, mock_user: MagicMock
+        self, client, mock_db, mock_user
     ):
         """测试获取社交概览成功（有公会、有好友、有未读消息）"""
         guild_uuid = uuid.uuid4()
         friend_uuid = uuid.uuid4()
 
-        # Mock 数据
         mock_friendship = MagicMock()
         mock_friendship.friend_id = friend_uuid
         mock_friendship.created_at = "2026-07-14T12:00:00Z"
@@ -94,9 +84,9 @@ class TestGetSocialOverview:
                 return_value=mock_friend_player,
             ),
         ):
-            response = client.get(
+            response = await client.get(
                 "/api/v1/player/social/overview",
-                headers={"Authorization": "Bearer test_token"},
+                headers={"Authorization": f"Bearer {player_token()}"},
             )
 
         assert response.status_code == 200
@@ -110,7 +100,7 @@ class TestGetSocialOverview:
 
     @pytest.mark.asyncio
     async def test_get_social_overview_success_no_guild(
-        self, client: TestClient, mock_db: AsyncMock, mock_user: MagicMock
+        self, client, mock_db, mock_user
     ):
         """测试获取社交概览成功（无公会）"""
         with (
@@ -137,9 +127,9 @@ class TestGetSocialOverview:
                 return_value=None,
             ),
         ):
-            response = client.get(
+            response = await client.get(
                 "/api/v1/player/social/overview",
-                headers={"Authorization": "Bearer test_token"},
+                headers={"Authorization": f"Bearer {player_token()}"},
             )
 
         assert response.status_code == 200
@@ -152,7 +142,7 @@ class TestGetSocialOverview:
 
     @pytest.mark.asyncio
     async def test_get_social_overview_success_zero_unread(
-        self, client: TestClient, mock_db: AsyncMock, mock_user: MagicMock
+        self, client, mock_db, mock_user
     ):
         """测试未读消息数为 0"""
         with (
@@ -179,9 +169,9 @@ class TestGetSocialOverview:
                 return_value=None,
             ),
         ):
-            response = client.get(
+            response = await client.get(
                 "/api/v1/player/social/overview",
-                headers={"Authorization": "Bearer test_token"},
+                headers={"Authorization": f"Bearer {player_token()}"},
             )
 
         assert response.status_code == 200
@@ -190,10 +180,9 @@ class TestGetSocialOverview:
 
     @pytest.mark.asyncio
     async def test_get_social_overview_success_many_friends(
-        self, client: TestClient, mock_db: AsyncMock, mock_user: MagicMock
+        self, client, mock_db, mock_user
     ):
         """测试最近好友列表正确展示（最多5个）"""
-        # 创建10个好友
         friendships = []
         for i in range(10):
             mock_friendship = MagicMock()
@@ -234,20 +223,19 @@ class TestGetSocialOverview:
                 return_value=mock_friend_player,
             ),
         ):
-            response = client.get(
+            response = await client.get(
                 "/api/v1/player/social/overview",
-                headers={"Authorization": "Bearer test_token"},
+                headers={"Authorization": f"Bearer {player_token()}"},
             )
 
         assert response.status_code == 200
         data = response.json()
         assert data["data"]["friends_count"] == 10
-        # 最多显示5个最近好友
         assert len(data["data"]["recent_friends"]) <= 5
 
     @pytest.mark.asyncio
     async def test_get_social_overview_invalid_player_id(
-        self, client: TestClient, mock_db: AsyncMock
+        self, client, mock_db
     ):
         """测试无效的玩家ID"""
         mock_user_invalid = MagicMock()
@@ -258,23 +246,23 @@ class TestGetSocialOverview:
             patch("app.api.routes.get_db", return_value=mock_db),
             patch("app.core.deps.get_current_user", return_value=mock_user_invalid),
         ):
-            response = client.get(
+            response = await client.get(
                 "/api/v1/player/social/overview",
-                headers={"Authorization": "Bearer test_token"},
+                headers={"Authorization": f"Bearer {player_token()}"},
             )
 
         assert response.status_code == 400
         assert response.json()["code"] == "INVALID_PLAYER_ID"
 
     @pytest.mark.asyncio
-    async def test_get_social_overview_unauthorized(self, client: TestClient):
+    async def test_get_social_overview_unauthorized(self, client):
         """测试未授权访问"""
-        response = client.get("/api/v1/player/social/overview")
+        response = await client.get("/api/v1/player/social/overview")
         assert response.status_code == 401
 
     @pytest.mark.asyncio
     async def test_get_social_overview_forbidden(
-        self, client: TestClient, mock_db: AsyncMock
+        self, client, mock_db
     ):
         """测试无权限访问"""
         mock_user_no_scope = MagicMock()
@@ -285,9 +273,19 @@ class TestGetSocialOverview:
             patch("app.api.routes.get_db", return_value=mock_db),
             patch("app.core.deps.get_current_user", return_value=mock_user_no_scope),
         ):
-            response = client.get(
+            response = await client.get(
                 "/api/v1/player/social/overview",
-                headers={"Authorization": "Bearer test_token"},
+                headers={"Authorization": f"Bearer {player_token()}"},
             )
 
         assert response.status_code == 403
+
+
+def player_token() -> str:
+    """生成测试玩家 token"""
+    from app.core.auth import create_test_token
+    from app.schemas.auth import Role
+    return create_test_token(
+        user_id="00000000-0000-0000-0000-000000000001",
+        role=Role.PLAYER,
+    )
