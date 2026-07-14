@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "monsters": [
+    {
+      "monster_key": "monster_wasteland_wolf",
+      "name": "荒原狼",
+      "monster_type": "beast",
+      "chapter_id": "chapter_02",
+      "region_key": "region_wasteland_01",
+      "level": 5,
+      "hp": 120,
+      "attack": 15,
+      "defense": 5,
+      "speed": 8,
+      "description": "荒原上成群出没的灰狼，比普通狼更凶猛。",
+      "behavior_pattern": {
+        "aggression": "aggressive",
+        "attack_pattern": "melee",
+        "special_behaviors": ["pack_hunt"]
+      },
+      "loot_table": [
+        {"item_key": "item_wolf_pelt", "drop_rate": 0.6, "quantity_min": 1, "quantity_max": 2}
+      ],
+      "skills": [
+        {"skill_key": "skill_bite", "name": "撕咬", "damage_multiplier": 1.2, "cooldown": 0}
+      ]
+    },
+    {
+      "monster_key": "monster_skeleton_warrior",
+      "name": "骷髅战士",
+      "monster_type": "undead",
+      "chapter_id": "chapter_01",
+      "region_key": "region_crypt_01",
+      "level": 8,
+      "hp": 150,
+      "attack": 20,
+      "defense": 8,
+      "speed": 3,
+      "description": "在古墓中徘徊的亡灵战士，手持锈蚀的武器。",
+      "behavior_pattern": {
+        "aggression": "defensive",
+        "attack_pattern": "melee",
+        "special_behaviors": ["patrol"]
+      },
+      "loot_table": [
+        {"item_key": "item_bone_fragment", "drop_rate": 0.8, "quantity_min": 1, "quantity_max": 3}
+      ],
+      "skills": [
+        {"skill_key": "skill_slash", "name": "斩击", "damage_multiplier": 1.0, "cooldown": 0}
+      ]
+    },
+    {
+      "monster_key": "monster_fire_elemental",
+      "name": "火焰元素",
+      "monster_type": "elemental",
+      "chapter_id": "chapter_02",
+      "region_key": "region_volcano_01",
+      "level": 15,
+      "hp": 300,
+      "attack": 35,
+      "defense": 5,
+      "speed": 6,
+      "description": "由纯粹火焰构成的元素生物，温度极高。",
+      "behavior_pattern": {
+        "aggression": "aggressive",
+        "attack_pattern": "magic",
+        "special_behaviors": ["aoe_burn"]
+      },
+      "loot_table": [
+        {"item_key": "item_fire_essence", "drop_rate": 0.4, "quantity_min": 1, "quantity_max": 2}
+      ],
+      "skills": [
+        {"skill_key": "skill_fireball", "name": "火球术", "damage_multiplier": 2.0, "cooldown": 3},
+        {"skill_key": "skill_flame_shield", "name": "火焰护盾", "damage_multiplier": 0.0, "cooldown": 10}
+      ]
+    }
+  ]
+}

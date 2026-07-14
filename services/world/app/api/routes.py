@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, Header, Query, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
@@ -14,6 +14,7 @@ from app.core.metrics import (
     record_item_create,
     record_item_update,
     record_item_delete,
+    record_monster_create,
 )
 from app.repositories.audit_repo import (
     ACTION_NPC_CREATE,
@@ -23,14 +24,17 @@ from app.repositories.audit_repo import (
     ACTION_ITEM_CREATE,
     ACTION_ITEM_UPDATE,
     ACTION_ITEM_DELETE,
+    ACTION_MONSTER_CREATE,
     RESOURCE_NPC,
     RESOURCE_QUEST,
     RESOURCE_REGION,
     RESOURCE_ITEM_DEFINITION,
+    RESOURCE_MONSTER_DEFINITION,
     AuditRepository,
 )
 from app.repositories.world_repo import (
     ItemDefinitionRepository,
+    MonsterDefinitionRepository,
     NpcRepository,
     QuestDefinitionRepository,
     WorldRepository,
@@ -38,6 +42,8 @@ from app.repositories.world_repo import (
 from app.schemas.world import (
     CreateItemRequest,
     CreateItemResponse,
+    CreateMonsterRequest,
+    CreateMonsterResponse,
     CreateNpcRequest,
     CreateNpcResponse,
     CreateQuestRequest,
@@ -53,6 +59,9 @@ from app.schemas.world import (
     ItemResponse,
     ItemRarity,
     ItemType,
+    MonsterListResponse,
+    MonsterResponse,
+    MonsterType,
     NpcListResponse,
     NpcResponse,
     PaginatedMeta,
@@ -1440,5 +1449,150 @@ async def delete_item(
     return EnvelopeResponse(
         request_id=request_id,
         data={"success": True, "item_id": str(item_id)},
+        trace_id=x_trace_id,
+    )
+
+
+# ==================== Monster API ====================
+
+
+@router.get(
+    "/world/monsters",
+    summary="获取怪物定义列表",
+    response_model=EnvelopeResponse,
+)
+async def list_monsters(
+    monster_type: str | None = Query(None, description="按怪物类型筛选"),
+    chapter_id: str | None = Query(None, description="按章节ID筛选"),
+    region_key: str | None = Query(None, description="按区域Key筛选"),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_user: UserPayload = RequireWorldReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse:
+    """获取怪物定义列表（公开接口，monsters:read Scope）。"""
+    repo = MonsterDefinitionRepository(db)
+    monsters, total = await repo.list_monsters(
+        monster_type=monster_type,
+        chapter_id=chapter_id,
+        region_key=region_key,
+        limit=limit,
+        offset=offset,
+    )
+    monster_responses = [MonsterResponse.model_validate(m) for m in monsters]
+    return EnvelopeResponse(
+        request_id="",
+        data=MonsterListResponse(monsters=monster_responses, total=total).model_dump(),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset).model_dump(),
+    )
+
+
+@router.get(
+    "/world/monsters/{monster_id}",
+    summary="获取怪物定义详情",
+    response_model=EnvelopeResponse,
+)
+async def get_monster(
+    monster_id: uuid.UUID,
+    current_user: UserPayload = RequireWorldReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse:
+    """获取单个怪物定义详情（公开接口，monsters:read Scope）。"""
+    repo = MonsterDefinitionRepository(db)
+    monster = await repo.get_monster_by_id(monster_id)
+    if monster is None:
+        raise_world_error(
+            WorldErrorCodes.MONSTER_NOT_FOUND,
+            f"怪物不存在: {monster_id}",
+            request_id=_make_request_id("req_world_monster"),
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+    return EnvelopeResponse(
+        request_id="",
+        data=MonsterResponse.model_validate(monster).model_dump(),
+    )
+
+
+@ops_router.post(
+    "/world/monsters",
+    summary="创建怪物定义",
+    response_model=EnvelopeResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_monster(
+    body: CreateMonsterRequest,
+    x_trace_id: str | None = Header(None, alias="X-Trace-Id"),
+    idempotency_key: str | None = Header(None, alias="Idempotency-Key"),
+    x_request_id: str | None = Header(None, alias="X-Request-Id"),
+    current_user: UserPayload = RequireOpsRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse:
+    """创建怪物定义（运营接口，ops:monsters:write Scope）。"""
+    request_id = x_request_id or _make_request_id("req_ops_monster")
+
+    repo = MonsterDefinitionRepository(db)
+
+    existing = await repo.get_monster_by_key(body.monster_key)
+    if existing is not None:
+        raise_world_error(
+            WorldErrorCodes.MONSTER_KEY_EXISTS,
+            f"怪物Key已存在: {body.monster_key}",
+            request_id=request_id,
+            status_code=status.HTTP_409_CONFLICT,
+            details=[
+                ErrorDetail(
+                    location="body",
+                    field="monster_key",
+                    issue="already_exists",
+                    rejected_value=body.monster_key,
+                )
+            ],
+        )
+
+    monster = await repo.create_monster(
+        monster_key=body.monster_key,
+        name=body.name,
+        monster_type=body.monster_type.value,
+        chapter_id=body.chapter_id,
+        region_key=body.region_key,
+        level=body.level,
+        hp=body.hp,
+        attack=body.attack,
+        defense=body.defense,
+        speed=body.speed,
+        description=body.description,
+        behavior_pattern=body.behavior_pattern,
+        loot_table=body.loot_table,
+        skills=body.skills,
+        min_reputation=body.min_reputation,
+    )
+
+    record_monster_create()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_MONSTER_CREATE,
+        resource_type=RESOURCE_MONSTER_DEFINITION,
+        resource_id=monster.monster_id,
+        request_payload_jsonb=body.model_dump(mode="json"),
+        result_status=201,
+    )
+
+    response_data = CreateMonsterResponse(
+        monster_id=monster.monster_id,
+        monster_key=monster.monster_key,
+        monster_type=MonsterType(monster.monster_type),
+        name=monster.name,
+        level=monster.level,
+        request_id=request_id,
+        trace_id=x_trace_id,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data.model_dump(),
         trace_id=x_trace_id,
     )

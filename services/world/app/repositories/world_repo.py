@@ -4,7 +4,7 @@ from typing import Any, Sequence
 from sqlalchemy import Select, func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domain.models import NPC, ItemDefinition, QuestDefinition, Region, WorldSkeleton
+from app.domain.models import NPC, ItemDefinition, MonsterDefinition, QuestDefinition, Region, WorldSkeleton
 
 VALID_STATUS_TRANSITIONS: dict[str, set[str]] = {
     "locked": {"active"},
@@ -484,3 +484,97 @@ class ItemDefinitionRepository:
         await self.db.delete(item)
         await self.db.flush()
         return True
+
+
+class MonsterDefinitionRepository:
+    def __init__(self, db: AsyncSession) -> None:
+        self.db = db
+
+    async def list_monsters(
+        self,
+        monster_type: str | None = None,
+        chapter_id: str | None = None,
+        region_key: str | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> tuple[Sequence[MonsterDefinition], int]:
+        count_stmt = select(sa_func.count(MonsterDefinition.monster_id))
+        if monster_type:
+            count_stmt = count_stmt.where(MonsterDefinition.monster_type == monster_type)
+        if chapter_id:
+            count_stmt = count_stmt.where(MonsterDefinition.chapter_id == chapter_id)
+        if region_key:
+            count_stmt = count_stmt.where(MonsterDefinition.region_key == region_key)
+        count_result = await self.db.execute(count_stmt)
+        total = count_result.scalar_one()
+
+        stmt: Select[tuple[MonsterDefinition]] = (
+            select(MonsterDefinition)
+            .order_by(MonsterDefinition.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        if monster_type:
+            stmt = stmt.where(MonsterDefinition.monster_type == monster_type)
+        if chapter_id:
+            stmt = stmt.where(MonsterDefinition.chapter_id == chapter_id)
+        if region_key:
+            stmt = stmt.where(MonsterDefinition.region_key == region_key)
+
+        result = await self.db.execute(stmt)
+        monsters = result.scalars().all()
+        return monsters, total
+
+    async def get_monster_by_id(self, monster_id: uuid.UUID) -> MonsterDefinition | None:
+        stmt: Select[tuple[MonsterDefinition]] = select(MonsterDefinition).where(
+            MonsterDefinition.monster_id == monster_id
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_monster_by_key(self, monster_key: str) -> MonsterDefinition | None:
+        stmt: Select[tuple[MonsterDefinition]] = select(MonsterDefinition).where(
+            MonsterDefinition.monster_key == monster_key
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def create_monster(
+        self,
+        *,
+        monster_key: str,
+        name: str,
+        monster_type: str,
+        chapter_id: str,
+        region_key: str | None = None,
+        level: int = 1,
+        hp: int = 10,
+        attack: int = 5,
+        defense: int = 0,
+        speed: int = 5,
+        description: str | None = None,
+        behavior_pattern: dict[str, Any] | None = None,
+        loot_table: list[dict[str, Any]] | None = None,
+        skills: list[dict[str, Any]] | None = None,
+        min_reputation: int = 0,
+    ) -> MonsterDefinition:
+        monster = MonsterDefinition(
+            monster_key=monster_key,
+            name=name,
+            monster_type=monster_type,
+            chapter_id=chapter_id,
+            region_key=region_key,
+            level=level,
+            hp=hp,
+            attack=attack,
+            defense=defense,
+            speed=speed,
+            description=description,
+            behavior_pattern_jsonb=behavior_pattern,
+            loot_table_jsonb=loot_table,
+            skills_jsonb=skills,
+            min_reputation=min_reputation,
+        )
+        self.db.add(monster)
+        await self.db.flush()
+        return monster

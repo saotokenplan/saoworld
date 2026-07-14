@@ -250,6 +250,121 @@ class QualityScorer:
 
         return QualityScoreResult(max(0.0, min(1.0, score)), reasons)
 
+    def score_monster(self, payload: dict[str, Any]) -> QualityScoreResult:
+        reasons: list[str] = []
+        score = 1.0
+
+        required_fields = [
+            "monster_key", "name", "monster_type", "chapter_id",
+            "region_key", "level", "hp", "attack", "defense",
+            "speed", "description", "behavior_pattern", "loot_table", "skills",
+        ]
+
+        for field in required_fields:
+            value = payload.get(field)
+            if value is None:
+                score -= 0.05
+                reasons.append(f"Missing field: {field}")
+            elif isinstance(value, str) and not value.strip():
+                score -= 0.03
+                reasons.append(f"Empty field: {field}")
+            elif isinstance(value, (list, dict)) and len(value) == 0:
+                score -= 0.04
+                reasons.append(f"Empty list/dict: {field}")
+
+        name = payload.get("name", "")
+        if len(name) < 2:
+            score -= 0.1
+            reasons.append("Monster name is too short")
+
+        description = payload.get("description", "")
+        if len(description) < 50:
+            score -= 0.1
+            reasons.append("Monster description is too short")
+
+        monster_type = payload.get("monster_type", "")
+        valid_types = {"beast", "humanoid", "undead", "mechanical", "elemental", "demon", "dragon", "boss"}
+        if monster_type and monster_type not in valid_types:
+            score -= 0.05
+            reasons.append(f"Invalid monster type: {monster_type}")
+
+        level = payload.get("level", 0)
+        if isinstance(level, (int, float)):
+            if level < 1 or level > 60:
+                score -= 0.08
+                reasons.append(f"Level out of range (1-60): {level}")
+
+        hp = payload.get("hp", 0)
+        if isinstance(hp, (int, float)) and hp <= 0:
+            score -= 0.1
+            reasons.append("HP must be positive")
+
+        attack = payload.get("attack", 0)
+        if isinstance(attack, (int, float)) and attack < 0:
+            score -= 0.08
+            reasons.append("Attack must be non-negative")
+
+        defense = payload.get("defense", 0)
+        if isinstance(defense, (int, float)) and defense < 0:
+            score -= 0.05
+            reasons.append("Defense must be non-negative")
+
+        speed = payload.get("speed", 0)
+        if isinstance(speed, (int, float)) and speed < 0:
+            score -= 0.05
+            reasons.append("Speed must be non-negative")
+
+        behavior_pattern = payload.get("behavior_pattern", {})
+        if isinstance(behavior_pattern, dict):
+            aggression = behavior_pattern.get("aggression", "")
+            valid_aggressions = {"passive", "defensive", "aggressive", "berserker"}
+            if aggression and aggression not in valid_aggressions:
+                score -= 0.03
+                reasons.append(f"Invalid aggression type: {aggression}")
+        else:
+            score -= 0.1
+            reasons.append("Behavior pattern must be a dictionary")
+
+        loot_table = payload.get("loot_table", [])
+        if isinstance(loot_table, list):
+            for idx, loot in enumerate(loot_table):
+                if not isinstance(loot, dict):
+                    score -= 0.02
+                    reasons.append(f"Loot entry {idx} is not a dictionary")
+                    continue
+                drop_rate = loot.get("drop_rate", 1.0)
+                if isinstance(drop_rate, (int, float)) and (drop_rate < 0 or drop_rate > 1.0):
+                    score -= 0.02
+                    reasons.append(f"Loot entry {idx} drop_rate out of range")
+        else:
+            score -= 0.1
+            reasons.append("Loot table must be a list")
+
+        skills = payload.get("skills", [])
+        if isinstance(skills, list):
+            if len(skills) < 1:
+                score -= 0.08
+                reasons.append("Monster needs at least 1 skill")
+            for idx, skill in enumerate(skills):
+                if not isinstance(skill, dict):
+                    score -= 0.03
+                    reasons.append(f"Skill {idx} is not a dictionary")
+        else:
+            score -= 0.15
+            reasons.append("Skills must be a list")
+
+        monster_key = payload.get("monster_key", "")
+        if monster_key and not monster_key.startswith("monster_"):
+            score -= 0.03
+            reasons.append("Monster key should start with 'monster_'")
+
+        region_key = payload.get("region_key", "")
+        if region_key and not region_key.startswith("region_"):
+            score -= 0.02
+            reasons.append("Region key should start with 'region_'")
+
+        return QualityScoreResult(max(0.0, min(1.0, score)), reasons)
+
     def score_settlement(self, payload: dict[str, Any]) -> QualityScoreResult:
         reasons: list[str] = []
         score = 1.0
@@ -388,6 +503,8 @@ class QualityScorer:
                 return self.score_region(payload)
             case "settlement":
                 return self.score_settlement(payload)
+            case "monster":
+                return self.score_monster(payload)
             case _:
                 return self.score_generic(payload)
 

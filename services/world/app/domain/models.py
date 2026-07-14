@@ -200,6 +200,70 @@ class ItemDefinition(Base):
     )
 
 
+class MonsterDefinition(Base):
+    __tablename__ = "monster_definitions"
+
+    monster_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    monster_key: Mapped[str] = mapped_column(String(128), nullable=False, unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(256), nullable=False)
+    monster_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    chapter_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    region_key: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    level: Mapped[int] = mapped_column(nullable=False, default=1, server_default="1")
+    hp: Mapped[int] = mapped_column(nullable=False, default=10)
+    attack: Mapped[int] = mapped_column(nullable=False, default=5)
+    defense: Mapped[int] = mapped_column(nullable=False, default=0)
+    speed: Mapped[int] = mapped_column(nullable=False, default=5)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    behavior_pattern_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    loot_table_jsonb: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, nullable=True)
+    skills_jsonb: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, nullable=True)
+    min_reputation: Mapped[int] = mapped_column(nullable=False, default=0, server_default="0", index=True)
+    schema_version: Mapped[int] = mapped_column(nullable=False, default=1, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "monster_type IN ('beast', 'humanoid', 'undead', 'mechanical', 'elemental', 'demon', 'dragon', 'boss')",
+            name="monster_definitions_monster_type_check",
+        ),
+        CheckConstraint(
+            "level >= 1",
+            name="monster_definitions_level_check",
+        ),
+        CheckConstraint(
+            "hp > 0",
+            name="monster_definitions_hp_check",
+        ),
+        CheckConstraint(
+            "attack >= 0",
+            name="monster_definitions_attack_check",
+        ),
+        CheckConstraint(
+            "defense >= 0",
+            name="monster_definitions_defense_check",
+        ),
+        CheckConstraint(
+            "speed >= 0",
+            name="monster_definitions_speed_check",
+        ),
+        CheckConstraint(
+            "min_reputation >= 0",
+            name="monster_definitions_min_reputation_check",
+        ),
+        Index("monster_definitions_monster_type_idx", "monster_type"),
+        Index("monster_definitions_chapter_id_idx", "chapter_id"),
+        Index("monster_definitions_region_key_idx", "region_key"),
+        Index("monster_definitions_level_idx", "level"),
+        Index("monster_definitions_min_reputation_idx", "min_reputation"),
+    )
+
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 

@@ -367,3 +367,98 @@ class CreateItemResponse(BaseModel):
     rarity: ItemRarity
     request_id: str
     trace_id: str | None = None
+
+
+class MonsterType(str, Enum):
+    BEAST = "beast"
+    HUMANOID = "humanoid"
+    UNDEAD = "undead"
+    MECHANICAL = "mechanical"
+    ELEMENTAL = "elemental"
+    DEMON = "demon"
+    DRAGON = "dragon"
+    BOSS = "boss"
+
+
+class MonsterResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    monster_id: uuid.UUID
+    monster_key: str
+    name: str
+    monster_type: MonsterType
+    chapter_id: str
+    region_key: str | None = None
+    level: int = 1
+    hp: int = 10
+    attack: int = 5
+    defense: int = 0
+    speed: int = 5
+    description: str | None = None
+    behavior_pattern: dict[str, object] | None = None
+    loot_table: list[dict[str, object]] | None = None
+    skills: list[dict[str, object]] | None = None
+    min_reputation: int = 0
+    schema_version: int = 1
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    def model_validate(cls, obj: Any, *args: Any, **kwargs: Any) -> "MonsterResponse":
+        if hasattr(obj, "behavior_pattern_jsonb"):
+            obj_dict = {
+                "monster_id": obj.monster_id,
+                "monster_key": obj.monster_key,
+                "name": obj.name,
+                "monster_type": obj.monster_type,
+                "chapter_id": obj.chapter_id,
+                "region_key": obj.region_key,
+                "level": obj.level,
+                "hp": obj.hp,
+                "attack": obj.attack,
+                "defense": obj.defense,
+                "speed": obj.speed,
+                "description": obj.description,
+                "behavior_pattern": obj.behavior_pattern_jsonb,
+                "loot_table": obj.loot_table_jsonb,
+                "skills": obj.skills_jsonb,
+                "min_reputation": obj.min_reputation,
+                "schema_version": obj.schema_version,
+                "created_at": obj.created_at,
+                "updated_at": obj.updated_at,
+            }
+            return super().model_validate(obj_dict, *args, **kwargs)
+        return super().model_validate(obj, *args, **kwargs)
+
+
+class MonsterListResponse(BaseModel):
+    monsters: list[MonsterResponse]
+    total: int
+
+
+class CreateMonsterRequest(BaseModel):
+    monster_key: str = Field(min_length=1, max_length=128, pattern=r"^[a-zA-Z0-9_\-]+$")
+    name: str = Field(min_length=1, max_length=256)
+    monster_type: MonsterType
+    chapter_id: str = Field(min_length=1, max_length=64)
+    region_key: str | None = None
+    level: int = Field(default=1, ge=1, le=60)
+    hp: int = Field(default=10, ge=1)
+    attack: int = Field(default=5, ge=0)
+    defense: int = Field(default=0, ge=0)
+    speed: int = Field(default=5, ge=0)
+    description: str | None = None
+    behavior_pattern: dict[str, object] | None = None
+    loot_table: list[dict[str, object]] | None = None
+    skills: list[dict[str, object]] | None = None
+    min_reputation: int = Field(default=0, ge=0)
+
+
+class CreateMonsterResponse(BaseModel):
+    monster_id: uuid.UUID
+    monster_key: str
+    monster_type: MonsterType
+    name: str
+    level: int = 1
+    request_id: str
+    trace_id: str | None = None

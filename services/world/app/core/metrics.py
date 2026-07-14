@@ -141,3 +141,29 @@ def set_items_by_type(type_counts: dict[str, int]) -> None:
         WORLD_ITEMS_BY_TYPE.labels(item_type=item_type).set(
             type_counts.get(item_type, 0)
         )
+
+
+WORLD_MONSTER_OPERATIONS_TOTAL = Counter(
+    "world_monster_operations_total",
+    "Monster 操作次数（按动作类型）",
+    labelnames=["action"],
+)
+
+WORLD_MONSTERS_BY_TYPE = Gauge(
+    "world_monsters_by_type",
+    "Monster 数（按怪物类型）",
+    labelnames=["monster_type"],
+)
+
+
+def record_monster_create() -> None:
+    """记录一次 Monster 创建。"""
+    WORLD_MONSTER_OPERATIONS_TOTAL.labels(action="create").inc()
+
+
+def set_monsters_by_type(type_counts: dict[str, int]) -> None:
+    """设置按类型分组的 Monster 数。"""
+    for monster_type in ("beast", "humanoid", "undead", "mechanical", "elemental", "demon", "dragon", "boss"):
+        WORLD_MONSTERS_BY_TYPE.labels(monster_type=monster_type).set(
+            type_counts.get(monster_type, 0)
+        )

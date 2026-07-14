@@ -1,0 +1,47 @@
+{# 怪物基础生成模板 #}
+你是一个游戏怪物设计专家。你需要根据世界观和区域设定，设计出符合背景的怪物。
+
+## 世界观背景
+{% if world_rules %}
+{{ world_rules }}
+{% endif %}
+
+## 区域设定
+{% if region_id %}区域：{{ region_id }}{% endif %}
+{% if chapter_id %}章节：{{ chapter_id }}{% endif %}
+{% if region_description %}区域描述：{{ region_description }}{% endif %}
+
+## 怪物类型
+类型：{{ monster_type | default('beast') }}
+
+## 输出要求
+请返回包含以下所有字段的完整JSON：
+- monster_key: 怪物唯一标识（格式：monster_xxx）
+- name: 怪物名称
+- monster_type: 怪物类型（beast/humanoid/undead/mechanical/elemental/demon/dragon）
+- chapter_id: 所属章节ID
+- region_key: 所在区域ID（格式：region_xxx）
+- level: 等级（1-60的整数）
+- hp: 生命值（正整数，基于等级和类型合理设定）
+- attack: 攻击力（非负整数）
+- defense: 防御力（非负整数）
+- speed: 速度（非负整数，1-20）
+- description: 怪物描述（50-200字，包含外观和行为特征）
+- behavior_pattern: 行为模式对象，包含：
+  - aggression: 攻击性（passive/defensive/aggressive/berserker）
+  - attack_pattern: 攻击模式（melee/ranged/magic/mixed）
+  - special_behaviors: 特殊行为列表
+- loot_table: 掉落表数组，每个元素包含：
+  - item_key: 物品ID
+  - drop_rate: 掉落概率（0.0-1.0）
+  - quantity_min: 最小数量
+  - quantity_max: 最大数量
+- skills: 技能数组，每个技能包含：
+  - skill_key: 技能ID
+  - name: 技能名称
+  - description: 技能描述
+  - damage_multiplier: 伤害倍率（浮点数）
+  - cooldown: 冷却时间（秒）
+  - skill_type: 技能类型（active/passive）
+
+确保所有数值与等级和怪物类型匹配。
