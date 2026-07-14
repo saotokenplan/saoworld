@@ -545,6 +545,7 @@
 48. ~~Sprint 6 S6-07「异常检测告警」~~ 已完成（2026-07-14 15:00）：vote-service 新增投票异常检测与告警系统，包括 vote_anomalies 表、AnomalyDetector 异常检测引擎（5种检测规则）、AnomalyRepository 仓储层（8个方法）、投票提交时自动异常检测、5个运营异常管理API、2个错误码、3类业务指标、3个审计动作常量、6个Schema；Alembic 迁移脚本 + 15个测试用例。vote-service 测试从 97 个增加到 112 个（+15），全部通过。为投票风控和运营监控提供基础能力。
 49. ~~Sprint 6 S6-06「运营事件配置」~~ 已完成（2026-07-14 16:00）：ops-service 新增运营事件配置系统，包括 ops_events 表、EventRepository 仓储层（9个方法）、EventEngine 事件引擎（生效判定、奖励倍率计算、叠加模式）、10个 API 端点（运营侧9个 + 玩家侧1个）、5个错误码、3类业务指标、7个审计动作常量、8个 Schema、events:read Scope；Alembic 迁移脚本 + 19个测试用例。ops-service 测试从 87 个增加到 106 个（+19），全部通过。为限时活动、双倍奖励等运营活动提供基础配置能力。
 50. ~~Sprint 7 S7-02「装备系统」~~ 已完成（2026-07-14 17:00）：world-service 新增装备定义系统（item_definitions 表、ItemDefinitionRepository、7个 API 端点、6个错误码、3类业务指标、3个审计动作、8个 Schema、items:read Scope）；player-service 新增玩家装备栏系统（player_equipment 表、EquipmentRepository、4个 API 端点、6个错误码、2类业务指标、2个审计动作、5个 Schema、equipment:read/write Scope）；两个服务各新增 Alembic 迁移脚本与测试用例。world-service 测试从 85 个增加到 97 个（+12），player-service 测试从 180 个增加到 190 个（+10），全部通过。为战斗系统和角色成长提供装备属性加成基础。
+51. ~~Sprint 7 S7-03「怪物生成模板」~~ 已完成（2026-07-14 19:00）：generation-service 新增怪物数据适配器（MonsterDataAdapter，含完整度验证、默认值填充、Key 规范化、8种怪物类型支持）、怪物 Jinja2 模板（monster_base.jinja2 + monster_boss.jinja2）、质量评分器怪物评分方法（score_monster）、内容生成器怪物生成方法（generate_monster）、模板管理器怪物模板匹配；world-service 新增怪物定义系统（monster_definitions 表、MonsterDefinitionRepository、3个 API 端点、3个错误码、2类业务指标、2个审计动作、6个 Schema）；客户端 MonsterManager 自动加载单例 + 怪物数据配置。generation-service 测试 +16、world-service 测试从 97 个增加到 111 个（+14），全部通过。为 S7-04 Boss 战设计提供数据基础。
 
 ## 进入实施前的建议门槛
 
