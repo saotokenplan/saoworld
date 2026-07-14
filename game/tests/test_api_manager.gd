@@ -74,3 +74,58 @@ func test_http_methods_available() -> void:
 	assert_true(api.has_method("post"))
 	assert_true(api.has_method("put"))
 	assert_true(api.has_method("delete"))
+
+func test_async_http_methods_available() -> void:
+	var api := APIManager
+	assert_true(api.has_method("get_async"))
+	assert_true(api.has_method("post_async"))
+	assert_true(api.has_method("put_async"))
+	assert_true(api.has_method("delete_async"))
+
+func test_request_pool_initial_empty() -> void:
+	var api := APIManager
+	assert_eq(api._request_pool.size(), 0, "初始连接池应为空")
+
+func test_request_pool_max_size() -> void:
+	var api := APIManager
+	assert_eq(api._max_pool_size, 5, "最大连接池大小应为 5")
+
+func test_retry_delay_with_jitter() -> void:
+	var api := APIManager
+	api.retry_delay = 2.0
+	api.retry_jitter_factor = 0.25
+	api.max_retry_interval = 30.0
+	
+	var delay_0: float = api._calculate_retry_delay(0)
+	var delay_1: float = api._calculate_retry_delay(1)
+	var delay_2: float = api._calculate_retry_delay(2)
+	
+	assert_true(delay_0 >= 1.5 and delay_0 <= 2.5, "第0次重试延迟应在 1.5-2.5 秒之间")
+	assert_true(delay_1 >= 3.0 and delay_1 <= 5.0, "第1次重试延迟应在 3.0-5.0 秒之间")
+	assert_true(delay_2 >= 6.0 and delay_2 <= 10.0, "第2次重试延迟应在 6.0-10.0 秒之间")
+
+func test_retry_delay_clamped() -> void:
+	var api := APIManager
+	api.retry_delay = 2.0
+	api.retry_jitter_factor = 0.25
+	api.max_retry_interval = 5.0
+	
+	var delay: float = api._calculate_retry_delay(10)
+	assert_true(delay <= 5.0, "重试延迟不应超过最大间隔")
+
+func test_retry_delay_minimum() -> void:
+	var api := APIManager
+	api.retry_delay = 2.0
+	api.retry_jitter_factor = 0.25
+	
+	var delay: float = api._calculate_retry_delay(0)
+	assert_true(delay >= 2.0, "重试延迟不应低于最小延迟")
+
+func test_max_retry_interval_config() -> void:
+	var api := APIManager
+	assert_true(api.max_retry_interval > 0, "最大重试间隔应大于 0")
+
+func test_retry_jitter_factor_config() -> void:
+	var api := APIManager
+	assert_true(api.retry_jitter_factor >= 0.0 and api.retry_jitter_factor <= 1.0, 
+		"抖动因子应在 0.0-1.0 之间")

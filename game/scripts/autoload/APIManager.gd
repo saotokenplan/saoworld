@@ -14,6 +14,12 @@ var request_timeout: float = 30.0
 var schema_version: int = 1
 var max_retries: int = 2
 var retry_delay: float = 2.0
+var max_retry_interval: float = 30.0
+var retry_jitter_factor: float = 0.25
+
+var _request_pool: Array[HTTPRequest] = []
+var _max_pool_size: int = 5
+var _pending_requests: Dictionary = {}
 
 var event_batch_interval: float = 30.0
 var max_batch_size: int = 50
@@ -116,25 +122,12 @@ func _make_request(method: String, endpoint: String, body: Dictionary, extra_hea
 	request_started.emit(request_id)
 	
 	var url: String = base_url + endpoint
-	var http_request := HTTPRequest.new()
-	add_child(http_request)
+	var http_request := _get_request_from_pool()
+	if not is_instance_valid(http_request):
+		http_request = HTTPRequest.new()
+		add_child(http_request)
 	
-	var headers: PackedStringArray = PackedStringArray()
-	headers.append("Content-Type: application/json")
-	
-	if auth_token != "":
-		headers.append("Authorization: Bearer %s" % auth_token)
-	
-	if trace_id != "":
-		headers.append("X-Trace-Id: %s" % trace_id)
-	
-	headers.append("X-Request-Id: %s" % request_id)
-	
-	if GameState.player_id != "":
-		headers.append("X-Player-Id: %s" % GameState.player_id)
-	
-	for key in extra_headers.keys():
-		headers.append("%s: %s" % [key, extra_headers[key]])
+	var headers: PackedStringArray = _build_request_headers(extra_headers, request_id)
 	
 	var error_code: Error = OK
 	var request_body: String = ""
@@ -153,7 +146,7 @@ func _make_request(method: String, endpoint: String, body: Dictionary, extra_hea
 	if error_code != OK:
 		var err: Dictionary = _build_error("NETWORK_ERROR", "Failed to send request: %s" % str(error_code), request_id)
 		request_failed.emit(request_id, err)
-		_remove_request(http_request)
+		_return_request_to_pool(http_request)
 		return err
 	
 	var completed: bool = false
@@ -170,7 +163,7 @@ func _make_request(method: String, endpoint: String, body: Dictionary, extra_hea
 				response_result = _build_error("INVALID_RESPONSE", "Invalid JSON response", request_id)
 			
 			completed = true
-			_remove_request(http_request)
+			_return_request_to_pool(http_request)
 	)
 	
 	var timeout_time: float = request_timeout
@@ -181,9 +174,10 @@ func _make_request(method: String, endpoint: String, body: Dictionary, extra_hea
 	
 	if not completed:
 		http_request.cancel_request()
-		_remove_request(http_request)
+		_return_request_to_pool(http_request)
 		if _can_retry(method) and retry_count < max_retries:
-			await get_tree().create_timer(retry_delay * pow(2, retry_count)).timeout
+			var delay: float = _calculate_retry_delay(retry_count)
+			await get_tree().create_timer(delay).timeout
 			return _make_request(method, endpoint, body, extra_headers, retry_count + 1)
 		
 		var timeout_err: Dictionary = _build_error("TIMEOUT", "Request timed out", request_id)
@@ -195,7 +189,8 @@ func _make_request(method: String, endpoint: String, body: Dictionary, extra_hea
 		if err_code == "TOKEN_EXPIRED" or err_code == "INVALID_TOKEN":
 			auth_error.emit(request_id, response_result.get("message", "Auth error"))
 		if _can_retry(method) and response_result.get("status_code", 0) == 500 and retry_count < max_retries:
-			await get_tree().create_timer(retry_delay * pow(2, retry_count)).timeout
+			var delay: float = _calculate_retry_delay(retry_count)
+			await get_tree().create_timer(delay).timeout
 			return _make_request(method, endpoint, body, extra_headers, retry_count + 1)
 	
 	return response_result
@@ -274,6 +269,226 @@ func _remove_request(req: HTTPRequest) -> void:
 	if is_instance_valid(req):
 		req.queue_free()
 
+func _get_request_from_pool() -> HTTPRequest:
+	for req in _request_pool:
+		if req and is_instance_valid(req) and not req.is_processing():
+			return req
+	if _request_pool.size() < _max_pool_size:
+		var new_req := HTTPRequest.new()
+		new_req.name = "HTTPRequest_%d" % _request_pool.size()
+		add_child(new_req)
+		_request_pool.append(new_req)
+		return new_req
+	return HTTPRequest.new()
+
+func _return_request_to_pool(req: HTTPRequest) -> void:
+	if not req:
+		return
+	for existing_req in _request_pool:
+		if existing_req == req:
+			return
+	if _request_pool.size() < _max_pool_size:
+		if not is_instance_valid(req):
+			req = HTTPRequest.new()
+		req.name = "HTTPRequest_%d" % _request_pool.size()
+		add_child(req)
+		_request_pool.append(req)
+	else:
+		if is_instance_valid(req):
+			req.queue_free()
+
+func _calculate_retry_delay(retry_count: int) -> float:
+	var base_delay: float = retry_delay * pow(2, retry_count)
+	var jitter: float = base_delay * retry_jitter_factor * (rand_range(-1.0, 1.0))
+	return min(max(base_delay + jitter, retry_delay), max_retry_interval)
+
+func get_async(endpoint: String, headers: Dictionary = {}, callback: Callable = null) -> String:
+	return _make_request_async("GET", endpoint, {}, headers, callback)
+
+func post_async(endpoint: String, body: Dictionary = {}, headers: Dictionary = {}, idempotency_key: String = "", callback: Callable = null) -> String:
+	if idempotency_key != "":
+		headers["Idempotency-Key"] = idempotency_key
+	return _make_request_async("POST", endpoint, body, headers, callback)
+
+func put_async(endpoint: String, body: Dictionary = {}, headers: Dictionary = {}, callback: Callable = null) -> String:
+	return _make_request_async("PUT", endpoint, body, headers, callback)
+
+func delete_async(endpoint: String, headers: Dictionary = {}, callback: Callable = null) -> String:
+	return _make_request_async("DELETE", endpoint, {}, headers, callback)
+
+func _make_request_async(method: String, endpoint: String, body: Dictionary, extra_headers: Dictionary, callback: Callable = null, retry_count: int = 0) -> String:
+	var request_id: String = generate_request_id()
+	request_started.emit(request_id)
+	
+	var url: String = base_url + endpoint
+	var http_request := _get_request_from_pool()
+	if not is_instance_valid(http_request):
+		http_request = HTTPRequest.new()
+		add_child(http_request)
+	
+	var headers: PackedStringArray = _build_request_headers(extra_headers, request_id)
+	
+	var error_code: Error = OK
+	var request_body: String = ""
+	
+	if method == "POST":
+		request_body = JSON.stringify(body)
+		error_code = http_request.request(url, headers, HTTPClient.METHOD_POST, request_body)
+	elif method == "PUT":
+		request_body = JSON.stringify(body)
+		error_code = http_request.request(url, headers, HTTPClient.METHOD_PUT, request_body)
+	elif method == "DELETE":
+		error_code = http_request.request(url, headers, HTTPClient.METHOD_DELETE)
+	else:
+		error_code = http_request.request(url, headers, HTTPClient.METHOD_GET)
+	
+	if error_code != OK:
+		_return_request_to_pool(http_request)
+		var err: Dictionary = _build_error("NETWORK_ERROR", "Failed to send request: %s" % str(error_code), request_id)
+		request_failed.emit(request_id, err)
+		if callback:
+			callback.call(err)
+		return request_id
+	
+	var timeout_timer: Timer = Timer.new()
+	timeout_timer.wait_time = request_timeout
+	timeout_timer.autostart = true
+	timeout_timer.one_shot = true
+	add_child(timeout_timer)
+	
+	_pending_requests[request_id] = {
+		"http_request": http_request,
+		"timeout_timer": timeout_timer,
+		"method": method,
+		"endpoint": endpoint,
+		"body": body,
+		"extra_headers": extra_headers,
+		"callback": callback,
+		"retry_count": retry_count
+	}
+	
+	http_request.request_completed.connect(
+		func(_result: int, response_code: int, _headers: PackedStringArray, _body: PackedByteArray) -> void:
+			_handle_async_response(request_id, response_code, _body)
+	)
+	
+	timeout_timer.timeout.connect(
+		func() -> void:
+			_handle_async_timeout(request_id)
+	)
+	
+	return request_id
+
+func _build_request_headers(extra_headers: Dictionary, request_id: String) -> PackedStringArray:
+	var headers: PackedStringArray = PackedStringArray()
+	headers.append("Content-Type: application/json")
+	
+	if auth_token != "":
+		headers.append("Authorization: Bearer %s" % auth_token)
+	
+	if trace_id != "":
+		headers.append("X-Trace-Id: %s" % trace_id)
+	
+	headers.append("X-Request-Id: %s" % request_id)
+	
+	if GameState.player_id != "":
+		headers.append("X-Player-Id: %s" % GameState.player_id)
+	
+	for key in extra_headers.keys():
+		headers.append("%s: %s" % [key, extra_headers[key]])
+	
+	return headers
+
+func _handle_async_response(request_id: String, response_code: int, body: PackedByteArray) -> void:
+	if not _pending_requests.has(request_id):
+		return
+	
+	var pending := _pending_requests[request_id]
+	var http_request := pending["http_request"]
+	var timeout_timer := pending["timeout_timer"]
+	var callback := pending["callback"]
+	var method := pending["method"]
+	var endpoint := pending["endpoint"]
+	var body_data := pending["body"]
+	var extra_headers := pending["extra_headers"]
+	var retry_count := pending["retry_count"]
+	
+	if is_instance_valid(timeout_timer):
+		timeout_timer.stop()
+		timeout_timer.queue_free()
+	
+	_return_request_to_pool(http_request)
+	
+	var response_text: String = body.get_string_from_utf8()
+	var parsed: Variant = JSON.parse_string(response_text)
+	
+	var response_result: Dictionary = {}
+	if typeof(parsed) == TYPE_DICTIONARY:
+		response_result = _parse_response(parsed, response_code, request_id)
+	else:
+		response_result = _build_error("INVALID_RESPONSE", "Invalid JSON response", request_id)
+	
+	_pending_requests.erase(request_id)
+	
+	if not response_result.get("success", false):
+		var err_code: String = response_result.get("code", "")
+		if err_code == "TOKEN_EXPIRED" or err_code == "INVALID_TOKEN":
+			auth_error.emit(request_id, response_result.get("message", "Auth error"))
+		if _can_retry(method) and response_result.get("status_code", 0) == 500 and retry_count < max_retries:
+			var delay: float = _calculate_retry_delay(retry_count)
+			var timer := Timer.new()
+			timer.wait_time = delay
+			timer.autostart = true
+			timer.one_shot = true
+			timer.timeout.connect(
+				func() -> void:
+					_make_request_async(method, endpoint, body_data, extra_headers, callback, retry_count + 1)
+					timer.queue_free()
+			)
+			add_child(timer)
+			return
+	
+	if callback:
+		callback.call(response_result)
+
+func _handle_async_timeout(request_id: String) -> void:
+	if not _pending_requests.has(request_id):
+		return
+	
+	var pending := _pending_requests[request_id]
+	var http_request := pending["http_request"]
+	var callback := pending["callback"]
+	var method := pending["method"]
+	var endpoint := pending["endpoint"]
+	var body_data := pending["body"]
+	var extra_headers := pending["extra_headers"]
+	var retry_count := pending["retry_count"]
+	
+	http_request.cancel_request()
+	_return_request_to_pool(http_request)
+	
+	_pending_requests.erase(request_id)
+	
+	if _can_retry(method) and retry_count < max_retries:
+		var delay: float = _calculate_retry_delay(retry_count)
+		var timer := Timer.new()
+		timer.wait_time = delay
+		timer.autostart = true
+		timer.one_shot = true
+		timer.timeout.connect(
+			func() -> void:
+				_make_request_async(method, endpoint, body_data, extra_headers, callback, retry_count + 1)
+				timer.queue_free()
+		)
+		add_child(timer)
+		return
+	
+	var timeout_err: Dictionary = _build_error("TIMEOUT", "Request timed out", request_id)
+	request_failed.emit(request_id, timeout_err)
+	
+	if callback:
+		callback.call(timeout_err)
+
 func _load_config() -> void:
 	var config_path: String = "res://data/config/game_config.tres"
 	if ResourceLoader.exists(config_path):
@@ -351,77 +566,18 @@ func _submit_events_batch(events: Array[Dictionary]) -> void:
 	if trace_id != "":
 		headers["X-Trace-Id"] = trace_id
 	
-	var response: Dictionary = _make_request_async("POST", endpoint, body, headers)
-
-func _make_request_async(method: String, endpoint: String, body: Dictionary, extra_headers: Dictionary) -> void:
-	var request_id: String = generate_request_id()
-	request_started.emit(request_id)
-	
-	var url: String = base_url + endpoint
-	var http_request := HTTPRequest.new()
-	add_child(http_request)
-	
-	var headers: PackedStringArray = PackedStringArray()
-	headers.append("Content-Type: application/json")
-	
-	if auth_token != "":
-		headers.append("Authorization: Bearer %s" % auth_token)
-	
-	if trace_id != "":
-		headers.append("X-Trace-Id: %s" % trace_id)
-	
-	headers.append("X-Request-Id: %s" % request_id)
-	
-	if GameState.player_id != "":
-		headers.append("X-Player-Id: %s" % GameState.player_id)
-	
-	for key in extra_headers.keys():
-		headers.append("%s: %s" % [key, extra_headers[key]])
-	
-	var error_code: Error = OK
-	var request_body: String = ""
-	
-	if method == "POST":
-		request_body = JSON.stringify(body)
-		error_code = http_request.request(url, headers, HTTPClient.METHOD_POST, request_body)
-	elif method == "PUT":
-		request_body = JSON.stringify(body)
-		error_code = http_request.request(url, headers, HTTPClient.METHOD_PUT, request_body)
-	elif method == "DELETE":
-		error_code = http_request.request(url, headers, HTTPClient.METHOD_DELETE)
-	else:
-		error_code = http_request.request(url, headers, HTTPClient.METHOD_GET)
-	
-	if error_code != OK:
-		var err: Dictionary = _build_error("NETWORK_ERROR", "Failed to send event batch: %s" % str(error_code), request_id)
-		event_submit_failed.emit(err)
-		_remove_request(http_request)
-		return
-	
-	http_request.request_completed.connect(
-		func _on_event_batch_completed(_result: int, response_code: int, _headers: PackedStringArray, _body: PackedByteArray) -> void:
-			var response_text: String = _body.get_string_from_utf8()
-			var parsed: Variant = JSON.parse_string(response_text)
-			
-			var success: bool = false
-			if typeof(parsed) == TYPE_DICTIONARY and response_code >= 200 and response_code < 300:
-				success = true
-				event_batch_submitted.emit(body["events"].size(), success)
-			else:
-				var err_code: String = "EVENT_SUBMIT_FAILED"
-				var err_message: String = "Event batch submission failed"
-				if typeof(parsed) == TYPE_DICTIONARY:
-					err_code = parsed.get("code", err_code)
-					err_message = parsed.get("message", err_message)
-				
-				var err: Dictionary = {
-					"success": false,
-					"status_code": response_code,
-					"request_id": request_id,
-					"code": err_code,
-					"message": err_message
-				}
-				event_submit_failed.emit(err)
-			
-			_remove_request(http_request)
-	)
+	post_async(endpoint, body, headers, "", func(response: Dictionary) -> void:
+		if response.get("success", false):
+			event_batch_submitted.emit(events.size(), true)
+		else:
+			var err_code: String = response.get("code", "EVENT_SUBMIT_FAILED")
+			var err_message: String = response.get("message", "Event batch submission failed")
+			var err: Dictionary = {
+				"success": false,
+				"status_code": response.get("status_code", 0),
+				"request_id": response.get("request_id", ""),
+				"code": err_code,
+				"message": err_message
+			}
+			event_submit_failed.emit(err)
+	})
