@@ -2,6 +2,22 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-14 22:00 — auto-20260714-2200
+
+- 任务：S7-06 装备生成模板
+- 分支：auto/auto-20260714-2200
+- 状态：✅ 已完成
+- 工作内容：
+  - generation-service 新增 ItemDataAdapter 装备数据适配器（字段完整度验证、默认值填充、world-service 格式适配、装备类型/槽位/稀有度规范化、属性/效果数据转换、可堆叠属性处理）
+  - generation-service 新增装备基础模板 item_base.jinja2
+  - generation-service 扩展 QualityScorer 新增 score_item 方法（类型合法性、稀有度、等级范围、售卖价格、可堆叠逻辑、属性数值、效果类型等校验）
+  - generation-service 扩展 ContentGenerator 新增 generate_item 方法（支持五种装备类型：weapon/armor/accessory/consumable/material）
+  - generation-service 扩展 TemplateManager 新增 get_item_template_by_type 方法
+  - 新增 24 个测试用例（装备数据适配器 18 个 + 质量评分器 6 个）
+- 测试结果：generation-service 228 测试全部通过，ruff 检查通过
+- 修改文件：9 个（4新建 + 3修改 + 2文档更新）
+- 合并状态：待合并到 feature-prd
+
 ## 2026-07-14 21:00 — auto-20260714-2100
 
 - 任务：代码质量修复与项目状态验证
