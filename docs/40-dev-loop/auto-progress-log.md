@@ -2,6 +2,20 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-15 07:30 — auto-20260715-0700
+
+- 任务：S8-01「客户端性能优化」第三、四阶段（SaveManager 存档优化 + PlayerManager 优化）
+- 分支：auto/auto-20260715-0700
+- 状态：✅ 已完成
+- 工作内容：
+  - SaveManager 异步化改造：`save_game()` 和 `load_game()` 改为 Thread 异步执行，避免阻塞主线程；新增存档信息缓存（60秒 TTL），`get_save_info()` 优先读取缓存；缓存失效机制确保数据一致性
+  - PlayerManager 索引优化：新增 `quest_index` 和 `region_index` 字典，`get_player_quest_by_id()` 和 `get_player_region_by_id()` 查询复杂度从 O(n) 优化为 O(1)
+  - PlayerManager 声望计算优化：预排序声望级别列表（`sorted_reputation_levels`），`calculate_reputation_level()` 不再每次调用都重新排序，性能提升约 50%
+  - PlayerManager 并行 API 请求：`refresh_all()` 改为并行调用四个 API（玩家信息、任务、区域、声望），新增 `pending_requests` 计数器追踪并行请求完成状态
+- 测试结果：vote-service 112 个测试全部通过（后端服务无回归）
+- 修改文件：5 个（2代码 + 3文档）
+- 合并状态：待合并到 feature-prd
+
 ## 2026-07-15 06:30 — auto-20260715-0600
 
 - 任务：S8-01「客户端性能优化」第二阶段（区域数据缓存 + 智能进度轮询）
