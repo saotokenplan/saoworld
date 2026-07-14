@@ -111,7 +111,7 @@ class ItemDataAdapter:
 
     def _fill_defaults(self, item_data: dict[str, Any]) -> dict[str, Any]:
         """填充缺失字段的默认值。"""
-        defaults = {
+        defaults: dict[str, Any] = {
             "item_key": f"item_{uuid.uuid4().hex[:8]}",
             "item_type": "weapon",
             "item_slot": None,
