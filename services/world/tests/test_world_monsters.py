@@ -406,3 +406,348 @@ async def test_create_monster_negative_hp(client: AsyncClient, ops_token: str):
         },
     )
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_boss_success(client: AsyncClient, ops_token: str):
+    """测试创建 Boss 成功。"""
+    response = await client.post(
+        "/api/v1/ops/world/monsters/bosses",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-create-boss-api-001",
+            "X-Trace-Id": "trace_create_boss_api_001",
+        },
+        json={
+            "monster_key": "boss_ancient_tree",
+            "name": "古树守护者",
+            "chapter_id": "chapter_02",
+            "region_key": "region_forest_01",
+            "level": 12,
+            "hp": 800,
+            "attack": 28,
+            "defense": 15,
+            "speed": 3,
+            "description": "幽光森林深处的千年古树，被自然之力赋予了意识。",
+            "behavior_pattern": {
+                "aggression": "aggressive",
+                "attack_pattern": "magic",
+                "special_behaviors": ["enrage", "phase_change"],
+            },
+            "loot_table": [
+                {"item_key": "item_ancient_core", "drop_rate": 1.0, "quantity_min": 1, "quantity_max": 1},
+            ],
+            "skills": [
+                {"skill_key": "skill_root_strike", "name": "根系打击", "damage_multiplier": 1.0, "cooldown": 0},
+            ],
+            "boss_rank": "legendary",
+            "phase_count": 3,
+            "special_skills": [
+                {"skill_key": "skill_root_bind", "name": "根系缠绕", "description": "束缚玩家", "cooldown": 8},
+                {"skill_key": "skill_nature_force", "name": "自然之力", "description": "恢复生命", "cooldown": 15},
+            ],
+            "enrage_threshold": 0.3,
+            "reward": {
+                "experience": 5000,
+                "items": [{"item_key": "item_ancient_core", "quantity": 1}],
+            },
+            "min_reputation": 0,
+        },
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert data["data"]["monster_key"] == "boss_ancient_tree"
+    assert data["data"]["monster_type"] == "boss"
+    assert data["trace_id"] == "trace_create_boss_api_001"
+
+
+@pytest.mark.asyncio
+async def test_create_boss_duplicate_key(client: AsyncClient, ops_token: str):
+    """测试创建重复 monster_key 的 Boss。"""
+    await client.post(
+        "/api/v1/ops/world/monsters/bosses",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-boss-dup-001",
+        },
+        json={
+            "monster_key": "boss_duplicate_test",
+            "name": "重复Boss",
+            "chapter_id": "chapter_02",
+            "region_key": "region_forest_01",
+            "level": 10,
+            "hp": 500,
+            "attack": 25,
+            "defense": 10,
+            "speed": 4,
+            "boss_rank": "legendary",
+            "phase_count": 2,
+            "special_skills": [],
+            "enrage_threshold": 0.3,
+            "reward": {"experience": 3000, "items": []},
+        },
+    )
+
+    response = await client.post(
+        "/api/v1/ops/world/monsters/bosses",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-boss-dup-002",
+        },
+        json={
+            "monster_key": "boss_duplicate_test",
+            "name": "重复Boss2",
+            "chapter_id": "chapter_02",
+            "region_key": "region_oasis_01",
+            "level": 15,
+            "hp": 1000,
+            "attack": 35,
+            "defense": 15,
+            "speed": 5,
+            "boss_rank": "mythic",
+            "phase_count": 3,
+            "special_skills": [],
+            "enrage_threshold": 0.25,
+            "reward": {"experience": 6000, "items": []},
+        },
+    )
+    assert response.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_list_bosses(client: AsyncClient, ops_token: str, player_token: str):
+    """测试查询 Boss 列表。"""
+    await client.post(
+        "/api/v1/ops/world/monsters/bosses",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-boss-list-001",
+        },
+        json={
+            "monster_key": "boss_list_test_01",
+            "name": "测试Boss1",
+            "chapter_id": "chapter_02",
+            "region_key": "region_forest_01",
+            "level": 10,
+            "hp": 500,
+            "attack": 25,
+            "defense": 10,
+            "speed": 4,
+            "boss_rank": "legendary",
+            "phase_count": 2,
+            "special_skills": [],
+            "enrage_threshold": 0.3,
+            "reward": {"experience": 3000, "items": []},
+        },
+    )
+
+    await client.post(
+        "/api/v1/ops/world/monsters/bosses",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-boss-list-002",
+        },
+        json={
+            "monster_key": "boss_list_test_02",
+            "name": "测试Boss2",
+            "chapter_id": "chapter_02",
+            "region_key": "region_oasis_01",
+            "level": 15,
+            "hp": 1000,
+            "attack": 35,
+            "defense": 15,
+            "speed": 5,
+            "boss_rank": "mythic",
+            "phase_count": 3,
+            "special_skills": [],
+            "enrage_threshold": 0.25,
+            "reward": {"experience": 6000, "items": []},
+        },
+    )
+
+    response = await client.get(
+        "/api/v1/world/bosses",
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "bosses" in data["data"]
+    assert data["data"]["total"] >= 2
+
+
+@pytest.mark.asyncio
+async def test_list_bosses_filter_by_region(client: AsyncClient, ops_token: str, player_token: str):
+    """测试按区域筛选 Boss 列表。"""
+    await client.post(
+        "/api/v1/ops/world/monsters/bosses",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-boss-region-001",
+        },
+        json={
+            "monster_key": "boss_region_test_01",
+            "name": "森林Boss",
+            "chapter_id": "chapter_02",
+            "region_key": "region_forest_01",
+            "level": 10,
+            "hp": 500,
+            "attack": 25,
+            "defense": 10,
+            "speed": 4,
+            "boss_rank": "legendary",
+            "phase_count": 2,
+            "special_skills": [],
+            "enrage_threshold": 0.3,
+            "reward": {"experience": 3000, "items": []},
+        },
+    )
+
+    response = await client.get(
+        "/api/v1/world/bosses?region_key=region_forest_01",
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["data"]["total"] >= 1
+
+
+@pytest.mark.asyncio
+async def test_get_boss_by_key(client: AsyncClient, ops_token: str, player_token: str):
+    """测试按 monster_key 查询 Boss 详情。"""
+    await client.post(
+        "/api/v1/ops/world/monsters/bosses",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-get-boss-001",
+        },
+        json={
+            "monster_key": "boss_get_test_01",
+            "name": "古树守护者",
+            "chapter_id": "chapter_02",
+            "region_key": "region_forest_01",
+            "level": 12,
+            "hp": 800,
+            "attack": 28,
+            "defense": 15,
+            "speed": 3,
+            "boss_rank": "legendary",
+            "phase_count": 3,
+            "special_skills": [
+                {"skill_key": "skill_root_bind", "name": "根系缠绕", "description": "束缚玩家", "cooldown": 8},
+            ],
+            "enrage_threshold": 0.3,
+            "reward": {"experience": 5000, "items": []},
+        },
+    )
+
+    response = await client.get(
+        "/api/v1/world/bosses/boss_get_test_01",
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["data"]["monster_key"] == "boss_get_test_01"
+    assert data["data"]["name"] == "古树守护者"
+    assert data["data"]["is_boss"] is True
+    assert data["data"]["boss_rank"] == "legendary"
+    assert data["data"]["phase_count"] == 3
+    assert data["data"]["enrage_threshold"] == 0.3
+
+
+@pytest.mark.asyncio
+async def test_get_boss_not_found(client: AsyncClient, player_token: str):
+    """测试查询不存在的 Boss。"""
+    response = await client.get(
+        "/api/v1/world/bosses/boss_not_exist",
+        headers={"Authorization": f"Bearer {player_token}"},
+    )
+    assert response.status_code == 404
+    data = response.json()
+    assert data["code"] == WorldErrorCodes.MONSTER_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_create_boss_invalid_rank(client: AsyncClient, ops_token: str):
+    """测试创建 Boss 时使用无效的 boss_rank。"""
+    response = await client.post(
+        "/api/v1/ops/world/monsters/bosses",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-boss-invalid-rank-001",
+        },
+        json={
+            "monster_key": "boss_invalid_rank",
+            "name": "无效等级Boss",
+            "chapter_id": "chapter_02",
+            "region_key": "region_forest_01",
+            "level": 10,
+            "hp": 500,
+            "attack": 25,
+            "defense": 10,
+            "speed": 4,
+            "boss_rank": "invalid_rank",
+            "phase_count": 2,
+            "special_skills": [],
+            "enrage_threshold": 0.3,
+            "reward": {"experience": 3000, "items": []},
+        },
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_boss_invalid_enrage_threshold(client: AsyncClient, ops_token: str):
+    """测试创建 Boss 时 enrage_threshold 超出范围。"""
+    response = await client.post(
+        "/api/v1/ops/world/monsters/bosses",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-boss-enrage-001",
+        },
+        json={
+            "monster_key": "boss_invalid_enrage",
+            "name": "无效狂暴Boss",
+            "chapter_id": "chapter_02",
+            "region_key": "region_forest_01",
+            "level": 10,
+            "hp": 500,
+            "attack": 25,
+            "defense": 10,
+            "speed": 4,
+            "boss_rank": "legendary",
+            "phase_count": 2,
+            "special_skills": [],
+            "enrage_threshold": 1.5,
+            "reward": {"experience": 3000, "items": []},
+        },
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_boss_player_forbidden(client: AsyncClient, player_token: str):
+    """测试玩家角色创建 Boss（权限不足）。"""
+    response = await client.post(
+        "/api/v1/ops/world/monsters/bosses",
+        headers={
+            "Authorization": f"Bearer {player_token}",
+            "Idempotency-Key": "test-boss-player-001",
+        },
+        json={
+            "monster_key": "boss_player_test",
+            "name": "玩家创建的Boss",
+            "chapter_id": "chapter_02",
+            "region_key": "region_forest_01",
+            "level": 10,
+            "hp": 500,
+            "attack": 25,
+            "defense": 10,
+            "speed": 4,
+            "boss_rank": "legendary",
+            "phase_count": 2,
+            "special_skills": [],
+            "enrage_threshold": 0.3,
+            "reward": {"experience": 3000, "items": []},
+        },
+    )
+    assert response.status_code == 403

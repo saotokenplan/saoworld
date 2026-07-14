@@ -380,6 +380,11 @@ class MonsterType(str, Enum):
     BOSS = "boss"
 
 
+class BossRank(str, Enum):
+    LEGENDARY = "legendary"
+    MYTHIC = "mythic"
+
+
 class MonsterResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -400,6 +405,12 @@ class MonsterResponse(BaseModel):
     skills: list[dict[str, object]] | None = None
     min_reputation: int = 0
     schema_version: int = 1
+    is_boss: bool = False
+    boss_rank: BossRank | None = None
+    phase_count: int = 1
+    special_skills: list[dict[str, object]] | None = None
+    enrage_threshold: float = 0.0
+    reward: dict[str, object] | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -424,6 +435,12 @@ class MonsterResponse(BaseModel):
                 "skills": obj.skills_jsonb,
                 "min_reputation": obj.min_reputation,
                 "schema_version": obj.schema_version,
+                "is_boss": getattr(obj, "is_boss", False),
+                "boss_rank": getattr(obj, "boss_rank", None),
+                "phase_count": getattr(obj, "phase_count", 1),
+                "special_skills": getattr(obj, "special_skills_jsonb", None),
+                "enrage_threshold": getattr(obj, "enrage_threshold", 0.0),
+                "reward": getattr(obj, "reward_jsonb", None),
                 "created_at": obj.created_at,
                 "updated_at": obj.updated_at,
             }
@@ -462,3 +479,30 @@ class CreateMonsterResponse(BaseModel):
     level: int = 1
     request_id: str
     trace_id: str | None = None
+
+
+class CreateBossRequest(BaseModel):
+    monster_key: str = Field(min_length=1, max_length=128, pattern=r"^[a-zA-Z0-9_\-]+$")
+    name: str = Field(min_length=1, max_length=256)
+    chapter_id: str = Field(min_length=1, max_length=64)
+    region_key: str = Field(min_length=1, max_length=128)
+    level: int = Field(default=10, ge=1, le=60)
+    hp: int = Field(default=500, ge=100)
+    attack: int = Field(default=30, ge=5)
+    defense: int = Field(default=10, ge=0)
+    speed: int = Field(default=5, ge=0)
+    description: str | None = None
+    behavior_pattern: dict[str, object] | None = None
+    loot_table: list[dict[str, object]] | None = None
+    skills: list[dict[str, object]] | None = None
+    min_reputation: int = Field(default=0, ge=0)
+    boss_rank: BossRank = BossRank.LEGENDARY
+    phase_count: int = Field(default=1, ge=1, le=5)
+    special_skills: list[dict[str, object]] | None = None
+    enrage_threshold: float = Field(default=0.3, ge=0.0, le=1.0)
+    reward: dict[str, object] | None = None
+
+
+class BossListResponse(BaseModel):
+    bosses: list[MonsterResponse]
+    total: int
