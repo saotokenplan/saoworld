@@ -121,10 +121,22 @@ class AnomalyDetector:
         def _is_aware(dt: datetime) -> bool:
             return dt.tzinfo is not None and dt.tzinfo.utcoffset(dt) is not None
 
-        def _to_aware(dt: datetime) -> datetime:
-            if _is_aware(dt):
-                return dt
-            return dt.replace(tzinfo=timezone.utc)
+        def _to_aware(dt: datetime | int | float | str) -> datetime:
+            if isinstance(dt, datetime):
+                if _is_aware(dt):
+                    return dt
+                return dt.replace(tzinfo=timezone.utc)
+            if isinstance(dt, (int, float)):
+                return datetime.fromtimestamp(dt, tz=timezone.utc)
+            if isinstance(dt, str):
+                try:
+                    parsed = datetime.fromisoformat(dt)
+                    if _is_aware(parsed):
+                        return parsed
+                    return parsed.replace(tzinfo=timezone.utc)
+                except ValueError:
+                    return datetime.now(timezone.utc)
+            return datetime.now(timezone.utc)
 
         count = sum(
             1

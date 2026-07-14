@@ -37,17 +37,29 @@ def _clean_app_modules():
 
 
 class TestVoteServiceIntegration:
-    @pytest_asyncio.fixture(autouse=True)
-    async def setup(self):
+    @pytest.fixture
+    def vote_client(self):
         old_path = sys.path.copy()
         _clean_app_modules()
         sys.path.insert(0, '/workspace/services/vote')
 
         try:
-            from app.core.db import Base as VoteBase, get_db as vote_get_db
+            from unittest.mock import AsyncMock, patch
 
-            async with vote_test_engine.begin() as conn:
-                await conn.run_sync(VoteBase.metadata.create_all)
+            from app.core.db import Base as VoteBase, get_db as vote_get_db
+            from app.main import app as vote_app
+
+            import asyncio
+
+            async def _setup_db():
+                async with vote_test_engine.begin() as conn:
+                    await conn.run_sync(VoteBase.metadata.create_all)
+
+            async def _teardown_db():
+                async with vote_test_engine.begin() as conn:
+                    await conn.run_sync(VoteBase.metadata.drop_all)
+
+            asyncio.run(_setup_db())
 
             async def override_vote_get_db() -> AsyncGenerator[AsyncSession, None]:
                 async with vote_test_session() as session:
@@ -60,28 +72,7 @@ class TestVoteServiceIntegration:
                     finally:
                         await session.close()
 
-            from app.main import app as vote_app
             vote_app.dependency_overrides[vote_get_db] = override_vote_get_db
-
-            yield
-
-            async with vote_test_engine.begin() as conn:
-                await conn.run_sync(VoteBase.metadata.drop_all)
-            vote_app.dependency_overrides.clear()
-        finally:
-            sys.path[:] = old_path
-            _clean_app_modules()
-
-    @pytest.fixture
-    def vote_client(self):
-        from unittest.mock import AsyncMock, patch
-
-        old_path = sys.path.copy()
-        _clean_app_modules()
-        sys.path.insert(0, '/workspace/services/vote')
-
-        try:
-            from app.main import app as vote_app
 
             mock_get_contribution = AsyncMock(return_value=1000)
             mock_close = AsyncMock()
@@ -90,6 +81,9 @@ class TestVoteServiceIntegration:
                  patch("app.core.player_client.PlayerContributionClient.close", mock_close):
                 with TestClient(vote_app) as client:
                     yield client
+
+            vote_app.dependency_overrides.clear()
+            asyncio.run(_teardown_db())
         finally:
             sys.path[:] = old_path
             _clean_app_modules()
