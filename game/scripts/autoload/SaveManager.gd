@@ -14,12 +14,21 @@ const DEFAULT_SAVE_PATH: String = "user://saves/"
 const DEFAULT_SAVE_FILE: String = "save_main.json"
 const CONFIG_PATH: String = "res://data/config/save_config.json"
 
+const SAVE_INFO_CACHE_TTL: int = 60000
+
 var config: Dictionary = {}
 var autosave_timer: Timer = null
 var last_save_time: int = 0
 var play_time_start: int = 0
 var is_saving: bool = false
 var is_loading: bool = false
+
+var save_info_cache: Dictionary = {}
+var save_info_cache_timestamps: Dictionary = {}
+var save_thread: Thread = null
+var load_thread: Thread = null
+var pending_save_data: Dictionary = {}
+var pending_load_slot: String = ""
 
 func _ready() -> void:
 	_load_config()
@@ -59,31 +68,46 @@ func save_game(slot: String = "main") -> Dictionary:
 		return {"success": false, "error": "正在保存中"}
 	
 	is_saving = true
-	var save_data: Dictionary = _build_save_data()
+	pending_save_data = {
+		"slot": slot,
+		"data": _build_save_data()
+	}
+	
+	if save_thread != null and save_thread.is_alive():
+		is_saving = false
+		return {"success": false, "error": "保存线程正在运行"}
+	
+	save_thread = Thread.new()
+	save_thread.start(self, "_thread_save_game", [slot, pending_save_data["data"]])
+	
+	return {"success": true, "message": "保存已启动"}
+
+func _thread_save_game(slot: String, save_data: Dictionary) -> void:
 	var save_path: String = _get_save_path(slot)
 	
 	var file := FileAccess.open(save_path, FileAccess.WRITE)
 	if not file:
-		is_saving = false
-		var error_msg: String = "无法创建存档文件: %s" % save_path
-		save_failed.emit(error_msg)
-		return {"success": false, "error": error_msg}
+		call_deferred("_on_save_complete", {"success": false, "error": "无法创建存档文件: %s" % save_path})
+		return
 	
 	var json_string: String = JSON.stringify(save_data)
 	file.store_string(json_string)
 	file.close()
 	
-	# 备份存档
 	if config.get("file", {}).get("backup_enabled", true):
 		_create_backup(slot)
 	
+	_invalidate_save_info_cache(slot)
+	call_deferred("_on_save_complete", {"success": true, "save_id": save_data.get("save_id", ""), "path": save_path})
+
+func _on_save_complete(result: Dictionary) -> void:
 	is_saving = false
 	last_save_time = Time.get_ticks_msec()
 	
-	var save_id: String = save_data.get("save_id", "")
-	save_completed.emit(save_id)
-	
-	return {"success": true, "save_id": save_id, "path": save_path}
+	if result.get("success", false):
+		save_completed.emit(result.get("save_id", ""))
+	else:
+		save_failed.emit(result.get("error", "保存失败"))
 
 func _build_save_data() -> Dictionary:
 	var current_time: String = Time.get_datetime_string_from_system()
@@ -201,51 +225,58 @@ func load_game(slot: String = "main") -> Dictionary:
 	if is_loading:
 		return {"success": false, "error": "正在加载中"}
 	
-	var save_path: String = _get_save_path(slot)
-	
 	if not has_save_file(slot):
 		var error_msg: String = "存档不存在: %s" % slot
 		load_failed.emit(error_msg)
 		return {"success": false, "error": error_msg}
 	
 	is_loading = true
+	pending_load_slot = slot
+	
+	if load_thread != null and load_thread.is_alive():
+		is_loading = false
+		return {"success": false, "error": "加载线程正在运行"}
+	
+	load_thread = Thread.new()
+	load_thread.start(self, "_thread_load_game", [slot])
+	
+	return {"success": true, "message": "加载已启动"}
+
+func _thread_load_game(slot: String) -> void:
+	var save_path: String = _get_save_path(slot)
 	
 	var file := FileAccess.open(save_path, FileAccess.READ)
 	if not file:
-		is_loading = false
-		var error_msg: String = "无法读取存档文件: %s" % save_path
-		load_failed.emit(error_msg)
-		return {"success": false, "error": error_msg}
+		call_deferred("_on_load_complete", {"success": false, "error": "无法读取存档文件: %s" % save_path})
+		return
 	
 	var content: String = file.get_as_text()
 	file.close()
 	
 	var parsed: Variant = JSON.parse_string(content)
 	if typeof(parsed) != TYPE_DICTIONARY:
-		is_loading = false
-		var error_msg: String = "存档数据格式错误"
-		load_failed.emit(error_msg)
-		return {"success": false, "error": error_msg}
+		call_deferred("_on_load_complete", {"success": false, "error": "存档数据格式错误"})
+		return
 	
 	var save_data: Dictionary = parsed
 	
-	# 验证存档版本
 	if not _validate_save_data(save_data):
-		is_loading = false
-		var error_msg: String = "存档数据验证失败"
-		load_failed.emit(error_msg)
-		return {"success": false, "error": error_msg}
+		call_deferred("_on_load_complete", {"success": false, "error": "存档数据验证失败"})
+		return
 	
-	# 恢复游戏状态
-	_restore_game_state(save_data)
-	
+	call_deferred("_on_load_complete", {"success": true, "save_id": save_data.get("save_id", ""), "data": save_data})
+
+func _on_load_complete(result: Dictionary) -> void:
 	is_loading = false
-	play_time_start = Time.get_ticks_msec()
 	
-	var save_id: String = save_data.get("save_id", "")
-	load_completed.emit(save_id)
-	
-	return {"success": true, "save_id": save_id, "data": save_data}
+	if result.get("success", false):
+		var save_data: Dictionary = result.get("data", {})
+		_restore_game_state(save_data)
+		play_time_start = Time.get_ticks_msec()
+		_invalidate_save_info_cache(pending_load_slot)
+		load_completed.emit(result.get("save_id", ""))
+	else:
+		load_failed.emit(result.get("error", "加载失败"))
 
 func _validate_save_data(save_data: Dictionary) -> bool:
 	if not save_data.has("schema_version"):
@@ -354,6 +385,9 @@ func get_save_info(slot: String = "main") -> Dictionary:
 	if not has_save_file(slot):
 		return {}
 	
+	if _is_save_info_cache_valid(slot):
+		return save_info_cache.get(slot, {})
+	
 	var save_path: String = _get_save_path(slot)
 	var file := FileAccess.open(save_path, FileAccess.READ)
 	if not file:
@@ -368,7 +402,7 @@ func get_save_info(slot: String = "main") -> Dictionary:
 	
 	var save_data: Dictionary = parsed
 	
-	return {
+	var info: Dictionary = {
 		"save_id": save_data.get("save_id", ""),
 		"created_at": save_data.get("created_at", ""),
 		"updated_at": save_data.get("updated_at", ""),
@@ -376,6 +410,34 @@ func get_save_info(slot: String = "main") -> Dictionary:
 		"player_level": save_data.get("player_attributes", {}).get("level", 1),
 		"chapter_id": save_data.get("player_progress", {}).get("chapter_id", "")
 	}
+	
+	_update_save_info_cache(slot, info)
+	return info
+
+func _is_save_info_cache_valid(slot: String) -> bool:
+	if not save_info_cache.has(slot):
+		return false
+	
+	var timestamp: int = save_info_cache_timestamps.get(slot, 0)
+	if timestamp == 0:
+		return false
+	
+	return (Time.get_ticks_msec() - timestamp) < SAVE_INFO_CACHE_TTL
+
+func _update_save_info_cache(slot: String, info: Dictionary) -> void:
+	save_info_cache[slot] = info
+	save_info_cache_timestamps[slot] = Time.get_ticks_msec()
+
+func _invalidate_save_info_cache(slot: String = "") -> void:
+	if slot != "":
+		save_info_cache.erase(slot)
+		save_info_cache_timestamps.erase(slot)
+	else:
+		save_info_cache.clear()
+		save_info_cache_timestamps.clear()
+
+func reset_cache() -> void:
+	_invalidate_save_info_cache()
 
 func quick_save() -> Dictionary:
 	return save_game("quicksave")

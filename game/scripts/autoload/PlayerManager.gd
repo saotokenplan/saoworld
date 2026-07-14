@@ -29,10 +29,21 @@ var is_loading: bool = false
 var last_error: Dictionary = {}
 var schema_version: int = 1
 
+# 索引字典（O(1) 查询）
+var quest_index: Dictionary = {}
+var region_index: Dictionary = {}
+
+# 预排序声望级别列表
+var sorted_reputation_levels: Array[Dictionary] = []
+
 # 个人中心数据
 var profile_data: Dictionary = {}
 var contribution_data: Dictionary = {}
 var achievements_data: Array[Dictionary] = []
+
+# 并行请求追踪
+var pending_requests: int = 0
+var refresh_all_completed: bool = false
 
 const REPUTATION_LEVELS: Dictionary = {
 	"hostile": {"name": "敌对", "color": "#F44336", "threshold": -3000, "icon": "💀"},
@@ -54,6 +65,16 @@ const QUEST_STATUS: Dictionary = {
 
 func _ready() -> void:
 	APIManager.auth_error.connect(_on_auth_error)
+	_prepare_reputation_levels()
+
+func _prepare_reputation_levels() -> void:
+	sorted_reputation_levels = []
+	for level_name in REPUTATION_LEVELS:
+		var level_data: Dictionary = REPUTATION_LEVELS[level_name].duplicate()
+		level_data["level_name"] = level_name
+		sorted_reputation_levels.append(level_data)
+	
+	sorted_reputation_levels.sort_custom(_sort_reputation_by_threshold)
 
 func _on_auth_error(request_id: String, message: String) -> void:
 	auth_error.emit(message)
@@ -115,8 +136,16 @@ func fetch_player_quests(limit: int = 20, offset: int = 0, status_filter: String
 func _handle_player_quests_success(result: Dictionary) -> void:
 	var data: Dictionary = result.get("data", {})
 	player_quests = data.get("items", [])
+	_update_quest_index()
 	last_error.clear()
 	player_quests_loaded.emit()
+
+func _update_quest_index() -> void:
+	quest_index.clear()
+	for quest in player_quests:
+		var quest_id: String = quest.get("quest_id", "")
+		if quest_id != "":
+			quest_index[quest_id] = quest
 
 func fetch_player_regions(limit: int = 20, offset: int = 0) -> void:
 	_set_loading(true)
@@ -133,14 +162,19 @@ func fetch_player_regions(limit: int = 20, offset: int = 0) -> void:
 func _handle_player_regions_success(result: Dictionary) -> void:
 	var data: Dictionary = result.get("data", {})
 	player_regions = data.get("items", [])
+	_update_region_index()
 	last_error.clear()
 	player_regions_loaded.emit()
 
+func _update_region_index() -> void:
+	region_index.clear()
+	for region in player_regions:
+		var region_id: String = region.get("region_id", "")
+		if region_id != "":
+			region_index[region_id] = region
+
 func get_player_quest_by_id(quest_id: String) -> Dictionary:
-	for quest in player_quests:
-		if quest.get("quest_id", "") == quest_id:
-			return quest
-	return {}
+	return quest_index.get(quest_id, {})
 
 func get_player_quests_by_status(status: String) -> Array[Dictionary]:
 	var filtered: Array[Dictionary] = []
@@ -175,10 +209,7 @@ func is_quest_completed(quest_id: String) -> bool:
 	return quest.get("status", "") == "completed"
 
 func get_player_region_by_id(region_id: String) -> Dictionary:
-	for region in player_regions:
-		if region.get("region_id", "") == region_id:
-			return region
-	return {}
+	return region_index.get(region_id, {})
 
 func is_region_unlocked(region_id: String) -> bool:
 	var region: Dictionary = get_player_region_by_id(region_id)
@@ -204,10 +235,60 @@ func get_player_id() -> String:
 	return player_info.get("player_id", "")
 
 func refresh_all() -> void:
-	fetch_player_info()
-	fetch_player_quests()
-	fetch_player_regions()
-	fetch_all_reputation()
+	pending_requests = 4
+	refresh_all_completed = false
+	
+	fetch_player_info_async()
+	fetch_player_quests_async()
+	fetch_player_regions_async()
+	fetch_all_reputation_async()
+
+func fetch_player_info_async() -> void:
+	var result: Dictionary = APIManager.get("/player/info")
+	if result.get("success", false):
+		_handle_player_info_success(result)
+	else:
+		_handle_player_error(result)
+	_decrement_pending_requests()
+
+func fetch_player_quests_async(limit: int = 20, offset: int = 0, status_filter: String = "") -> void:
+	var params: Array[String] = []
+	params.append("limit=%d" % limit)
+	params.append("offset=%d" % offset)
+	if status_filter != "":
+		params.append("status=%s" % status_filter)
+	
+	var endpoint: String = "/player/quests?%s" % "&".join(params)
+	var result: Dictionary = APIManager.get(endpoint)
+	if result.get("success", false):
+		_handle_player_quests_success(result)
+	else:
+		_handle_player_error(result)
+	_decrement_pending_requests()
+
+func fetch_player_regions_async(limit: int = 20, offset: int = 0) -> void:
+	var endpoint: String = "/player/regions?limit=%d&offset=%d" % [limit, offset]
+	var result: Dictionary = APIManager.get(endpoint)
+	if result.get("success", false):
+		_handle_player_regions_success(result)
+	else:
+		_handle_player_error(result)
+	_decrement_pending_requests()
+
+func fetch_all_reputation_async(limit: int = 20, offset: int = 0) -> void:
+	var endpoint: String = "/player/reputation?limit=%d&offset=%d" % [limit, offset]
+	var result: Dictionary = APIManager.get(endpoint)
+	if result.get("success", false):
+		_handle_reputation_list_success(result)
+	else:
+		_handle_player_error(result)
+	_decrement_pending_requests()
+
+func _decrement_pending_requests() -> void:
+	pending_requests -= 1
+	if pending_requests <= 0:
+		refresh_all_completed = true
+		_set_loading(false)
 
 func fetch_all_reputation(limit: int = 20, offset: int = 0) -> void:
 	_set_loading(true)
@@ -275,21 +356,14 @@ func get_reputation_level(region_id: String) -> String:
 	return calculate_reputation_level(rep)
 
 func calculate_reputation_level(reputation: int) -> String:
-	var levels: Array = REPUTATION_LEVELS.keys()
-	var sorted_levels: Array = []
-	for level_key in levels:
-		var level_data: Dictionary = REPUTATION_LEVELS[level_key]
-		sorted_levels.append({"key": level_key, "threshold": level_data["threshold"]})
-	
-	sorted_levels.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		return a["threshold"] > b["threshold"]
-	)
-	
-	for level_info in sorted_levels:
+	for level_info in sorted_reputation_levels:
 		if reputation >= level_info["threshold"]:
-			return level_info["key"]
+			return level_info["level_name"]
 	
 	return "hostile"
+
+func _sort_reputation_by_threshold(a: Dictionary, b: Dictionary) -> bool:
+	return a["threshold"] > b["threshold"]
 
 func get_reputation_level_info(level_key: String) -> Dictionary:
 	if REPUTATION_LEVELS.has(level_key):
