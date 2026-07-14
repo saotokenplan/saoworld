@@ -2,6 +2,27 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-14 20:00 — auto-20260714-2000
+
+- 任务：S7-04 Boss战设计
+- 分支：auto/auto-20260714-2000
+- 状态：✅ 已完成
+- 工作内容：
+  - world-service 扩展 MonsterDefinition 模型新增Boss专属字段（is_boss、boss_rank、phase_count、special_skills_jsonb、enrage_threshold、reward_jsonb）
+  - world-service 新增 BossRank 枚举、BossResponse、BossListResponse Schema
+  - world-service 新增 3 个 Boss API 端点（`GET /world/bosses`、`GET /world/bosses/{monster_key}`、`POST /ops/monsters/bosses`）
+  - generation-service 新增 BossDataAdapter 数据适配器（完整度验证 0.95、默认值填充、Key规范化）
+  - generation-service 扩展 QualityScorer 新增 score_boss 方法（阶段数校验、特殊技能校验、奖励配置校验）
+  - generation-service 扩展 ContentGenerator 新增 generate_boss 方法
+  - 客户端 CombatManager 扩展支持Boss阶段管理（phase_change 信号、阶段转换逻辑、狂暴机制）和特殊技能处理
+  - 客户端 CombatHUD 扩展支持阶段进度显示、技能提示、狂暴状态
+  - 创建第二章区域Boss数据配置（古树守护者 legendary/3阶段、沙漠帝王 mythic/4阶段）
+  - 新增 Alembic 迁移脚本
+  - 新增 14 个测试用例（world-service +12、generation-service +2）
+- 测试结果：world-service 120 测试通过，generation-service 197 测试通过
+- 修改文件：16 个（5新建 + 9修改 + 2文档更新）
+- 合并状态：待合并到 feature-prd
+
 ## 2026-07-14 19:00 — auto-20260714-1900
 
 - 任务：S7-03 怪物生成模板
