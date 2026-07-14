@@ -2,6 +2,20 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-15 00:00 — auto-20260715-0000
+
+- 任务：S8-07 Boss 战斗 GUT 测试
+- 分支：auto/auto-20260715-0000
+- 状态：✅ 已完成
+- 工作内容：
+  - 扩展 CombatManager 测试用例新增 9 个 Boss 战测试（Boss 战开始成功/失败、阶段转换、狂暴激活、特殊技能、胜利验证、逃跑限制、状态重置）
+  - 扩展 CombatHUD 测试用例新增 4 个 Boss 相关测试（阶段显示方法、狂暴状态显示、技能提示方法、阶段信息存储）
+  - 扩展 CombatHUD 新增 Boss 辅助方法（show_enrage_indicator、hide_enrage_indicator、show_boss_skill_alert、set_boss_phase_info）
+  - 新增实例变量 current_phase 和 total_phases
+- 测试结果：新增 13 个 GUT 测试用例
+- 修改文件：5 个（2新建 + 3修改）
+- 合并状态：✅ 已合并到 feature-prd (hash: 7cf21df)
+
 ## 2026-07-14 23:30 — auto-20260714-2300
 
 - 任务：S8-06 客户端装备系统 UI
