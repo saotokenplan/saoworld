@@ -23,6 +23,9 @@ signal closed
 # 成就标签页
 @onready var achievements_grid: GridContainer = $MarginContainer/VBoxContainer/TabContainer/成就/AchievementsGrid
 
+# 装备标签页
+@onready var equipment_list: ItemList = $MarginContainer/VBoxContainer/TabContainer/装备/EquipmentList
+
 func _ready() -> void:
 	# 连接信号
 	refresh_button.pressed.connect(_on_refresh_pressed)
@@ -38,6 +41,11 @@ func _ready() -> void:
 	# 连接 VoteManager 信号
 	VoteManager.vote_history_loaded.connect(_on_vote_history_loaded)
 	
+	# 连接 InventoryManager 信号
+	var inv_manager: Node = get_node_or_null("/root/InventoryManager")
+	if inv_manager != null:
+		inv_manager.equipment_updated.connect(_on_equipment_updated)
+	
 	# 初始加载数据
 	_load_all_data()
 
@@ -45,6 +53,9 @@ func _load_all_data() -> void:
 	"""加载个人中心全部数据"""
 	PlayerManager.refresh_profile()
 	VoteManager.fetch_vote_history()
+	var inv_manager: Node = get_node_or_null("/root/InventoryManager")
+	if inv_manager != null:
+		inv_manager.load_equipment()
 
 func _on_refresh_pressed() -> void:
 	"""刷新按钮点击"""
@@ -150,6 +161,31 @@ func _on_loading_changed(is_loading: bool) -> void:
 		refresh_button.text = "加载中..."
 	else:
 		refresh_button.text = "刷新数据"
+
+func _on_equipment_updated(equipment: Array[Dictionary], stats: Dictionary) -> void:
+	"""装备数据加载完成"""
+	equipment_list.clear()
+	
+	var slot_names: Dictionary = {
+		"helmet": "头盔",
+		"armor": "护甲",
+		"weapon": "武器",
+		"accessory": "饰品"
+	}
+	
+	for item in equipment:
+		var slot: String = slot_names.get(item.get("slot", ""), item.get("slot", ""))
+		var item_name: String = item.get("item_name", "")
+		if item_name == "" and item.has("item_key"):
+			item_name = item.get("item_key", "")
+		if item_name == "":
+			equipment_list.add_item("%s | 空" % slot)
+		else:
+			var rarity: String = item.get("rarity", "")
+			equipment_list.add_item("%s | %s | %s" % [slot, item_name, rarity])
+	
+	if equipment.is_empty():
+		equipment_list.add_item("暂无装备")
 
 func show_personal_center() -> void:
 	"""显示个人中心"""

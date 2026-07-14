@@ -2,6 +2,21 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-14 23:30 — auto-20260714-2300
+
+- 任务：S8-06 客户端装备系统 UI
+- 分支：auto/auto-20260714-2300
+- 状态：✅ 已完成
+- 工作内容：
+  - 创建 EquipmentPanel.tscn 装备面板场景（装备槽位网格布局、属性统计面板、加载/空状态）
+  - 实现 equipment_panel.gd 脚本（信号声明、装备列表显示、装备/卸下操作、属性统计展示、4种槽位名称映射）
+  - 扩展 InventoryManager.gd 新增装备相关方法（load_equipment、equip_item、unequip_item、get_equipment、get_equipment_stats）和信号（equipment_updated、equipment_error）
+  - 集成装备面板到个人中心（新增「装备」标签页、装备列表显示、与 InventoryManager 信号联动）
+  - 新增 test_equipment_panel.gd GUT 测试（6个用例：信号声明、初始状态、装备列表、属性统计、空状态显示、槽位名称常量）
+- 测试结果：player-service 装备 API 测试 10 个全部通过
+- 修改文件：8 个（3新建 + 3修改 + 2文档更新）
+- 合并状态：待合并到 feature-prd
+
 ## 2026-07-14 22:00 — auto-20260714-2200
 
 - 任务：S7-06 装备生成模板
