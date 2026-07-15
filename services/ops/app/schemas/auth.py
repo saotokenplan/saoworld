@@ -18,6 +18,7 @@ class Scope(str, Enum):
     VOTES_HISTORY_READ = "votes:history:read"
     CONTENT_READ = "content:read"
     EVENTS_READ = "events:read"
+    FEEDBACK_SUBMIT = "feedback:submit"
 
     OPS_VOTE_CYCLES_WRITE = "ops:vote-cycles:write"
     CONTENT_RELEASE = "content:release"
@@ -38,6 +39,7 @@ ROLE_SCOPES: dict[Role, list[Scope]] = {
         Scope.VOTES_HISTORY_READ,
         Scope.CONTENT_READ,
         Scope.EVENTS_READ,
+        Scope.FEEDBACK_SUBMIT,
     ],
     Role.OPS: [
         Scope.VOTES_HISTORY_READ,

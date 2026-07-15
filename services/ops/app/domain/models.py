@@ -376,3 +376,47 @@ class Requirement(Base):
         Index("requirements_status_idx", "status"),
         Index("requirements_priority_idx", "priority"),
     )
+
+
+class PlayerFeedback(Base):
+    __tablename__ = "player_feedbacks"
+
+    feedback_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    player_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    feedback_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    priority: Mapped[str] = mapped_column(String(16), nullable=False, default="medium", server_default="medium")
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending", server_default="pending", index=True)
+    title: Mapped[str] = mapped_column(String(256), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    region_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    chapter_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    attachment_urls: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    metadata_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    resolved_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolution_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    trace_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "feedback_type IN ('bug', 'suggestion', 'question', 'other')",
+            name="player_feedbacks_type_check",
+        ),
+        CheckConstraint(
+            "priority IN ('low', 'medium', 'high', 'critical')",
+            name="player_feedbacks_priority_check",
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'in_progress', 'resolved', 'closed')",
+            name="player_feedbacks_status_check",
+        ),
+        Index("player_feedbacks_player_idx", "player_id", "created_at"),
+        Index("player_feedbacks_status_created_idx", "status", "created_at"),
+        Index("player_feedbacks_type_created_idx", "feedback_type", "created_at"),
+    )

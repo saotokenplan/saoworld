@@ -102,3 +102,37 @@ def record_event_trigger(event_type: str) -> None:
 def set_active_events_count(count: int) -> None:
     """设置当前生效事件数。"""
     OPS_EVENTS_ACTIVE_COUNT.set(count)
+
+
+# 用户反馈指标
+OPS_FEEDBACK_SUBMITTED_TOTAL = Counter(
+    "ops_feedback_submitted_total",
+    "用户反馈提交数（按类型）",
+    labelnames=["feedback_type"],
+)
+
+OPS_FEEDBACK_STATUS_TOTAL = Counter(
+    "ops_feedback_status_total",
+    "用户反馈状态变更数（按状态）",
+    labelnames=["status"],
+)
+
+OPS_FEEDBACK_PENDING_COUNT = Gauge(
+    "ops_feedback_pending_count",
+    "待处理反馈数",
+)
+
+
+def record_feedback_submitted(feedback_type: str) -> None:
+    """记录一次反馈提交。"""
+    OPS_FEEDBACK_SUBMITTED_TOTAL.labels(feedback_type=feedback_type).inc()
+
+
+def record_feedback_status(status: str) -> None:
+    """记录一次反馈状态变更。"""
+    OPS_FEEDBACK_STATUS_TOTAL.labels(status=status).inc()
+
+
+def set_pending_feedback_count(count: int) -> None:
+    """设置待处理反馈数。"""
+    OPS_FEEDBACK_PENDING_COUNT.set(count)
