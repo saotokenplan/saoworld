@@ -192,6 +192,59 @@ CONTENT_PACKAGE_DETAIL_SCENARIO = Scenario(
 )
 
 
+def vote_submit_high_concurrency_scenario(
+    base_url: str,
+    headers: Mapping[str, str],
+    candidate_id: str = "00000000-0000-0000-0000-000000000001",
+) -> LoadConfig:
+    """高并发投票提交场景（1000 并发）。"""
+    return LoadConfig(
+        base_url=base_url,
+        method="POST",
+        path="/api/v1/votes/submit",
+        concurrency=100,
+        total_requests=10000,
+        timeout_seconds=30.0,
+        headers=dict(headers),
+        body_factory=lambda i: {
+            "candidate_id": candidate_id,
+            "device_fingerprint_hash": f"perf_device_{i}",
+            "weight": 1.0,
+        },
+    )
+
+
+def query_high_concurrency_scenario(
+    base_url: str,
+    headers: Mapping[str, str],
+) -> LoadConfig:
+    """高并发查询场景（5000 并发）。"""
+    return LoadConfig(
+        base_url=base_url,
+        method="GET",
+        path="/api/v1/votes/current",
+        concurrency=200,
+        total_requests=50000,
+        timeout_seconds=30.0,
+        headers=dict(headers),
+    )
+
+
+VOTE_SUBMIT_HIGH_CONCURRENCY_SCENARIO = Scenario(
+    name="vote_submit_high",
+    description="高并发投票提交：1000 并发，要求 p95 < 300ms",
+    config_factory=vote_submit_high_concurrency_scenario,
+    thresholds=get_default_thresholds("vote_submit_high"),
+)
+
+QUERY_HIGH_CONCURRENCY_SCENARIO = Scenario(
+    name="query_high",
+    description="高并发查询：5000 并发，要求 p95 < 500ms",
+    config_factory=query_high_concurrency_scenario,
+    thresholds=get_default_thresholds("query_high"),
+)
+
+
 def default_scenarios() -> list[Scenario]:
     """获取默认场景列表。"""
     return [
