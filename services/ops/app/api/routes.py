@@ -64,6 +64,7 @@ from app.repositories.insight_repo import InsightRepository
 from app.repositories.ops_action_repo import OpsActionRepository
 from app.repositories.requirement_repo import RequirementRepository
 from app.repositories.event_repo import EventRepository
+from app.repositories.feedback_repo import FeedbackRepository
 from app.schemas.ops import (
     AnalyticsOverview,
     AnalyticsReportItem,
@@ -96,6 +97,13 @@ from app.schemas.ops import (
     EventCreateRequest,
     EventUpdateRequest,
     EventResponse,
+)
+from app.schemas.feedback import (
+    FeedbackSubmit,
+    FeedbackUpdate,
+    FeedbackResponse,
+    FeedbackListResponse,
+    FeedbackStatsResponse,
 )
 
 router = APIRouter()
@@ -2561,5 +2569,329 @@ async def get_player_active_events(
     return EnvelopeResponse(
         request_id=request_id,
         data=response_data,
+        trace_id=trace_id,
+    )
+
+
+# ============================================================
+# 用户反馈 API
+# ============================================================
+
+
+ACTION_FEEDBACK_SUBMIT = "feedback_submit"
+ACTION_FEEDBOOK_UPDATE = "feedback_update"
+ACTION_FEEDBACK_QUERY = "feedback_query"
+RESOURCE_FEEDBACK = "feedback"
+
+
+@router.post(
+    "/feedback",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["feedback"],
+    status_code=status.HTTP_201_CREATED,
+)
+async def submit_feedback(
+    body: FeedbackSubmit,
+    request: Request,
+    current_user: UserPayload = require_scope(Scope.FEEDBACK_SUBMIT),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    x_player_id: str | None = Header(default=None, alias="X-Player-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FeedbackResponse]:
+    """玩家提交反馈。"""
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+    player_id = x_player_id or current_user.user_id
+
+    # 校验反馈类型
+    valid_types = ("bug", "suggestion", "question", "other")
+    if body.feedback_type not in valid_types:
+        raise_ops_error(
+            OpsErrorCodes.INVALID_FEEDBACK_TYPE,
+            f"无效的反馈类型: {body.feedback_type}",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # 校验优先级
+    valid_priorities = ("low", "medium", "high", "critical")
+    if body.priority not in valid_priorities:
+        raise_ops_error(
+            OpsErrorCodes.INVALID_ARGUMENT,
+            f"无效的优先级: {body.priority}",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    repo = FeedbackRepository(db)
+    feedback = await repo.create(
+        player_id=player_id,
+        feedback_type=body.feedback_type,
+        title=body.title,
+        content=body.content,
+        priority=body.priority,
+        region_id=body.region_id,
+        chapter_id=body.chapter_id,
+        attachment_urls=body.attachment_urls,
+        metadata_jsonb=body.metadata,
+        trace_id=trace_id,
+    )
+
+    from app.core.metrics import record_feedback_submitted
+    record_feedback_submitted(body.feedback_type)
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=player_id,
+        operator_role="player",
+        action=ACTION_FEEDBACK_SUBMIT,
+        resource_type=RESOURCE_FEEDBACK,
+        resource_id=feedback.feedback_id,
+        result_status=201,
+    )
+
+    await db.commit()
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=FeedbackResponse.model_validate(feedback),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/feedback",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["feedback"],
+)
+async def list_feedback(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    status: str | None = Query(default=None),
+    feedback_type: str | None = Query(default=None),
+    priority: str | None = Query(default=None),
+    player_id: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FeedbackListResponse]:
+    """运营列表查询反馈。"""
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = FeedbackRepository(db)
+    feedbacks = await repo.list(
+        status=status,
+        feedback_type=feedback_type,
+        priority=priority,
+        player_id=player_id,
+        limit=limit,
+        offset=offset,
+    )
+    total = await repo.count(
+        status=status,
+        feedback_type=feedback_type,
+        priority=priority,
+        player_id=player_id,
+    )
+
+    response_data = FeedbackListResponse(
+        feedbacks=[FeedbackResponse.model_validate(f) for f in feedbacks],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_FEEDBACK_QUERY,
+        resource_type=RESOURCE_FEEDBACK,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/feedback/stats",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}},
+    tags=["feedback"],
+)
+async def get_feedback_stats(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FeedbackStatsResponse]:
+    """运营查询反馈统计。"""
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = FeedbackRepository(db)
+
+    total = await repo.count()
+    pending = await repo.count(status="pending")
+    in_progress = await repo.count(status="in_progress")
+    resolved = await repo.count(status="resolved")
+    closed = await repo.count(status="closed")
+
+    # 按类型统计
+    by_type = {}
+    for t in ("bug", "suggestion", "question", "other"):
+        by_type[t] = await repo.count(feedback_type=t)
+
+    # 按优先级统计
+    by_priority = {}
+    for p in ("low", "medium", "high", "critical"):
+        by_priority[p] = await repo.count(priority=p)
+
+    response_data = FeedbackStatsResponse(
+        total=total,
+        pending=pending,
+        in_progress=in_progress,
+        resolved=resolved,
+        closed=closed,
+        by_type=by_type,
+        by_priority=by_priority,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=response_data,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/feedback/{feedback_id}",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}, 404: {"description": "Feedback not found"}},
+    tags=["feedback"],
+)
+async def get_feedback(
+    feedback_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FeedbackResponse]:
+    """运营查询反馈详情。"""
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = FeedbackRepository(db)
+    feedback = await repo.get_by_id(feedback_id)
+
+    if not feedback:
+        raise_ops_error(
+            OpsErrorCodes.FEEDBACK_NOT_FOUND,
+            "反馈不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=FeedbackResponse.model_validate(feedback),
+        trace_id=trace_id,
+    )
+
+
+@router.patch(
+    "/ops/feedback/{feedback_id}",
+    responses={401: {"description": "Unauthorized"}, 403: {"description": "Forbidden"}, 404: {"description": "Feedback not found"}},
+    tags=["feedback"],
+)
+async def update_feedback(
+    feedback_id: uuid.UUID,
+    body: FeedbackUpdate,
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FeedbackResponse]:
+    """运营更新反馈状态。"""
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    repo = FeedbackRepository(db)
+    feedback = await repo.get_by_id(feedback_id)
+
+    if not feedback:
+        raise_ops_error(
+            OpsErrorCodes.FEEDBACK_NOT_FOUND,
+            "反馈不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    # 校验状态
+    if body.status:
+        valid_statuses = ("pending", "in_progress", "resolved", "closed")
+        if body.status not in valid_statuses:
+            raise_ops_error(
+                OpsErrorCodes.INVALID_FEEDBACK_STATUS,
+                f"无效的状态: {body.status}",
+                request_id,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+    # 校验优先级
+    if body.priority:
+        valid_priorities = ("low", "medium", "high", "critical")
+        if body.priority not in valid_priorities:
+            raise_ops_error(
+                OpsErrorCodes.INVALID_ARGUMENT,
+                f"无效的优先级: {body.priority}",
+                request_id,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+    # 更新状态
+    if body.status:
+        feedback = await repo.update_status(
+            feedback_id=feedback_id,
+            new_status=body.status,
+            resolved_by=current_user.user_id,
+            resolution_note=body.resolution_note,
+        )
+        from app.core.metrics import record_feedback_status
+        record_feedback_status(body.status)
+
+    # 更新优先级
+    if body.priority:
+        feedback = await repo.update_priority(
+            feedback_id=feedback_id,
+            new_priority=body.priority,
+        )
+
+    await db.commit()
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_FEEDBOOK_UPDATE,
+        resource_type=RESOURCE_FEEDBACK,
+        resource_id=feedback_id,
+        result_status=200,
+    )
+
+    assert feedback is not None
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=FeedbackResponse.model_validate(feedback),
         trace_id=trace_id,
     )
