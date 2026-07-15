@@ -81,6 +81,7 @@ from app.repositories.audit_repo import (
     ACTION_REPUTATION_UNLOCK,
     ACTION_PRIVATE_MESSAGE_SEND,
     ACTION_PRIVATE_MESSAGE_READ,
+    ACTION_PRIVATE_MESSAGE_DELETE,
     ACTION_GUILD_CREATE,
     ACTION_GUILD_UPDATE,
     ACTION_GUILD_DELETE,
@@ -3129,6 +3130,64 @@ async def get_unread_count(
     return EnvelopeResponse(
         request_id=request_id,
         data=UnreadCountResponse(unread_count=count),
+        trace_id=trace_id,
+    )
+
+
+@router.delete(
+    "/player/messages/{message_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Message not found"},
+    },
+    tags=["messages"],
+)
+async def delete_private_message(
+    message_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireMessagesWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse:
+    """删除私聊消息（仅发送者可删）"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_msg_del")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    message_repo = PrivateMessageRepository(db)
+    deleted = await message_repo.delete_message(message_id, player_uuid)
+
+    if not deleted:
+        raise_player_error(
+            PlayerErrorCodes.MESSAGE_NOT_FOUND,
+            "消息不存在或无权删除",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_PRIVATE_MESSAGE_DELETE,
+        resource_type=RESOURCE_PRIVATE_MESSAGE,
+        resource_id=message_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data={"deleted": True},
         trace_id=trace_id,
     )
 

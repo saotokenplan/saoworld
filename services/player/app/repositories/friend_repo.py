@@ -344,9 +344,9 @@ class FriendRepository:
                     Friendship.status == "accepted",
                 ),
             )
-        )
+        ).limit(1)
         result = await self.db.execute(stmt)
-        return result.scalar_one_or_none() is not None
+        return result.scalar() is not None
 
     async def get_friend_count(self, player_id: uuid.UUID) -> int:
         """获取好友数量。
