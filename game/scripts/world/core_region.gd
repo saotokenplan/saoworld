@@ -6,7 +6,7 @@ signal npc_interaction_started(npc_data: Dictionary)
 signal combat_started(enemy_type: String)
 
 const PLAYER_SCENE: PackedScene = preload("res://scenes/player/Player.tscn")
-const ENEMY_SCENE: PackedScene = preload("res://scenes/enemies/Enemy.tscn")
+const ENEMY_SCENE: PackedScene = preload("res://scenes/npc/Enemy.tscn")
 
 @export var region_id: String = "region_core_ironward"
 @export var region_name: String = "铁卫城周边"
