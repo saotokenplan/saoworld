@@ -3,9 +3,9 @@ info:
   title: AI Game MVP API Draft
   version: 0.1.0-draft
   description: >
-    首版单文件 OpenAPI 草案，覆盖投票、内容更新、发布回滚、世界查询、
-    任务查询和部分运营审核接口。当前仍为文档级草案收敛结果，接口边界、
-    服务职责和数据约束仍以上游规范为准。
+    单文件 OpenAPI 3.1 草案，覆盖全部 8 个后端服务（vote/world/content/generation/
+    review/player/ops/gateway）共 176 个 API 端点。当前仍为文档级草案收敛结果，
+    接口边界、服务职责和数据约束仍以上游规范为准。
 servers:
   - url: https://api.example.com
     description: production placeholder
@@ -13,17 +13,61 @@ security:
   - bearerAuth: []
 tags:
   - name: votes
-    description: 玩家投票周期、投票提交、历史结果与运营投票周期管理
+    description: 玩家投票周期、投票提交、历史结果、讨论区与运营投票周期管理
+  - name: vote-discussions
+    description: 投票讨论区与回复
+  - name: vote-anomalies
+    description: 投票异常检测与管理
   - name: content
     description: 内容更新、内容包查询、发布与回滚
   - name: world
-    description: 世界区域查询
+    description: 世界区域、骨架快照、NPC、任务、物品、怪物与Boss查询
+  - name: world-npcs
+    description: NPC 定义查询与管理
+  - name: world-items
+    description: 物品定义查询与管理
+  - name: world-monsters
+    description: 怪物与Boss定义查询与管理
   - name: quests
-    description: 玩家任务查询
+    description: 玩家任务查询与操作
+  - name: player
+    description: 玩家基础信息、等级、贡献度
+  - name: player-quests
+    description: 玩家任务接取、进度更新与完成
+  - name: player-reputation
+    description: 玩家声望查询
+  - name: player-inventory
+    description: 玩家背包管理
+  - name: player-equipment
+    description: 玩家装备穿戴与卸下
+  - name: player-achievements
+    description: 玩家成就定义与解锁
+  - name: player-friends
+    description: 好友系统
+  - name: player-messages
+    description: 玩家私信
+  - name: player-guilds
+    description: 公会管理与公会聊天
+  - name: player-social
+    description: 社交概览
   - name: ops
     description: 运营侧写接口
+  - name: ops-dashboard
+    description: 运营仪表盘与系统状态
+  - name: ops-analytics
+    description: 数据分析与趋势
+  - name: ops-insights
+    description: 洞察与需求管理
+  - name: ops-events
+    description: 运营事件管理
+  - name: ops-proxy
+    description: 运营代理接口（转发到下游服务）
   - name: review
     description: 内容审核批准接口
+  - name: generation
+    description: AI生成请求与生成对象管理
+  - name: gateway
+    description: API网关、健康检查与事件批量提交
 paths:
   /api/v1/votes/current:
     get:
@@ -724,6 +768,2809 @@ paths:
               examples:
                 invalidReviewState:
                   $ref: '#/components/examples/InvalidReviewStateError'
+
+  # ============================================================
+  # 投票服务扩展端点
+  # ============================================================
+
+  /api/v1/votes/current/progress:
+    get:
+      tags: [votes]
+      summary: 获取当前投票进度
+      operationId: getVoteProgress
+      security:
+        - bearerAuth: [votes:read]
+      x-roles: [player, system]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回当前投票周期的进度统计
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/votes/history/{vote_cycle_id}/chart-data:
+    get:
+      tags: [votes]
+      summary: 获取投票结果图表数据
+      operationId: getVoteChartData
+      security:
+        - bearerAuth: [votes:history:read]
+      x-roles: [player, ops, system]
+      parameters:
+        - name: vote_cycle_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回投票结果图表数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/votes/history/{vote_cycle_id}/review:
+    get:
+      tags: [votes]
+      summary: 获取投票复盘报告
+      operationId: getVoteReview
+      security:
+        - bearerAuth: [votes:history:read]
+      x-roles: [player, ops, system]
+      parameters:
+        - name: vote_cycle_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回投票复盘报告
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  # ---- 投票讨论区 ----
+
+  /api/v1/votes/discussions/{vote_cycle_id}:
+    get:
+      tags: [vote-discussions]
+      summary: 列出投票讨论
+      operationId: listDiscussions
+      security:
+        - bearerAuth: [votes:discussions:read]
+      x-roles: [player, system]
+      parameters:
+        - name: vote_cycle_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回讨论列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+    post:
+      tags: [vote-discussions]
+      summary: 创建讨论
+      operationId: createDiscussion
+      security:
+        - bearerAuth: [votes:discussions:write]
+      x-roles: [player]
+      parameters:
+        - name: vote_cycle_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XTraceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  maxLength: 2000
+              required: [content]
+      responses:
+        '201':
+          description: 讨论创建成功
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/v1/votes/discussions/{discussion_id}/like:
+    post:
+      tags: [vote-discussions]
+      summary: 点赞讨论
+      operationId: likeDiscussion
+      security:
+        - bearerAuth: [votes:discussions:write]
+      x-roles: [player]
+      parameters:
+        - name: discussion_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 点赞成功
+
+  /api/v1/votes/discussions/{discussion_id}/unlike:
+    post:
+      tags: [vote-discussions]
+      summary: 取消点赞讨论
+      operationId: unlikeDiscussion
+      security:
+        - bearerAuth: [votes:discussions:write]
+      x-roles: [player]
+      parameters:
+        - name: discussion_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 取消点赞成功
+
+  /api/v1/votes/discussions/{discussion_id}:
+    delete:
+      tags: [vote-discussions]
+      summary: 删除讨论
+      operationId: deleteDiscussion
+      security:
+        - bearerAuth: [votes:discussions:write]
+      x-roles: [player]
+      parameters:
+        - name: discussion_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: 删除成功
+
+  /api/v1/votes/discussions/{discussion_id}/replies:
+    get:
+      tags: [vote-discussions]
+      summary: 列出讨论回复
+      operationId: listDiscussionReplies
+      security:
+        - bearerAuth: [votes:discussions:read]
+      x-roles: [player, system]
+      parameters:
+        - name: discussion_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回回复列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+    post:
+      tags: [vote-discussions]
+      summary: 创建回复
+      operationId: createReply
+      security:
+        - bearerAuth: [votes:discussions:write]
+      x-roles: [player]
+      parameters:
+        - name: discussion_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  maxLength: 1000
+              required: [content]
+      responses:
+        '201':
+          description: 回复创建成功
+
+  /api/v1/votes/replies/{reply_id}/like:
+    post:
+      tags: [vote-discussions]
+      summary: 点赞回复
+      operationId: likeReply
+      security:
+        - bearerAuth: [votes:discussions:write]
+      x-roles: [player]
+      parameters:
+        - name: reply_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 点赞成功
+
+  /api/v1/votes/replies/{reply_id}/unlike:
+    post:
+      tags: [vote-discussions]
+      summary: 取消点赞回复
+      operationId: unlikeReply
+      security:
+        - bearerAuth: [votes:discussions:write]
+      x-roles: [player]
+      parameters:
+        - name: reply_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 取消点赞成功
+
+  /api/v1/votes/replies/{reply_id}:
+    delete:
+      tags: [vote-discussions]
+      summary: 删除回复
+      operationId: deleteReply
+      security:
+        - bearerAuth: [votes:discussions:write]
+      x-roles: [player]
+      parameters:
+        - name: reply_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: 删除成功
+
+  # ---- 投票异常检测 ----
+
+  /api/v1/ops/anomalies:
+    get:
+      tags: [vote-anomalies]
+      summary: 列出异常记录
+      operationId: listAnomalies
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: 返回异常记录列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/ops/anomalies/stats:
+    get:
+      tags: [vote-anomalies]
+      summary: 获取异常统计
+      operationId: getAnomalyStats
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      responses:
+        '200':
+          description: 返回异常统计概览
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/ops/anomalies/{anomaly_id}:
+    get:
+      tags: [vote-anomalies]
+      summary: 获取异常详情
+      operationId: getAnomaly
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: anomaly_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回异常详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/ops/anomalies/{anomaly_id}/resolve:
+    patch:
+      tags: [vote-anomalies]
+      summary: 标记异常已解决
+      operationId: resolveAnomaly
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: anomaly_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 标记成功
+
+  /api/v1/ops/anomalies/{anomaly_id}/false-positive:
+    patch:
+      tags: [vote-anomalies]
+      summary: 标记异常误报
+      operationId: markAnomalyFalsePositive
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: anomaly_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 标记成功
+
+  # ---- 投票周期状态管理扩展 ----
+
+  /api/v1/ops/vote-cycles/{id}/schedule:
+    post:
+      tags: [ops]
+      summary: 调度投票周期（draft→scheduled）
+      operationId: scheduleVoteCycle
+      security:
+        - bearerAuth: [ops:vote-cycles:write]
+      x-roles: [ops]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XTraceId'
+      responses:
+        '200':
+          description: 状态迁移成功
+        '409':
+          description: 当前状态不允许此操作
+
+  /api/v1/ops/vote-cycles/{id}/open:
+    post:
+      tags: [ops]
+      summary: 开启投票周期（scheduled→open）
+      operationId: openVoteCycle
+      security:
+        - bearerAuth: [ops:vote-cycles:write]
+      x-roles: [ops]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XTraceId'
+      responses:
+        '200':
+          description: 状态迁移成功
+
+  /api/v1/ops/vote-cycles/{id}/close:
+    post:
+      tags: [ops]
+      summary: 关闭投票周期（open→closed）
+      operationId: closeVoteCycle
+      security:
+        - bearerAuth: [ops:vote-cycles:write]
+      x-roles: [ops]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XTraceId'
+      responses:
+        '200':
+          description: 状态迁移成功
+
+  /api/v1/ops/vote-cycles/{id}/finalize:
+    post:
+      tags: [ops]
+      summary: 确认投票周期（closed→finalized）
+      operationId: finalizeVoteCycle
+      security:
+        - bearerAuth: [ops:vote-cycles:write]
+      x-roles: [ops]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XTraceId'
+      responses:
+        '200':
+          description: 状态迁移成功
+
+  # ============================================================
+  # 世界服务扩展端点
+  # ============================================================
+
+  /api/v1/world/skeleton:
+    get:
+      tags: [world]
+      summary: 获取当前世界骨架快照
+      operationId: getWorldSkeleton
+      security:
+        - bearerAuth: [world:read]
+      x-roles: [player, system]
+      responses:
+        '200':
+          description: 返回世界骨架快照
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/world/npcs:
+    get:
+      tags: [world-npcs]
+      summary: 获取 NPC 列表
+      operationId: listNpcs
+      security:
+        - bearerAuth: [world:read]
+      x-roles: [player, system]
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: 返回 NPC 列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/world/npcs/{npc_id}:
+    get:
+      tags: [world-npcs]
+      summary: 获取 NPC 详情（by UUID）
+      operationId: getNpc
+      security:
+        - bearerAuth: [world:read]
+      x-roles: [player, system]
+      parameters:
+        - name: npc_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回 NPC 详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/world/npcs/by-key/{npc_key}:
+    get:
+      tags: [world-npcs]
+      summary: 获取 NPC 详情（by key）
+      operationId: getNpcByKey
+      security:
+        - bearerAuth: [world:read]
+      x-roles: [player, system]
+      parameters:
+        - name: npc_key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 返回 NPC 详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/world/quests:
+    get:
+      tags: [world]
+      summary: 获取任务列表（世界任务定义）
+      operationId: listWorldQuests
+      security:
+        - bearerAuth: [world:read]
+      x-roles: [player, system]
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: 返回任务定义列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/world/quests/{quest_id}:
+    get:
+      tags: [world]
+      summary: 获取任务详情（by UUID）
+      operationId: getWorldQuest
+      security:
+        - bearerAuth: [world:read]
+      x-roles: [player, system]
+      parameters:
+        - name: quest_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回任务定义详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/world/quests/by-key/{quest_key}:
+    get:
+      tags: [world]
+      summary: 获取任务详情（by key）
+      operationId: getWorldQuestByKey
+      security:
+        - bearerAuth: [world:read]
+      x-roles: [player, system]
+      parameters:
+        - name: quest_key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 返回任务定义详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/world/items:
+    get:
+      tags: [world-items]
+      summary: 获取物品列表
+      operationId: listItems
+      security:
+        - bearerAuth: [world:read]
+      x-roles: [player, system]
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: 返回物品定义列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/world/items/{item_key}:
+    get:
+      tags: [world-items]
+      summary: 获取物品详情
+      operationId: getItem
+      security:
+        - bearerAuth: [world:read]
+      x-roles: [player, system]
+      parameters:
+        - name: item_key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 返回物品定义详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/world/monsters:
+    get:
+      tags: [world-monsters]
+      summary: 获取怪物定义列表
+      operationId: listMonsters
+      security:
+        - bearerAuth: [world:read]
+      x-roles: [player, system]
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: 返回怪物定义列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/world/monsters/{monster_id}:
+    get:
+      tags: [world-monsters]
+      summary: 获取怪物详情
+      operationId: getMonster
+      security:
+        - bearerAuth: [world:read]
+      x-roles: [player, system]
+      parameters:
+        - name: monster_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回怪物定义详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/world/bosses:
+    get:
+      tags: [world-monsters]
+      summary: 获取区域 Boss 列表
+      operationId: listBosses
+      security:
+        - bearerAuth: [world:read]
+      x-roles: [player, system]
+      responses:
+        '200':
+          description: 返回 Boss 列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/world/bosses/{monster_key}:
+    get:
+      tags: [world-monsters]
+      summary: 获取 Boss 详情
+      operationId: getBoss
+      security:
+        - bearerAuth: [world:read]
+      x-roles: [player, system]
+      parameters:
+        - name: monster_key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 返回 Boss 详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================================
+  # 玩家服务端点
+  # ============================================================
+
+  /api/v1/player/info:
+    get:
+      tags: [player]
+      summary: 获取玩家基本信息
+      operationId: getPlayerInfo
+      security:
+        - bearerAuth: []
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回玩家基本信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/player/profile:
+    get:
+      tags: [player]
+      summary: 获取玩家档案（聚合）
+      operationId: getPlayerProfile
+      security:
+        - bearerAuth: []
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回玩家聚合档案
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/level:
+    get:
+      tags: [player]
+      summary: 获取玩家等级
+      operationId: getPlayerLevel
+      security:
+        - bearerAuth: []
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回玩家等级和经验
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/contribution:
+    get:
+      tags: [player]
+      summary: 获取贡献度
+      operationId: getPlayerContribution
+      security:
+        - bearerAuth: [contribution:read]
+      x-roles: [player, system]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回玩家贡献度
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/quests/{quest_id}/accept:
+    post:
+      tags: [player-quests]
+      summary: 接受任务
+      operationId: acceptQuest
+      security:
+        - bearerAuth: [quests:write]
+      x-roles: [player]
+      parameters:
+        - name: quest_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 接受成功
+
+  /api/v1/player/quests/{quest_id}/progress:
+    post:
+      tags: [player-quests]
+      summary: 更新任务进度
+      operationId: updateQuestProgress
+      security:
+        - bearerAuth: [quests:write]
+      x-roles: [player]
+      parameters:
+        - name: quest_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/XPlayerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                objectives:
+                  type: object
+              required: [objectives]
+      responses:
+        '200':
+          description: 进度更新成功
+
+  /api/v1/player/quests/{quest_id}/complete:
+    post:
+      tags: [player-quests]
+      summary: 完成任务
+      operationId: completeQuest
+      security:
+        - bearerAuth: [quests:write]
+      x-roles: [player]
+      parameters:
+        - name: quest_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 任务完成
+
+  /api/v1/player/quests/{quest_id}/fail:
+    post:
+      tags: [player-quests]
+      summary: 失败任务
+      operationId: failQuest
+      security:
+        - bearerAuth: [quests:write]
+      x-roles: [player]
+      parameters:
+        - name: quest_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 任务失败
+
+  /api/v1/player/regions:
+    get:
+      tags: [player]
+      summary: 获取玩家区域列表
+      operationId: getPlayerRegions
+      security:
+        - bearerAuth: []
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回玩家已解锁区域
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/inventory:
+    get:
+      tags: [player-inventory]
+      summary: 获取玩家背包
+      operationId: getPlayerInventory
+      security:
+        - bearerAuth: []
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回背包物品列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/inventory/use:
+    post:
+      tags: [player-inventory]
+      summary: 使用物品
+      operationId: useItem
+      security:
+        - bearerAuth: []
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                item_key:
+                  type: string
+                quantity:
+                  type: integer
+                  minimum: 1
+              required: [item_key, quantity]
+      responses:
+        '200':
+          description: 使用成功
+
+  /api/v1/player/reputation:
+    get:
+      tags: [player-reputation]
+      summary: 获取全部声望
+      operationId: getAllReputation
+      security:
+        - bearerAuth: []
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回所有区域声望
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/reputation/{region_id}:
+    get:
+      tags: [player-reputation]
+      summary: 获取指定区域声望
+      operationId: getRegionReputation
+      security:
+        - bearerAuth: []
+      x-roles: [player]
+      parameters:
+        - name: region_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回指定区域声望
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/equipment:
+    get:
+      tags: [player-equipment]
+      summary: 获取装备信息
+      operationId: getPlayerEquipment
+      security:
+        - bearerAuth: []
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回玩家装备栏
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/equipment/stats:
+    get:
+      tags: [player-equipment]
+      summary: 获取装备属性统计
+      operationId: getEquipmentStats
+      security:
+        - bearerAuth: []
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回装备属性汇总
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/equipment/equip:
+    post:
+      tags: [player-equipment]
+      summary: 装备物品
+      operationId: equipItem
+      security:
+        - bearerAuth: []
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                item_key:
+                  type: string
+                slot:
+                  type: string
+              required: [item_key, slot]
+      responses:
+        '200':
+          description: 装备成功
+        '409':
+          description: 槽位已占用或物品不可装备
+
+  /api/v1/player/equipment/unequip:
+    post:
+      tags: [player-equipment]
+      summary: 卸下装备
+      operationId: unequipItem
+      security:
+        - bearerAuth: []
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                slot:
+                  type: string
+              required: [slot]
+      responses:
+        '200':
+          description: 卸下成功
+
+  /api/v1/player/achievements:
+    get:
+      tags: [player-achievements]
+      summary: 列出成就定义
+      operationId: listAchievements
+      security:
+        - bearerAuth: [achievements:read]
+      x-roles: [player, system]
+      responses:
+        '200':
+          description: 返回成就定义列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/me/achievements:
+    get:
+      tags: [player-achievements]
+      summary: 列出我的成就
+      operationId: listMyAchievements
+      security:
+        - bearerAuth: [achievements:read]
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回玩家已解锁/未解锁成就
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/me/achievements/{achievement_key}/claim:
+    post:
+      tags: [player-achievements]
+      summary: 领取成就奖励
+      operationId: claimAchievementReward
+      security:
+        - bearerAuth: [achievements:unlock]
+      x-roles: [player]
+      parameters:
+        - name: achievement_key
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 奖励领取成功
+        '409':
+          description: 奖励已领取或成就未解锁
+
+  # ---- 好友系统 ----
+
+  /api/v1/player/friends:
+    get:
+      tags: [player-friends]
+      summary: 获取好友列表
+      operationId: listFriends
+      security:
+        - bearerAuth: [friends:read]
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回好友列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/friends/request:
+    post:
+      tags: [player-friends]
+      summary: 发送好友请求
+      operationId: sendFriendRequest
+      security:
+        - bearerAuth: [friends:write]
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                target_player_id:
+                  type: string
+                  format: uuid
+              required: [target_player_id]
+      responses:
+        '201':
+          description: 请求已发送
+        '409':
+          description: 已发送请求或已是好友
+
+  /api/v1/player/friends/accept:
+    post:
+      tags: [player-friends]
+      summary: 接受好友请求
+      operationId: acceptFriendRequest
+      security:
+        - bearerAuth: [friends:write]
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                request_id:
+                  type: string
+                  format: uuid
+              required: [request_id]
+      responses:
+        '200':
+          description: 接受成功
+
+  /api/v1/player/friends/reject:
+    post:
+      tags: [player-friends]
+      summary: 拒绝好友请求
+      operationId: rejectFriendRequest
+      security:
+        - bearerAuth: [friends:write]
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                request_id:
+                  type: string
+                  format: uuid
+              required: [request_id]
+      responses:
+        '200':
+          description: 拒绝成功
+
+  /api/v1/player/friends/{friend_id}:
+    delete:
+      tags: [player-friends]
+      summary: 删除好友
+      operationId: deleteFriend
+      security:
+        - bearerAuth: [friends:write]
+      x-roles: [player]
+      parameters:
+        - name: friend_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '204':
+          description: 删除成功
+
+  /api/v1/player/friends/requests:
+    get:
+      tags: [player-friends]
+      summary: 获取好友请求列表
+      operationId: listFriendRequests
+      security:
+        - bearerAuth: [friends:read]
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回待处理好友请求
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/friends/{friend_id}/status:
+    get:
+      tags: [player-friends]
+      summary: 获取好友状态
+      operationId: getFriendStatus
+      security:
+        - bearerAuth: [friends:read]
+      x-roles: [player]
+      parameters:
+        - name: friend_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回好友在线状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  # ---- 私信 ----
+
+  /api/v1/player/messages:
+    post:
+      tags: [player-messages]
+      summary: 发送私信
+      operationId: sendMessage
+      security:
+        - bearerAuth: [messages:write]
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                recipient_id:
+                  type: string
+                  format: uuid
+                content:
+                  type: string
+                  maxLength: 1000
+              required: [recipient_id, content]
+      responses:
+        '201':
+          description: 消息发送成功
+
+  /api/v1/player/messages/conversations:
+    get:
+      tags: [player-messages]
+      summary: 获取会话列表
+      operationId: listConversations
+      security:
+        - bearerAuth: [messages:read]
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回会话列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/messages/conversations/{friend_id}:
+    get:
+      tags: [player-messages]
+      summary: 获取会话消息
+      operationId: getConversationMessages
+      security:
+        - bearerAuth: [messages:read]
+      x-roles: [player]
+      parameters:
+        - name: friend_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/XPlayerId'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: 返回会话中的消息列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/messages/{message_id}/read:
+    post:
+      tags: [player-messages]
+      summary: 标记消息已读
+      operationId: markMessageRead
+      security:
+        - bearerAuth: [messages:write]
+      x-roles: [player]
+      parameters:
+        - name: message_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 标记成功
+
+  /api/v1/player/messages/unread:
+    get:
+      tags: [player-messages]
+      summary: 获取未读消息
+      operationId: getUnreadMessages
+      security:
+        - bearerAuth: [messages:read]
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回未读消息列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/messages/unread/count:
+    get:
+      tags: [player-messages]
+      summary: 获取未读消息数
+      operationId: getUnreadCount
+      security:
+        - bearerAuth: [messages:read]
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回未读消息数
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  # ---- 公会 ----
+
+  /api/v1/player/guilds:
+    post:
+      tags: [player-guilds]
+      summary: 创建公会
+      operationId: createGuild
+      security:
+        - bearerAuth: [guild:write]
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+              required: [name]
+      responses:
+        '201':
+          description: 公会创建成功
+        '409':
+          description: 名称已存在或已加入公会
+
+  /api/v1/player/guilds/my:
+    get:
+      tags: [player-guilds]
+      summary: 获取我的公会
+      operationId: getMyGuild
+      security:
+        - bearerAuth: [guild:read]
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回当前公会信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/guilds/{guild_id}:
+    get:
+      tags: [player-guilds]
+      summary: 获取公会详情
+      operationId: getGuild
+      security:
+        - bearerAuth: [guild:read]
+      x-roles: [player]
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回公会详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+    put:
+      tags: [player-guilds]
+      summary: 更新公会信息
+      operationId: updateGuild
+      security:
+        - bearerAuth: [guild:write]
+      x-roles: [player]
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '200':
+          description: 更新成功
+    delete:
+      tags: [player-guilds]
+      summary: 解散公会
+      operationId: deleteGuild
+      security:
+        - bearerAuth: [guild:write]
+      x-roles: [player]
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: 解散成功
+
+  /api/v1/player/guilds/{guild_id}/members:
+    get:
+      tags: [player-guilds]
+      summary: 获取公会成员列表
+      operationId: listGuildMembers
+      security:
+        - bearerAuth: [guild:read]
+      x-roles: [player]
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回成员列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+    post:
+      tags: [player-guilds]
+      summary: 邀请公会成员
+      operationId: inviteGuildMember
+      security:
+        - bearerAuth: [guild:write]
+      x-roles: [player]
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                player_id:
+                  type: string
+                  format: uuid
+              required: [player_id]
+      responses:
+        '200':
+          description: 邀请成功
+
+  /api/v1/player/guilds/{guild_id}/members/{player_id}:
+    delete:
+      tags: [player-guilds]
+      summary: 移除公会成员
+      operationId: removeGuildMember
+      security:
+        - bearerAuth: [guild:write]
+      x-roles: [player]
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: player_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: 移除成功
+
+  /api/v1/player/guilds/{guild_id}/leave:
+    post:
+      tags: [player-guilds]
+      summary: 离开公会
+      operationId: leaveGuild
+      security:
+        - bearerAuth: [guild:write]
+      x-roles: [player]
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 离开成功
+
+  /api/v1/player/guilds/{guild_id}/transfer:
+    post:
+      tags: [player-guilds]
+      summary: 转让会长
+      operationId: transferGuild
+      security:
+        - bearerAuth: [guild:write]
+      x-roles: [player]
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                new_leader_id:
+                  type: string
+                  format: uuid
+              required: [new_leader_id]
+      responses:
+        '200':
+          description: 转让成功
+
+  /api/v1/player/guilds/{guild_id}/messages:
+    get:
+      tags: [player-guilds]
+      summary: 获取公会消息
+      operationId: listGuildMessages
+      security:
+        - bearerAuth: [guild:read]
+      x-roles: [player]
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: 返回公会消息列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+    post:
+      tags: [player-guilds]
+      summary: 发送公会消息
+      operationId: sendGuildMessage
+      security:
+        - bearerAuth: [guild:write]
+      x-roles: [player]
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/XPlayerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  maxLength: 1000
+              required: [content]
+      responses:
+        '201':
+          description: 消息发送成功
+
+  /api/v1/player/guilds/{guild_id}/messages/read:
+    post:
+      tags: [player-guilds]
+      summary: 标记公会消息已读
+      operationId: markGuildMessagesRead
+      security:
+        - bearerAuth: [guild:write]
+      x-roles: [player]
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 标记成功
+
+  /api/v1/player/guilds/{guild_id}/messages/unread-count:
+    get:
+      tags: [player-guilds]
+      summary: 获取未读公会消息数
+      operationId: getGuildUnreadCount
+      security:
+        - bearerAuth: [guild:read]
+      x-roles: [player]
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回未读消息数
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/player/guilds/{guild_id}/messages/{message_id}:
+    delete:
+      tags: [player-guilds]
+      summary: 删除公会消息
+      operationId: deleteGuildMessage
+      security:
+        - bearerAuth: [guild:write]
+      x-roles: [player]
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: message_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: 删除成功
+
+  /api/v1/player/social/overview:
+    get:
+      tags: [player-social]
+      summary: 获取社交概览
+      operationId: getSocialOverview
+      security:
+        - bearerAuth: [social:read]
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回社交概览（好友数、公会、未读消息等）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  # ============================================================
+  # 内容服务扩展端点
+  # ============================================================
+
+  /api/v1/content/packages/by-vote-cycle/{vote_cycle_id}:
+    get:
+      tags: [content]
+      summary: 按投票周期获取内容包
+      operationId: getContentPackagesByVoteCycle
+      security:
+        - bearerAuth: [content:read]
+      x-roles: [player, system, ops]
+      parameters:
+        - name: vote_cycle_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回与该投票周期关联的内容包
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/ops/content-packages:
+    post:
+      tags: [content]
+      summary: 创建内容包
+      operationId: createContentPackage
+      security:
+        - bearerAuth: [content:release]
+      x-roles: [ops]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XTraceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vote_cycle_id:
+                  type: string
+                  format: uuid
+                version:
+                  type: string
+              required: [vote_cycle_id, version]
+      responses:
+        '201':
+          description: 内容包创建成功
+
+  # ============================================================
+  # 生成服务端点
+  # ============================================================
+
+  /api/v1/ops/generation/requests:
+    get:
+      tags: [generation]
+      summary: 列出生成请求
+      operationId: listGenerationRequests
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: 返回生成请求列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+    post:
+      tags: [generation]
+      summary: 创建生成请求
+      operationId: createGenerationRequest
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XTraceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                chapter_id:
+                  type: string
+                region_id:
+                  type: string
+                template_version:
+                  type: string
+              required: [chapter_id, region_id]
+      responses:
+        '201':
+          description: 生成请求创建成功
+
+  /api/v1/ops/generation/requests/{request_id}:
+    get:
+      tags: [generation]
+      summary: 获取生成请求详情
+      operationId: getGenerationRequest
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回生成请求详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/ops/generation/requests/{request_id}/status:
+    post:
+      tags: [generation]
+      summary: 更新生成请求状态
+      operationId: updateGenerationRequestStatus
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/XTraceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [processing, succeeded, failed_retryable, failed_permanent]
+              required: [status]
+      responses:
+        '200':
+          description: 状态更新成功
+
+  /api/v1/ops/generation/objects:
+    get:
+      tags: [generation]
+      summary: 列出生成对象
+      operationId: listGenerationObjects
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: 返回生成对象列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/ops/generation/objects/{object_id}:
+    get:
+      tags: [generation]
+      summary: 获取生成对象详情
+      operationId: getGenerationObject
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: object_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回生成对象详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/ops/generation/objects/{object_id}/status:
+    post:
+      tags: [generation]
+      summary: 更新生成对象状态（审核）
+      operationId: updateGenerationObjectStatus
+      security:
+        - bearerAuth: [review:approve]
+      x-roles: [reviewer, ops]
+      parameters:
+        - name: object_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/XTraceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [approved, rejected, needs_revision]
+              required: [status]
+      responses:
+        '200':
+          description: 状态更新成功
+
+  /api/v1/ops/generation/cost:
+    get:
+      tags: [generation]
+      summary: 获取生成成本统计
+      operationId: getGenerationCost
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      responses:
+        '200':
+          description: 返回生成成本统计
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  # ============================================================
+  # 审核服务端点
+  # ============================================================
+
+  /api/v1/ops/review/records:
+    get:
+      tags: [review]
+      summary: 列出审核记录
+      operationId: listReviewRecords
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: 返回审核记录列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+    post:
+      tags: [review]
+      summary: 创建审核记录
+      operationId: createReviewRecord
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XTraceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                object_id:
+                  type: string
+                  format: uuid
+                object_type:
+                  type: string
+              required: [object_id, object_type]
+      responses:
+        '201':
+          description: 审核记录创建成功
+
+  /api/v1/ops/review/records/{review_id}:
+    get:
+      tags: [review]
+      summary: 获取审核记录详情
+      operationId: getReviewRecord
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: review_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回审核记录详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/ops/review/records/{review_id}/result:
+    post:
+      tags: [review]
+      summary: 更新审核结果
+      operationId: updateReviewResult
+      security:
+        - bearerAuth: [review:approve]
+      x-roles: [reviewer, ops]
+      parameters:
+        - name: review_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/XTraceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                result:
+                  type: string
+                  enum: [approved, rejected, manual_review]
+                risk_level:
+                  type: string
+                  enum: [low, medium, high, critical]
+                notes:
+                  type: string
+              required: [result]
+      responses:
+        '200':
+          description: 审核结果更新成功
+
+  /api/v1/ops/review/{object_id}/reject:
+    post:
+      tags: [review]
+      summary: 拒绝内容对象
+      operationId: rejectObject
+      security:
+        - bearerAuth: [review:approve]
+      x-roles: [reviewer, ops]
+      parameters:
+        - name: object_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/XTraceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+              required: [reason]
+      responses:
+        '200':
+          description: 拒绝成功
+
+  # ============================================================
+  # 运营服务端点
+  # ============================================================
+
+  /api/v1/ops/dashboard:
+    get:
+      tags: [ops-dashboard]
+      summary: 获取运营仪表盘
+      operationId: getOpsDashboard
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      responses:
+        '200':
+          description: 返回运营仪表盘数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/ops/dashboard/history:
+    get:
+      tags: [ops-dashboard]
+      summary: 获取仪表盘历史
+      operationId: getDashboardHistory
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      responses:
+        '200':
+          description: 返回仪表盘历史数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/ops/actions:
+    get:
+      tags: [ops-dashboard]
+      summary: 获取运营操作记录列表
+      operationId: listOpsActions
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: 返回运营操作列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/ops/actions/{action_id}:
+    get:
+      tags: [ops-dashboard]
+      summary: 获取运营操作详情
+      operationId: getOpsAction
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: action_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回操作详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/ops/system/status:
+    get:
+      tags: [ops-dashboard]
+      summary: 获取系统状态
+      operationId: getSystemStatus
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      responses:
+        '200':
+          description: 返回系统各服务状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/ops/analytics/dashboard/overview:
+    get:
+      tags: [ops-analytics]
+      summary: 获取分析总览
+      operationId: getAnalyticsOverview
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      responses:
+        '200':
+          description: 返回分析总览数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/ops/analytics/dashboard/regions:
+    get:
+      tags: [ops-analytics]
+      summary: 获取区域分析
+      operationId: getAnalyticsRegions
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      responses:
+        '200':
+          description: 返回区域分析数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/ops/analytics/dashboard/quests:
+    get:
+      tags: [ops-analytics]
+      summary: 获取任务分析
+      operationId: getAnalyticsQuests
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      responses:
+        '200':
+          description: 返回任务分析数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/ops/analytics/dashboard/votes:
+    get:
+      tags: [ops-analytics]
+      summary: 获取投票分析
+      operationId: getAnalyticsVotes
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      responses:
+        '200':
+          description: 返回投票分析数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/insights:
+    get:
+      tags: [ops-insights]
+      summary: 获取洞察列表
+      operationId: listInsights
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      responses:
+        '200':
+          description: 返回洞察列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/insights/{insight_id}:
+    get:
+      tags: [ops-insights]
+      summary: 获取洞察详情
+      operationId: getInsight
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: insight_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回洞察详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/ops/insights/{insight_id}/generate-requirement:
+    post:
+      tags: [ops-insights]
+      summary: 从洞察生成需求
+      operationId: generateRequirement
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: insight_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XTraceId'
+      responses:
+        '201':
+          description: 需求生成成功
+
+  /api/v1/ops/requirements:
+    get:
+      tags: [ops-insights]
+      summary: 获取需求列表
+      operationId: listRequirements
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      responses:
+        '200':
+          description: 返回需求列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/ops/requirements/{requirement_id}:
+    get:
+      tags: [ops-insights]
+      summary: 获取需求详情
+      operationId: getRequirement
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: requirement_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回需求详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/ops/requirements/{requirement_id}/approve:
+    post:
+      tags: [ops-insights]
+      summary: 批准需求
+      operationId: approveRequirement
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: requirement_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XTraceId'
+      responses:
+        '200':
+          description: 批准成功
+
+  # ---- 运营事件 ----
+
+  /api/v1/ops/events:
+    get:
+      tags: [ops-events]
+      summary: 列出运营事件
+      operationId: listOpsEvents
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: 返回运营事件列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+    post:
+      tags: [ops-events]
+      summary: 创建运营事件
+      operationId: createOpsEvent
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XTraceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                event_type:
+                  type: string
+                start_time:
+                  type: string
+                  format: date-time
+                end_time:
+                  type: string
+                  format: date-time
+                config:
+                  type: object
+              required: [name, event_type, start_time, end_time]
+      responses:
+        '201':
+          description: 事件创建成功
+
+  /api/v1/ops/events/active:
+    get:
+      tags: [ops-events]
+      summary: 获取活跃运营事件
+      operationId: getActiveOpsEvents
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      responses:
+        '200':
+          description: 返回当前活跃事件
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/ops/events/{event_id}:
+    get:
+      tags: [ops-events]
+      summary: 获取运营事件详情
+      operationId: getOpsEvent
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 返回事件详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+    put:
+      tags: [ops-events]
+      summary: 更新运营事件
+      operationId: updateOpsEvent
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                config:
+                  type: object
+      responses:
+        '200':
+          description: 更新成功
+    delete:
+      tags: [ops-events]
+      summary: 删除运营事件
+      operationId: deleteOpsEvent
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: 删除成功
+
+  /api/v1/ops/events/{event_id}/activate:
+    post:
+      tags: [ops-events]
+      summary: 激活运营事件
+      operationId: activateOpsEvent
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 激活成功
+
+  /api/v1/ops/events/{event_id}/pause:
+    post:
+      tags: [ops-events]
+      summary: 暂停运营事件
+      operationId: pauseOpsEvent
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 暂停成功
+
+  /api/v1/ops/events/{event_id}/end:
+    post:
+      tags: [ops-events]
+      summary: 结束运营事件
+      operationId: endOpsEvent
+      security:
+        - bearerAuth: [ops]
+      x-roles: [ops]
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 结束成功
+
+  /api/v1/player/events/active:
+    get:
+      tags: [ops-events]
+      summary: 获取玩家可见活跃事件
+      operationId: getPlayerActiveEvents
+      security:
+        - bearerAuth: [events:read]
+      x-roles: [player]
+      parameters:
+        - $ref: '#/components/parameters/XPlayerId'
+      responses:
+        '200':
+          description: 返回玩家可见的活跃事件
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  # ============================================================
+  # 网关服务端点
+  # ============================================================
+
+  /api/v1/health:
+    get:
+      tags: [gateway]
+      summary: 网关健康检查
+      operationId: gatewayHealthCheck
+      security: []
+      responses:
+        '200':
+          description: 服务健康
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+
+  /api/v1/health/services:
+    get:
+      tags: [gateway]
+      summary: 全服务健康检查
+      operationId: allServicesHealthCheck
+      security: []
+      responses:
+        '200':
+          description: 各服务健康状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+
+  /api/v1/events/batch:
+    post:
+      tags: [gateway]
+      summary: 批量提交玩家事件
+      operationId: batchSubmitEvents
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/XTraceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                events:
+                  type: array
+                  items:
+                    type: object
+              required: [events]
+      responses:
+        '200':
+          description: 批量提交结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
 components:
   securitySchemes:
     bearerAuth:
