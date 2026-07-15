@@ -34,14 +34,14 @@ from .scenarios import (
     CONTENT_PACKAGE_DETAIL_SCENARIO,
     CONTENT_QUERY_SCENARIO,
     PLAYER_PROFILE_QUERY_SCENARIO,
+    QUERY_HIGH_CONCURRENCY_SCENARIO,
     VOTE_QUERY_SCENARIO,
+    VOTE_SUBMIT_HIGH_CONCURRENCY_SCENARIO,
     VOTE_SUBMIT_SCENARIO,
     WORLD_REGION_QUERY_SCENARIO,
     Scenario,
     default_scenarios,
 )
-from .threshold import check_thresholds
-
 
 SCENARIO_MAP: dict[str, Scenario] = {
     "vote_submit": VOTE_SUBMIT_SCENARIO,
@@ -50,6 +50,8 @@ SCENARIO_MAP: dict[str, Scenario] = {
     "world_region_query": WORLD_REGION_QUERY_SCENARIO,
     "player_profile_query": PLAYER_PROFILE_QUERY_SCENARIO,
     "content_package_detail": CONTENT_PACKAGE_DETAIL_SCENARIO,
+    "vote_submit_high": VOTE_SUBMIT_HIGH_CONCURRENCY_SCENARIO,
+    "query_high": QUERY_HIGH_CONCURRENCY_SCENARIO,
 }
 
 

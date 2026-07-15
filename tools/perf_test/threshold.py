@@ -150,6 +150,16 @@ DEFAULT_THRESHOLDS: dict[str, list[Threshold]] = {
         Threshold(name="content_package_detail_p99", metric="p99_ms", max_value=200.0, severity="warn"),
         Threshold(name="content_package_detail_error_rate", metric="error_rate", max_value=0.01, severity="blocker"),
     ],
+    "vote_submit_high": [
+        Threshold(name="vote_submit_high_p95", metric="p95_ms", max_value=300.0, severity="blocker"),
+        Threshold(name="vote_submit_high_p99", metric="p99_ms", max_value=800.0, severity="warn"),
+        Threshold(name="vote_submit_high_error_rate", metric="error_rate", max_value=0.02, severity="blocker"),
+    ],
+    "query_high": [
+        Threshold(name="query_high_p95", metric="p95_ms", max_value=500.0, severity="blocker"),
+        Threshold(name="query_high_p99", metric="p99_ms", max_value=1000.0, severity="warn"),
+        Threshold(name="query_high_error_rate", metric="error_rate", max_value=0.02, severity="blocker"),
+    ],
 }
 
 
