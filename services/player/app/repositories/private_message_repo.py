@@ -6,7 +6,7 @@
 import uuid
 from typing import Any
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.models import PrivateMessage
@@ -117,7 +117,7 @@ class PrivateMessageRepository:
                 )
             )
             .group_by(
-                func.case(
+                case(
                     (PrivateMessage.sender_id == player_id, PrivateMessage.receiver_id),
                     else_=PrivateMessage.sender_id,
                 )

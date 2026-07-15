@@ -133,6 +133,12 @@ async def test_player_region(test_player: Player) -> PlayerRegion:
 
 
 @pytest_asyncio.fixture
+async def db() -> AsyncGenerator[AsyncSession, None]:
+    async with TestSessionLocal() as session:
+        yield session
+
+
+@pytest_asyncio.fixture
 async def test_inventory_item(test_player: Player) -> PlayerInventory:
     item = PlayerInventory(
         inventory_id=uuid.uuid4(),
