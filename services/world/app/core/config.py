@@ -22,5 +22,10 @@ class Settings(BaseSettings):
 
     api_v1_prefix: str = "/api/v1"
 
+    allowed_origins: list[str] = ["http://localhost:8080", "http://127.0.0.1:8080"]
+
 
 settings = Settings()
+
+if settings.jwt_secret == "change-me-in-production" and settings.environment not in ("local", "test"):
+    raise ValueError("WORLD_JWT_SECRET 必须在环境变量中设置，禁止使用默认值")
