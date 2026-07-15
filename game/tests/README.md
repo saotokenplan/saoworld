@@ -57,6 +57,8 @@
 | test_world_map_navigation.gd | WorldMap 区域导航与进入 | 5 |
 | test_enemy.gd | Enemy 怪物实体 | 8 |
 | test_personal_center.gd | PersonalCenter 个人中心 | 1 |
+| test_feedback_manager.gd | FeedbackManager 用户反馈管理 | 18 |
+| test_feedback_panel.gd | FeedbackPanel 反馈面板 | 22 |
 
 ## 测试覆盖范围
 
@@ -71,6 +73,7 @@
 - **CombatManager**：战斗状态机、伤害计算、胜负判定
 - **InventoryManager**：背包数据管理、物品添加/移除/使用
 - **SaveManager**：存档读写、自动保存、备份管理、异步存档（Thread）、存档信息缓存（TTL）、缓存失效机制
+- **FeedbackManager**：反馈提交管理、类型/优先级验证、快捷方法（bug/suggestion/question）、待处理请求追踪、响应解析
 
 ### UI 组件测试
 - **VotingPanel**：信号声明、候选项选择状态、投票状态、提交按钮逻辑
@@ -86,6 +89,7 @@
 - **QuestPanel**：任务列表、详情展示、目标进度、奖励展示、任务接取
 - **WorldMap**：区域渲染、状态标识、点击选择、详情展示、区域导航
 - **ReputationPanel**：声望列表、详情展示、信号声明
+- **FeedbackPanel**：反馈表单、输入验证、长度限制、加载状态、消息显示、表单清空
 
 ### 场景与角色测试
 - **Player**：初始状态、重置状态、移动状态信号、输入方向、配置加载

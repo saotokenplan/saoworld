@@ -7,6 +7,7 @@ signal closed
 @onready var contribution_label: Label = $MarginContainer/VBoxContainer/PlayerInfoPanel/InfoVBox/ContributionLabel
 @onready var achievements_label: Label = $MarginContainer/VBoxContainer/PlayerInfoPanel/InfoVBox/AchievementsLabel
 @onready var refresh_button: Button = $MarginContainer/VBoxContainer/RefreshButton
+@onready var feedback_button: Button = $MarginContainer/VBoxContainer/FeedbackButton
 @onready var close_button: Button = $MarginContainer/VBoxContainer/Header/CloseButton
 @onready var tab_container: TabContainer = $MarginContainer/VBoxContainer/TabContainer
 
@@ -26,9 +27,12 @@ signal closed
 # 装备标签页
 @onready var equipment_list: ItemList = $MarginContainer/VBoxContainer/TabContainer/装备/EquipmentList
 
+var _feedback_panel: Control = null
+
 func _ready() -> void:
 	# 连接信号
 	refresh_button.pressed.connect(_on_refresh_pressed)
+	feedback_button.pressed.connect(_on_feedback_pressed)
 	close_button.pressed.connect(_on_close_pressed)
 	
 	# 连接 PlayerManager 信号
@@ -60,6 +64,16 @@ func _load_all_data() -> void:
 func _on_refresh_pressed() -> void:
 	"""刷新按钮点击"""
 	_load_all_data()
+
+func _on_feedback_pressed() -> void:
+	"""反馈按钮点击"""
+	if _feedback_panel == null:
+		var feedback_scene = load("res://scenes/ui/FeedbackPanel.tscn")
+		if feedback_scene:
+			_feedback_panel = feedback_scene.instantiate()
+			add_child(_feedback_panel)
+	if _feedback_panel:
+		_feedback_panel.show_panel()
 
 func _on_close_pressed() -> void:
 	"""关闭按钮点击"""
