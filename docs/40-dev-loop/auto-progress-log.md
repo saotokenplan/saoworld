@@ -2,6 +2,22 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-15 17:00 — auto-20260715-1700
+
+- 任务：S8-04 Bug修复与测试补全
+- 分支：auto/auto-20260715-1700
+- 状态：✅ 已完成
+- 工作内容：
+  - 修复 friend_repo.py `are_friends` Bug：双向好友记录导致 MultipleResultsFound 异常
+  - 修复 private_message_repo.py `get_recent_conversations` Bug：func.case → sqlalchemy.case
+  - 补充缺失的 DELETE /player/messages/{message_id} API 路由
+  - 重写 test_private_message_api.py：13 个空壳 → 14 个完整测试用例
+  - 添加 conftest.py 中缺失的 db fixture
+  - 更新 project-status.md：Sprint 8 全部完成
+- 测试结果：player-service 202 个测试全部通过，ruff 检查通过，无回归
+- 修改文件：8 个
+- 合并状态：待合并
+
 ## 2026-07-15 16:00 — auto-20260715-1600
 
 - 任务：S8-05 安全审计（剩余4个服务）
