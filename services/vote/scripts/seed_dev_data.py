@@ -27,42 +27,69 @@ async def seed():
             VoteCandidate(
                 candidate_id=uuid.uuid4(),
                 vote_cycle_id=cycle_id,
-                title="探索迷雾森林",
-                summary="玩家深入北部迷雾森林，揭开古老遗迹的秘密",
-                description="一条探索向的主线，新增森林区域和3个NPC",
-                region_scope=["forest_north"],
+                title="探索幽光森林深处",
+                summary="玩家深入幽光森林深处，探索古树遗迹，揭开森林守护者的秘密",
+                description="探索向主线，新增森林深处区域、2个关键地点、3个NPC（古树精灵、森林守护者、迷路学者）、2个支线任务（古树的试炼、精灵的请求）",
+                region_scope=["region_west_forest"],
                 risk_tags=["content_risk"],
+                generated_params={
+                    "template_type": "quest",
+                    "template_id": "quest_main",
+                    "count": 3,
+                    "region_id": "region_west_forest",
+                    "chapter_id": "chapter_02",
+                    "theme": "exploration",
+                    "difficulty": "medium",
+                },
                 status="active",
             ),
             VoteCandidate(
                 candidate_id=uuid.uuid4(),
                 vote_cycle_id=cycle_id,
-                title="重建边境哨所",
-                summary="协助村民重建被摧毁的边境哨所，开启贸易路线",
-                description="一条建设向的主线，新增建造系统和商人NPC",
-                region_scope=["border_outpost"],
+                title="征服南部绿洲沙漠",
+                summary="前往南部绿洲，解开沙漠神庙的秘密，击败沙漠帝王",
+                description="战斗向主线，新增沙漠神庙区域、3个关键地点、3个NPC（神庙祭司、沙漠侦察员、商会会长）、2个支线任务（商队救援、稀有商品）",
+                region_scope=["region_south_oasis"],
+                risk_tags=["combat_risk"],
+                generated_params={
+                    "template_type": "quest",
+                    "template_id": "quest_main",
+                    "count": 3,
+                    "region_id": "region_south_oasis",
+                    "chapter_id": "chapter_02",
+                    "theme": "combat",
+                    "difficulty": "hard",
+                },
+                status="active",
+            ),
+            VoteCandidate(
+                candidate_id=uuid.uuid4(),
+                vote_cycle_id=cycle_id,
+                title="扩展铁卫城周边",
+                summary="扩建铁卫城周边区域，增加新的聚落和NPC互动",
+                description="建设向主线，新增铁卫城郊区区域、2个关键地点、2个NPC（铁匠、商人）、3个支线任务（装备打造、物资采购、区域声望）",
+                region_scope=["core_region"],
                 risk_tags=["economy_risk"],
-                status="active",
-            ),
-            VoteCandidate(
-                candidate_id=uuid.uuid4(),
-                vote_cycle_id=cycle_id,
-                title="追踪暗影盗贼",
-                summary="追查在城镇中行窃的神秘盗贼组织",
-                description=None,
-                region_scope=["town_square"],
-                risk_tags=[],
+                generated_params={
+                    "template_type": "settlement",
+                    "template_id": "settlement_base",
+                    "count": 1,
+                    "region_id": "core_region",
+                    "chapter_id": "chapter_01",
+                    "theme": "building",
+                    "settlement_type": "town",
+                },
                 status="active",
             ),
         ]
         cycle = VoteCycle(
             vote_cycle_id=cycle_id,
-            chapter_id="ch_prologue_01",
+            chapter_id="chapter_02",
             status="open",
             starts_at=now - timedelta(hours=1),
-            ends_at=now + timedelta(hours=23),
+            ends_at=now + timedelta(days=7),
             created_by="dev_seed",
-            created_reason="MVP development seed data",
+            created_reason="Public beta seed data - chapter 2 vote cycle",
             candidates=candidates,
         )
         session.add(cycle)
@@ -71,9 +98,12 @@ async def seed():
         print(f"Seeded vote cycle: {cycle_id}")
         print(f"  Chapter: {cycle.chapter_id}")
         print(f"  Status: {cycle.status}")
+        print(f"  Duration: {cycle.starts_at} to {cycle.ends_at}")
         print("  Candidates:")
         for c in candidates:
             print(f"    - {c.title} ({c.candidate_id})")
+            print(f"      Region Scope: {c.region_scope}")
+            print(f"      Generated Params: {c.generated_params}")
 
 
 if __name__ == "__main__":
