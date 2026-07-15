@@ -4,7 +4,7 @@ extends GutTest
 var enemy: Area2D
 
 func before_each() -> void:
-	enemy = autofree(load("res://scenes/enemies/Enemy.tscn").instantiate())
+	enemy = autofree(load("res://scenes/npc/Enemy.tscn").instantiate())
 	add_child(enemy)
 
 func test_initial_state() -> void:

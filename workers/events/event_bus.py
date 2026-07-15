@@ -20,7 +20,7 @@ class EventBus:
 
     async def disconnect(self) -> None:
         if self._redis is not None:
-            await self._redis.close()
+            await self._redis.aclose()
             self._redis = None
 
     async def publish(
