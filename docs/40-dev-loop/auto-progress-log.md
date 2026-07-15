@@ -16,7 +16,7 @@
   - 更新 project-status.md：Sprint 8 全部完成
 - 测试结果：player-service 202 个测试全部通过，ruff 检查通过，无回归
 - 修改文件：8 个
-- 合并状态：待合并
+- 合并状态：✅ 已合并到 feature-prd（bcb2779）
 
 ## 2026-07-15 16:00 — auto-20260715-1600
 
