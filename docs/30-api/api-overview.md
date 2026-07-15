@@ -78,39 +78,358 @@
 | `content-service` | 内容包、灰度投放、版本归档、回滚 | 部分 |
 | `ops-service` | 运营后台入口、指标汇总、Issue 触发 | 否 |
 
-## 当前接口清单
+## 完整接口清单（176 个端点）
 
-### 世界与任务
+> 以下清单基于代码实际实现审计，按服务分组。所有端点均需 `Authorization: Bearer <token>` 认证（除健康检查外）。
 
-| 方法 | 路径 | 角色 | 作用 | 建议归属服务 |
-|---|---|---|---|---|
-| `GET` | `/api/v1/world/regions` | `player` | 获取当前可见区域列表 | `world-service` |
-| `GET` | `/api/v1/world/regions/{region_id}` | `player` | 获取区域详情和状态 | `world-service` |
-| `GET` | `/api/v1/quests` | `player` | 获取玩家任务列表 | `player-service` 或 `world-service` |
+### vote-service（27 个端点）
 
-### 投票
+#### 玩家接口
 
-| 方法 | 路径 | 角色 | 作用 | 建议归属服务 |
-|---|---|---|---|---|
-| `GET` | `/api/v1/votes/current` | `player` | 获取当前投票周期与候选项 | `vote-service` |
-| `POST` | `/api/v1/votes/submit` | `player` | 提交投票 | `vote-service` |
-| `GET` | `/api/v1/votes/history` | `player` | 获取历史投票结果与落地情况 | `vote-service` |
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| GET | `/api/v1/votes/current` | `votes:read` | 获取当前投票周期与候选项 |
+| GET | `/api/v1/votes/current/progress` | `votes:read` | 获取当前投票进度 |
+| POST | `/api/v1/votes/submit` | `votes:submit` | 提交投票 |
+| GET | `/api/v1/votes/history` | `votes:history:read` | 获取历史投票记录 |
+| GET | `/api/v1/votes/history/{vote_cycle_id}/chart-data` | `votes:history:read` | 获取投票结果图表数据 |
+| GET | `/api/v1/votes/history/{vote_cycle_id}/review` | `votes:history:read` | 获取投票复盘报告 |
+| GET | `/api/v1/votes/discussions/{vote_cycle_id}` | `votes:discussions:read` | 列出投票讨论 |
+| POST | `/api/v1/votes/discussions/{vote_cycle_id}` | `votes:discussions:write` | 创建讨论 |
+| POST | `/api/v1/votes/discussions/{discussion_id}/like` | `votes:discussions:write` | 点赞讨论 |
+| POST | `/api/v1/votes/discussions/{discussion_id}/unlike` | `votes:discussions:write` | 取消点赞讨论 |
+| DELETE | `/api/v1/votes/discussions/{discussion_id}` | `votes:discussions:write` | 删除讨论 |
+| GET | `/api/v1/votes/discussions/{discussion_id}/replies` | `votes:discussions:read` | 列出讨论回复 |
+| POST | `/api/v1/votes/discussions/{discussion_id}/replies` | `votes:discussions:write` | 创建回复 |
+| POST | `/api/v1/votes/replies/{reply_id}/like` | `votes:discussions:write` | 点赞回复 |
+| POST | `/api/v1/votes/replies/{reply_id}/unlike` | `votes:discussions:write` | 取消点赞回复 |
+| DELETE | `/api/v1/votes/replies/{reply_id}` | `votes:discussions:write` | 删除回复 |
 
-### 内容更新
+#### 运营接口
 
-| 方法 | 路径 | 角色 | 作用 | 建议归属服务 |
-|---|---|---|---|---|
-| `GET` | `/api/v1/content/updates` | `player` | 获取当前玩家可见的新内容包 | `content-service` |
-| `GET` | `/api/v1/content/packages/{content_package_id}` | `player` | 获取内容包摘要 | `content-service` |
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| POST | `/api/v1/ops/vote-cycles` | `ops:vote-cycles:write` | 创建投票周期 |
+| POST | `/api/v1/ops/vote-cycles/{id}/schedule` | `ops:vote-cycles:write` | 调度投票周期（draft→scheduled） |
+| POST | `/api/v1/ops/vote-cycles/{id}/open` | `ops:vote-cycles:write` | 开启投票周期（scheduled→open） |
+| POST | `/api/v1/ops/vote-cycles/{id}/close` | `ops:vote-cycles:write` | 关闭投票周期（open→closed） |
+| POST | `/api/v1/ops/vote-cycles/{id}/finalize` | `ops:vote-cycles:write` | 确认投票周期（closed→finalized） |
+| GET | `/api/v1/ops/anomalies` | `ops` | 列出异常记录 |
+| GET | `/api/v1/ops/anomalies/stats` | `ops` | 获取异常统计 |
+| GET | `/api/v1/ops/anomalies/{anomaly_id}` | `ops` | 获取异常详情 |
+| PATCH | `/api/v1/ops/anomalies/{anomaly_id}/resolve` | `ops` | 标记异常已解决 |
+| PATCH | `/api/v1/ops/anomalies/{anomaly_id}/false-positive` | `ops` | 标记异常误报 |
 
-### 运营与审核
+### world-service（26 个端点）
 
-| 方法 | 路径 | 角色 | 作用 | 建议归属服务 |
-|---|---|---|---|---|
-| `POST` | `/api/v1/ops/vote-cycles` | `ops` | 创建投票周期 | `ops-service` |
-| `POST` | `/api/v1/ops/review/{object_id}/approve` | `reviewer` 或 `ops` | 批准内容对象 | `review-service` |
-| `POST` | `/api/v1/ops/content-packages/{id}/release` | `ops` | 发布内容包 | `content-service` |
-| `POST` | `/api/v1/ops/content-packages/{id}/rollback` | `ops` | 回滚内容包 | `content-service` |
+#### 玩家接口
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| GET | `/api/v1/world/regions` | `world:read` | 获取可见区域列表 |
+| GET | `/api/v1/world/regions/{region_id}` | `world:read` | 获取区域详情 |
+| GET | `/api/v1/world/skeleton` | `world:read` | 获取当前世界骨架快照 |
+| GET | `/api/v1/world/npcs` | `world:read` | 获取 NPC 列表 |
+| GET | `/api/v1/world/npcs/{npc_id}` | `world:read` | 获取 NPC 详情（by UUID） |
+| GET | `/api/v1/world/npcs/by-key/{npc_key}` | `world:read` | 获取 NPC 详情（by key） |
+| GET | `/api/v1/world/quests` | `world:read` | 获取任务列表 |
+| GET | `/api/v1/world/quests/{quest_id}` | `world:read` | 获取任务详情（by UUID） |
+| GET | `/api/v1/world/quests/by-key/{quest_key}` | `world:read` | 获取任务详情（by key） |
+| GET | `/api/v1/world/items` | `items:read` | 获取物品列表 |
+| GET | `/api/v1/world/items/{item_key}` | `items:read` | 获取物品详情 |
+| GET | `/api/v1/world/monsters` | `world:read` | 获取怪物定义列表 |
+| GET | `/api/v1/world/monsters/{monster_id}` | `world:read` | 获取怪物详情 |
+| GET | `/api/v1/world/bosses` | `world:read` | 获取区域 Boss 列表 |
+| GET | `/api/v1/world/bosses/{monster_key}` | `world:read` | 获取 Boss 详情 |
+
+#### 运营接口
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| POST | `/api/v1/ops/world/regions` | `ops` | 创建区域 |
+| POST | `/api/v1/ops/world/regions/{region_id}/status` | `ops` | 更新区域状态 |
+| POST | `/api/v1/ops/world/skeleton` | `ops` | 创建世界骨架快照 |
+| POST | `/api/v1/ops/world/npcs` | `ops` | 创建 NPC |
+| POST | `/api/v1/ops/world/quests` | `ops` | 创建任务 |
+| POST | `/api/v1/ops/world/items` | `ops` | 创建物品 |
+| PUT | `/api/v1/ops/world/items/{item_id}` | `ops` | 更新物品 |
+| DELETE | `/api/v1/ops/world/items/{item_id}` | `ops` | 删除物品 |
+| POST | `/api/v1/ops/world/monsters` | `ops` | 创建怪物定义 |
+| POST | `/api/v1/ops/world/monsters/bosses` | `ops` | 创建 Boss 定义 |
+
+### content-service（7 个端点）
+
+#### 玩家接口
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| GET | `/api/v1/content/updates` | `content:read` | 获取玩家可见内容更新列表 |
+| GET | `/api/v1/content/packages/{package_id}` | `content:read` | 获取内容包详情 |
+| GET | `/api/v1/content/packages/by-vote-cycle/{vote_cycle_id}` | `content:read` | 按投票周期获取内容包 |
+
+#### 运营接口
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| POST | `/api/v1/ops/content-packages` | `content:release` | 创建内容包 |
+| POST | `/api/v1/ops/content-packages/{package_id}/release` | `content:release` | 发布内容包（灰度/全量） |
+| POST | `/api/v1/ops/content-packages/{package_id}/rollback` | `content:rollback` | 回滚内容包 |
+| GET | `/api/v1/health` | 公开 | 健康检查 |
+
+### generation-service（10 个端点）
+
+#### 运营接口
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| GET | `/api/v1/ops/generation/requests` | `ops` | 列出生成请求 |
+| GET | `/api/v1/ops/generation/requests/{request_id}` | `ops` | 获取生成请求详情 |
+| POST | `/api/v1/ops/generation/requests` | `ops` | 创建生成请求 |
+| POST | `/api/v1/ops/generation/requests/{request_id}/status` | `ops` | 更新生成请求状态 |
+| GET | `/api/v1/ops/generation/objects` | `ops` | 列出生成对象 |
+| GET | `/api/v1/ops/generation/objects/{object_id}` | `ops` | 获取生成对象详情 |
+| POST | `/api/v1/ops/generation/objects/{object_id}/status` | `review:approve` | 更新生成对象状态（审核） |
+| POST | `/api/v1/ops/generation/requests/{request_id}/objects` | `ops` | 创建生成对象 |
+| GET | `/api/v1/ops/generation/cost` | `ops` | 获取生成成本统计 |
+| GET | `/api/v1/health` | 公开 | 健康检查 |
+
+### review-service（7 个端点）
+
+#### 运营接口
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| GET | `/api/v1/ops/review/records` | `ops` | 列出审核记录 |
+| GET | `/api/v1/ops/review/records/{review_id}` | `ops` | 获取审核记录详情 |
+| POST | `/api/v1/ops/review/records` | `ops` | 创建审核记录 |
+| POST | `/api/v1/ops/review/records/{review_id}/result` | `review:approve` | 更新审核结果 |
+| POST | `/api/v1/ops/review/{object_id}/approve` | `review:approve` | 批准内容对象 |
+| POST | `/api/v1/ops/review/{object_id}/reject` | `review:approve` | 拒绝内容对象 |
+| GET | `/api/v1/health` | 公开 | 健康检查 |
+
+### player-service（53 个端点）
+
+#### 玩家接口 — 基础
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| GET | `/api/v1/player/info` | player | 获取玩家基本信息 |
+| GET | `/api/v1/player/profile` | player | 获取玩家档案（聚合） |
+| GET | `/api/v1/player/level` | player | 获取玩家等级 |
+| GET | `/api/v1/player/contribution` | `contribution:read` | 获取贡献度 |
+
+#### 玩家接口 — 任务
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| GET | `/api/v1/player/quests` | `quests:read` | 获取玩家任务列表 |
+| GET | `/api/v1/player/quests/{quest_id}` | `quests:read` | 获取玩家任务详情 |
+| POST | `/api/v1/player/quests/{quest_id}/accept` | `quests:write` | 接受任务 |
+| POST | `/api/v1/player/quests/{quest_id}/progress` | `quests:write` | 更新任务进度 |
+| POST | `/api/v1/player/quests/{quest_id}/complete` | `quests:write` | 完成任务 |
+| POST | `/api/v1/player/quests/{quest_id}/fail` | `quests:write` | 失败任务 |
+
+#### 玩家接口 — 区域与声望
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| GET | `/api/v1/player/regions` | player | 获取玩家区域列表 |
+| GET | `/api/v1/player/reputation/{region_id}` | player | 获取指定区域声望 |
+| GET | `/api/v1/player/reputation` | player | 获取全部声望 |
+
+#### 玩家接口 — 背包
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| GET | `/api/v1/player/inventory` | player | 获取玩家背包 |
+| POST | `/api/v1/player/inventory/use` | player | 使用物品 |
+
+#### 玩家接口 — 装备
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| GET | `/api/v1/player/equipment` | player | 获取装备信息 |
+| GET | `/api/v1/player/equipment/stats` | player | 获取装备属性统计 |
+| POST | `/api/v1/player/equipment/equip` | player | 装备物品 |
+| POST | `/api/v1/player/equipment/unequip` | player | 卸下装备 |
+
+#### 玩家接口 — 成就
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| GET | `/api/v1/player/achievements` | `achievements:read` | 列出成就定义 |
+| GET | `/api/v1/player/achievements/{achievement_key}` | `achievements:read` | 获取成就定义详情 |
+| GET | `/api/v1/player/me/achievements` | `achievements:read` | 列出我的成就 |
+| POST | `/api/v1/player/me/achievements/{achievement_key}/claim` | `achievements:unlock` | 领取成就奖励 |
+
+#### 玩家接口 — 好友
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| POST | `/api/v1/player/friends/request` | `friends:write` | 发送好友请求 |
+| POST | `/api/v1/player/friends/accept` | `friends:write` | 接受好友请求 |
+| POST | `/api/v1/player/friends/reject` | `friends:write` | 拒绝好友请求 |
+| DELETE | `/api/v1/player/friends/{friend_id}` | `friends:write` | 删除好友 |
+| GET | `/api/v1/player/friends` | `friends:read` | 获取好友列表 |
+| GET | `/api/v1/player/friends/requests` | `friends:read` | 获取好友请求列表 |
+| GET | `/api/v1/player/friends/{friend_id}/status` | `friends:read` | 获取好友状态 |
+
+#### 玩家接口 — 私信
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| POST | `/api/v1/player/messages` | `messages:write` | 发送私信 |
+| GET | `/api/v1/player/messages/conversations` | `messages:read` | 获取会话列表 |
+| GET | `/api/v1/player/messages/conversations/{friend_id}` | `messages:read` | 获取会话消息 |
+| POST | `/api/v1/player/messages/{message_id}/read` | `messages:write` | 标记消息已读 |
+| GET | `/api/v1/player/messages/unread` | `messages:read` | 获取未读消息 |
+| GET | `/api/v1/player/messages/unread/count` | `messages:read` | 获取未读消息数 |
+
+#### 玩家接口 — 公会
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| POST | `/api/v1/player/guilds` | `guild:write` | 创建公会 |
+| GET | `/api/v1/player/guilds/my` | `guild:read` | 获取我的公会 |
+| GET | `/api/v1/player/guilds/{guild_id}` | `guild:read` | 获取公会详情 |
+| PUT | `/api/v1/player/guilds/{guild_id}` | `guild:write` | 更新公会信息 |
+| DELETE | `/api/v1/player/guilds/{guild_id}` | `guild:write` | 解散公会 |
+| POST | `/api/v1/player/guilds/{guild_id}/members` | `guild:write` | 邀请公会成员 |
+| DELETE | `/api/v1/player/guilds/{guild_id}/members/{player_id}` | `guild:write` | 移除公会成员 |
+| POST | `/api/v1/player/guilds/{guild_id}/leave` | `guild:write` | 离开公会 |
+| POST | `/api/v1/player/guilds/{guild_id}/transfer` | `guild:write` | 转让会长 |
+| GET | `/api/v1/player/guilds/{guild_id}/members` | `guild:read` | 获取公会成员列表 |
+
+#### 玩家接口 — 公会聊天
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| POST | `/api/v1/player/guilds/{guild_id}/messages` | `guild:write` | 发送公会消息 |
+| GET | `/api/v1/player/guilds/{guild_id}/messages` | `guild:read` | 获取公会消息 |
+| POST | `/api/v1/player/guilds/{guild_id}/messages/read` | `guild:write` | 标记公会消息已读 |
+| GET | `/api/v1/player/guilds/{guild_id}/messages/unread-count` | `guild:read` | 获取未读公会消息数 |
+| DELETE | `/api/v1/player/guilds/{guild_id}/messages/{message_id}` | `guild:write` | 删除公会消息 |
+
+#### 玩家接口 — 社交概览
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| GET | `/api/v1/player/social/overview` | `social:read` | 获取社交概览 |
+
+#### 运营接口
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| POST | `/api/v1/ops/players` | `ops` | 创建玩家 |
+| GET | `/api/v1/ops/players` | `ops` | 列出玩家 |
+| GET | `/api/v1/ops/players/{player_id}` | `ops` | 获取玩家详情 |
+| PUT | `/api/v1/ops/players/{player_id}` | `ops` | 更新玩家 |
+| POST | `/api/v1/ops/players/{player_id}/regions/{region_id}/unlock` | `ops` | 解锁区域 |
+| GET | `/api/v1/ops/players/{player_id}/quests` | `ops` | 获取玩家任务 |
+| POST | `/api/v1/ops/players/{player_id}/quests` | `ops` | 创建玩家任务 |
+| PATCH | `/api/v1/ops/players/{player_id}/quests/{quest_id}/status` | `ops` | 更新任务状态 |
+| POST | `/api/v1/ops/players/{player_id}/inventory` | `ops` | 添加背包物品 |
+| DELETE | `/api/v1/ops/players/{player_id}/inventory/{item_key}` | `ops` | 移除背包物品 |
+| POST | `/api/v1/ops/players/{player_id}/reputation/{region_id}/adjust` | `ops` | 调整声望 |
+| POST | `/api/v1/ops/players/{player_id}/experience` | `ops` | 增加经验 |
+| POST | `/api/v1/ops/players/{player_id}/contribution` | `ops` | 增加贡献度 |
+| POST | `/api/v1/ops/achievements` | `ops` | 创建成就定义 |
+| POST | `/api/v1/ops/players/{player_id}/achievements/{achievement_key}/unlock` | `ops` | 解锁成就 |
+
+### ops-service（42 个端点）
+
+#### 运营接口 — 仪表盘与分析
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| GET | `/api/v1/ops/dashboard` | `ops` | 获取运营仪表盘 |
+| GET | `/api/v1/ops/dashboard/history` | `ops` | 获取仪表盘历史 |
+| GET | `/api/v1/ops/actions` | `ops` | 获取运营操作记录列表 |
+| GET | `/api/v1/ops/actions/{action_id}` | `ops` | 获取运营操作详情 |
+| GET | `/api/v1/ops/system/status` | `ops` | 获取系统状态 |
+
+#### 运营接口 — 数据分析
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| GET | `/api/v1/ops/analytics/player-metrics` | `ops` | 获取玩家指标 |
+| GET | `/api/v1/ops/analytics/region-metrics` | `ops` | 获取区域指标 |
+| GET | `/api/v1/ops/analytics/trends` | `ops` | 获取趋势数据 |
+| GET | `/api/v1/ops/analytics/reports` | `ops` | 获取分析报告列表 |
+| GET | `/api/v1/ops/analytics/dashboard/overview` | `ops` | 获取分析总览 |
+| GET | `/api/v1/ops/analytics/dashboard/regions` | `ops` | 获取区域分析 |
+| GET | `/api/v1/ops/analytics/dashboard/quests` | `ops` | 获取任务分析 |
+| GET | `/api/v1/ops/analytics/dashboard/votes` | `ops` | 获取投票分析 |
+
+#### 运营接口 — 洞察与需求
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| GET | `/api/v1/insights` | `ops` | 获取洞察列表 |
+| GET | `/api/v1/insights/{insight_id}` | `ops` | 获取洞察详情 |
+| POST | `/api/v1/ops/insights/{insight_id}/generate-requirement` | `ops` | 从洞察生成需求 |
+| GET | `/api/v1/ops/requirements` | `ops` | 获取需求列表 |
+| GET | `/api/v1/ops/requirements/{requirement_id}` | `ops` | 获取需求详情 |
+| POST | `/api/v1/ops/requirements/{requirement_id}/approve` | `ops` | 批准需求 |
+
+#### 运营接口 — 投票管理代理
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| POST | `/api/v1/ops/vote-cycles` | `ops` | 创建投票周期（代理） |
+| POST | `/api/v1/ops/vote-cycles/{id}/schedule` | `ops` | 调度投票周期（代理） |
+| POST | `/api/v1/ops/vote-cycles/{id}/open` | `ops` | 开启投票周期（代理） |
+| POST | `/api/v1/ops/vote-cycles/{id}/close` | `ops` | 关闭投票周期（代理） |
+| POST | `/api/v1/ops/vote-cycles/{id}/finalize` | `ops` | 确认投票周期（代理） |
+| GET | `/api/v1/ops/vote-cycles` | `ops` | 列出投票周期（代理） |
+| GET | `/api/v1/ops/vote-cycles/{vote_cycle_id}` | `ops` | 获取投票周期详情（代理） |
+
+#### 运营接口 — 内容管理代理
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| POST | `/api/v1/ops/content-packages/{id}/release` | `ops` | 发布内容包（代理） |
+| POST | `/api/v1/ops/content-packages/{id}/rollback` | `ops` | 回滚内容包（代理） |
+| GET | `/api/v1/ops/content-packages` | `ops` | 列出内容包（代理） |
+| GET | `/api/v1/ops/content-packages/{content_package_id}` | `ops` | 获取内容包详情（代理） |
+
+#### 运营接口 — 审核工作流代理
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| POST | `/api/v1/ops/review/{object_id}/approve` | `ops` | 批准审核对象（代理） |
+| POST | `/api/v1/ops/review/{object_id}/reject` | `ops` | 拒绝审核对象（代理） |
+| GET | `/api/v1/ops/review/objects` | `ops` | 列出审核对象（代理） |
+| GET | `/api/v1/ops/review/stats` | `ops` | 获取审核统计（代理） |
+
+#### 运营接口 — 运营事件
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| POST | `/api/v1/ops/events` | `ops` | 创建运营事件 |
+| GET | `/api/v1/ops/events` | `ops` | 列出运营事件 |
+| GET | `/api/v1/ops/events/active` | `ops` | 获取活跃运营事件 |
+| GET | `/api/v1/ops/events/{event_id}` | `ops` | 获取运营事件详情 |
+| PUT | `/api/v1/ops/events/{event_id}` | `ops` | 更新运营事件 |
+| POST | `/api/v1/ops/events/{event_id}/activate` | `ops` | 激活运营事件 |
+| POST | `/api/v1/ops/events/{event_id}/pause` | `ops` | 暂停运营事件 |
+| POST | `/api/v1/ops/events/{event_id}/end` | `ops` | 结束运营事件 |
+| DELETE | `/api/v1/ops/events/{event_id}` | `ops` | 删除运营事件 |
+
+#### 玩家接口
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| GET | `/api/v1/player/events/active` | `events:read` | 获取玩家可见活跃事件 |
+
+### gateway-service（4 个端点）
+
+| 方法 | 路径 | Scope | 说明 |
+|------|------|-------|------|
+| GET | `/api/v1/health` | 公开 | 网关健康检查 |
+| GET | `/api/v1/health/services` | 公开 | 全服务健康检查 |
+| POST | `/api/v1/events/batch` | — | 批量提交玩家事件 |
+| * | `/{full_path:path}` | — | 全路径反向代理 |
 
 ## 请求与响应样例
 
@@ -198,21 +517,14 @@
 | `api-examples-ops.md` | 运营仪表盘、运营操作记录、系统状态监控接口样例 |
 | `api-examples-gateway.md` | 网关健康检查、服务状态监控接口样例 |
 | `openapi-draft.md` | OpenAPI 草案入口、分批次阅读片段 |
-| `openapi-v1-draft.yaml` | **权威**单文件 OpenAPI 3.1 草案（12 个接口） |
+| `openapi-v1-draft.yaml` | **权威**单文件 OpenAPI 3.1 草案（覆盖全部 8 个服务） |
 
 ## 需要后续补齐的内容
 
-- 第二批/第三批接口的字段级校验错误 details 样例
+- 新增端点的字段级校验错误 details 样例
 - 成功响应包装的复用层抽象
-- 更完整的幂等策略说明（当前 `Idempotency-Key` 头已定义，但冲突响应行为待细化）
-- 服务端实现阶段：将预留错误码（如 `INTERNAL_ERROR`、`TOKEN_EXPIRED`）落地
-- 仓库策略确认后，决定是否按服务拆分子草案
-
-## 建议下一步
-
-1. 选定首个最小落地目标（建议投票链路），进入服务端工程初始化。
-2. 实现过程中根据代码实际约束迭代 OpenAPI 草案。
-3. 仓库策略明确后，决定单文件拆分方案。
+- 更完整的幂等策略说明（`Idempotency-Key` 冲突响应行为待细化）
+- 按服务拆分 OpenAPI 子草案，降低单文件复杂度
 
 ## 与其他文档的关系
 
