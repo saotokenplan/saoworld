@@ -1,0 +1,81 @@
+[gd_scene load_steps=2 format=3 uid="uid://feedbackpanel001"]
+
+[ext_resource type="Script" path="res://scripts/ui/feedback_panel.gd" id="1_fp"]
+
+[node name="FeedbackPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_fp")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = 40.0
+offset_right = -40.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "用户反馈"
+horizontal_alignment = 1
+
+[node name="FeedbackTypeOption" type="OptionButton" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="PriorityOption" type="OptionButton" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="TitleInput" type="LineEdit" parent="VBoxContainer"]
+layout_mode = 2
+placeholder_text = "请输入反馈标题"
+
+[node name="ContentInput" type="TextEdit" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 200)
+placeholder_text = "请详细描述您的反馈内容..."
+
+[node name="RegionInput" type="LineEdit" parent="VBoxContainer"]
+layout_mode = 2
+placeholder_text = "相关区域（可选）"
+
+[node name="ChapterInput" type="LineEdit" parent="VBoxContainer"]
+layout_mode = 2
+placeholder_text = "相关章节（可选）"
+
+[node name="MessageLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = ""
+horizontal_alignment = 1
+
+[node name="LoadingIndicator" type="Control" parent="VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 20)
+visible = false
+
+[node name="LoadingLabel" type="Label" parent="VBoxContainer/LoadingIndicator"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+text = "提交中..."
+horizontal_alignment = 1
+
+[node name="SubmitButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "提交反馈"
+
+[node name="CancelButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "取消"

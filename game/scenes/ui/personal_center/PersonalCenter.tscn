@@ -73,6 +73,10 @@ text = "成就：加载中..."
 layout_mode = 2
 text = "刷新数据"
 
+[node name="FeedbackButton" type="Button" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "用户反馈"
+
 [node name="TabContainer" type="TabContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
