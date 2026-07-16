@@ -34,6 +34,22 @@ func fetch_my_guild() -> void:
 
 	_set_loading(false)
 
+func fetch_guild_info(guild_id: String) -> void:
+	if guild_id == "":
+		guild_error.emit("INVALID_GUILD_ID", "公会ID不能为空")
+		return
+
+	_set_loading(true)
+	var result: Dictionary = APIManager.get("/guild/%s" % guild_id)
+
+	if result.get("success", false):
+		_guild_info = result.get("data", {})
+		guild_info_loaded.emit()
+	else:
+		_handle_error(result)
+
+	_set_loading(false)
+
 func fetch_guild_members(guild_id: String) -> void:
 	if guild_id == "":
 		guild_error.emit("INVALID_GUILD_ID", "公会ID不能为空")
