@@ -126,6 +126,9 @@ from app.repositories.private_message_repo import PrivateMessageRepository
 from app.repositories.player_quest_repo import PlayerQuestRepository
 from app.repositories.player_region_repo import PlayerRegionRepository
 from app.repositories.player_repo import PlayerRepository
+from app.repositories.trade_repo import TradeRepository
+from app.repositories.auction_repo import AuctionRepository
+from app.repositories.wallet_repo import WalletRepository
 from app.schemas.player import (
     AcceptQuestRequest,
     AchievementDefinitionListResponse,
@@ -205,6 +208,20 @@ from app.schemas.player import (
     EquipmentStatsResponse,
     get_reputation_level,
     REPUTATION_LEVEL_THRESHOLDS,
+    TradeStatus,
+    TradeItemSchema,
+    CreateTradeRequest,
+    TradeResponse,
+    TradeListResponse,
+    AuctionStatus,
+    CreateAuctionRequest,
+    AuctionResponse,
+    AuctionListResponse,
+    BidRequest,
+    TransactionType,
+    WalletResponse,
+    WalletTransactionResponse,
+    WalletTransactionListResponse,
 )
 
 router = APIRouter()
@@ -5083,5 +5100,837 @@ async def claim_guild_quest_reward(
     return EnvelopeResponse(
         request_id=request_id,
         data=GuildQuestProgressResponse.model_validate(progress),
+        trace_id=trace_id,
+    )
+
+
+# === 交易系统 API ===
+
+
+@router.post(
+    "/player/trades",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        401: {"description": "Unauthorized"},
+        400: {"description": "Invalid request"},
+        404: {"description": "Recipient not found"},
+        409: {"description": "Insufficient inventory/coins"},
+    },
+    tags=["trade"],
+)
+async def create_trade(
+    request: Request,
+    body: CreateTradeRequest,
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[TradeResponse]:
+    """发起交易请求"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_trade_create")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if player_uuid == body.recipient_id:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "不能与自己交易",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    trade_repo = TradeRepository(db)
+    inventory_repo = InventoryRepository(db)
+    wallet_repo = WalletRepository(db)
+
+    player_repo = PlayerRepository(db)
+    recipient = await player_repo.get_player_by_id(body.recipient_id)
+    if recipient is None:
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_NOT_FOUND,
+            "目标玩家不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if body.offer_items:
+        for item in body.offer_items:
+            has_item = await inventory_repo.has_item(player_uuid, item.item_key, item.quantity)
+            if not has_item:
+                raise_player_error(
+                    PlayerErrorCodes.INSUFFICIENT_INVENTORY,
+                    f"物品 {item.item_key} 数量不足",
+                    request_id,
+                    status_code=status.HTTP_409_CONFLICT,
+                )
+
+    if body.offer_coins > 0:
+        wallet = await wallet_repo.get_wallet(player_uuid)
+        if wallet is None or wallet.gold_coins < body.offer_coins:
+            raise_player_error(
+                PlayerErrorCodes.INSUFFICIENT_GOLD,
+                "金币不足",
+                request_id,
+                status_code=status.HTTP_409_CONFLICT,
+            )
+
+    trade = await trade_repo.create_trade(
+        initiator_id=player_uuid,
+        recipient_id=body.recipient_id,
+        offer_items=body.offer_items,
+        offer_coins=body.offer_coins,
+        request_items=body.request_items,
+        request_coins=body.request_coins,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=TradeResponse.model_validate(trade),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/trades/{trade_id}/accept",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Trade not found"},
+        409: {"description": "Invalid trade state or insufficient inventory/coins"},
+    },
+    tags=["trade"],
+)
+async def accept_trade(
+    trade_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[TradeResponse]:
+    """接受交易"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_trade_accept")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    trade_repo = TradeRepository(db)
+    trade = await trade_repo.accept_trade(trade_id, player_uuid)
+
+    if trade is None:
+        raise_player_error(
+            PlayerErrorCodes.TRADE_NOT_FOUND,
+            "交易不存在或无法接受",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=TradeResponse.model_validate(trade),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/trades/{trade_id}/reject",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Trade not found"},
+        409: {"description": "Not recipient of trade"},
+    },
+    tags=["trade"],
+)
+async def reject_trade(
+    trade_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[TradeResponse]:
+    """拒绝交易"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_trade_reject")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    trade_repo = TradeRepository(db)
+    trade = await trade_repo.reject_trade(trade_id, player_uuid)
+
+    if trade is None:
+        raise_player_error(
+            PlayerErrorCodes.TRADE_NOT_FOUND,
+            "交易不存在或无权拒绝",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=TradeResponse.model_validate(trade),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/trades/{trade_id}/cancel",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Trade not found"},
+        409: {"description": "Not initiator or trade already completed"},
+    },
+    tags=["trade"],
+)
+async def cancel_trade(
+    trade_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[TradeResponse]:
+    """取消交易（仅发起方）"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_trade_cancel")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    trade_repo = TradeRepository(db)
+    trade = await trade_repo.cancel_trade(trade_id, player_uuid)
+
+    if trade is None:
+        raise_player_error(
+            PlayerErrorCodes.TRADE_NOT_FOUND,
+            "交易不存在或无权取消",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=TradeResponse.model_validate(trade),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/trades",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["trade"],
+)
+async def get_player_trades(
+    request: Request,
+    status: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[TradeListResponse]:
+    """获取玩家交易列表"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_trade_list")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    trade_repo = TradeRepository(db)
+    trades, total = await trade_repo.get_player_trades(player_uuid, status=status, limit=limit, offset=offset)
+
+    trade_responses = [TradeResponse.model_validate(t) for t in trades]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=TradeListResponse(trades=trade_responses, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/trades/{trade_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Trade not found"},
+    },
+    tags=["trade"],
+)
+async def get_trade_detail(
+    trade_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[TradeResponse]:
+    """获取交易详情"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_trade_detail")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    trade_repo = TradeRepository(db)
+    trade = await trade_repo.get_trade(trade_id, player_uuid)
+
+    if trade is None:
+        raise_player_error(
+            PlayerErrorCodes.TRADE_NOT_FOUND,
+            "交易不存在或无权查看",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=TradeResponse.model_validate(trade),
+        trace_id=trace_id,
+    )
+
+
+# === 拍卖行 API ===
+
+
+@router.post(
+    "/player/auction/listings",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        401: {"description": "Unauthorized"},
+        400: {"description": "Invalid request"},
+        409: {"description": "Insufficient inventory"},
+    },
+    tags=["auction"],
+)
+async def create_auction_listing(
+    request: Request,
+    body: CreateAuctionRequest,
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[AuctionResponse]:
+    """创建拍卖行挂单"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_auction_create")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    auction_repo = AuctionRepository(db)
+    inventory_repo = InventoryRepository(db)
+
+    has_item = await inventory_repo.has_item(player_uuid, body.item_key, body.quantity)
+    if not has_item:
+        raise_player_error(
+            PlayerErrorCodes.INSUFFICIENT_INVENTORY,
+            f"物品 {body.item_key} 数量不足",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    if body.buyout_price is not None and body.buyout_price < body.starting_price:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_BUYOUT_PRICE,
+            "一口价不能低于起拍价",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    listing = await auction_repo.create_listing(
+        seller_id=player_uuid,
+        item_key=body.item_key,
+        item_type=body.item_type.value,
+        quantity=body.quantity,
+        starting_price=body.starting_price,
+        buyout_price=body.buyout_price,
+        duration_hours=body.duration_hours,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=AuctionResponse.model_validate(listing),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/auction/listings/{listing_id}/cancel",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Listing not found"},
+        409: {"description": "Not seller or listing already sold/expired"},
+    },
+    tags=["auction"],
+)
+async def cancel_auction_listing(
+    listing_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[AuctionResponse]:
+    """取消挂单（仅卖家）"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_auction_cancel")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    auction_repo = AuctionRepository(db)
+    listing = await auction_repo.cancel_listing(listing_id, player_uuid)
+
+    if listing is None:
+        raise_player_error(
+            PlayerErrorCodes.AUCTION_NOT_FOUND,
+            "挂单不存在或无权取消",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=AuctionResponse.model_validate(listing),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/auction/listings/{listing_id}/bid",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Listing not found"},
+        409: {"description": "Bid too low or insufficient gold"},
+    },
+    tags=["auction"],
+)
+async def place_bid(
+    listing_id: uuid.UUID,
+    body: BidRequest,
+    request: Request,
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[AuctionResponse]:
+    """出价"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_auction_bid")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    auction_repo = AuctionRepository(db)
+    wallet_repo = WalletRepository(db)
+
+    listing = await auction_repo.get_listing_by_id(listing_id)
+    if listing is None:
+        raise_player_error(
+            PlayerErrorCodes.AUCTION_NOT_FOUND,
+            "挂单不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if listing.status != AuctionStatus.ACTIVE.value:
+        raise_player_error(
+            PlayerErrorCodes.AUCTION_NOT_ACTIVE,
+            "挂单非活跃状态",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    if listing.seller_id == player_uuid:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "不能给自己的挂单出价",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    min_bid = listing.current_price + 1
+    if body.bid_amount < min_bid:
+        raise_player_error(
+            PlayerErrorCodes.BID_TOO_LOW,
+            f"出价必须高于当前价格 {listing.current_price}",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    wallet = await wallet_repo.get_wallet(player_uuid)
+    if wallet is None or wallet.gold_coins < body.bid_amount:
+        raise_player_error(
+            PlayerErrorCodes.INSUFFICIENT_GOLD,
+            "金币不足",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    updated_listing = await auction_repo.place_bid(listing_id, player_uuid, body.bid_amount)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=AuctionResponse.model_validate(updated_listing),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/auction/listings/{listing_id}/buyout",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Listing not found"},
+        409: {"description": "No buyout price or insufficient gold"},
+    },
+    tags=["auction"],
+)
+async def buyout_auction(
+    listing_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[AuctionResponse]:
+    """一口价购买"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_auction_buyout")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    auction_repo = AuctionRepository(db)
+    wallet_repo = WalletRepository(db)
+
+    listing = await auction_repo.get_listing_by_id(listing_id)
+    if listing is None:
+        raise_player_error(
+            PlayerErrorCodes.AUCTION_NOT_FOUND,
+            "挂单不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if listing.status != AuctionStatus.ACTIVE.value:
+        raise_player_error(
+            PlayerErrorCodes.AUCTION_NOT_ACTIVE,
+            "挂单非活跃状态",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    if listing.seller_id == player_uuid:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "不能购买自己的挂单",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if listing.buyout_price is None:
+        raise_player_error(
+            PlayerErrorCodes.AUCTION_NO_BUYOUT,
+            "该挂单没有一口价",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    wallet = await wallet_repo.get_wallet(player_uuid)
+    if wallet is None or wallet.gold_coins < listing.buyout_price:
+        raise_player_error(
+            PlayerErrorCodes.INSUFFICIENT_GOLD,
+            "金币不足",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    updated_listing = await auction_repo.buyout(listing_id, player_uuid)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=AuctionResponse.model_validate(updated_listing),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/auction/listings",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["auction"],
+)
+async def get_auction_listings(
+    request: Request,
+    item_key: str | None = Query(default=None),
+    item_type: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[AuctionListResponse]:
+    """获取拍卖行挂单列表"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_auction_list")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    auction_repo = AuctionRepository(db)
+    listings, total = await auction_repo.get_active_listings(
+        item_key=item_key, item_type=item_type, limit=limit, offset=offset
+    )
+
+    listing_responses = [AuctionResponse.model_validate(l) for l in listings]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=AuctionListResponse(listings=listing_responses, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/auction/listings/{listing_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Listing not found"},
+    },
+    tags=["auction"],
+)
+async def get_auction_listing(
+    listing_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[AuctionResponse]:
+    """获取挂单详情"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_auction_detail")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    auction_repo = AuctionRepository(db)
+    listing = await auction_repo.get_listing_by_id(listing_id)
+
+    if listing is None:
+        raise_player_error(
+            PlayerErrorCodes.AUCTION_NOT_FOUND,
+            "挂单不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=AuctionResponse.model_validate(listing),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/auction/my-listings",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["auction"],
+)
+async def get_my_auction_listings(
+    request: Request,
+    status: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[AuctionListResponse]:
+    """获取我的挂单列表"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_auction_my")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    auction_repo = AuctionRepository(db)
+    listings, total = await auction_repo.get_seller_listings(player_uuid, status=status, limit=limit, offset=offset)
+
+    listing_responses = [AuctionResponse.model_validate(l) for l in listings]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=AuctionListResponse(listings=listing_responses, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+# === 钱包 API ===
+
+
+@router.get(
+    "/player/wallet",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["wallet"],
+)
+async def get_player_wallet(
+    request: Request,
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[WalletResponse]:
+    """获取玩家钱包"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_wallet_get")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    wallet_repo = WalletRepository(db)
+    wallet = await wallet_repo.get_wallet(player_uuid)
+
+    if wallet is None:
+        raise_player_error(
+            PlayerErrorCodes.WALLET_NOT_FOUND,
+            "钱包不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=WalletResponse.model_validate(wallet),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/wallet/transactions",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["wallet"],
+)
+async def get_wallet_transactions(
+    request: Request,
+    transaction_type: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequirePlayerRole,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[WalletTransactionListResponse]:
+    """获取钱包交易记录"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_wallet_transactions")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    wallet_repo = WalletRepository(db)
+    transactions, total = await wallet_repo.get_transactions(
+        player_uuid, transaction_type=transaction_type, limit=limit, offset=offset
+    )
+
+    transaction_responses = [WalletTransactionResponse.model_validate(t) for t in transactions]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=WalletTransactionListResponse(transactions=transaction_responses, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
         trace_id=trace_id,
     )

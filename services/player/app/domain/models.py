@@ -489,3 +489,162 @@ class GuildQuestProgress(Base):
         Index("guild_quest_progress_player_idx", "player_id", "guild_quest_id", unique=True),
         Index("guild_quest_progress_quest_idx", "guild_quest_id", "created_at"),
     )
+
+
+class PlayerTrade(Base):
+    """玩家交易记录表。"""
+
+    __tablename__ = "player_trades"
+
+    trade_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    initiator_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    recipient_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="pending", server_default="pending", index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'accepted', 'rejected', 'cancelled', 'completed')",
+            name="player_trades_status_check",
+        ),
+        Index("player_trades_initiator_status_idx", "initiator_id", "status"),
+        Index("player_trades_recipient_status_idx", "recipient_id", "status"),
+    )
+
+
+class TradeItem(Base):
+    """交易物品明细表。"""
+
+    __tablename__ = "trade_items"
+
+    trade_item_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    trade_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    from_player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    item_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    item_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, server_default="material"
+    )
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+
+    __table_args__ = (
+        CheckConstraint(
+            "item_type IN ('consumable', 'equipment', 'material', 'quest_item')",
+            name="trade_items_item_type_check",
+        ),
+        CheckConstraint("quantity > 0", name="trade_items_quantity_check"),
+        Index("trade_items_trade_idx", "trade_id"),
+    )
+
+
+class TradeCoin(Base):
+    """交易金币明细表。"""
+
+    __tablename__ = "trade_coins"
+
+    trade_coin_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    trade_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    from_player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("amount > 0", name="trade_coins_amount_check"),
+        Index("trade_coins_trade_idx", "trade_id"),
+    )
+
+
+class AuctionListing(Base):
+    """拍卖行挂单表。"""
+
+    __tablename__ = "auction_listings"
+
+    listing_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    seller_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    item_key: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    item_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, server_default="material"
+    )
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    starting_price: Mapped[int] = mapped_column(Integer, nullable=False)
+    current_price: Mapped[int] = mapped_column(Integer, nullable=False)
+    buyout_price: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="active", server_default="active", index=True
+    )
+    highest_bidder_id: Mapped[uuid.UUID | None] = mapped_column(UUIDType(), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    sold_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    buyer_id: Mapped[uuid.UUID | None] = mapped_column(UUIDType(), nullable=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "item_type IN ('consumable', 'equipment', 'material', 'quest_item')",
+            name="auction_listings_item_type_check",
+        ),
+        CheckConstraint("quantity > 0", name="auction_listings_quantity_check"),
+        CheckConstraint("starting_price >= 0", name="auction_listings_starting_price_check"),
+        CheckConstraint("current_price >= 0", name="auction_listings_current_price_check"),
+        CheckConstraint(
+            "status IN ('active', 'sold', 'expired', 'cancelled')",
+            name="auction_listings_status_check",
+        ),
+        Index("auction_listings_seller_status_idx", "seller_id", "status"),
+        Index("auction_listings_item_key_idx", "item_key", "status"),
+        Index("auction_listings_expires_idx", "expires_at"),
+    )
+
+
+class PlayerWallet(Base):
+    """玩家钱包表。"""
+
+    __tablename__ = "player_wallets"
+
+    wallet_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, unique=True, index=True)
+    gold_coins: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint("gold_coins >= 0", name="player_wallets_gold_check"),
+    )
+
+
+class WalletTransaction(Base):
+    """钱包流水表。"""
+
+    __tablename__ = "wallet_transactions"
+
+    transaction_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    wallet_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    transaction_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    balance_before: Mapped[int] = mapped_column(Integer, nullable=False)
+    balance_after: Mapped[int] = mapped_column(Integer, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reference_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "transaction_type IN ('earn', 'spend', 'trade_send', 'trade_receive', "
+            "'auction_sell', 'auction_buy', 'fee', 'tax', 'gift', 'quest_reward')",
+            name="wallet_transactions_type_check",
+        ),
+        Index("wallet_transactions_player_idx", "player_id", "created_at"),
+        Index("wallet_transactions_wallet_idx", "wallet_id", "created_at"),
+    )
