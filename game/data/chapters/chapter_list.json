@@ -32,16 +32,16 @@
     {
       "chapter_id": "chapter_03",
       "name": "自由之声",
-      "description": "接触自由领地，了解自由派立场，面对秩序与自由的抉择",
+      "description": "接触自由领地，了解自由派立场，面对秩序与自由的抉择。探索熔火裂谷和永霜冰原，揭示旧世界的秘密",
       "theme": "faction_conflict",
       "status": "locked",
       "prerequisites": ["chapter_02"],
       "unlock_condition": "complete_chapter_02",
-      "main_quests": [],
-      "side_quests": [],
-      "regions": [],
-      "level_range": [15, 25],
-      "estimated_time": "TBD"
+      "main_quests": ["quest_volcano_ch3_main1", "quest_volcano_ch3_main2", "quest_volcano_ch3_main3", "quest_volcano_ch3_main4", "quest_volcano_ch3_main5", "quest_glacier_ch3_main1", "quest_glacier_ch3_main2", "quest_glacier_ch3_main3", "quest_glacier_ch3_main4", "quest_glacier_ch3_main5"],
+      "side_quests": ["quest_volcano_side1", "quest_volcano_side2", "quest_glacier_side1", "quest_glacier_side2"],
+      "regions": ["region_north_volcano", "region_frost_glacier"],
+      "level_range": [15, 30],
+      "estimated_time": "5-7 hours"
     }
   ]
 }
