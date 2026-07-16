@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "region_id": "region_frost_glacier",
+  "name": "永霜冰原",
+  "description": "暗影面纱的研究圣地，一片被永恒寒冰覆盖的极地荒原。冰川下埋藏着旧世界的秘密，暗影面纱在此建立了隐秘的研究站，探索冰封的远古遗物。极寒的气候和冰层下的未知危险让这片区域成为勇敢者的试炼场。",
+  "type": "expansion",
+  "terrain": ["glacier", "tundra", "ruins"],
+  "climate": "arctic",
+  "resource_level": "medium",
+  "risk_level": "very_high",
+  "status": "active",
+  "factions": [
+    {"faction_id": "faction_shadowveil", "influence": 0.6, "presence": "strong"},
+    {"faction_id": "faction_ironward", "influence": 0.1, "presence": "exploring"},
+    {"faction_id": "faction_freehold", "influence": 0.1, "presence": "minor"}
+  ],
+  "key_locations": [
+    {"location_id": "loc_glacier_station", "name": "暗影研究站", "type": "building", "description": "暗影面纱在冰原上的研究基地，常年笼罩在神秘的蓝光之中"},
+    {"location_id": "loc_glacier_frozen_lake", "name": "永冻之湖", "type": "lake", "description": "永不融化的冰湖，冰面下隐约可见远古建筑的轮廓"},
+    {"location_id": "loc_glacier_ruins", "name": "冰封遗迹", "type": "ruins", "description": "被冰层完全封存的旧世界遗迹，传说蕴含改变世界的力量"},
+    {"location_id": "loc_glacier_peak", "name": "霜冠之巅", "type": "landmark", "description": "冰原最高峰，传说冰霜女皇在此建立了她的冰之宫殿"}
+  ],
+  "available_quests": ["quest_glacier_ch3_main1", "quest_glacier_side1", "quest_glacier_side2"],
+  "npcs": ["npc_glacier_scholar", "npc_glacier_explorer", "npc_glacier_hermit", "npc_glacier_guardian"]
+}

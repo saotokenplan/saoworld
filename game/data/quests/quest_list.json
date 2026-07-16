@@ -576,6 +576,300 @@
       "start_npc": "npc_oasis_scout",
       "end_npc": "npc_oasis_scout",
       "region": "region_expansion_southoasis"
+    },
+    {
+      "quest_id": "quest_volcano_ch3_main1",
+      "title": "裂谷来客",
+      "description": "抵达熔火裂谷，向矿业前哨指挥官维克托·烈焰报到，了解地底异变的最新情况",
+      "type": "main",
+      "chapter": "chapter_03",
+      "status": "available",
+      "prerequisites": ["quest_oasis_ch2_main5"],
+      "objectives": [
+        {"id": "obj_enter_volcano", "description": "进入熔火裂谷区域", "type": "location", "target": "loc_volcano_outpost"},
+        {"id": "obj_talk_commander", "description": "与维克托·烈焰交谈", "type": "npc", "target": "npc_volcano_commander"},
+        {"id": "obj_survey_outpost", "description": "视察矿业前哨", "type": "explore", "target": "loc_volcano_outpost"},
+        {"id": "obj_accept_mission", "description": "接受地底调查任务", "type": "story", "target": "accept_mission"}
+      ],
+      "rewards": {"experience": 300, "reputation": {"faction_ironward": 80}},
+      "failure_condition": null,
+      "start_npc": null,
+      "end_npc": "npc_volcano_commander",
+      "region": "region_north_volcano"
+    },
+    {
+      "quest_id": "quest_volcano_ch3_main2",
+      "title": "深渊之声",
+      "description": "深入深渊矿脉调查失踪事件，发现地底深处有某种巨大生物正在苏醒",
+      "type": "main",
+      "chapter": "chapter_03",
+      "status": "locked",
+      "prerequisites": ["quest_volcano_ch3_main1"],
+      "objectives": [
+        {"id": "obj_enter_mine", "description": "进入深渊矿脉", "type": "location", "target": "loc_volcano_deep_mine"},
+        {"id": "obj_find_clues", "description": "寻找矿工失踪线索", "type": "explore", "target": 3},
+        {"id": "obj_defeat_creatures", "description": "击败地底生物", "type": "combat", "target": 6},
+        {"id": "obj_find_source", "description": "找到异变源头", "type": "explore", "target": "loc_deep_source"},
+        {"id": "obj_report_commander", "description": "返回向维克托报告", "type": "npc", "target": "npc_volcano_commander"}
+      ],
+      "rewards": {"experience": 500, "reputation": {"faction_ironward": 120}, "gold": 200},
+      "failure_condition": null,
+      "start_npc": "npc_volcano_commander",
+      "end_npc": "npc_volcano_commander",
+      "region": "region_north_volcano"
+    },
+    {
+      "quest_id": "quest_volcano_ch3_main3",
+      "title": "熔炉危机",
+      "description": "地底异变导致熔炉工坊温度失控，必须深入火山口关闭失控的地热阀门",
+      "type": "main",
+      "chapter": "chapter_03",
+      "status": "locked",
+      "prerequisites": ["quest_volcano_ch3_main2"],
+      "objectives": [
+        {"id": "obj_talk_smith", "description": "与赫尔墨斯·熔炉交谈", "type": "npc", "target": "npc_volcano_smith"},
+        {"id": "obj_reach_crater", "description": "前往烈焰火山口", "type": "location", "target": "loc_volcano_crater"},
+        {"id": "obj_close_valve1", "description": "关闭东侧地热阀门", "type": "story", "target": "valve_east"},
+        {"id": "obj_close_valve2", "description": "关闭西侧地热阀门", "type": "story", "target": "valve_west"},
+        {"id": "obj_defeat_fire_guardian", "description": "击败火焰守卫", "type": "combat", "target": 2},
+        {"id": "obj_report_smith", "description": "返回向赫尔墨斯报告", "type": "npc", "target": "npc_volcano_smith"}
+      ],
+      "rewards": {"experience": 650, "reputation": {"faction_ironward": 150}, "gold": 280},
+      "failure_condition": {"type": "time_limit", "minutes": 25},
+      "start_npc": "npc_volcano_smith",
+      "end_npc": "npc_volcano_smith",
+      "region": "region_north_volcano"
+    },
+    {
+      "quest_id": "quest_volcano_ch3_main4",
+      "title": "地底巨兽",
+      "description": "深渊矿脉最深处发现了远古熔岩巨兽的巢穴，必须在它完全苏醒前将其击败",
+      "type": "main",
+      "chapter": "chapter_03",
+      "status": "locked",
+      "prerequisites": ["quest_volcano_ch3_main3"],
+      "objectives": [
+        {"id": "obj_descend_deep", "description": "深入矿脉最底层", "type": "location", "target": "loc_volcano_deep_mine"},
+        {"id": "obj_find_nest", "description": "找到熔岩巨兽巢穴", "type": "explore", "target": "loc_lava_beast_nest"},
+        {"id": "obj_defat_minions", "description": "清除巨兽仆从", "type": "combat", "target": 10},
+        {"id": "obj_prepare_fight", "description": "做好战斗准备", "type": "story", "target": "prepare_boss_fight"}
+      ],
+      "rewards": {"experience": 800, "reputation": {"faction_ironward": 200}, "gold": 350},
+      "failure_condition": null,
+      "start_npc": "npc_volcano_commander",
+      "end_npc": "npc_volcano_miner",
+      "region": "region_north_volcano"
+    },
+    {
+      "quest_id": "quest_volcano_ch3_main5",
+      "title": "熔岩之心",
+      "description": "挑战并击败熔岩巨兽，解除熔火裂谷的地底威胁，恢复矿业前哨的安全",
+      "type": "main",
+      "chapter": "chapter_03",
+      "status": "locked",
+      "prerequisites": ["quest_volcano_ch3_main4"],
+      "objectives": [
+        {"id": "obj_enter_arena", "description": "进入熔岩巨兽巢穴", "type": "location", "target": "loc_boss_lava_beast"},
+        {"id": "obj_defeat_boss", "description": "击败熔岩巨兽", "type": "boss", "target": "boss_lava_beast"},
+        {"id": "obj_claim_reward", "description": "获取Boss掉落奖励", "type": "collect", "target": 1},
+        {"id": "obj_report_commander", "description": "向维克托报告胜利", "type": "npc", "target": "npc_volcano_commander"},
+        {"id": "obj_celebrate", "description": "参加矿业前哨庆功宴", "type": "story", "target": "volcano_celebration"}
+      ],
+      "rewards": {"experience": 1500, "reputation": {"faction_ironward": 400}, "gold": 600, "items": ["item_lava_beast_core"]},
+      "failure_condition": null,
+      "start_npc": "npc_volcano_commander",
+      "end_npc": "npc_volcano_commander",
+      "region": "region_north_volcano"
+    },
+    {
+      "quest_id": "quest_volcano_side1",
+      "title": "龙钢矿脉",
+      "description": "帮助锻造师赫尔墨斯收集深渊矿脉中的龙钢矿石，恢复熔炉工坊的产能",
+      "type": "side",
+      "chapter": "chapter_03",
+      "status": "available",
+      "prerequisites": ["quest_volcano_ch3_main1"],
+      "objectives": [
+        {"id": "obj_talk_smith", "description": "与赫尔墨斯交谈", "type": "npc", "target": "npc_volcano_smith"},
+        {"id": "obj_enter_mine", "description": "进入深渊矿脉", "type": "location", "target": "loc_volcano_deep_mine"},
+        {"id": "obj_mine_dragonsteel", "description": "采集龙钢矿石", "type": "collect", "target": 8},
+        {"id": "obj_defeat_lizards", "description": "击退熔岩蜥蜴", "type": "combat", "target": 5},
+        {"id": "obj_return_smith", "description": "将矿石交给赫尔墨斯", "type": "npc", "target": "npc_volcano_smith"}
+      ],
+      "rewards": {"experience": 300, "reputation": {"faction_ironward": 60}, "gold": 150},
+      "failure_condition": null,
+      "start_npc": "npc_volcano_smith",
+      "end_npc": "npc_volcano_smith",
+      "region": "region_north_volcano"
+    },
+    {
+      "quest_id": "quest_volcano_side2",
+      "title": "地壳监测",
+      "description": "帮助地质学家莉娜在深渊矿脉深处安装地震监测仪，收集地壳运动数据",
+      "type": "side",
+      "chapter": "chapter_03",
+      "status": "available",
+      "prerequisites": ["quest_volcano_ch3_main1"],
+      "objectives": [
+        {"id": "obj_talk_geologist", "description": "与莉娜·岩心交谈", "type": "npc", "target": "npc_volcano_geologist"},
+        {"id": "obj_install_sensor1", "description": "在浅层矿道安装监测仪", "type": "story", "target": "sensor_shallow"},
+        {"id": "obj_install_sensor2", "description": "在深层矿道安装监测仪", "type": "story", "target": "sensor_deep"},
+        {"id": "obj_install_sensor3", "description": "在热液区域安装监测仪", "type": "story", "target": "sensor_thermal"},
+        {"id": "obj_defeat_hazards", "description": "清除安装路线上的危险生物", "type": "combat", "target": 4},
+        {"id": "obj_report_geologist", "description": "向莉娜报告安装完成", "type": "npc", "target": "npc_volcano_geologist"}
+      ],
+      "rewards": {"experience": 350, "reputation": {"faction_ironward": 70}, "gold": 120},
+      "failure_condition": null,
+      "start_npc": "npc_volcano_geologist",
+      "end_npc": "npc_volcano_geologist",
+      "region": "region_north_volcano"
+    },
+    {
+      "quest_id": "quest_glacier_ch3_main1",
+      "title": "冰原初探",
+      "description": "抵达永霜冰原，与暗影面纱首席研究员伊莎贝拉会面，了解冰封遗迹的最新发现",
+      "type": "main",
+      "chapter": "chapter_03",
+      "status": "available",
+      "prerequisites": ["quest_volcano_ch3_main5"],
+      "objectives": [
+        {"id": "obj_enter_glacier", "description": "进入永霜冰原区域", "type": "location", "target": "loc_glacier_station"},
+        {"id": "obj_talk_scholar", "description": "与伊莎贝拉·冰渊交谈", "type": "npc", "target": "npc_glacier_scholar"},
+        {"id": "obj_visit_lake", "description": "前往永冻之湖", "type": "location", "target": "loc_glacier_frozen_lake"},
+        {"id": "obj_accept_research", "description": "接受遗迹研究任务", "type": "story", "target": "accept_research"}
+      ],
+      "rewards": {"experience": 350, "reputation": {"faction_shadowveil": 80}},
+      "failure_condition": null,
+      "start_npc": null,
+      "end_npc": "npc_glacier_scholar",
+      "region": "region_frost_glacier"
+    },
+    {
+      "quest_id": "quest_glacier_ch3_main2",
+      "title": "冰封密室",
+      "description": "与探险家奥拉夫一起探索永冻之湖下方的冰封遗迹，发现旧世界的封印技术",
+      "type": "main",
+      "chapter": "chapter_03",
+      "status": "locked",
+      "prerequisites": ["quest_glacier_ch3_main1"],
+      "objectives": [
+        {"id": "obj_talk_explorer", "description": "与奥拉夫·冰原交谈", "type": "npc", "target": "npc_glacier_explorer"},
+        {"id": "obj_break_ice", "description": "突破永冻之湖冰层", "type": "story", "target": "break_ice"},
+        {"id": "obj_explore_chamber", "description": "探索冰封密室", "type": "explore", "target": 4},
+        {"id": "obj_defeat_ice_guardian", "description": "击败冰封守卫", "type": "combat", "target": 3},
+        {"id": "obj_retrieve_data", "description": "获取封印技术数据", "type": "collect", "target": 1},
+        {"id": "obj_report_scholar", "description": "返回向伊莎贝拉报告", "type": "npc", "target": "npc_glacier_scholar"}
+      ],
+      "rewards": {"experience": 550, "reputation": {"faction_shadowveil": 130}, "gold": 220},
+      "failure_condition": null,
+      "start_npc": "npc_glacier_explorer",
+      "end_npc": "npc_glacier_scholar",
+      "region": "region_frost_glacier"
+    },
+    {
+      "quest_id": "quest_glacier_ch3_main3",
+      "title": "封印松动",
+      "description": "冰封遗迹的封印出现裂缝，必须与守卫队长艾拉合作修复封印，防止远古力量外泄",
+      "type": "main",
+      "chapter": "chapter_03",
+      "status": "locked",
+      "prerequisites": ["quest_glacier_ch3_main2"],
+      "objectives": [
+        {"id": "obj_talk_guardian", "description": "与艾拉·寒铁交谈", "type": "npc", "target": "npc_glacier_guardian"},
+        {"id": "obj_seal_crack1", "description": "修复东部封印裂缝", "type": "story", "target": "seal_east"},
+        {"id": "obj_seal_crack2", "description": "修复西部封印裂缝", "type": "story", "target": "seal_west"},
+        {"id": "obj_defeat_leak_creatures", "description": "消灭封印泄漏的生物", "type": "combat", "target": 8},
+        {"id": "obj_report_guardian", "description": "向艾拉报告修复完成", "type": "npc", "target": "npc_glacier_guardian"}
+      ],
+      "rewards": {"experience": 700, "reputation": {"faction_shadowveil": 160}, "gold": 300},
+      "failure_condition": {"type": "time_limit", "minutes": 30},
+      "start_npc": "npc_glacier_guardian",
+      "end_npc": "npc_glacier_guardian",
+      "region": "region_frost_glacier"
+    },
+    {
+      "quest_id": "quest_glacier_ch3_main4",
+      "title": "冰之宫殿",
+      "description": "隐者凌霜透露了冰霜女皇的存在，必须前往霜冠之巅的冰之宫殿阻止远古灾祸的苏醒",
+      "type": "main",
+      "chapter": "chapter_03",
+      "status": "locked",
+      "prerequisites": ["quest_glacier_ch3_main3"],
+      "objectives": [
+        {"id": "obj_talk_hermit", "description": "与凌霜·隐者交谈", "type": "npc", "target": "npc_glacier_hermit"},
+        {"id": "obj_climb_peak", "description": "攀登霜冠之巅", "type": "location", "target": "loc_glacier_peak"},
+        {"id": "obj_find_palace", "description": "找到冰之宫殿入口", "type": "explore", "target": "loc_ice_palace"},
+        {"id": "obj_defeat_elite", "description": "击败冰之宫殿精英守卫", "type": "combat", "target": 4},
+        {"id": "obj_prepare_boss", "description": "准备挑战冰霜女皇", "type": "story", "target": "prepare_boss_fight"}
+      ],
+      "rewards": {"experience": 900, "reputation": {"faction_shadowveil": 220}, "gold": 400},
+      "failure_condition": null,
+      "start_npc": "npc_glacier_hermit",
+      "end_npc": "npc_glacier_explorer",
+      "region": "region_frost_glacier"
+    },
+    {
+      "quest_id": "quest_glacier_ch3_main5",
+      "title": "永霜终焉",
+      "description": "挑战并击败冰霜女皇，阻止远古灾祸完全苏醒，封印永霜冰原的力量",
+      "type": "main",
+      "chapter": "chapter_03",
+      "status": "locked",
+      "prerequisites": ["quest_glacier_ch3_main4"],
+      "objectives": [
+        {"id": "obj_enter_throne", "description": "进入冰霜女皇王座", "type": "location", "target": "loc_boss_frost_queen"},
+        {"id": "obj_defeat_boss", "description": "击败冰霜女皇", "type": "boss", "target": "boss_frost_queen"},
+        {"id": "obj_seal_power", "description": "使用封印碎片封印远古力量", "type": "story", "target": "seal_ancient_power"},
+        {"id": "obj_report_scholar", "description": "向伊莎贝拉报告", "type": "npc", "target": "npc_glacier_scholar"},
+        {"id": "obj_celebrate", "description": "参加研究站庆功", "type": "story", "target": "glacier_celebration"}
+      ],
+      "rewards": {"experience": 1800, "reputation": {"faction_shadowveil": 500}, "gold": 800, "items": ["item_frost_queen_crown"]},
+      "failure_condition": null,
+      "start_npc": "npc_glacier_scholar",
+      "end_npc": "npc_glacier_scholar",
+      "region": "region_frost_glacier"
+    },
+    {
+      "quest_id": "quest_glacier_side1",
+      "title": "远古遗物",
+      "description": "帮助研究员伊莎贝拉收集冰封遗迹中的远古技术遗物",
+      "type": "side",
+      "chapter": "chapter_03",
+      "status": "available",
+      "prerequisites": ["quest_glacier_ch3_main1"],
+      "objectives": [
+        {"id": "obj_talk_scholar", "description": "与伊莎贝拉交谈", "type": "npc", "target": "npc_glacier_scholar"},
+        {"id": "obj_find_artifacts", "description": "在遗迹中寻找远古遗物", "type": "explore", "target": 3},
+        {"id": "obj_collect_crystals", "description": "收集冰魄水晶", "type": "collect", "target": 5},
+        {"id": "obj_defeat_ice_creatures", "description": "击败冰原生物", "type": "combat", "target": 4},
+        {"id": "obj_return_scholar", "description": "将遗物交给伊莎贝拉", "type": "npc", "target": "npc_glacier_scholar"}
+      ],
+      "rewards": {"experience": 350, "reputation": {"faction_shadowveil": 70}, "gold": 180},
+      "failure_condition": null,
+      "start_npc": "npc_glacier_scholar",
+      "end_npc": "npc_glacier_scholar",
+      "region": "region_frost_glacier"
+    },
+    {
+      "quest_id": "quest_glacier_side2",
+      "title": "冰层修复",
+      "description": "帮助守卫队长艾拉修复遗迹外围的冰层裂缝，防止封印能量外泄",
+      "type": "side",
+      "chapter": "chapter_03",
+      "status": "available",
+      "prerequisites": ["quest_glacier_ch3_main1"],
+      "objectives": [
+        {"id": "obj_talk_guardian", "description": "与艾拉·寒铁交谈", "type": "npc", "target": "npc_glacier_guardian"},
+        {"id": "obj_gather_materials", "description": "收集封印材料", "type": "collect", "target": 6},
+        {"id": "obj_repair_crack1", "description": "修复北部冰层裂缝", "type": "story", "target": "crack_north"},
+        {"id": "obj_repair_crack2", "description": "修复南部冰层裂缝", "type": "story", "target": "crack_south"},
+        {"id": "obj_report_guardian", "description": "向艾拉报告修复完成", "type": "npc", "target": "npc_glacier_guardian"}
+      ],
+      "rewards": {"experience": 300, "reputation": {"faction_shadowveil": 60}, "gold": 130},
+      "failure_condition": null,
+      "start_npc": "npc_glacier_guardian",
+      "end_npc": "npc_glacier_guardian",
+      "region": "region_frost_glacier"
     }
   ]
 }

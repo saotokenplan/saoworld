@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "region_id": "region_north_volcano",
+  "name": "熔火裂谷",
+  "description": "铁卫联盟的矿业重镇，一片被火山活动塑造的危险地带。熔岩河流纵横交错，硫磺气息弥漫空中。铁卫联盟在此建立了坚固的矿业前哨，开采稀有矿石支撑军事力量，但地底的异动正威胁着整个区域的安全。",
+  "type": "expansion",
+  "terrain": ["volcano", "lava", "cave"],
+  "climate": "volcanic",
+  "resource_level": "very_high",
+  "risk_level": "high",
+  "status": "active",
+  "factions": [
+    {"faction_id": "faction_ironward", "influence": 0.6, "presence": "strong"},
+    {"faction_id": "faction_shadowveil", "influence": 0.2, "presence": "exploring"},
+    {"faction_id": "faction_freehold", "influence": 0.1, "presence": "minor"}
+  ],
+  "key_locations": [
+    {"location_id": "loc_volcano_outpost", "name": "铁卫矿业前哨", "type": "outpost", "description": "铁卫联盟在火山区域建立的坚固前哨站，是矿工和士兵的驻扎地"},
+    {"location_id": "loc_volcano_forge", "name": "熔炉工坊", "type": "building", "description": "利用地热驱动的巨大锻造工坊，能铸造普通火炉无法熔炼的合金"},
+    {"location_id": "loc_volcano_crater", "name": "烈焰火山口", "type": "landmark", "description": "活火山的巨大火山口，熔岩翻涌，是整个区域的地热核心"},
+    {"location_id": "loc_volcano_deep_mine", "name": "深渊矿脉", "type": "mine", "description": "深入地底的矿脉通道，传说通往远古火龙的沉睡之地"}
+  ],
+  "available_quests": ["quest_volcano_ch3_main1", "quest_volcano_side1", "quest_volcano_side2"],
+  "npcs": ["npc_volcano_commander", "npc_volcano_smith", "npc_volcano_geologist", "npc_volcano_miner"]
+}

@@ -169,6 +169,102 @@
         ]
       },
       "min_reputation": 0
+    },
+    {
+      "monster_key": "boss_lava_beast",
+      "name": "熔岩巨兽",
+      "monster_type": "boss",
+      "chapter_id": "chapter_03",
+      "region_key": "region_north_volcano",
+      "level": 22,
+      "hp": 2000,
+      "attack": 45,
+      "defense": 18,
+      "speed": 5,
+      "description": "沉睡在熔火裂谷深渊矿脉最底层的远古巨兽，由熔岩和岩石构成的巨大生命体。它曾是旧世界锻造技术的产物，在天裂事件中失控并陷入沉睡。随着地壳异变加剧，它正在逐渐苏醒，一旦完全苏醒，整个熔火裂谷都将化为火海。",
+      "behavior_pattern": {
+        "aggression": "aggressive",
+        "attack_pattern": "mixed",
+        "special_behaviors": ["enrage", "phase_change", "summon"]
+      },
+      "loot_table": [
+        {"item_key": "item_lava_beast_core", "drop_rate": 1.0, "quantity_min": 1, "quantity_max": 1},
+        {"item_key": "item_fire_essence", "drop_rate": 0.9, "quantity_min": 3, "quantity_max": 6},
+        {"item_key": "item_dragonsteel_ore", "drop_rate": 0.7, "quantity_min": 5, "quantity_max": 10}
+      ],
+      "skills": [
+        {"skill_key": "skill_lava_punch", "name": "熔岩重拳", "damage_multiplier": 1.3, "cooldown": 0},
+        {"skill_key": "skill_rock_throw", "name": "巨岩投掷", "damage_multiplier": 1.5, "cooldown": 3}
+      ],
+      "is_boss": true,
+      "boss_rank": "mythic",
+      "phase_count": 3,
+      "phase_names": ["苏醒阶段", "狂暴阶段", "毁灭阶段"],
+      "special_skills": [
+        {"skill_key": "skill_eruption", "name": "火山喷发", "description": "召唤多道岩浆柱从地面喷涌而出，覆盖大片区域", "cooldown": 10},
+        {"skill_key": "skill_magma_armor", "name": "熔岩铠甲", "description": "全身覆盖熔岩护甲，大幅提升防御并反弹近战伤害", "cooldown": 15},
+        {"skill_key": "skill_summon_elemental", "name": "召唤火焰元素", "description": "召唤2个火焰元素仆从协助战斗", "cooldown": 20},
+        {"skill_key": "skill_seismic_slam", "name": "地震猛击", "description": "猛击地面造成全屏震动，击倒所有玩家并造成大量伤害", "cooldown": 12},
+        {"skill_key": "skill_ultimate_eruption", "name": "终极喷发", "description": "蓄力后释放毁灭性火山喷发，需要在安全区域躲避", "cooldown": 25}
+      ],
+      "enrage_threshold": 0.25,
+      "reward": {
+        "experience": 10000,
+        "items": [
+          {"item_key": "item_lava_beast_core", "quantity": 1},
+          {"item_key": "item_fire_essence", "quantity": 5},
+          {"item_key": "item_dragonsteel_ingot", "quantity": 2}
+        ]
+      },
+      "min_reputation": 0
+    },
+    {
+      "monster_key": "boss_frost_queen",
+      "name": "冰霜女皇",
+      "monster_type": "boss",
+      "chapter_id": "chapter_03",
+      "region_key": "region_frost_glacier",
+      "level": 28,
+      "hp": 3000,
+      "attack": 50,
+      "defense": 20,
+      "speed": 7,
+      "description": "永霜冰原冰之宫殿的统治者，旧世界末代女科学家的意识被冰封后与远古技术融合形成的存在。她拥有操控冰霜的绝对力量，能在瞬间冻结整片区域。她的意识在冰封中逐渐扭曲，从保护人类变成了封锁一切，试图将整个世界永远冰封。",
+      "behavior_pattern": {
+        "aggression": "strategic",
+        "attack_pattern": "magic",
+        "special_behaviors": ["enrage", "phase_change", "freeze"]
+      },
+      "loot_table": [
+        {"item_key": "item_frost_queen_crown", "drop_rate": 1.0, "quantity_min": 1, "quantity_max": 1},
+        {"item_key": "item_ice_essence", "drop_rate": 0.9, "quantity_min": 3, "quantity_max": 6},
+        {"item_key": "item_ancient_seal_fragment", "drop_rate": 0.5, "quantity_min": 1, "quantity_max": 2}
+      ],
+      "skills": [
+        {"skill_key": "skill_ice_lance", "name": "冰霜之枪", "damage_multiplier": 1.4, "cooldown": 0},
+        {"skill_key": "skill_frost_wave", "name": "寒冰波动", "damage_multiplier": 1.0, "cooldown": 2}
+      ],
+      "is_boss": true,
+      "boss_rank": "legendary",
+      "phase_count": 4,
+      "phase_names": ["沉眠阶段", "觉醒阶段", "冰封阶段", "终焉阶段"],
+      "special_skills": [
+        {"skill_key": "skill_blizzard", "name": "暴风雪", "description": "召唤暴风雪覆盖全场，持续造成冰冻伤害并降低移动速度", "cooldown": 8},
+        {"skill_key": "skill_freeze_ray", "name": "绝对零度射线", "description": "发射直线冰冻射线，命中后冻结目标3秒", "cooldown": 10},
+        {"skill_key": "skill_ice_prison", "name": "冰之牢笼", "description": "在目标周围生成冰牢，需要打破冰墙才能脱困", "cooldown": 15},
+        {"skill_key": "skill_ice_clone", "name": "冰之分身", "description": "创造3个冰之分身，分身被击破时会爆炸造成范围冰冻伤害", "cooldown": 18},
+        {"skill_key": "skill_absolute_zero", "name": "绝对零度", "description": "终极技能，释放全场冰冻能量，必须在冰柱后方躲避否则被瞬间冻结", "cooldown": 30}
+      ],
+      "enrage_threshold": 0.2,
+      "reward": {
+        "experience": 15000,
+        "items": [
+          {"item_key": "item_frost_queen_crown", "quantity": 1},
+          {"item_key": "item_ice_essence", "quantity": 5},
+          {"item_key": "item_seal_key_fragment", "quantity": 1}
+        ]
+      },
+      "min_reputation": 0
     }
   ]
 }

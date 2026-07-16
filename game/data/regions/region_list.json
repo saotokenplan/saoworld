@@ -53,6 +53,26 @@
       "type": "expansion",
       "risk_level": "low",
       "resource_level": "medium"
+    },
+    {
+      "region_id": "region_north_volcano",
+      "name": "熔火裂谷",
+      "description": "铁卫联盟的矿业重镇，被火山活动塑造的危险地带，蕴含珍稀矿石。",
+      "status": "locked",
+      "level_range": [15, 25],
+      "type": "expansion",
+      "risk_level": "high",
+      "resource_level": "very_high"
+    },
+    {
+      "region_id": "region_frost_glacier",
+      "name": "永霜冰原",
+      "description": "暗影面纱的研究圣地，被永恒寒冰覆盖的极地荒原，隐藏远古秘密。",
+      "status": "locked",
+      "level_range": [20, 30],
+      "type": "expansion",
+      "risk_level": "very_high",
+      "resource_level": "medium"
     }
   ]
 }
