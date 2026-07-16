@@ -112,6 +112,17 @@ class InventoryRepository:
         await self.db.flush()
         return item
 
+    async def has_item(
+        self, player_id: uuid.UUID, item_key: str, quantity: int = 1
+    ) -> bool:
+        stmt: Select[tuple[PlayerInventory]] = select(PlayerInventory).where(
+            PlayerInventory.player_id == player_id,
+            PlayerInventory.item_key == item_key,
+            PlayerInventory.quantity >= quantity,
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none() is not None
+
     async def use_item(
         self, player_id: uuid.UUID, item_key: str, quantity: int = 1
     ) -> PlayerInventory:

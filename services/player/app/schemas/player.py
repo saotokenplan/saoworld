@@ -907,3 +907,163 @@ class ClaimGuildQuestRewardRequest(BaseModel):
 class GuildQuestListResponse(BaseModel):
     quests: list[GuildQuestResponse]
     total: int
+
+
+# === 交易系统相关 Schema ===
+
+
+class TradeStatus(str, Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    CANCELLED = "cancelled"
+    COMPLETED = "completed"
+
+
+class TradeItemSchema(BaseModel):
+    item_key: str = Field(min_length=1, max_length=128)
+    item_type: ItemType = ItemType.MATERIAL
+    quantity: int = Field(default=1, ge=1)
+
+
+class TradeCoinSchema(BaseModel):
+    amount: int = Field(ge=1)
+
+
+class CreateTradeRequest(BaseModel):
+    recipient_id: uuid.UUID
+    offer_items: list[TradeItemSchema] = []
+    offer_coins: int = 0
+    request_items: list[TradeItemSchema] = []
+    request_coins: int = 0
+
+
+class TradeItemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    trade_item_id: uuid.UUID
+    item_key: str
+    item_type: str
+    quantity: int
+    from_player_id: uuid.UUID
+
+
+class TradeCoinResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    trade_coin_id: uuid.UUID
+    amount: int
+    from_player_id: uuid.UUID
+
+
+class TradeResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    trade_id: uuid.UUID
+    initiator_id: uuid.UUID
+    recipient_id: uuid.UUID
+    status: TradeStatus
+    trade_fee: int = 0
+    created_at: datetime
+    completed_at: datetime | None = None
+    offer_items: list[TradeItemResponse] = []
+    offer_coins: list[TradeCoinResponse] = []
+    request_items: list[TradeItemResponse] = []
+    request_coins: list[TradeCoinResponse] = []
+
+
+class TradeListResponse(BaseModel):
+    trades: list[TradeResponse]
+    total: int
+
+
+# === 拍卖行相关 Schema ===
+
+
+class AuctionStatus(str, Enum):
+    ACTIVE = "active"
+    SOLD = "sold"
+    EXPIRED = "expired"
+    CANCELLED = "cancelled"
+
+
+class CreateAuctionRequest(BaseModel):
+    item_key: str = Field(min_length=1, max_length=128)
+    item_type: ItemType = ItemType.MATERIAL
+    quantity: int = Field(default=1, ge=1)
+    starting_price: int = Field(ge=1)
+    buyout_price: int | None = None
+    duration_hours: int = Field(default=24, ge=1, le=168)
+
+
+class AuctionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    listing_id: uuid.UUID
+    seller_id: uuid.UUID
+    item_key: str
+    item_type: str
+    quantity: int
+    starting_price: int
+    current_price: int
+    buyout_price: int | None = None
+    status: AuctionStatus
+    highest_bidder_id: uuid.UUID | None = None
+    auction_tax: int = 0
+    created_at: datetime
+    expires_at: datetime
+    sold_at: datetime | None = None
+    buyer_id: uuid.UUID | None = None
+
+
+class AuctionListResponse(BaseModel):
+    listings: list[AuctionResponse]
+    total: int
+
+
+class BidRequest(BaseModel):
+    bid_amount: int = Field(ge=1)
+
+
+# === 钱包相关 Schema ===
+
+
+class TransactionType(str, Enum):
+    EARN = "earn"
+    SPEND = "spend"
+    TRADE_SEND = "trade_send"
+    TRADE_RECEIVE = "trade_receive"
+    AUCTION_SELL = "auction_sell"
+    AUCTION_BUY = "auction_buy"
+    FEE = "fee"
+    TAX = "tax"
+    GIFT = "gift"
+    QUEST_REWARD = "quest_reward"
+
+
+class WalletResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    wallet_id: uuid.UUID
+    player_id: uuid.UUID
+    gold_coins: int = 0
+    created_at: datetime
+    updated_at: datetime
+
+
+class WalletTransactionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    transaction_id: uuid.UUID
+    transaction_type: TransactionType
+    amount: int
+    balance_before: int
+    balance_after: int
+    description: str | None = None
+    reference_id: str | None = None
+    created_at: datetime
+
+
+class WalletTransactionListResponse(BaseModel):
+    transactions: list[WalletTransactionResponse]
+    total: int
