@@ -38,6 +38,12 @@ class Scope(str, Enum):
 
     SOCIAL_READ = "social:read"
 
+    GUILD_WAR_READ = "guild_war:read"
+    GUILD_WAR_WRITE = "guild_war:write"
+
+    COLLAB_QUEST_READ = "collab_quest:read"
+    COLLAB_QUEST_WRITE = "collab_quest:write"
+
     REVIEW_APPROVE = "review:approve"
 
 
@@ -58,6 +64,10 @@ ROLE_SCOPES: dict[Role, list[Scope]] = {
         Scope.GUILD_READ,
         Scope.GUILD_WRITE,
         Scope.SOCIAL_READ,
+        Scope.GUILD_WAR_READ,
+        Scope.GUILD_WAR_WRITE,
+        Scope.COLLAB_QUEST_READ,
+        Scope.COLLAB_QUEST_WRITE,
     ],
     Role.OPS: [
         Scope.VOTES_HISTORY_READ,

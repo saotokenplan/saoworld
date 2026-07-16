@@ -2,6 +2,18 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-17 08:00 — auto-20260717-0800
+
+- 任务：M2 社交系统扩展（公会战 + 好友协作任务）
+- 分支：auto/auto-20260717-0800
+- 状态：✅ 已完成
+- 工作内容：
+  - 实现公会战系统（guild_wars + guild_war_participants 表、GuildWarRepository 15方法、9 API端点、15测试用例）
+  - 实现好友协作任务系统（friend_collab_quests 表、FriendCollabQuestRepository 12方法、8 API端点、12测试用例）
+  - player-service 测试从 232 增加到 259（+27）
+  - 全量验证：8 个后端服务共 1096 个测试全部通过，ruff 检查通过
+  - M2 里程碑全部完成
+
 ## 2026-07-17 05:00 — auto-20260717-0500
 
 - 任务：项目就绪状态持续验证

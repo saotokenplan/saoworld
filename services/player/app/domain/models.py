@@ -601,6 +601,139 @@ class AuctionListing(Base):
     )
 
 
+class GuildWar(Base):
+    """公会战表。"""
+
+    __tablename__ = "guild_wars"
+
+    war_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    challenger_guild_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    defender_guild_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="declared", server_default="declared", index=True
+    )
+    war_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="territory", server_default="territory", index=True
+    )
+    declared_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    winner_guild_id: Mapped[uuid.UUID | None] = mapped_column(UUIDType(), nullable=True, index=True)
+    challenger_score: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    defender_score: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    reward_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('declared', 'accepted', 'in_progress', 'completed', 'cancelled')",
+            name="guild_wars_status_check",
+        ),
+        CheckConstraint(
+            "war_type IN ('territory', 'resource', 'honor')",
+            name="guild_wars_type_check",
+        ),
+        CheckConstraint("challenger_score >= 0", name="guild_wars_challenger_score_check"),
+        CheckConstraint("defender_score >= 0", name="guild_wars_defender_score_check"),
+        Index("guild_wars_challenger_status_idx", "challenger_guild_id", "status"),
+        Index("guild_wars_defender_status_idx", "defender_guild_id", "status"),
+    )
+
+
+class GuildWarParticipant(Base):
+    """公会战参与成员表。"""
+
+    __tablename__ = "guild_war_participants"
+
+    participant_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    war_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    guild_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    kills: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    deaths: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    contribution_score: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    joined_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint("kills >= 0", name="guild_war_participants_kills_check"),
+        CheckConstraint("deaths >= 0", name="guild_war_participants_deaths_check"),
+        CheckConstraint("contribution_score >= 0", name="guild_war_participants_contribution_check"),
+        Index("guild_war_participants_war_player_idx", "war_id", "player_id", unique=True),
+        Index("guild_war_participants_war_guild_idx", "war_id", "guild_id"),
+    )
+
+
+class FriendCollabQuest(Base):
+    """好友协作任务表。"""
+
+    __tablename__ = "friend_collab_quests"
+
+    quest_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    initiator_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    friend_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    quest_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="hunt", server_default="hunt", index=True
+    )
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="pending_invite", server_default="pending_invite", index=True
+    )
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    objectives_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    progress_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    rewards_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    schema_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "quest_type IN ('hunt', 'explore', 'collect', 'escort', 'challenge')",
+            name="friend_collab_quests_type_check",
+        ),
+        CheckConstraint(
+            "status IN ('pending_invite', 'active', 'completed', 'failed', 'expired')",
+            name="friend_collab_quests_status_check",
+        ),
+        Index("friend_collab_quests_initiator_status_idx", "initiator_id", "status"),
+        Index("friend_collab_quests_friend_status_idx", "friend_id", "status"),
+    )
+
+
 class PlayerWallet(Base):
     """玩家钱包表。"""
 
