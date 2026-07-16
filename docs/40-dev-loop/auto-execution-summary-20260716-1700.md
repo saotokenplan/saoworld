@@ -77,4 +77,4 @@
 ## 合并状态
 
 - 合并目标：feature-prd
-- 合并状态：待执行
+- 合并状态：✅ 已完成（merge commit: 6dd9bda）
