@@ -33,19 +33,25 @@
 | test_world_manager.gd | WorldManager 区域管理 | 39 |
 | test_vote_manager.gd | VoteManager 投票系统管理（含落地信息、讨论区方法） | 32 |
 | test_content_manager.gd | ContentManager 内容更新管理 | 22 |
+| test_save_manager.gd | SaveManager 存档系统管理（含异步存档、缓存机制） | 24 |
+| test_player_manager.gd | PlayerManager 玩家信息管理（含索引优化、声望预排序、并行请求） | 41 |
+| test_friend_manager.gd | FriendManager 好友系统管理 | 15 |
+| test_private_chat_manager.gd | PrivateChatManager 私聊系统管理 | 11 |
 | test_combat_manager.gd | CombatManager 战斗系统管理 | 13 |
 | test_npc_dialog.gd | NPCDialog 对话交互组件 | 13 |
+| test_feedback_manager.gd | FeedbackManager 用户反馈管理 | 18 |
+| test_feedback_panel.gd | FeedbackPanel 反馈面板 | 22 |
 | test_vote_result_panel.gd | VoteResultPanel 投票结果展示 | 12 |
+| test_vote_review_panel.gd | VoteReviewPanel 投票复盘面板 | 11 |
+| test_equipment_panel.gd | EquipmentPanel 装备面板 | 6 |
 | test_vote_history_panel.gd | VoteHistoryPanel 投票历史面板 | 7 |
 | test_audio_manager.gd | AudioManager 音频管理 | 17 |
-| test_player_manager.gd | PlayerManager 玩家信息管理（含索引优化、声望预排序、并行请求） | 41 |
 | test_player.gd | Player 玩家移动与状态 | 15 |
 | test_api_manager.gd | APIManager API 请求管理 | 11 |
 | test_game_state.gd | GameState 全局状态管理 | 11 |
 | test_voting_panel.gd | VotingPanel 投票界面 | 5 |
 | test_content_package_detail.gd | ContentPackageDetail 内容包详情弹窗 | 9 |
 | test_inventory_manager.gd | InventoryManager 背包系统管理 | 9 |
-| test_save_manager.gd | SaveManager 存档系统管理（含异步存档、缓存机制） | 24 |
 | test_quest_panel.gd | QuestPanel 任务面板组件 | 9 |
 | test_npc_panel.gd | NPCPanel NPC 列表 | 4 |
 | test_combat_hud.gd | CombatHUD 战斗 HUD | 7 |
@@ -57,8 +63,6 @@
 | test_world_map_navigation.gd | WorldMap 区域导航与进入 | 5 |
 | test_enemy.gd | Enemy 怪物实体 | 8 |
 | test_personal_center.gd | PersonalCenter 个人中心 | 1 |
-| test_feedback_manager.gd | FeedbackManager 用户反馈管理 | 18 |
-| test_feedback_panel.gd | FeedbackPanel 反馈面板 | 22 |
 
 ## 测试覆盖范围
 
@@ -74,10 +78,14 @@
 - **InventoryManager**：背包数据管理、物品添加/移除/使用
 - **SaveManager**：存档读写、自动保存、备份管理、异步存档（Thread）、存档信息缓存（TTL）、缓存失效机制
 - **FeedbackManager**：反馈提交管理、类型/优先级验证、快捷方法（bug/suggestion/question）、待处理请求追踪、响应解析
+- **FriendManager**：好友列表/待处理请求管理、信号声明、好友关系判定、好友计数
+- **PrivateChatManager**：未读消息缓存管理、信号声明、加载状态、未读数查询
+- **EquipmentPanel**：装备列表显示、属性统计、信号声明（back_pressed/equip_item/unequip_item）
 
 ### UI 组件测试
 - **VotingPanel**：信号声明、候选项选择状态、投票状态、提交按钮逻辑
 - **VoteResultPanel**：信号声明、百分比计算、获胜者判定、总票数计算
+- **VoteReviewPanel**：信号声明、初始状态、复盘数据展示（show_review 设置 review_data）
 - **VoteHistoryPanel**：信号声明、分页状态、历史数据管理、落地展示
 - **VoteDiscussionPanel**：初始状态、讨论列表渲染、回复列表渲染、排序切换、发布验证、信号发射
 - **NPCPanel**：信号声明、NPC 列表加载、数据覆盖
