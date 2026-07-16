@@ -20,7 +20,7 @@
   - 生成执行摘要 auto-execution-summary-20260716-1800.md
 - 验证结果：player-service 测试 215/215 通过，ruff 和 mypy 检查通过
 - 修改文件：9 个（4 新建 + 5 修改）
-- 合并状态：✅ 待合并到 feature-prd
+- 合并状态：✅ 已合并到 feature-prd（merge commit: 4659972）
 
 ## 2026-07-16 17:00 — auto-20260716-1700
 
