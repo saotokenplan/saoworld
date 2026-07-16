@@ -909,6 +909,178 @@ class GuildQuestListResponse(BaseModel):
     total: int
 
 
+# === 公会战相关 Schema ===
+
+
+class GuildWarStatus(str, Enum):
+    DECLARED = "declared"
+    ACCEPTED = "accepted"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+
+class GuildWarType(str, Enum):
+    TERRITORY = "territory"
+    RESOURCE = "resource"
+    HONOR = "honor"
+
+
+class DeclareWarRequest(BaseModel):
+    defender_guild_id: uuid.UUID
+    war_type: GuildWarType = GuildWarType.TERRITORY
+    reward_config: dict | None = None
+
+
+class JoinWarRequest(BaseModel):
+    guild_id: uuid.UUID
+
+
+class GuildWarResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    war_id: uuid.UUID
+    challenger_guild_id: uuid.UUID
+    defender_guild_id: uuid.UUID
+    status: GuildWarStatus
+    war_type: GuildWarType
+    declared_at: datetime
+    accepted_at: datetime | None = None
+    started_at: datetime | None = None
+    ended_at: datetime | None = None
+    winner_guild_id: uuid.UUID | None = None
+    challenger_score: int = 0
+    defender_score: int = 0
+    reward: dict | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    def model_validate(cls, obj: Any, *args: Any, **kwargs: Any) -> "GuildWarResponse":
+        if hasattr(obj, "__table__"):
+            obj_dict = {}
+            for attr in [
+                "war_id", "challenger_guild_id", "defender_guild_id", "status",
+                "war_type", "declared_at", "accepted_at", "started_at", "ended_at",
+                "winner_guild_id", "challenger_score", "defender_score",
+                "reward_jsonb", "created_at", "updated_at",
+            ]:
+                try:
+                    value = getattr(obj, attr)
+                    obj_dict[attr] = value
+                except Exception:
+                    obj_dict[attr] = None
+            obj_dict["reward"] = obj_dict.pop("reward_jsonb", None)
+            return super().model_validate(obj_dict, *args, **kwargs)
+        return super().model_validate(obj, *args, **kwargs)
+
+
+class GuildWarListResponse(BaseModel):
+    wars: list[GuildWarResponse]
+    total: int
+
+
+class GuildWarParticipantResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    participant_id: uuid.UUID
+    war_id: uuid.UUID
+    guild_id: uuid.UUID
+    player_id: uuid.UUID
+    kills: int = 0
+    deaths: int = 0
+    contribution_score: int = 0
+    joined_at: datetime
+
+
+class WarScoreboardResponse(BaseModel):
+    challenger_participants: list[GuildWarParticipantResponse]
+    defender_participants: list[GuildWarParticipantResponse]
+
+
+# === 好友协作任务相关 Schema ===
+
+
+class FriendCollabQuestStatus(str, Enum):
+    PENDING_INVITE = "pending_invite"
+    ACTIVE = "active"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    EXPIRED = "expired"
+
+
+class FriendCollabQuestType(str, Enum):
+    HUNT = "hunt"
+    EXPLORE = "explore"
+    COLLECT = "collect"
+    ESCORT = "escort"
+    CHALLENGE = "challenge"
+
+
+class CreateFriendCollabQuestRequest(BaseModel):
+    friend_id: uuid.UUID
+    quest_type: FriendCollabQuestType = FriendCollabQuestType.HUNT
+    title: str = Field(min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=1000)
+    objectives: dict | None = None
+    rewards: dict | None = None
+    expires_at: datetime | None = None
+
+
+class AcceptFriendCollabQuestRequest(BaseModel):
+    pass
+
+
+class UpdateFriendCollabQuestProgressRequest(BaseModel):
+    progress_data: dict = Field(default_factory=dict)
+
+
+class FriendCollabQuestResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    quest_id: uuid.UUID
+    initiator_id: uuid.UUID
+    friend_id: uuid.UUID
+    quest_type: FriendCollabQuestType
+    status: FriendCollabQuestStatus
+    title: str
+    description: str | None = None
+    objectives: dict | None = None
+    progress: dict | None = None
+    rewards: dict | None = None
+    expires_at: datetime | None = None
+    completed_at: datetime | None = None
+    schema_version: int = 1
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    def model_validate(cls, obj: Any, *args: Any, **kwargs: Any) -> "FriendCollabQuestResponse":
+        if hasattr(obj, "__table__"):
+            obj_dict = {}
+            for attr in [
+                "quest_id", "initiator_id", "friend_id", "quest_type", "status",
+                "title", "description", "objectives_jsonb", "progress_jsonb",
+                "rewards_jsonb", "expires_at", "completed_at", "schema_version",
+                "created_at", "updated_at",
+            ]:
+                try:
+                    value = getattr(obj, attr)
+                    obj_dict[attr] = value
+                except Exception:
+                    obj_dict[attr] = None
+            obj_dict["objectives"] = obj_dict.pop("objectives_jsonb", None)
+            obj_dict["progress"] = obj_dict.pop("progress_jsonb", None)
+            obj_dict["rewards"] = obj_dict.pop("rewards_jsonb", None)
+            return super().model_validate(obj_dict, *args, **kwargs)
+        return super().model_validate(obj, *args, **kwargs)
+
+
+class FriendCollabQuestListResponse(BaseModel):
+    quests: list[FriendCollabQuestResponse]
+    total: int
+
+
 # === 交易系统相关 Schema ===
 
 

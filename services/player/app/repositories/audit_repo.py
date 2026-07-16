@@ -53,6 +53,22 @@ ACTION_GUILD_MESSAGE_DELETE = "guild_message_delete"
 ACTION_EQUIPMENT_EQUIP = "equipment_equip"
 ACTION_EQUIPMENT_UNEQUIP = "equipment_unequip"
 
+# 公会战相关动作
+ACTION_GUILD_WAR_DECLARE = "guild_war_declare"
+ACTION_GUILD_WAR_ACCEPT = "guild_war_accept"
+ACTION_GUILD_WAR_CANCEL = "guild_war_cancel"
+ACTION_GUILD_WAR_START = "guild_war_start"
+ACTION_GUILD_WAR_COMPLETE = "guild_war_complete"
+ACTION_GUILD_WAR_JOIN = "guild_war_join"
+
+# 好友协作任务相关动作
+ACTION_COLLAB_QUEST_CREATE = "collab_quest_create"
+ACTION_COLLAB_QUEST_ACCEPT = "collab_quest_accept"
+ACTION_COLLAB_QUEST_REJECT = "collab_quest_reject"
+ACTION_COLLAB_QUEST_PROGRESS = "collab_quest_progress"
+ACTION_COLLAB_QUEST_COMPLETE = "collab_quest_complete"
+ACTION_COLLAB_QUEST_FAIL = "collab_quest_fail"
+
 RESOURCE_PLAYER = "player"
 RESOURCE_REGION = "region"
 RESOURCE_QUEST = "quest"
@@ -68,6 +84,9 @@ RESOURCE_GUILD = "guild"
 RESOURCE_GUILD_MEMBER = "guild_member"
 RESOURCE_GUILD_MESSAGE = "guild_message"
 RESOURCE_EQUIPMENT = "equipment"
+RESOURCE_GUILD_WAR = "guild_war"
+RESOURCE_GUILD_WAR_PARTICIPANT = "guild_war_participant"
+RESOURCE_COLLAB_QUEST = "collab_quest"
 
 
 class AuditRepository:

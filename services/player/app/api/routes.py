@@ -20,6 +20,10 @@ from app.core.deps import (
     RequireQuestsReadScope,
     RequireQuestsWriteScope,
     RequireSocialReadScope,
+    RequireGuildWarReadScope,
+    RequireGuildWarWriteScope,
+    RequireCollabQuestReadScope,
+    RequireCollabQuestWriteScope,
     UserPayload,
 )
 from app.core.errors import PlayerErrorCodes, raise_player_error
@@ -53,6 +57,11 @@ from app.core.metrics import (
     record_reputation_unlock,
     record_equipment_equip,
     record_equipment_unequip,
+    record_guild_war_declared,
+    record_guild_war_completed,
+    record_guild_war_participant_joined,
+    record_collab_quest_created,
+    record_collab_quest_completed,
 )
 from app.repositories.audit_repo import (
     ACTION_ACHIEVEMENT_CREATE,
@@ -94,6 +103,16 @@ from app.repositories.audit_repo import (
     ACTION_GUILD_MESSAGE_DELETE,
     ACTION_EQUIPMENT_EQUIP,
     ACTION_EQUIPMENT_UNEQUIP,
+    ACTION_GUILD_WAR_DECLARE,
+    ACTION_GUILD_WAR_ACCEPT,
+    ACTION_GUILD_WAR_CANCEL,
+    ACTION_GUILD_WAR_COMPLETE,
+    ACTION_GUILD_WAR_JOIN,
+    ACTION_COLLAB_QUEST_CREATE,
+    ACTION_COLLAB_QUEST_ACCEPT,
+    ACTION_COLLAB_QUEST_REJECT,
+    ACTION_COLLAB_QUEST_PROGRESS,
+    ACTION_COLLAB_QUEST_COMPLETE,
     RESOURCE_ACHIEVEMENT,
     RESOURCE_CONTRIBUTION,
     RESOURCE_EXPERIENCE,
@@ -109,6 +128,9 @@ from app.repositories.audit_repo import (
     RESOURCE_GUILD_MEMBER,
     RESOURCE_GUILD_MESSAGE,
     RESOURCE_EQUIPMENT,
+    RESOURCE_GUILD_WAR,
+    RESOURCE_GUILD_WAR_PARTICIPANT,
+    RESOURCE_COLLAB_QUEST,
     AuditRepository,
 )
 from app.repositories.achievement_repo import (
@@ -129,6 +151,8 @@ from app.repositories.player_repo import PlayerRepository
 from app.repositories.trade_repo import TradeRepository
 from app.repositories.auction_repo import AuctionRepository
 from app.repositories.wallet_repo import WalletRepository
+from app.repositories.guild_war_repo import GuildWarRepository
+from app.repositories.friend_collab_quest_repo import FriendCollabQuestRepository
 from app.schemas.player import (
     AcceptQuestRequest,
     AchievementDefinitionListResponse,
@@ -219,6 +243,16 @@ from app.schemas.player import (
     WalletResponse,
     WalletTransactionResponse,
     WalletTransactionListResponse,
+    GuildWarResponse,
+    GuildWarListResponse,
+    GuildWarParticipantResponse,
+    WarScoreboardResponse,
+    DeclareWarRequest,
+    JoinWarRequest,
+    FriendCollabQuestResponse,
+    FriendCollabQuestListResponse,
+    CreateFriendCollabQuestRequest,
+    UpdateFriendCollabQuestProgressRequest,
 )
 
 router = APIRouter()
@@ -5928,6 +5962,1161 @@ async def get_wallet_transactions(
     return EnvelopeResponse(
         request_id=request_id,
         data=WalletTransactionListResponse(transactions=transaction_responses, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+# ============================================================
+# 公会战相关 API
+# ============================================================
+
+
+@router.post(
+    "/player/guild/wars",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not guild leader/officer"},
+        409: {"description": "Cannot declare war"},
+    },
+    tags=["guild-wars"],
+)
+async def declare_war(
+    request: Request,
+    body: DeclareWarRequest,
+    current_user: UserPayload = RequireGuildWarWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildWarResponse]:
+    """宣战（公会会长/官员）"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_war_declare")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    war_repo = GuildWarRepository(db)
+    audit_repo = AuditRepository(db)
+
+    # 获取玩家所在公会
+    guild = await guild_repo.get_guild_by_player(player_uuid)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.NOT_IN_GUILD,
+            "您未加入任何公会",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    # 检查是否为会长或官员
+    if not await guild_repo.is_guild_officer(guild.guild_id, player_uuid):
+        raise_player_error(
+            PlayerErrorCodes.NOT_GUILD_LEADER_OR_OFFICER,
+            "只有会长或官员才能宣战",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    # 检查不能对自身公会宣战
+    if guild.guild_id == body.defender_guild_id:
+        raise_player_error(
+            PlayerErrorCodes.CANNOT_DECLARE_WAR_ON_SELF,
+            "不能对自身公会宣战",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # 检查防守方公会是否存在
+    defender_guild = await guild_repo.get_guild_by_id(body.defender_guild_id)
+    if defender_guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "目标公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    # 检查是否已有进行中的战争
+    if await war_repo.has_active_war_between(guild.guild_id, body.defender_guild_id):
+        raise_player_error(
+            PlayerErrorCodes.GUILD_WAR_ALREADY_EXISTS,
+            "两个公会之间已有进行中的战争",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    war = await war_repo.declare_war(
+        challenger_guild_id=guild.guild_id,
+        defender_guild_id=body.defender_guild_id,
+        war_type=body.war_type.value,
+        reward_config=body.reward_config,
+    )
+
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_GUILD_WAR_DECLARE,
+        resource_type=RESOURCE_GUILD_WAR,
+        resource_id=war.war_id,
+        request_payload_jsonb={"defender_guild_id": str(body.defender_guild_id), "war_type": body.war_type.value},
+        result_status=201,
+    )
+
+    record_guild_war_declared(str(guild.guild_id))
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildWarResponse.model_validate(war),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/guild/wars/{war_id}/accept",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not defender guild leader"},
+        409: {"description": "War not in declared status"},
+    },
+    tags=["guild-wars"],
+)
+async def accept_war(
+    request: Request,
+    war_id: uuid.UUID,
+    current_user: UserPayload = RequireGuildWarWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildWarResponse]:
+    """接受宣战（防守方公会会长）"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_war_accept")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    war_repo = GuildWarRepository(db)
+    audit_repo = AuditRepository(db)
+
+    war = await war_repo.get_war(war_id)
+    if war is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_WAR_NOT_FOUND,
+            "公会战不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if war.status != "declared":
+        raise_player_error(
+            PlayerErrorCodes.GUILD_WAR_NOT_DECLARED,
+            "公会战不在宣战状态",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    # 获取玩家所在公会
+    guild = await guild_repo.get_guild_by_player(player_uuid)
+    if guild is None or guild.guild_id != war.defender_guild_id:
+        raise_player_error(
+            PlayerErrorCodes.NOT_GUILD_LEADER_OR_OFFICER,
+            "只有防守方公会会长才能接受宣战",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    if not await guild_repo.is_guild_officer(guild.guild_id, player_uuid):
+        raise_player_error(
+            PlayerErrorCodes.NOT_GUILD_LEADER_OR_OFFICER,
+            "只有会长或官员才能接受宣战",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    war = await war_repo.accept_war(war_id)
+
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_GUILD_WAR_ACCEPT,
+        resource_type=RESOURCE_GUILD_WAR,
+        resource_id=war_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildWarResponse.model_validate(war),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/guild/wars/{war_id}/cancel",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not challenger guild leader"},
+        409: {"description": "War not in declared status"},
+    },
+    tags=["guild-wars"],
+)
+async def cancel_war(
+    request: Request,
+    war_id: uuid.UUID,
+    current_user: UserPayload = RequireGuildWarWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildWarResponse]:
+    """取消公会战（宣战方公会会长）"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_war_cancel")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    war_repo = GuildWarRepository(db)
+    audit_repo = AuditRepository(db)
+
+    war = await war_repo.get_war(war_id)
+    if war is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_WAR_NOT_FOUND,
+            "公会战不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if war.status != "declared":
+        raise_player_error(
+            PlayerErrorCodes.GUILD_WAR_NOT_DECLARED,
+            "只有宣战状态的战争才能取消",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    guild = await guild_repo.get_guild_by_player(player_uuid)
+    if guild is None or guild.guild_id != war.challenger_guild_id:
+        raise_player_error(
+            PlayerErrorCodes.NOT_GUILD_LEADER_OR_OFFICER,
+            "只有宣战方公会会长才能取消战争",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    if not await guild_repo.is_guild_officer(guild.guild_id, player_uuid):
+        raise_player_error(
+            PlayerErrorCodes.NOT_GUILD_LEADER_OR_OFFICER,
+            "只有会长或官员才能取消战争",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    war = await war_repo.cancel_war(war_id, guild.guild_id)
+
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_GUILD_WAR_CANCEL,
+        resource_type=RESOURCE_GUILD_WAR,
+        resource_id=war_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildWarResponse.model_validate(war),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/guild/wars/active",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["guild-wars"],
+)
+async def get_active_wars(
+    request: Request,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireGuildWarReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildWarListResponse]:
+    """获取我方公会的进行中战争"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_war_active")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    war_repo = GuildWarRepository(db)
+
+    guild = await guild_repo.get_guild_by_player(player_uuid)
+    if guild is None:
+        return EnvelopeResponse(
+            request_id=request_id,
+            data=GuildWarListResponse(wars=[], total=0),
+            meta=PaginatedMeta(total=0, limit=limit, offset=offset),
+            trace_id=trace_id,
+        )
+
+    wars, total = await war_repo.get_active_wars(guild.guild_id, limit=limit, offset=offset)
+    war_responses = [GuildWarResponse.model_validate(w) for w in wars]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildWarListResponse(wars=war_responses, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/guild/wars/history",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["guild-wars"],
+)
+async def get_war_history(
+    request: Request,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireGuildWarReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildWarListResponse]:
+    """获取我方公会的战争历史"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_war_history")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    war_repo = GuildWarRepository(db)
+
+    guild = await guild_repo.get_guild_by_player(player_uuid)
+    if guild is None:
+        return EnvelopeResponse(
+            request_id=request_id,
+            data=GuildWarListResponse(wars=[], total=0),
+            meta=PaginatedMeta(total=0, limit=limit, offset=offset),
+            trace_id=trace_id,
+        )
+
+    wars, total = await war_repo.get_guild_war_history(guild.guild_id, limit=limit, offset=offset)
+    war_responses = [GuildWarResponse.model_validate(w) for w in wars]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildWarListResponse(wars=war_responses, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/guild/wars/{war_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "War not found"},
+    },
+    tags=["guild-wars"],
+)
+async def get_war_details(
+    request: Request,
+    war_id: uuid.UUID,
+    current_user: UserPayload = RequireGuildWarReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildWarResponse]:
+    """获取公会战详情"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_war_detail")
+
+    war_repo = GuildWarRepository(db)
+
+    war = await war_repo.get_war(war_id)
+    if war is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_WAR_NOT_FOUND,
+            "公会战不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildWarResponse.model_validate(war),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/guild/wars/{war_id}/join",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        401: {"description": "Unauthorized"},
+        409: {"description": "Already joined or wrong guild"},
+    },
+    tags=["guild-wars"],
+)
+async def join_war(
+    request: Request,
+    war_id: uuid.UUID,
+    body: JoinWarRequest,
+    current_user: UserPayload = RequireGuildWarWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildWarParticipantResponse]:
+    """加入公会战"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_war_join")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    war_repo = GuildWarRepository(db)
+    audit_repo = AuditRepository(db)
+
+    war = await war_repo.get_war(war_id)
+    if war is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_WAR_NOT_FOUND,
+            "公会战不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if war.status not in ("declared", "accepted", "in_progress"):
+        raise_player_error(
+            PlayerErrorCodes.GUILD_WAR_NOT_ACTIVE,
+            "公会战不在可加入状态",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    # 检查玩家是否已加入
+    if await war_repo.is_player_in_war(war_id, player_uuid):
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_ALREADY_IN_WAR,
+            "您已加入此公会战",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    # 检查玩家公会是否为参战方
+    if body.guild_id != war.challenger_guild_id and body.guild_id != war.defender_guild_id:
+        raise_player_error(
+            PlayerErrorCodes.CANNOT_JOIN_OPPONENT_AS_WRONG_GUILD,
+            "您的公会不是参战方",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    participant = await war_repo.join_war(war_id, body.guild_id, player_uuid)
+
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_GUILD_WAR_JOIN,
+        resource_type=RESOURCE_GUILD_WAR_PARTICIPANT,
+        resource_id=participant.participant_id,
+        result_status=201,
+    )
+
+    record_guild_war_participant_joined(str(war_id))
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildWarParticipantResponse.model_validate(participant),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/guild/wars/{war_id}/scoreboard",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "War not found"},
+    },
+    tags=["guild-wars"],
+)
+async def get_war_scoreboard(
+    request: Request,
+    war_id: uuid.UUID,
+    current_user: UserPayload = RequireGuildWarReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[WarScoreboardResponse]:
+    """获取公会战记分板"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_war_scoreboard")
+
+    war_repo = GuildWarRepository(db)
+
+    war = await war_repo.get_war(war_id)
+    if war is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_WAR_NOT_FOUND,
+            "公会战不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    challenger_participants, defender_participants = await war_repo.get_war_scoreboard(war_id)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=WarScoreboardResponse(
+            challenger_participants=[
+                GuildWarParticipantResponse.model_validate(p) for p in challenger_participants
+            ],
+            defender_participants=[
+                GuildWarParticipantResponse.model_validate(p) for p in defender_participants
+            ],
+        ),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/guild/wars/{war_id}/complete",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not authorized"},
+        404: {"description": "War not found"},
+    },
+    tags=["guild-wars"],
+)
+async def complete_war(
+    request: Request,
+    war_id: uuid.UUID,
+    winner_guild_id: uuid.UUID = Query(...),
+    current_user: UserPayload = RequireGuildWarWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildWarResponse]:
+    """完成公会战"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_war_complete")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    war_repo = GuildWarRepository(db)
+    audit_repo = AuditRepository(db)
+
+    war = await war_repo.get_war(war_id)
+    if war is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_WAR_NOT_FOUND,
+            "公会战不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if war.status != "in_progress":
+        raise_player_error(
+            PlayerErrorCodes.GUILD_WAR_NOT_ACTIVE,
+            "公会战不在进行中状态",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    guild = await guild_repo.get_guild_by_player(player_uuid)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.NOT_IN_GUILD,
+            "您未加入任何公会",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    if not await guild_repo.is_guild_officer(guild.guild_id, player_uuid):
+        raise_player_error(
+            PlayerErrorCodes.NOT_GUILD_LEADER_OR_OFFICER,
+            "只有会长或官员才能结束战争",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    war = await war_repo.complete_war(war_id, winner_guild_id)
+
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_GUILD_WAR_COMPLETE,
+        resource_type=RESOURCE_GUILD_WAR,
+        resource_id=war_id,
+        request_payload_jsonb={"winner_guild_id": str(winner_guild_id)},
+        result_status=200,
+    )
+
+    record_guild_war_completed(str(winner_guild_id))
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildWarResponse.model_validate(war),
+        trace_id=trace_id,
+    )
+
+
+# ============================================================
+# 好友协作任务相关 API
+# ============================================================
+
+
+@router.post(
+    "/player/friend/collab-quests",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        401: {"description": "Unauthorized"},
+        409: {"description": "Cannot create collab quest"},
+    },
+    tags=["collab-quests"],
+)
+async def create_collab_quest(
+    request: Request,
+    body: CreateFriendCollabQuestRequest,
+    current_user: UserPayload = RequireCollabQuestWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FriendCollabQuestResponse]:
+    """创建好友协作任务"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_collab_create")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # 检查不能与自己协作
+    if player_uuid == body.friend_id:
+        raise_player_error(
+            PlayerErrorCodes.CANNOT_COLLAB_WITH_SELF,
+            "不能与自己创建协作任务",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # 检查是否为好友
+    friend_repo = FriendRepository(db)
+    friend_member = await friend_repo.get_friendship(player_uuid, body.friend_id)
+    if friend_member is None or friend_member.status != "accepted":
+        raise_player_error(
+            PlayerErrorCodes.NOT_FRIENDS_FOR_COLLAB,
+            "只能与好友创建协作任务",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    quest_repo = FriendCollabQuestRepository(db)
+    audit_repo = AuditRepository(db)
+
+    quest = await quest_repo.create_quest(
+        initiator_id=player_uuid,
+        friend_id=body.friend_id,
+        quest_type=body.quest_type.value,
+        title=body.title,
+        objectives=body.objectives,
+        rewards=body.rewards,
+        expires_at=body.expires_at,
+        description=body.description if hasattr(body, "description") else None,
+    )
+
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_COLLAB_QUEST_CREATE,
+        resource_type=RESOURCE_COLLAB_QUEST,
+        resource_id=quest.quest_id,
+        request_payload_jsonb={"friend_id": str(body.friend_id), "quest_type": body.quest_type.value},
+        result_status=201,
+    )
+
+    record_collab_quest_created(current_user.user_id)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=FriendCollabQuestResponse.model_validate(quest),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/friend/collab-quests/{quest_id}/accept",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not the invited friend"},
+        409: {"description": "Quest not pending"},
+    },
+    tags=["collab-quests"],
+)
+async def accept_collab_quest(
+    request: Request,
+    quest_id: uuid.UUID,
+    current_user: UserPayload = RequireCollabQuestWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FriendCollabQuestResponse]:
+    """接受协作任务邀请"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_collab_accept")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    quest_repo = FriendCollabQuestRepository(db)
+    audit_repo = AuditRepository(db)
+
+    quest = await quest_repo.get_quest(quest_id)
+    if quest is None:
+        raise_player_error(
+            PlayerErrorCodes.COLLAB_QUEST_NOT_FOUND,
+            "协作任务不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if quest.friend_id != player_uuid:
+        raise_player_error(
+            PlayerErrorCodes.COLLAB_QUEST_INVITE_NOT_FOR_YOU,
+            "此协作任务邀请不是发给您的",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    if quest.status != "pending_invite":
+        raise_player_error(
+            PlayerErrorCodes.COLLAB_QUEST_NOT_PENDING,
+            "协作任务不在待接受状态",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    quest = await quest_repo.accept_quest(quest_id)
+
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_COLLAB_QUEST_ACCEPT,
+        resource_type=RESOURCE_COLLAB_QUEST,
+        resource_id=quest_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=FriendCollabQuestResponse.model_validate(quest),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/friend/collab-quests/{quest_id}/reject",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not the invited friend"},
+        409: {"description": "Quest not pending"},
+    },
+    tags=["collab-quests"],
+)
+async def reject_collab_quest(
+    request: Request,
+    quest_id: uuid.UUID,
+    current_user: UserPayload = RequireCollabQuestWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FriendCollabQuestResponse]:
+    """拒绝协作任务邀请"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_collab_reject")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    quest_repo = FriendCollabQuestRepository(db)
+    audit_repo = AuditRepository(db)
+
+    quest = await quest_repo.get_quest(quest_id)
+    if quest is None:
+        raise_player_error(
+            PlayerErrorCodes.COLLAB_QUEST_NOT_FOUND,
+            "协作任务不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if quest.friend_id != player_uuid:
+        raise_player_error(
+            PlayerErrorCodes.COLLAB_QUEST_INVITE_NOT_FOR_YOU,
+            "此协作任务邀请不是发给您的",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    if quest.status != "pending_invite":
+        raise_player_error(
+            PlayerErrorCodes.COLLAB_QUEST_NOT_PENDING,
+            "协作任务不在待接受状态",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    quest = await quest_repo.reject_quest(quest_id)
+
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_COLLAB_QUEST_REJECT,
+        resource_type=RESOURCE_COLLAB_QUEST,
+        resource_id=quest_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=FriendCollabQuestResponse.model_validate(quest),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/friend/collab-quests/{quest_id}/progress",
+    responses={
+        401: {"description": "Unauthorized"},
+        409: {"description": "Quest not active"},
+    },
+    tags=["collab-quests"],
+)
+async def update_collab_quest_progress(
+    request: Request,
+    quest_id: uuid.UUID,
+    body: UpdateFriendCollabQuestProgressRequest,
+    current_user: UserPayload = RequireCollabQuestWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FriendCollabQuestResponse]:
+    """更新协作任务进度"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_collab_progress")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    quest_repo = FriendCollabQuestRepository(db)
+    audit_repo = AuditRepository(db)
+
+    quest = await quest_repo.get_quest(quest_id)
+    if quest is None:
+        raise_player_error(
+            PlayerErrorCodes.COLLAB_QUEST_NOT_FOUND,
+            "协作任务不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if quest.status != "active":
+        raise_player_error(
+            PlayerErrorCodes.COLLAB_QUEST_NOT_ACTIVE,
+            "协作任务不在进行中状态",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    quest = await quest_repo.update_progress(quest_id, player_uuid, body.progress_data)
+
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_COLLAB_QUEST_PROGRESS,
+        resource_type=RESOURCE_COLLAB_QUEST,
+        resource_id=quest_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=FriendCollabQuestResponse.model_validate(quest),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/friend/collab-quests/{quest_id}/complete",
+    responses={
+        401: {"description": "Unauthorized"},
+        409: {"description": "Quest not active"},
+    },
+    tags=["collab-quests"],
+)
+async def complete_collab_quest(
+    request: Request,
+    quest_id: uuid.UUID,
+    current_user: UserPayload = RequireCollabQuestWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FriendCollabQuestResponse]:
+    """完成协作任务"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_collab_complete")
+
+    try:
+        uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    quest_repo = FriendCollabQuestRepository(db)
+    audit_repo = AuditRepository(db)
+
+    quest = await quest_repo.get_quest(quest_id)
+    if quest is None:
+        raise_player_error(
+            PlayerErrorCodes.COLLAB_QUEST_NOT_FOUND,
+            "协作任务不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if quest.status != "active":
+        raise_player_error(
+            PlayerErrorCodes.COLLAB_QUEST_NOT_ACTIVE,
+            "协作任务不在进行中状态",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    quest = await quest_repo.complete_quest(quest_id)
+
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role="player",
+        action=ACTION_COLLAB_QUEST_COMPLETE,
+        resource_type=RESOURCE_COLLAB_QUEST,
+        resource_id=quest_id,
+        result_status=200,
+    )
+
+    record_collab_quest_completed(current_user.user_id)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=FriendCollabQuestResponse.model_validate(quest),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/friend/collab-quests/active",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["collab-quests"],
+)
+async def get_active_collab_quests(
+    request: Request,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireCollabQuestReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FriendCollabQuestListResponse]:
+    """获取进行中的协作任务"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_collab_active")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    quest_repo = FriendCollabQuestRepository(db)
+    quests, total = await quest_repo.get_active_quests(player_uuid, limit=limit, offset=offset)
+    quest_responses = [FriendCollabQuestResponse.model_validate(q) for q in quests]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=FriendCollabQuestListResponse(quests=quest_responses, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/friend/collab-quests/pending",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["collab-quests"],
+)
+async def get_pending_collab_quests(
+    request: Request,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireCollabQuestReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FriendCollabQuestListResponse]:
+    """获取待处理的协作任务邀请"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_collab_pending")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    quest_repo = FriendCollabQuestRepository(db)
+    quests, total = await quest_repo.get_pending_invites(player_uuid, limit=limit, offset=offset)
+    quest_responses = [FriendCollabQuestResponse.model_validate(q) for q in quests]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=FriendCollabQuestListResponse(quests=quest_responses, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/friend/collab-quests/history",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["collab-quests"],
+)
+async def get_collab_quest_history(
+    request: Request,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireCollabQuestReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[FriendCollabQuestListResponse]:
+    """获取协作任务历史"""
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_collab_history")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    quest_repo = FriendCollabQuestRepository(db)
+    quests, total = await quest_repo.get_quest_history(player_uuid, limit=limit, offset=offset)
+    quest_responses = [FriendCollabQuestResponse.model_validate(q) for q in quests]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=FriendCollabQuestListResponse(quests=quest_responses, total=total),
         meta=PaginatedMeta(total=total, limit=limit, offset=offset),
         trace_id=trace_id,
     )

@@ -360,3 +360,62 @@ def record_equipment_equip() -> None:
 def record_equipment_unequip() -> None:
     """记录一次装备卸下。"""
     EQUIPMENT_OPERATIONS_TOTAL.labels(action="unequip").inc()
+
+
+# 公会战相关指标
+GUILD_WARS_DECLARED_TOTAL = Counter(
+    "guild_wars_declared_total",
+    "公会战宣战次数",
+    labelnames=["challenger_guild_id"],
+)
+
+GUILD_WARS_COMPLETED_TOTAL = Counter(
+    "guild_wars_completed_total",
+    "公会战完成次数",
+    labelnames=["winner_guild_id"],
+)
+
+GUILD_WAR_PARTICIPANTS_JOINED_TOTAL = Counter(
+    "guild_war_participants_joined_total",
+    "公会战参与加入次数",
+    labelnames=["war_id"],
+)
+
+
+def record_guild_war_declared(challenger_guild_id: str) -> None:
+    """记录一次公会战宣战。"""
+    GUILD_WARS_DECLARED_TOTAL.labels(challenger_guild_id=challenger_guild_id).inc()
+
+
+def record_guild_war_completed(winner_guild_id: str) -> None:
+    """记录一次公会战完成。"""
+    GUILD_WARS_COMPLETED_TOTAL.labels(winner_guild_id=winner_guild_id).inc()
+
+
+def record_guild_war_participant_joined(war_id: str) -> None:
+    """记录一次公会战参与加入。"""
+    GUILD_WAR_PARTICIPANTS_JOINED_TOTAL.labels(war_id=war_id).inc()
+
+
+# 好友协作任务相关指标
+COLLAB_QUESTS_CREATED_TOTAL = Counter(
+    "collab_quests_created_total",
+    "好友协作任务创建次数",
+    labelnames=["initiator_id"],
+)
+
+COLLAB_QUESTS_COMPLETED_TOTAL = Counter(
+    "collab_quests_completed_total",
+    "好友协作任务完成次数",
+    labelnames=["initiator_id"],
+)
+
+
+def record_collab_quest_created(initiator_id: str) -> None:
+    """记录一次好友协作任务创建。"""
+    COLLAB_QUESTS_CREATED_TOTAL.labels(initiator_id=initiator_id).inc()
+
+
+def record_collab_quest_completed(initiator_id: str) -> None:
+    """记录一次好友协作任务完成。"""
+    COLLAB_QUESTS_COMPLETED_TOTAL.labels(initiator_id=initiator_id).inc()
