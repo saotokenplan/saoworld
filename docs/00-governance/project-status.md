@@ -22,6 +22,7 @@
 
 ## 当前阶段
 
+- **M2-01 第三章区域内容开发完成（2026-07-16 15:00）**：启动 M2 里程碑首个任务，为第三章「自由之声」新增2个扩展区域的完整内容。包括：1）2个新区域——熔火裂谷（铁卫联盟矿业重镇，火山地带，15-25级）和永霜冰原（暗影面纱研究圣地，冰川区域，20-30级），各含4个关键地点、阵营关系、资源/风险等级；2）8个新NPC（火山4个：指挥官维克托·烈焰、锻造师赫尔墨斯·熔炉、地质学家莉娜·岩心、矿工巴尔德·矿石；冰原4个：研究员伊莎贝拉·冰渊、探险家奥拉夫·冰原、隐者凌霜·隐者、守卫队长艾拉·寒铁），每个含完整对话树；3）14个新任务（2条主线链各5个 + 4个支线），火山主线：裂谷来客→深渊之声→熔炉危机→地底巨兽→熔岩之心，冰原主线：冰原初探→冰封密室→封印松动→冰之宫殿→永霜终焉；4）2个区域Boss——熔岩巨兽（mythic，3阶段，22级）和冰霜女皇（legendary，4阶段，28级），含完整Boss属性、特殊技能和阶段设计；5）chapter_list.json 第三章字段完整填充。quest_list.json 从28个任务扩展到42个任务（+14），npc_list.json 从14个NPC扩展到22个NPC（+8），monster_list.json 从5个怪物扩展到7个怪物（+2），region_list.json 从5个区域扩展到7个区域（+2）。JSON数据格式验证全部通过。为 M2 里程碑提供第三章完整内容基础。
 - **项目状态报告生成（2026-07-16 14:00）**：分析项目当前状态后确认所有规划的技术工作已完成，生成详细项目状态报告。报告确认：1）Sprint 0-9 全部完成，项目进度100%；2）核心指标全部达标（1039个后端测试、297个客户端测试、358个tools测试、23个playtest测试全部通过）；3）功能完整（8个后端服务、完整客户端工程、基础设施齐全、内容资产完善）；4）当前阻塞为运营决策延迟；5）建议立即启动灰度发布流程。已生成状态报告（`docs/40-dev-loop/auto-status-report-20260716-1400.md`）。
 - **项目就绪状态持续验证（2026-07-16 13:00）**：执行周期性项目就绪状态验证，确认所有核心指标持续达标。验证结果：1）8 个后端服务共 1039 个测试全部通过（vote 112 + player 202 + world 120 + generation 228 + review 65 + content 113 + ops 122 + gateway 77）；2）所有 8 个后端服务 ruff 代码质量检查全部通过；3）所有 8 个后端服务 mypy 类型检查全部通过；4）tools 模块共 358 个测试全部通过（content_check 28 + loop_logging 36 + perf_test 68 + agents 226）；5）playtest 23 个测试全部通过；6）workers 30/37 通过（7 个 Redis 环境限制）。项目持续保持灰度发布就绪状态，等待运营决策启动灰度发布流程。
 - **项目就绪状态持续验证与客户端测试清单同步（2026-07-16 04:02）**：执行周期性项目就绪状态验证，并同步更新客户端测试清单。验证结果：1）8 个后端服务共 1039 个测试全部通过（vote 112 + player 202 + world 120 + generation 228 + review 65 + content 113 + ops 122 + gateway 77）；2）所有 8 个后端服务 ruff 代码质量检查全部通过；3）所有 8 个后端服务 mypy 类型检查全部通过；4）tools 模块共 358 个测试全部通过（content_check 28 + loop_logging 36 + perf_test 68 + agents 226）；5）playtest 23 个测试全部通过；6）workers 30/37 通过（7 个 Redis 环境限制）。客户端测试清单同步：补全 game/tests/README.md 中遗漏的 4 个测试文件（test_equipment_panel.gd 6 个、test_friend_manager.gd 15 个、test_private_chat_manager.gd 11 个、test_vote_review_panel.gd 11 个，共 43 个测试用例），更新测试覆盖范围说明，覆盖范围与实际测试文件保持一致。项目持续保持灰度发布就绪状态，等待运营决策启动灰度发布流程。
@@ -278,7 +279,7 @@
 ### 产品侧未定
 
 - ~~世界观根设定的具体文本版本尚未单独沉淀为正式世界观文档。~~ 已完成，`docs/20-specs/world-lore-spec.md` 已创建，包含世界背景、势力阵营、核心规则、地理环境、章节切分等完整设定。
-- ~~首期区域、阵营、关键 NPC、章节切分仍缺少具体实例化内容包。~~ 已完成，`game/data/` 目录已包含区域配置（core_region.json、expansion_region.json）、阵营列表（faction_list.json）、NPC列表（npc_list.json）、任务列表（quest_list.json）、章节列表（chapter_list.json），所有数据均带 `schema_version` 字段。
+- ~~首期区域、阵营、关键 NPC、章节切分仍缺少具体实例化内容包。~~ 已完成，`game/data/` 目录已包含区域配置（core_region.json、expansion_region.json、region_west_forest.json、region_south_oasis.json、region_north_volcano.json、region_frost_glacier.json）、阵营列表（faction_list.json）、NPC列表（npc_list.json，含第三章8个新NPC）、任务列表（quest_list.json，含第三章14个新任务）、怪物列表（monster_list.json，含2个第三章Boss）、章节列表（chapter_list.json），所有数据均带 `schema_version` 字段。第三章「自由之声」已新增熔火裂谷和永霜冰原2个扩展区域，含完整区域数据、8个NPC（含对话树）、14个任务（2条主线链+4个支线）和2个区域Boss。
 - ~~客户端交互稿、界面流和关键页面信息结构尚未文档化。~~ 已完成，客户端交互稿文档已创建，包含主菜单、投票界面、世界地图、任务面板、NPC交互、界面流程图等 7 个文档。
 
 ### 技术侧未定
