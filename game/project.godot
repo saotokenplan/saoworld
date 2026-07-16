@@ -34,6 +34,7 @@ CombatManager="*res://scripts/autoload/CombatManager.gd"
 SaveManager="*res://scripts/autoload/SaveManager.gd"
 InventoryManager="*res://scripts/autoload/InventoryManager.gd"
 FeedbackManager="*res://scripts/autoload/FeedbackManager.gd"
+GuildManager="*res://scripts/autoload/GuildManager.gd"
 
 [display]
 

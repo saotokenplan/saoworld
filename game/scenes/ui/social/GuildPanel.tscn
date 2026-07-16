@@ -1,0 +1,101 @@
+[gd_scene load_steps=3 format=3 uid="uid://guildpanel001"]
+
+[ext_resource type="Script" path="res://scripts/ui/social/guild_panel.gd" id="1_gp"]
+[ext_resource type="PackedScene" path="res://scenes/ui/social/GuildQuestPanel.tscn" id="2_gqp"]
+
+[node name="GuildPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_gp")
+
+[node name="TabContainer" type="TabContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GuildInfoTab" type="Control" parent="TabContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="TabContainer/GuildInfoTab"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="GuildNameLabel" type="Label" parent="TabContainer/GuildInfoTab/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "公会名称"
+
+[node name="GuildDescription" type="Label" parent="TabContainer/GuildInfoTab/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "公会描述"
+
+[node name="GuildStats" type="Label" parent="TabContainer/GuildInfoTab/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "等级: 1 | 成员: 0/50"
+
+[node name="GuildAnnouncement" type="Label" parent="TabContainer/GuildInfoTab/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "公会公告"
+
+[node name="CloseButton" type="Button" parent="TabContainer/GuildInfoTab/VBoxContainer"]
+layout_mode = 2
+text = "关闭"
+
+[node name="MembersTab" type="Control" parent="TabContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="TabContainer/MembersTab"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="MemberList" type="ItemList" parent="TabContainer/MembersTab/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 300)
+
+[node name="RefreshButton" type="Button" parent="TabContainer/MembersTab/VBoxContainer"]
+layout_mode = 2
+text = "刷新成员列表"
+
+[node name="QuestTab" type="Control" parent="TabContainer"]
+layout_mode = 2
+
+[node name="GuildQuestPanel" parent="TabContainer/QuestTab" instance=ExtResource("2_gqp")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
