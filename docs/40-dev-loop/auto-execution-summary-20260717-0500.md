@@ -68,4 +68,4 @@
 
 ## 任务状态
 - 任务状态：已完成
-- 合并状态：待合并到 feature-prd
+- 合并状态：✅ 已合并到 feature-prd（merge commit: c423bda）
