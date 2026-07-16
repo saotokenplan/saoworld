@@ -1,0 +1,72 @@
+[gd_scene load_steps=2 format=3 uid="uid://guildquestpanel001"]
+
+[ext_resource type="Script" path="res://scripts/ui/social/guild_quest_panel.gd" id="1_gqp"]
+
+[node name="GuildQuestPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_gqp")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="QuestListLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "公会任务"
+
+[node name="QuestList" type="ItemList" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 150)
+
+[node name="QuestDetail" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="QuestName" type="Label" parent="VBoxContainer/QuestDetail"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "选择任务查看详情"
+
+[node name="QuestDescription" type="Label" parent="VBoxContainer/QuestDetail"]
+layout_mode = 2
+autowrap_mode = 1
+text = ""
+
+[node name="ProgressBar" type="ProgressBar" parent="VBoxContainer/QuestDetail"]
+layout_mode = 2
+size_flags_horizontal = 3
+value = 0
+
+[node name="ProgressLabel" type="Label" parent="VBoxContainer/QuestDetail"]
+layout_mode = 2
+text = "进度: 0/100"
+
+[node name="RewardLabel" type="Label" parent="VBoxContainer/QuestDetail"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "奖励: "
+
+[node name="ActionButton" type="Button" parent="VBoxContainer/QuestDetail"]
+layout_mode = 2
+text = "领取奖励"
+disabled = true
+
+[node name="RefreshButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "刷新任务"
