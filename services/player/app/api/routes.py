@@ -119,6 +119,7 @@ from app.repositories.contribution_repo import ContributionRepository
 from app.repositories.friend_repo import FriendRepository
 from app.repositories.guild_repo import GuildRepository
 from app.repositories.guild_message_repo import GuildMessageRepository
+from app.repositories.guild_quest_repo import GuildQuestRepository, GuildQuestProgressRepository
 from app.repositories.inventory_repo import InventoryRepository
 from app.repositories.equipment_repo import EquipmentRepository
 from app.repositories.private_message_repo import PrivateMessageRepository
@@ -171,6 +172,11 @@ from app.schemas.player import (
     SocialOverview,
     GuildSummary,
     FriendSummary,
+    GuildQuestResponse,
+    GuildQuestProgressResponse,
+    CreateGuildQuestRequest,
+    UpdateGuildQuestProgressRequest,
+    GuildQuestListResponse,
     get_level_progress,
     HealthResponse,
     InventoryItemResponse,
@@ -4581,5 +4587,501 @@ async def unequip_item(
     return EnvelopeResponse(
         request_id=request_id,
         data=EquipmentResponse.model_validate(equipment),
+        trace_id=trace_id,
+    )
+
+
+# === 公会任务 API ===
+
+
+@router.get(
+    "/player/guilds/{guild_id}/quests",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not in guild"},
+        404: {"description": "Guild not found"},
+    },
+    tags=["guilds"],
+)
+async def get_guild_quests(
+    request: Request,
+    guild_id: uuid.UUID,
+    status: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireGuildReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildQuestListResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_quests")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    quest_repo = GuildQuestRepository(db)
+
+    guild = await guild_repo.get_guild_by_id(guild_id)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    guild_member = await guild_repo.get_member(guild_id, player_uuid)
+    if guild_member is None:
+        raise_player_error(
+            PlayerErrorCodes.NOT_IN_GUILD,
+            "您不是该公会成员",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    quests, total = await quest_repo.get_guild_quests(guild_id, status=status, limit=limit, offset=offset)
+
+    quest_responses = [GuildQuestResponse.model_validate(q) for q in quests]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildQuestListResponse(quests=quest_responses, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/guilds/{guild_id}/quests",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not guild officer"},
+        404: {"description": "Guild not found"},
+        409: {"description": "Quest key already exists"},
+    },
+    tags=["guilds"],
+)
+async def create_guild_quest(
+    request: Request,
+    guild_id: uuid.UUID,
+    body: CreateGuildQuestRequest,
+    current_user: UserPayload = RequireGuildWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildQuestResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_quest_create")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    quest_repo = GuildQuestRepository(db)
+    audit_repo = AuditRepository(db)
+
+    guild = await guild_repo.get_guild_by_id(guild_id)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if not await guild_repo.is_guild_leader(guild_id, player_uuid):
+        raise_player_error(
+            PlayerErrorCodes.NOT_GUILD_LEADER,
+            "只有会长可以创建公会任务",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    existing = await quest_repo.get_quest_by_key(guild_id, body.quest_key)
+    if existing is not None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_QUEST_KEY_EXISTS,
+            "任务键名已存在",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    quest = await quest_repo.create_quest(
+        guild_id=guild_id,
+        quest_key=body.quest_key,
+        name=body.name,
+        description=body.description,
+        quest_type=body.quest_type.value,
+        objectives_jsonb=body.objectives,
+        rewards_jsonb=body.rewards,
+        progress_target=body.progress_target,
+        time_limit_minutes=body.time_limit_minutes,
+        created_by=player_uuid,
+    )
+
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action="GUILD_QUEST_CREATE",
+        resource_type="GUILD_QUEST",
+        resource_id=quest.guild_quest_id,
+        request_payload_jsonb=body.model_dump(mode="json"),
+        result_status=201,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildQuestResponse.model_validate(quest),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/guilds/{guild_id}/quests/{guild_quest_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not in guild"},
+        404: {"description": "Guild or quest not found"},
+    },
+    tags=["guilds"],
+)
+async def get_guild_quest(
+    request: Request,
+    guild_id: uuid.UUID,
+    guild_quest_id: uuid.UUID,
+    current_user: UserPayload = RequireGuildReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildQuestResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_quest_get")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    quest_repo = GuildQuestRepository(db)
+
+    guild = await guild_repo.get_guild_by_id(guild_id)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    guild_member = await guild_repo.get_member(guild_id, player_uuid)
+    if guild_member is None:
+        raise_player_error(
+            PlayerErrorCodes.NOT_IN_GUILD,
+            "您不是该公会成员",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    quest = await quest_repo.get_quest_by_id(guild_quest_id)
+    if quest is None or quest.guild_id != guild_id:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_QUEST_NOT_FOUND,
+            "任务不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildQuestResponse.model_validate(quest),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/guilds/{guild_id}/quests/{guild_quest_id}/progress",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not in guild"},
+        404: {"description": "Guild or quest not found"},
+        409: {"description": "Quest not active"},
+    },
+    tags=["guilds"],
+)
+async def update_guild_quest_progress(
+    request: Request,
+    guild_id: uuid.UUID,
+    guild_quest_id: uuid.UUID,
+    body: UpdateGuildQuestProgressRequest,
+    current_user: UserPayload = RequireGuildWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildQuestResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_quest_progress")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    quest_repo = GuildQuestRepository(db)
+    progress_repo = GuildQuestProgressRepository(db)
+    audit_repo = AuditRepository(db)
+
+    guild = await guild_repo.get_guild_by_id(guild_id)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    guild_member = await guild_repo.get_member(guild_id, player_uuid)
+    if guild_member is None:
+        raise_player_error(
+            PlayerErrorCodes.NOT_IN_GUILD,
+            "您不是该公会成员",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    quest = await quest_repo.get_quest_by_id(guild_quest_id)
+    if quest is None or quest.guild_id != guild_id:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_QUEST_NOT_FOUND,
+            "任务不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if quest.status != "active":
+        raise_player_error(
+            PlayerErrorCodes.GUILD_QUEST_NOT_ACTIVE,
+            "任务未处于活跃状态",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    await progress_repo.record_contribution(guild_quest_id, player_uuid, body.contribution)
+
+    updated_quest = await quest_repo.update_progress(guild_quest_id, body.contribution)
+
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action="GUILD_QUEST_PROGRESS_UPDATE",
+        resource_type="GUILD_QUEST",
+        resource_id=guild_quest_id,
+        request_payload_jsonb={"contribution": body.contribution},
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildQuestResponse.model_validate(updated_quest),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/guilds/{guild_id}/quests/{guild_quest_id}/progress",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not in guild"},
+        404: {"description": "Guild or quest not found"},
+    },
+    tags=["guilds"],
+)
+async def get_guild_quest_progress(
+    request: Request,
+    guild_id: uuid.UUID,
+    guild_quest_id: uuid.UUID,
+    current_user: UserPayload = RequireGuildReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildQuestProgressResponse | None]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_quest_progress_get")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    quest_repo = GuildQuestRepository(db)
+    progress_repo = GuildQuestProgressRepository(db)
+
+    guild = await guild_repo.get_guild_by_id(guild_id)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    guild_member = await guild_repo.get_member(guild_id, player_uuid)
+    if guild_member is None:
+        raise_player_error(
+            PlayerErrorCodes.NOT_IN_GUILD,
+            "您不是该公会成员",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    quest = await quest_repo.get_quest_by_id(guild_quest_id)
+    if quest is None or quest.guild_id != guild_id:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_QUEST_NOT_FOUND,
+            "任务不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    progress = await progress_repo.get_progress(guild_quest_id, player_uuid)
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildQuestProgressResponse.model_validate(progress) if progress else None,
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/guilds/{guild_id}/quests/{guild_quest_id}/claim-reward",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Not in guild"},
+        404: {"description": "Guild or quest not found"},
+        409: {"description": "Quest not completed or reward already claimed"},
+    },
+    tags=["guilds"],
+)
+async def claim_guild_quest_reward(
+    request: Request,
+    guild_id: uuid.UUID,
+    guild_quest_id: uuid.UUID,
+    current_user: UserPayload = RequireGuildWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[GuildQuestProgressResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_guild_quest_claim")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    guild_repo = GuildRepository(db)
+    quest_repo = GuildQuestRepository(db)
+    progress_repo = GuildQuestProgressRepository(db)
+    audit_repo = AuditRepository(db)
+
+    guild = await guild_repo.get_guild_by_id(guild_id)
+    if guild is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_NOT_FOUND,
+            "公会不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    guild_member = await guild_repo.get_member(guild_id, player_uuid)
+    if guild_member is None:
+        raise_player_error(
+            PlayerErrorCodes.NOT_IN_GUILD,
+            "您不是该公会成员",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    quest = await quest_repo.get_quest_by_id(guild_quest_id)
+    if quest is None or quest.guild_id != guild_id:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_QUEST_NOT_FOUND,
+            "任务不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if quest.status != "completed":
+        raise_player_error(
+            PlayerErrorCodes.GUILD_QUEST_NOT_ACTIVE,
+            "任务未完成，无法领取奖励",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    progress = await progress_repo.get_progress(guild_quest_id, player_uuid)
+    if progress is None:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_QUEST_NOT_FOUND,
+            "您没有参与该任务",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if progress.claimed_reward:
+        raise_player_error(
+            PlayerErrorCodes.GUILD_QUEST_REWARD_ALREADY_CLAIMED,
+            "奖励已领取",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    progress = await progress_repo.claim_reward(guild_quest_id, player_uuid)
+
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action="GUILD_QUEST_REWARD_CLAIM",
+        resource_type="GUILD_QUEST",
+        resource_id=guild_quest_id,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=GuildQuestProgressResponse.model_validate(progress),
         trace_id=trace_id,
     )

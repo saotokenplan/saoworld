@@ -416,3 +416,76 @@ class GuildMessage(Base):
         Index("guild_messages_guild_created_idx", "guild_id", "created_at"),
         Index("guild_messages_sender_created_idx", "sender_id", "created_at"),
     )
+
+
+class GuildQuest(Base):
+    """公会任务表。"""
+
+    __tablename__ = "guild_quests"
+
+    guild_quest_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    guild_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    quest_key: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    quest_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="collect", server_default="collect", index=True
+    )
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="active", server_default="active", index=True
+    )
+    objectives_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    rewards_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    progress_target: Mapped[int] = mapped_column(Integer, nullable=False, default=100, server_default="100")
+    current_progress: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    time_limit_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=1440, server_default="1440")
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_by: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False)
+    schema_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "quest_type IN ('collect', 'kill', 'deliver', 'explore', 'defend', 'craft')",
+            name="guild_quests_type_check",
+        ),
+        CheckConstraint(
+            "status IN ('active', 'completed', 'failed', 'expired')",
+            name="guild_quests_status_check",
+        ),
+        CheckConstraint("progress_target > 0", name="guild_quests_target_check"),
+        CheckConstraint("current_progress >= 0", name="guild_quests_progress_check"),
+        CheckConstraint("time_limit_minutes > 0", name="guild_quests_time_check"),
+        Index("guild_quests_guild_status_idx", "guild_id", "status"),
+        Index("guild_quests_guild_key_idx", "guild_id", "quest_key", unique=True),
+    )
+
+
+class GuildQuestProgress(Base):
+    """公会成员任务进度表。"""
+
+    __tablename__ = "guild_quest_progress"
+
+    progress_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    guild_quest_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    contribution: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    claimed_reward: Mapped[bool] = mapped_column(nullable=False, default=False, server_default="false")
+    claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint("contribution >= 0", name="guild_quest_progress_contribution_check"),
+        Index("guild_quest_progress_player_idx", "player_id", "guild_quest_id", unique=True),
+        Index("guild_quest_progress_quest_idx", "guild_quest_id", "created_at"),
+    )

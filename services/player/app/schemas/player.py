@@ -782,3 +782,128 @@ class SocialOverview(BaseModel):
     unread_messages: int  # 未读消息数
     guild_info: GuildSummary | None = None  # 公会信息（如果已加入）
     recent_friends: list[FriendSummary] = []  # 最近好友列表（最多5个）
+
+
+# === 公会任务相关 Schema ===
+
+
+class GuildQuestType(str, Enum):
+    COLLECT = "collect"
+    KILL = "kill"
+    DELIVER = "deliver"
+    EXPLORE = "explore"
+    DEFEND = "defend"
+    CRAFT = "craft"
+
+
+class GuildQuestStatus(str, Enum):
+    ACTIVE = "active"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    EXPIRED = "expired"
+
+
+class GuildQuestResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    guild_quest_id: uuid.UUID
+    guild_id: uuid.UUID
+    quest_key: str
+    name: str
+    description: str
+    quest_type: GuildQuestType
+    status: GuildQuestStatus
+    objectives: dict | None = None
+    rewards: dict | None = None
+    progress_target: int = 100
+    current_progress: int = 0
+    progress_percentage: float = 0.0
+    time_limit_minutes: int = 1440
+    expires_at: datetime | None = None
+    created_by: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    def model_validate(cls, obj: Any, *args: Any, **kwargs: Any) -> "GuildQuestResponse":
+        if hasattr(obj, "__table__"):
+            from datetime import datetime, timezone
+            obj_dict = {}
+            for attr in [
+                "guild_quest_id", "guild_id", "quest_key", "name", "description",
+                "quest_type", "status", "objectives_jsonb", "rewards_jsonb",
+                "progress_target", "current_progress", "time_limit_minutes",
+                "expires_at", "created_by", "created_at", "updated_at"
+            ]:
+                try:
+                    value = getattr(obj, attr)
+                    obj_dict[attr] = value
+                except Exception:
+                    obj_dict[attr] = None
+            if obj_dict.get("updated_at") is None:
+                obj_dict["updated_at"] = obj_dict.get("created_at") or datetime.now(timezone.utc)
+            progress = 0.0
+            if obj_dict.get("progress_target", 1) > 0:
+                progress = min(1.0, max(0.0, obj_dict.get("current_progress", 0) / obj_dict.get("progress_target", 1)))
+            obj_dict["objectives"] = obj_dict.pop("objectives_jsonb", None)
+            obj_dict["rewards"] = obj_dict.pop("rewards_jsonb", None)
+            obj_dict["progress_percentage"] = progress
+            return super().model_validate(obj_dict, *args, **kwargs)
+        return super().model_validate(obj, *args, **kwargs)
+
+
+class GuildQuestProgressResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    progress_id: uuid.UUID
+    guild_quest_id: uuid.UUID
+    player_id: uuid.UUID
+    contribution: int = 0
+    claimed_reward: bool = False
+    claimed_at: datetime | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    def model_validate(cls, obj: Any, *args: Any, **kwargs: Any) -> "GuildQuestProgressResponse":
+        if hasattr(obj, "__table__"):
+            from datetime import datetime, timezone
+            obj_dict = {}
+            for attr in [
+                "progress_id", "guild_quest_id", "player_id",
+                "contribution", "claimed_reward", "claimed_at",
+                "created_at", "updated_at"
+            ]:
+                try:
+                    value = getattr(obj, attr)
+                    obj_dict[attr] = value
+                except Exception:
+                    obj_dict[attr] = None
+            if obj_dict.get("updated_at") is None:
+                obj_dict["updated_at"] = obj_dict.get("created_at") or datetime.now(timezone.utc)
+            return super().model_validate(obj_dict, *args, **kwargs)
+        return super().model_validate(obj, *args, **kwargs)
+
+
+class CreateGuildQuestRequest(BaseModel):
+    quest_key: str = Field(min_length=1, max_length=128)
+    name: str = Field(min_length=1, max_length=128)
+    description: str = Field(min_length=1)
+    quest_type: GuildQuestType = GuildQuestType.COLLECT
+    objectives: dict | None = None
+    rewards: dict | None = None
+    progress_target: int = Field(default=100, ge=1)
+    time_limit_minutes: int = Field(default=1440, ge=1)
+
+
+class UpdateGuildQuestProgressRequest(BaseModel):
+    contribution: int = Field(ge=1)
+
+
+class ClaimGuildQuestRewardRequest(BaseModel):
+    pass
+
+
+class GuildQuestListResponse(BaseModel):
+    quests: list[GuildQuestResponse]
+    total: int
