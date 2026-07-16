@@ -208,8 +208,6 @@ from app.schemas.player import (
     EquipmentStatsResponse,
     get_reputation_level,
     REPUTATION_LEVEL_THRESHOLDS,
-    TradeStatus,
-    TradeItemSchema,
     CreateTradeRequest,
     TradeResponse,
     TradeListResponse,
@@ -218,7 +216,6 @@ from app.schemas.player import (
     AuctionResponse,
     AuctionListResponse,
     BidRequest,
-    TransactionType,
     WalletResponse,
     WalletTransactionResponse,
     WalletTransactionListResponse,
@@ -4623,7 +4620,7 @@ async def unequip_item(
 async def get_guild_quests(
     request: Request,
     guild_id: uuid.UUID,
-    status: str | None = Query(default=None),
+    quest_status: str | None = Query(default=None, alias="status"),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     current_user: UserPayload = RequireGuildReadScope,
@@ -4663,7 +4660,7 @@ async def get_guild_quests(
             status_code=status.HTTP_403_FORBIDDEN,
         )
 
-    quests, total = await quest_repo.get_guild_quests(guild_id, status=status, limit=limit, offset=offset)
+    quests, total = await quest_repo.get_guild_quests(guild_id, status=quest_status, limit=limit, offset=offset)
 
     quest_responses = [GuildQuestResponse.model_validate(q) for q in quests]
 
@@ -5184,9 +5181,9 @@ async def create_trade(
     trade = await trade_repo.create_trade(
         initiator_id=player_uuid,
         recipient_id=body.recipient_id,
-        offer_items=body.offer_items,
+        offer_items=[item.model_dump() for item in body.offer_items],
         offer_coins=body.offer_coins,
-        request_items=body.request_items,
+        request_items=[item.model_dump() for item in body.request_items],
         request_coins=body.request_coins,
     )
 
@@ -5347,7 +5344,7 @@ async def cancel_trade(
 )
 async def get_player_trades(
     request: Request,
-    status: str | None = Query(default=None),
+    trade_status: str | None = Query(default=None, alias="status"),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     current_user: UserPayload = RequirePlayerRole,
@@ -5368,7 +5365,7 @@ async def get_player_trades(
         )
 
     trade_repo = TradeRepository(db)
-    trades, total = await trade_repo.get_player_trades(player_uuid, status=status, limit=limit, offset=offset)
+    trades, total = await trade_repo.get_player_trades(player_uuid, status=trade_status, limit=limit, offset=offset)
 
     trade_responses = [TradeResponse.model_validate(t) for t in trades]
 
@@ -5722,7 +5719,7 @@ async def get_auction_listings(
     request: Request,
     item_key: str | None = Query(default=None),
     item_type: str | None = Query(default=None),
-    status: str | None = Query(default=None),
+    listing_status: str | None = Query(default=None, alias="status"),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     current_user: UserPayload = RequirePlayerRole,
@@ -5733,7 +5730,7 @@ async def get_auction_listings(
     request_id = _make_request_id("req_auction_list")
 
     try:
-        player_uuid = uuid.UUID(current_user.user_id)
+        uuid.UUID(current_user.user_id)
     except ValueError:
         raise_player_error(
             PlayerErrorCodes.INVALID_PLAYER_ID,
@@ -5747,7 +5744,7 @@ async def get_auction_listings(
         item_key=item_key, item_type=item_type, limit=limit, offset=offset
     )
 
-    listing_responses = [AuctionResponse.model_validate(l) for l in listings]
+    listing_responses = [AuctionResponse.model_validate(listing) for listing in listings]
 
     return EnvelopeResponse(
         request_id=request_id,
@@ -5776,7 +5773,7 @@ async def get_auction_listing(
     request_id = _make_request_id("req_auction_detail")
 
     try:
-        player_uuid = uuid.UUID(current_user.user_id)
+        uuid.UUID(current_user.user_id)
     except ValueError:
         raise_player_error(
             PlayerErrorCodes.INVALID_PLAYER_ID,
@@ -5812,7 +5809,7 @@ async def get_auction_listing(
 )
 async def get_my_auction_listings(
     request: Request,
-    status: str | None = Query(default=None),
+    listing_status: str | None = Query(default=None, alias="status"),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     current_user: UserPayload = RequirePlayerRole,
@@ -5833,9 +5830,9 @@ async def get_my_auction_listings(
         )
 
     auction_repo = AuctionRepository(db)
-    listings, total = await auction_repo.get_seller_listings(player_uuid, status=status, limit=limit, offset=offset)
+    listings, total = await auction_repo.get_seller_listings(player_uuid, status=listing_status, limit=limit, offset=offset)
 
-    listing_responses = [AuctionResponse.model_validate(l) for l in listings]
+    listing_responses = [AuctionResponse.model_validate(listing) for listing in listings]
 
     return EnvelopeResponse(
         request_id=request_id,

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,9 +16,9 @@ class TradeRepository:
         self,
         initiator_id: Any,
         recipient_id: Any,
-        offer_items: list[dict] = [],
+        offer_items: list[dict[str, Any] | Any] = [],
         offer_coins: int = 0,
-        request_items: list[dict] = [],
+        request_items: list[dict[str, Any] | Any] = [],
         request_coins: int = 0,
     ) -> PlayerTrade:
         trade = PlayerTrade(
@@ -75,6 +75,15 @@ class TradeRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_trade(self, trade_id: Any, player_id: Any) -> PlayerTrade | None:
+        result = await self.db.execute(
+            select(PlayerTrade).where(
+                PlayerTrade.trade_id == trade_id,
+                (PlayerTrade.initiator_id == player_id) | (PlayerTrade.recipient_id == player_id),
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def get_trades_by_player(
         self, player_id: Any, status: str | None = None, limit: int = 20, offset: int = 0
     ) -> tuple[list[PlayerTrade], int]:
@@ -96,7 +105,7 @@ class TradeRepository:
 
         query = query.order_by(PlayerTrade.created_at.desc()).limit(limit).offset(offset)
         result = await self.db.execute(query)
-        trades = result.scalars().all()
+        trades = cast(list[PlayerTrade], list(result.scalars().all()))
         return trades, total
 
     async def accept_trade(self, trade_id: Any, player_id: Any) -> PlayerTrade | None:
@@ -180,7 +189,7 @@ class TradeRepository:
                 TradeItem.from_player_id == from_player_id,
             )
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_trade_coins(self, trade_id: Any, from_player_id: Any) -> list[TradeCoin]:
         result = await self.db.execute(
@@ -189,7 +198,7 @@ class TradeRepository:
                 TradeCoin.from_player_id == from_player_id,
             )
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_player_trades(
         self, player_id: Any, status: str | None = None, limit: int = 20, offset: int = 0
