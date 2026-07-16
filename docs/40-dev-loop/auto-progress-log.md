@@ -2,6 +2,26 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-16 18:00 — auto-20260716-1800
+
+- 任务：M2-02 社交系统扩展 - 公会任务功能
+- 分支：auto/auto-20260716-1800
+- 状态：✅ 已完成（后端部分）
+- 工作内容：
+  - 创建任务计划文档 auto-plan-20260716-1800.md
+  - player-service 新增 `guild_quests` 和 `guild_quest_progress` 表及模型
+  - 实现 GuildQuestRepository 和 GuildQuestProgressRepository 仓储层
+  - 新增 6 个 API 端点（任务列表、创建、详情、进度更新、进度查询、奖励领取）
+  - 新增 6 个 Schema 和 6 个错误码
+  - 创建 Alembic 迁移脚本
+  - 新增 13 个测试用例，全部通过
+  - 更新 project-status.md 添加本轮完成记录
+  - 更新任务计划文档状态为已完成
+  - 生成执行摘要 auto-execution-summary-20260716-1800.md
+- 验证结果：player-service 测试 215/215 通过，ruff 和 mypy 检查通过
+- 修改文件：9 个（4 新建 + 5 修改）
+- 合并状态：✅ 待合并到 feature-prd
+
 ## 2026-07-16 17:00 — auto-20260716-1700
 
 - 任务：项目就绪状态持续验证
