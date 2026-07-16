@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -157,5 +157,5 @@ class WalletRepository:
 
         query = query.order_by(WalletTransaction.created_at.desc()).limit(limit).offset(offset)
         result = await self.db.execute(query)
-        transactions = result.scalars().all()
+        transactions = cast(list[WalletTransaction], list(result.scalars().all()))
         return transactions, total

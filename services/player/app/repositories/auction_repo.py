@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, cast
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -96,7 +96,7 @@ class AuctionRepository:
 
         query = query.order_by(AuctionListing.current_price.asc()).limit(limit).offset(offset)
         result = await self.db.execute(query)
-        listings = result.scalars().all()
+        listings = cast(list[AuctionListing], list(result.scalars().all()))
         return listings, total
 
     async def get_seller_listings(
@@ -118,7 +118,7 @@ class AuctionRepository:
 
         query = query.order_by(AuctionListing.created_at.desc()).limit(limit).offset(offset)
         result = await self.db.execute(query)
-        listings = result.scalars().all()
+        listings = cast(list[AuctionListing], list(result.scalars().all()))
         return listings, total
 
     async def get_bidder_listings(
@@ -139,7 +139,7 @@ class AuctionRepository:
 
         query = query.order_by(AuctionListing.created_at.desc()).limit(limit).offset(offset)
         result = await self.db.execute(query)
-        listings = result.scalars().all()
+        listings = cast(list[AuctionListing], list(result.scalars().all()))
         return listings, total
 
     async def place_bid(self, listing_id: Any, bidder_id: Any, bid_amount: int) -> AuctionListing | None:
