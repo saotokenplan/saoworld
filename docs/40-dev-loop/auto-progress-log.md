@@ -17,7 +17,7 @@
   - 个人中心新增「经济」标签页，集成三个面板作为子标签
   - 新增 GUT 测试（test_wallet_manager.gd 9个用例 + test_trade_manager.gd 22个用例）
 - 修改文件：16 个（12新建 + 4修改）
-- 合并状态：✅ 待合并到 feature-prd
+- 合并状态：✅ 已合并到 feature-prd（merge commit: b28ada8）
 
 ## 2026-07-18 00:00 — auto-20260718-0000
 
