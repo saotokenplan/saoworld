@@ -2,6 +2,23 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-18 00:00 — auto-20260718-0000
+
+- 任务：M3-01 客户端公会战与好友协作任务 UI
+- 分支：auto/auto-20260718-0000
+- 状态：✅ 已完成
+- 工作内容：
+  - GuildManager 扩展：新增 9 个公会战信号、4 个状态字段、9 个 API 方法、4 个 getter、reset 清理
+  - FriendManager 扩展：新增 9 个协作任务信号、4 个状态字段、8 个 API 方法、4 个 getter、reset 清理
+  - 修复 FriendManager 未在 project.godot 注册为 autoload 的遗留 bug
+  - 创建 GuildWarPanel 场景与脚本（列表/详情/记分板/状态机按钮/本地化映射）
+  - 创建 FriendCollabQuestPanel 场景与脚本（列表/详情/创建表单/状态机按钮/本地化映射）
+  - GuildPanel 新增「战争」标签页集成 GuildWarPanel
+  - FriendPanel 重构为 TabContainer 布局，新增「协作」标签页集成 FriendCollabQuestPanel
+  - 新增 4 个测试文件共 74 个 GUT 测试用例（test_guild_manager +16、test_friend_manager +16、test_guild_war_panel 新建 21、test_friend_collab_quest_panel 新建 21）
+  - 验证：vote-service 112 测试 + player-service 259 测试全部通过，无回归
+  - M3 里程碑启动，首个任务 M3-01 完成
+
 ## 2026-07-17 08:00 — auto-20260717-0800
 
 - 任务：M2 社交系统扩展（公会战 + 好友协作任务）
