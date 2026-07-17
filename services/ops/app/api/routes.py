@@ -97,6 +97,9 @@ from app.schemas.ops import (
     EventCreateRequest,
     EventUpdateRequest,
     EventResponse,
+    EconomicOverview,
+    TradeStatsItem,
+    EconomicTrendPoint,
 )
 from app.schemas.feedback import (
     FeedbackSubmit,
@@ -2893,5 +2896,148 @@ async def update_feedback(
     return EnvelopeResponse(
         request_id=request_id,
         data=FeedbackResponse.model_validate(feedback),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/analytics/dashboard/economy/overview",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["analytics"],
+)
+async def get_economy_overview(
+    request: Request,
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[EconomicOverview]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    dashboard_repo = DashboardRepository(db)
+    latest_dashboard = await dashboard_repo.get_latest_dashboard()
+
+    economy_data = {}
+    if latest_dashboard and latest_dashboard.metrics_jsonb:
+        economy_data = latest_dashboard.metrics_jsonb.get("economy", {})
+
+    overview = EconomicOverview(**economy_data)
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_DASHBOARD_VIEW,
+        resource_type=RESOURCE_DASHBOARD,
+        resource_id=None,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=overview,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/analytics/dashboard/economy/trends",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["analytics"],
+)
+async def get_economy_trends(
+    request: Request,
+    days: int = Query(default=30, ge=1, le=365),
+    granularity: str = Query(default="day"),
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[EconomicTrendPoint]]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    dashboard_repo = DashboardRepository(db)
+    latest_dashboard = await dashboard_repo.get_latest_dashboard()
+
+    trends_data = []
+    if latest_dashboard and latest_dashboard.metrics_jsonb:
+        trends_data = latest_dashboard.metrics_jsonb.get("economy_trends", [])
+
+    trends = [EconomicTrendPoint(**item) for item in trends_data]
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_DASHBOARD_VIEW,
+        resource_type=RESOURCE_DASHBOARD,
+        resource_id=None,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=trends,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/ops/analytics/dashboard/economy/trade-stats",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["analytics"],
+)
+async def get_economy_trade_stats(
+    request: Request,
+    days: int = Query(default=7, ge=1, le=365),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireOpsScope,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[TradeStatsItem]]:
+    request_id = _get_request_id(request)
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    dashboard_repo = DashboardRepository(db)
+    latest_dashboard = await dashboard_repo.get_latest_dashboard()
+
+    trade_stats_data = []
+    total = 0
+    if latest_dashboard and latest_dashboard.metrics_jsonb:
+        trade_stats_data = latest_dashboard.metrics_jsonb.get("trade_stats", [])
+        total = len(trade_stats_data)
+
+    items = [TradeStatsItem(**item) for item in trade_stats_data]
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_DASHBOARD_VIEW,
+        resource_type=RESOURCE_DASHBOARD,
+        resource_id=None,
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=items,
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
         trace_id=trace_id,
     )
