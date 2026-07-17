@@ -73,6 +73,26 @@
       "type": "expansion",
       "risk_level": "very_high",
       "resource_level": "medium"
+    },
+    {
+      "region_id": "region_starfall_wastes",
+      "name": "星陨荒原",
+      "description": "天裂事件的核心发生地，被巨大陨石坑遍布的荒凉原野，蕴含异星矿物与远古真相。",
+      "status": "locked",
+      "level_range": [30, 40],
+      "type": "expansion",
+      "risk_level": "very_high",
+      "resource_level": "high"
+    },
+    {
+      "region_id": "region_abyss_rift",
+      "name": "深渊裂隙",
+      "description": "从天裂核心向下延伸的地底深渊，远古文明遗留的终极秘密埋藏于此。",
+      "status": "locked",
+      "level_range": [40, 50],
+      "type": "expansion",
+      "risk_level": "extreme",
+      "resource_level": "very_high"
     }
   ]
 }

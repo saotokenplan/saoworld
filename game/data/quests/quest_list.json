@@ -10,12 +10,37 @@
       "status": "available",
       "prerequisites": [],
       "objectives": [
-        {"id": "obj_wake_up", "description": "在废墟中醒来", "type": "story", "completed": true},
-        {"id": "obj_reach_ironward", "description": "前往铁卫城", "type": "location", "target": "loc_ironward_city"},
-        {"id": "obj_talk_guard", "description": "与城门守卫交谈", "type": "npc", "target": "npc_ironward_guard"},
-        {"id": "obj_report_commander", "description": "向艾瑞尔统帅报告", "type": "npc", "target": "npc_ironward_leader"}
+        {
+          "id": "obj_wake_up",
+          "description": "在废墟中醒来",
+          "type": "story",
+          "completed": true
+        },
+        {
+          "id": "obj_reach_ironward",
+          "description": "前往铁卫城",
+          "type": "location",
+          "target": "loc_ironward_city"
+        },
+        {
+          "id": "obj_talk_guard",
+          "description": "与城门守卫交谈",
+          "type": "npc",
+          "target": "npc_ironward_guard"
+        },
+        {
+          "id": "obj_report_commander",
+          "description": "向艾瑞尔统帅报告",
+          "type": "npc",
+          "target": "npc_ironward_leader"
+        }
       ],
-      "rewards": {"experience": 100, "reputation": {"faction_ironward": 10}},
+      "rewards": {
+        "experience": 100,
+        "reputation": {
+          "faction_ironward": 10
+        }
+      },
       "failure_condition": null,
       "start_npc": null,
       "end_npc": "npc_ironward_leader",
@@ -28,14 +53,41 @@
       "type": "main",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_main_ch01_start"],
-      "objectives": [
-        {"id": "obj_accept_recruit", "description": "接受艾瑞尔统帅的招募", "type": "npc", "target": "npc_ironward_leader"},
-        {"id": "obj_basic_training", "description": "完成基础战斗训练", "type": "combat", "target": 5},
-        {"id": "obj_prove_worth", "description": "证明你的价值", "type": "quest", "target": "quest_north_outpost_defense"},
-        {"id": "obj_take_oath", "description": "宣誓加入铁卫联盟", "type": "story", "target": "ironward_oath"}
+      "prerequisites": [
+        "quest_main_ch01_start"
       ],
-      "rewards": {"experience": 500, "reputation": {"faction_ironward": 100}},
+      "objectives": [
+        {
+          "id": "obj_accept_recruit",
+          "description": "接受艾瑞尔统帅的招募",
+          "type": "npc",
+          "target": "npc_ironward_leader"
+        },
+        {
+          "id": "obj_basic_training",
+          "description": "完成基础战斗训练",
+          "type": "combat",
+          "target": 5
+        },
+        {
+          "id": "obj_prove_worth",
+          "description": "证明你的价值",
+          "type": "quest",
+          "target": "quest_north_outpost_defense"
+        },
+        {
+          "id": "obj_take_oath",
+          "description": "宣誓加入铁卫联盟",
+          "type": "story",
+          "target": "ironward_oath"
+        }
+      ],
+      "rewards": {
+        "experience": 500,
+        "reputation": {
+          "faction_ironward": 100
+        }
+      },
       "failure_condition": null,
       "start_npc": "npc_ironward_leader",
       "end_npc": "npc_ironward_leader",
@@ -48,14 +100,39 @@
       "type": "side",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_main_ch01_start"],
-      "objectives": [
-        {"id": "obj_get_supplies", "description": "从仓库领取补给物资", "type": "location", "target": "loc_supply_depot"},
-        {"id": "obj_escort_supplies", "description": "护送补给前往北方前哨", "type": "travel", "target": "loc_north_outpost"},
-        {"id": "obj_deliver_supplies", "description": "将补给交付给前哨指挥官", "type": "npc", "target": "npc_north_commander"}
+      "prerequisites": [
+        "quest_main_ch01_start"
       ],
-      "rewards": {"experience": 150, "reputation": {"faction_ironward": 30}},
-      "failure_condition": {"type": "time_limit", "minutes": 30},
+      "objectives": [
+        {
+          "id": "obj_get_supplies",
+          "description": "从仓库领取补给物资",
+          "type": "location",
+          "target": "loc_supply_depot"
+        },
+        {
+          "id": "obj_escort_supplies",
+          "description": "护送补给前往北方前哨",
+          "type": "travel",
+          "target": "loc_north_outpost"
+        },
+        {
+          "id": "obj_deliver_supplies",
+          "description": "将补给交付给前哨指挥官",
+          "type": "npc",
+          "target": "npc_north_commander"
+        }
+      ],
+      "rewards": {
+        "experience": 150,
+        "reputation": {
+          "faction_ironward": 30
+        }
+      },
+      "failure_condition": {
+        "type": "time_limit",
+        "minutes": 30
+      },
       "start_npc": "npc_supply_master",
       "end_npc": "npc_north_commander",
       "region": "region_core_ironward"
@@ -67,14 +144,41 @@
       "type": "side",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_main_ch01_start"],
-      "objectives": [
-        {"id": "obj_talk_farmer", "description": "与玛莎交谈了解情况", "type": "npc", "target": "npc_farmer"},
-        {"id": "obj_patrol_farm", "description": "巡逻农田寻找野兽踪迹", "type": "explore", "target": "loc_west_farmlands"},
-        {"id": "obj_defeat_beasts", "description": "击退侵扰农田的野兽", "type": "combat", "target": 3},
-        {"id": "obj_report_success", "description": "向玛莎报告任务完成", "type": "npc", "target": "npc_farmer"}
+      "prerequisites": [
+        "quest_main_ch01_start"
       ],
-      "rewards": {"experience": 150, "reputation": {"faction_ironward": 30}},
+      "objectives": [
+        {
+          "id": "obj_talk_farmer",
+          "description": "与玛莎交谈了解情况",
+          "type": "npc",
+          "target": "npc_farmer"
+        },
+        {
+          "id": "obj_patrol_farm",
+          "description": "巡逻农田寻找野兽踪迹",
+          "type": "explore",
+          "target": "loc_west_farmlands"
+        },
+        {
+          "id": "obj_defeat_beasts",
+          "description": "击退侵扰农田的野兽",
+          "type": "combat",
+          "target": 3
+        },
+        {
+          "id": "obj_report_success",
+          "description": "向玛莎报告任务完成",
+          "type": "npc",
+          "target": "npc_farmer"
+        }
+      ],
+      "rewards": {
+        "experience": 150,
+        "reputation": {
+          "faction_ironward": 30
+        }
+      },
       "failure_condition": null,
       "start_npc": "npc_farmer",
       "end_npc": "npc_farmer",
@@ -87,14 +191,41 @@
       "type": "side",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_main_ch01_start"],
-      "objectives": [
-        {"id": "obj_find_researcher", "description": "找到露娜研究员", "type": "npc", "target": "npc_shadowveil_researcher"},
-        {"id": "obj_explore_center", "description": "探索灰谷中心广场", "type": "explore", "target": "loc_grayvalley_center"},
-        {"id": "obj_collect_samples", "description": "收集遗迹样本", "type": "collect", "target": 5},
-        {"id": "obj_return_samples", "description": "将样本交给露娜", "type": "npc", "target": "npc_shadowveil_researcher"}
+      "prerequisites": [
+        "quest_main_ch01_start"
       ],
-      "rewards": {"experience": 250, "reputation": {"faction_shadowveil": 50}},
+      "objectives": [
+        {
+          "id": "obj_find_researcher",
+          "description": "找到露娜研究员",
+          "type": "npc",
+          "target": "npc_shadowveil_researcher"
+        },
+        {
+          "id": "obj_explore_center",
+          "description": "探索灰谷中心广场",
+          "type": "explore",
+          "target": "loc_grayvalley_center"
+        },
+        {
+          "id": "obj_collect_samples",
+          "description": "收集遗迹样本",
+          "type": "collect",
+          "target": 5
+        },
+        {
+          "id": "obj_return_samples",
+          "description": "将样本交给露娜",
+          "type": "npc",
+          "target": "npc_shadowveil_researcher"
+        }
+      ],
+      "rewards": {
+        "experience": 250,
+        "reputation": {
+          "faction_shadowveil": 50
+        }
+      },
       "failure_condition": null,
       "start_npc": "npc_shadowveil_researcher",
       "end_npc": "npc_shadowveil_researcher",
@@ -107,14 +238,42 @@
       "type": "side",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_main_ch01_start"],
-      "objectives": [
-        {"id": "obj_talk_merchant", "description": "与雷克斯交谈获取线索", "type": "npc", "target": "npc_merchant"},
-        {"id": "obj_find_relic_location", "description": "找到遗物所在位置", "type": "explore", "target": "loc_eastern_wall"},
-        {"id": "obj_retrieve_relic", "description": "获取旧世界遗物", "type": "collect", "target": 1},
-        {"id": "obj_deliver_relic", "description": "将遗物交给雷克斯", "type": "npc", "target": "npc_merchant"}
+      "prerequisites": [
+        "quest_main_ch01_start"
       ],
-      "rewards": {"experience": 200, "reputation": {"faction_harvest": 40}, "gold": 100},
+      "objectives": [
+        {
+          "id": "obj_talk_merchant",
+          "description": "与雷克斯交谈获取线索",
+          "type": "npc",
+          "target": "npc_merchant"
+        },
+        {
+          "id": "obj_find_relic_location",
+          "description": "找到遗物所在位置",
+          "type": "explore",
+          "target": "loc_eastern_wall"
+        },
+        {
+          "id": "obj_retrieve_relic",
+          "description": "获取旧世界遗物",
+          "type": "collect",
+          "target": 1
+        },
+        {
+          "id": "obj_deliver_relic",
+          "description": "将遗物交给雷克斯",
+          "type": "npc",
+          "target": "npc_merchant"
+        }
+      ],
+      "rewards": {
+        "experience": 200,
+        "reputation": {
+          "faction_harvest": 40
+        },
+        "gold": 100
+      },
       "failure_condition": null,
       "start_npc": "npc_merchant",
       "end_npc": "npc_merchant",
@@ -127,16 +286,49 @@
       "type": "side",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_main_ch01_start"],
-      "objectives": [
-        {"id": "obj_talk_scavenger", "description": "与杰克交谈了解情况", "type": "npc", "target": "npc_scavenger_leader"},
-        {"id": "obj_reach_eastern_wall", "description": "前往东墙废墟", "type": "travel", "target": "loc_eastern_wall"},
-        {"id": "obj_defeat_enemies", "description": "清除废墟中的敌人", "type": "combat", "target": 4},
-        {"id": "obj_rescue_prisoner", "description": "救出被困的拾荒者", "type": "rescue", "target": "npc_scavenger_prisoner"},
-        {"id": "obj_return_camp", "description": "返回营地向杰克报告", "type": "npc", "target": "npc_scavenger_leader"}
+      "prerequisites": [
+        "quest_main_ch01_start"
       ],
-      "rewards": {"experience": 200, "gold": 80},
-      "failure_condition": {"type": "time_limit", "minutes": 20},
+      "objectives": [
+        {
+          "id": "obj_talk_scavenger",
+          "description": "与杰克交谈了解情况",
+          "type": "npc",
+          "target": "npc_scavenger_leader"
+        },
+        {
+          "id": "obj_reach_eastern_wall",
+          "description": "前往东墙废墟",
+          "type": "travel",
+          "target": "loc_eastern_wall"
+        },
+        {
+          "id": "obj_defeat_enemies",
+          "description": "清除废墟中的敌人",
+          "type": "combat",
+          "target": 4
+        },
+        {
+          "id": "obj_rescue_prisoner",
+          "description": "救出被困的拾荒者",
+          "type": "rescue",
+          "target": "npc_scavenger_prisoner"
+        },
+        {
+          "id": "obj_return_camp",
+          "description": "返回营地向杰克报告",
+          "type": "npc",
+          "target": "npc_scavenger_leader"
+        }
+      ],
+      "rewards": {
+        "experience": 200,
+        "gold": 80
+      },
+      "failure_condition": {
+        "type": "time_limit",
+        "minutes": 20
+      },
       "start_npc": "npc_scavenger_leader",
       "end_npc": "npc_scavenger_leader",
       "region": "region_expansion_grayvalley"
@@ -148,14 +340,41 @@
       "type": "side",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_main_ch01_start"],
-      "objectives": [
-        {"id": "obj_talk_guide", "description": "找到莱拉·迷雾", "type": "npc", "target": "npc_forest_guide"},
-        {"id": "obj_follow_guide", "description": "跟随莱拉游览森林", "type": "travel", "target": "loc_forest_moonlake"},
-        {"id": "obj_visit_ancient_tree", "description": "参观精灵古树", "type": "location", "target": "loc_forest_ancient_tree"},
-        {"id": "obj_return_camp", "description": "返回自由领地营地", "type": "location", "target": "loc_forest_camp"}
+      "prerequisites": [
+        "quest_main_ch01_start"
       ],
-      "rewards": {"experience": 100, "reputation": {"faction_freehold": 20}},
+      "objectives": [
+        {
+          "id": "obj_talk_guide",
+          "description": "找到莱拉·迷雾",
+          "type": "npc",
+          "target": "npc_forest_guide"
+        },
+        {
+          "id": "obj_follow_guide",
+          "description": "跟随莱拉游览森林",
+          "type": "travel",
+          "target": "loc_forest_moonlake"
+        },
+        {
+          "id": "obj_visit_ancient_tree",
+          "description": "参观精灵古树",
+          "type": "location",
+          "target": "loc_forest_ancient_tree"
+        },
+        {
+          "id": "obj_return_camp",
+          "description": "返回自由领地营地",
+          "type": "location",
+          "target": "loc_forest_camp"
+        }
+      ],
+      "rewards": {
+        "experience": 100,
+        "reputation": {
+          "faction_freehold": 20
+        }
+      },
       "failure_condition": null,
       "start_npc": "npc_forest_guide",
       "end_npc": "npc_forest_leader",
@@ -168,15 +387,48 @@
       "type": "side",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_main_ch01_start"],
-      "objectives": [
-        {"id": "obj_talk_forest_leader", "description": "与艾琳·绿风交谈", "type": "npc", "target": "npc_forest_leader"},
-        {"id": "obj_investigate_tree", "description": "调查精灵古树的状况", "type": "explore", "target": "loc_forest_ancient_tree"},
-        {"id": "obj_find_source", "description": "找到古树衰弱的源头", "type": "explore", "target": "loc_forest_deep"},
-        {"id": "obj_defeat_corruption", "description": "清除侵蚀古树的腐化力量", "type": "combat", "target": 6},
-        {"id": "obj_restore_tree", "description": "帮助古树恢复生机", "type": "story", "target": "restore_tree"}
+      "prerequisites": [
+        "quest_main_ch01_start"
       ],
-      "rewards": {"experience": 400, "reputation": {"faction_freehold": 100}, "gold": 150},
+      "objectives": [
+        {
+          "id": "obj_talk_forest_leader",
+          "description": "与艾琳·绿风交谈",
+          "type": "npc",
+          "target": "npc_forest_leader"
+        },
+        {
+          "id": "obj_investigate_tree",
+          "description": "调查精灵古树的状况",
+          "type": "explore",
+          "target": "loc_forest_ancient_tree"
+        },
+        {
+          "id": "obj_find_source",
+          "description": "找到古树衰弱的源头",
+          "type": "explore",
+          "target": "loc_forest_deep"
+        },
+        {
+          "id": "obj_defeat_corruption",
+          "description": "清除侵蚀古树的腐化力量",
+          "type": "combat",
+          "target": 6
+        },
+        {
+          "id": "obj_restore_tree",
+          "description": "帮助古树恢复生机",
+          "type": "story",
+          "target": "restore_tree"
+        }
+      ],
+      "rewards": {
+        "experience": 400,
+        "reputation": {
+          "faction_freehold": 100
+        },
+        "gold": 150
+      },
       "failure_condition": null,
       "start_npc": "npc_forest_leader",
       "end_npc": "npc_forest_leader",
@@ -189,16 +441,52 @@
       "type": "side",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_main_ch01_start"],
-      "objectives": [
-        {"id": "obj_talk_merchant", "description": "与萨拉丁·金砂交谈", "type": "npc", "target": "npc_oasis_merchant"},
-        {"id": "obj_reach_desert_edge", "description": "前往沙漠边缘", "type": "travel", "target": "loc_oasis_desert_edge"},
-        {"id": "obj_defeat_bandits", "description": "击败围攻商队的强盗", "type": "combat", "target": 5},
-        {"id": "obj_rescue_caravan", "description": "解救被困的商队", "type": "rescue", "target": "npc_caravan_master"},
-        {"id": "obj_return_oasis", "description": "返回绿洲向萨拉丁报告", "type": "npc", "target": "npc_oasis_merchant"}
+      "prerequisites": [
+        "quest_main_ch01_start"
       ],
-      "rewards": {"experience": 350, "reputation": {"faction_harvest": 80}, "gold": 200},
-      "failure_condition": {"type": "time_limit", "minutes": 25},
+      "objectives": [
+        {
+          "id": "obj_talk_merchant",
+          "description": "与萨拉丁·金砂交谈",
+          "type": "npc",
+          "target": "npc_oasis_merchant"
+        },
+        {
+          "id": "obj_reach_desert_edge",
+          "description": "前往沙漠边缘",
+          "type": "travel",
+          "target": "loc_oasis_desert_edge"
+        },
+        {
+          "id": "obj_defeat_bandits",
+          "description": "击败围攻商队的强盗",
+          "type": "combat",
+          "target": 5
+        },
+        {
+          "id": "obj_rescue_caravan",
+          "description": "解救被困的商队",
+          "type": "rescue",
+          "target": "npc_caravan_master"
+        },
+        {
+          "id": "obj_return_oasis",
+          "description": "返回绿洲向萨拉丁报告",
+          "type": "npc",
+          "target": "npc_oasis_merchant"
+        }
+      ],
+      "rewards": {
+        "experience": 350,
+        "reputation": {
+          "faction_harvest": 80
+        },
+        "gold": 200
+      },
+      "failure_condition": {
+        "type": "time_limit",
+        "minutes": 25
+      },
       "start_npc": "npc_oasis_merchant",
       "end_npc": "npc_oasis_merchant",
       "region": "region_expansion_southoasis"
@@ -210,16 +498,51 @@
       "type": "side",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_main_ch01_start"],
-      "objectives": [
-        {"id": "obj_talk_priest", "description": "与赛义德·圣光交谈", "type": "npc", "target": "npc_oasis_priest"},
-        {"id": "obj_find_secret_entrance", "description": "找到神庙地下的秘密入口", "type": "explore", "target": "loc_oasis_temple"},
-        {"id": "obj_explore_ruins", "description": "探索古老遗迹", "type": "explore", "target": "loc_oasis_underground"},
-        {"id": "obj_defeat_guardian", "description": "击败遗迹守护者", "type": "combat", "target": 1},
-        {"id": "obj_retrieve_treasure", "description": "获取沙漠之神的宝藏", "type": "collect", "target": 1},
-        {"id": "obj_return_temple", "description": "返回神庙向祭司报告", "type": "npc", "target": "npc_oasis_priest"}
+      "prerequisites": [
+        "quest_main_ch01_start"
       ],
-      "rewards": {"experience": 500, "gold": 300},
+      "objectives": [
+        {
+          "id": "obj_talk_priest",
+          "description": "与赛义德·圣光交谈",
+          "type": "npc",
+          "target": "npc_oasis_priest"
+        },
+        {
+          "id": "obj_find_secret_entrance",
+          "description": "找到神庙地下的秘密入口",
+          "type": "explore",
+          "target": "loc_oasis_temple"
+        },
+        {
+          "id": "obj_explore_ruins",
+          "description": "探索古老遗迹",
+          "type": "explore",
+          "target": "loc_oasis_underground"
+        },
+        {
+          "id": "obj_defeat_guardian",
+          "description": "击败遗迹守护者",
+          "type": "combat",
+          "target": 1
+        },
+        {
+          "id": "obj_retrieve_treasure",
+          "description": "获取沙漠之神的宝藏",
+          "type": "collect",
+          "target": 1
+        },
+        {
+          "id": "obj_return_temple",
+          "description": "返回神庙向祭司报告",
+          "type": "npc",
+          "target": "npc_oasis_priest"
+        }
+      ],
+      "rewards": {
+        "experience": 500,
+        "gold": 300
+      },
       "failure_condition": null,
       "start_npc": "npc_oasis_priest",
       "end_npc": "npc_oasis_priest",
@@ -232,14 +555,42 @@
       "type": "side",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_main_ch01_start"],
-      "objectives": [
-        {"id": "obj_talk_trader", "description": "与阿米尔·丝路交谈", "type": "npc", "target": "npc_oasis_trader"},
-        {"id": "obj_collect_items", "description": "收集交易所需的物品", "type": "collect", "target": 3},
-        {"id": "obj_deliver_items", "description": "将物品交付给买家", "type": "npc", "target": "npc_oasis_merchant"},
-        {"id": "obj_return_trader", "description": "向阿米尔报告交易完成", "type": "npc", "target": "npc_oasis_trader"}
+      "prerequisites": [
+        "quest_main_ch01_start"
       ],
-      "rewards": {"experience": 150, "reputation": {"faction_harvest": 30}, "gold": 100},
+      "objectives": [
+        {
+          "id": "obj_talk_trader",
+          "description": "与阿米尔·丝路交谈",
+          "type": "npc",
+          "target": "npc_oasis_trader"
+        },
+        {
+          "id": "obj_collect_items",
+          "description": "收集交易所需的物品",
+          "type": "collect",
+          "target": 3
+        },
+        {
+          "id": "obj_deliver_items",
+          "description": "将物品交付给买家",
+          "type": "npc",
+          "target": "npc_oasis_merchant"
+        },
+        {
+          "id": "obj_return_trader",
+          "description": "向阿米尔报告交易完成",
+          "type": "npc",
+          "target": "npc_oasis_trader"
+        }
+      ],
+      "rewards": {
+        "experience": 150,
+        "reputation": {
+          "faction_harvest": 30
+        },
+        "gold": 100
+      },
       "failure_condition": null,
       "start_npc": "npc_oasis_trader",
       "end_npc": "npc_oasis_trader",
@@ -252,14 +603,41 @@
       "type": "main",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_main_ch01_start"],
-      "objectives": [
-        {"id": "obj_enter_forest", "description": "进入幽光森林区域", "type": "location", "target": "loc_forest_entrance"},
-        {"id": "obj_find_camp", "description": "找到自由领地营地", "type": "location", "target": "loc_forest_camp"},
-        {"id": "obj_talk_leader", "description": "与艾琳·绿风交谈", "type": "npc", "target": "npc_forest_leader"},
-        {"id": "obj_accept_mission", "description": "接受森林调查任务", "type": "story", "target": "accept_mission"}
+      "prerequisites": [
+        "quest_main_ch01_start"
       ],
-      "rewards": {"experience": 200, "reputation": {"faction_freehold": 50}},
+      "objectives": [
+        {
+          "id": "obj_enter_forest",
+          "description": "进入幽光森林区域",
+          "type": "location",
+          "target": "loc_forest_entrance"
+        },
+        {
+          "id": "obj_find_camp",
+          "description": "找到自由领地营地",
+          "type": "location",
+          "target": "loc_forest_camp"
+        },
+        {
+          "id": "obj_talk_leader",
+          "description": "与艾琳·绿风交谈",
+          "type": "npc",
+          "target": "npc_forest_leader"
+        },
+        {
+          "id": "obj_accept_mission",
+          "description": "接受森林调查任务",
+          "type": "story",
+          "target": "accept_mission"
+        }
+      ],
+      "rewards": {
+        "experience": 200,
+        "reputation": {
+          "faction_freehold": 50
+        }
+      },
       "failure_condition": null,
       "start_npc": null,
       "end_npc": "npc_forest_leader",
@@ -272,15 +650,48 @@
       "type": "main",
       "chapter": "chapter_02",
       "status": "locked",
-      "prerequisites": ["quest_forest_ch2_main1"],
-      "objectives": [
-        {"id": "obj_talk_guide", "description": "找到向导莱拉", "type": "npc", "target": "npc_forest_guide"},
-        {"id": "obj_visit_ancient_tree", "description": "前往精灵古树", "type": "location", "target": "loc_forest_ancient_tree"},
-        {"id": "obj_collect_samples", "description": "收集古树样本", "type": "collect", "target": 5},
-        {"id": "obj_defeat_corrupted", "description": "清除腐化生物", "type": "combat", "target": 3},
-        {"id": "obj_return_guide", "description": "将样本交给莱拉", "type": "npc", "target": "npc_forest_guide"}
+      "prerequisites": [
+        "quest_forest_ch2_main1"
       ],
-      "rewards": {"experience": 350, "reputation": {"faction_freehold": 80}, "gold": 120},
+      "objectives": [
+        {
+          "id": "obj_talk_guide",
+          "description": "找到向导莱拉",
+          "type": "npc",
+          "target": "npc_forest_guide"
+        },
+        {
+          "id": "obj_visit_ancient_tree",
+          "description": "前往精灵古树",
+          "type": "location",
+          "target": "loc_forest_ancient_tree"
+        },
+        {
+          "id": "obj_collect_samples",
+          "description": "收集古树样本",
+          "type": "collect",
+          "target": 5
+        },
+        {
+          "id": "obj_defeat_corrupted",
+          "description": "清除腐化生物",
+          "type": "combat",
+          "target": 3
+        },
+        {
+          "id": "obj_return_guide",
+          "description": "将样本交给莱拉",
+          "type": "npc",
+          "target": "npc_forest_guide"
+        }
+      ],
+      "rewards": {
+        "experience": 350,
+        "reputation": {
+          "faction_freehold": 80
+        },
+        "gold": 120
+      },
       "failure_condition": null,
       "start_npc": "npc_forest_guide",
       "end_npc": "npc_forest_guide",
@@ -293,15 +704,48 @@
       "type": "main",
       "chapter": "chapter_02",
       "status": "locked",
-      "prerequisites": ["quest_forest_ch2_main2"],
-      "objectives": [
-        {"id": "obj_enter_mist", "description": "进入迷雾小径", "type": "location", "target": "loc_forest_mist_path"},
-        {"id": "obj_explore_deep", "description": "探索迷雾深处", "type": "explore", "target": "loc_forest_deep"},
-        {"id": "obj_defeat_beasts", "description": "击败腐化野兽", "type": "combat", "target": 8},
-        {"id": "obj_find_source", "description": "找到腐化源头", "type": "explore", "target": "loc_corruption_source"},
-        {"id": "obj_report_findings", "description": "返回营地报告", "type": "npc", "target": "npc_forest_leader"}
+      "prerequisites": [
+        "quest_forest_ch2_main2"
       ],
-      "rewards": {"experience": 500, "reputation": {"faction_freehold": 120}, "gold": 180},
+      "objectives": [
+        {
+          "id": "obj_enter_mist",
+          "description": "进入迷雾小径",
+          "type": "location",
+          "target": "loc_forest_mist_path"
+        },
+        {
+          "id": "obj_explore_deep",
+          "description": "探索迷雾深处",
+          "type": "explore",
+          "target": "loc_forest_deep"
+        },
+        {
+          "id": "obj_defeat_beasts",
+          "description": "击败腐化野兽",
+          "type": "combat",
+          "target": 8
+        },
+        {
+          "id": "obj_find_source",
+          "description": "找到腐化源头",
+          "type": "explore",
+          "target": "loc_corruption_source"
+        },
+        {
+          "id": "obj_report_findings",
+          "description": "返回营地报告",
+          "type": "npc",
+          "target": "npc_forest_leader"
+        }
+      ],
+      "rewards": {
+        "experience": 500,
+        "reputation": {
+          "faction_freehold": 120
+        },
+        "gold": 180
+      },
       "failure_condition": null,
       "start_npc": "npc_forest_leader",
       "end_npc": "npc_forest_leader",
@@ -314,15 +758,48 @@
       "type": "main",
       "chapter": "chapter_02",
       "status": "locked",
-      "prerequisites": ["quest_forest_ch2_main3"],
-      "objectives": [
-        {"id": "obj_return_tree", "description": "返回精灵古树", "type": "location", "target": "loc_forest_ancient_tree"},
-        {"id": "obj_accept_trial", "description": "接受古树试炼", "type": "story", "target": "accept_trial"},
-        {"id": "obj_defeat_trials", "description": "通过三项试炼", "type": "combat", "target": 3},
-        {"id": "obj_prove_worth", "description": "证明你的勇气与智慧", "type": "story", "target": "prove_worth"},
-        {"id": "obj_prepare_boss", "description": "准备挑战古树守护者", "type": "story", "target": "prepare_boss_fight"}
+      "prerequisites": [
+        "quest_forest_ch2_main3"
       ],
-      "rewards": {"experience": 600, "reputation": {"faction_freehold": 150}, "gold": 250},
+      "objectives": [
+        {
+          "id": "obj_return_tree",
+          "description": "返回精灵古树",
+          "type": "location",
+          "target": "loc_forest_ancient_tree"
+        },
+        {
+          "id": "obj_accept_trial",
+          "description": "接受古树试炼",
+          "type": "story",
+          "target": "accept_trial"
+        },
+        {
+          "id": "obj_defeat_trials",
+          "description": "通过三项试炼",
+          "type": "combat",
+          "target": 3
+        },
+        {
+          "id": "obj_prove_worth",
+          "description": "证明你的勇气与智慧",
+          "type": "story",
+          "target": "prove_worth"
+        },
+        {
+          "id": "obj_prepare_boss",
+          "description": "准备挑战古树守护者",
+          "type": "story",
+          "target": "prepare_boss_fight"
+        }
+      ],
+      "rewards": {
+        "experience": 600,
+        "reputation": {
+          "faction_freehold": 150
+        },
+        "gold": 250
+      },
       "failure_condition": null,
       "start_npc": "npc_forest_healer",
       "end_npc": "npc_forest_leader",
@@ -335,15 +812,51 @@
       "type": "main",
       "chapter": "chapter_02",
       "status": "locked",
-      "prerequisites": ["quest_forest_ch2_main4"],
-      "objectives": [
-        {"id": "obj_enter_arena", "description": "进入古树守护者巢穴", "type": "location", "target": "loc_boss_ancient_tree"},
-        {"id": "obj_defeat_boss", "description": "击败古树守护者", "type": "boss", "target": "boss_ancient_tree"},
-        {"id": "obj_claim_reward", "description": "获取Boss掉落奖励", "type": "collect", "target": 1},
-        {"id": "obj_return_leader", "description": "向艾琳报告胜利", "type": "npc", "target": "npc_forest_leader"},
-        {"id": "obj_celebrate", "description": "参与森林庆典", "type": "story", "target": "forest_celebration"}
+      "prerequisites": [
+        "quest_forest_ch2_main4"
       ],
-      "rewards": {"experience": 1000, "reputation": {"faction_freehold": 300}, "gold": 500, "items": ["item_ancient_tree_essence"]},
+      "objectives": [
+        {
+          "id": "obj_enter_arena",
+          "description": "进入古树守护者巢穴",
+          "type": "location",
+          "target": "loc_boss_ancient_tree"
+        },
+        {
+          "id": "obj_defeat_boss",
+          "description": "击败古树守护者",
+          "type": "boss",
+          "target": "boss_ancient_tree"
+        },
+        {
+          "id": "obj_claim_reward",
+          "description": "获取Boss掉落奖励",
+          "type": "collect",
+          "target": 1
+        },
+        {
+          "id": "obj_return_leader",
+          "description": "向艾琳报告胜利",
+          "type": "npc",
+          "target": "npc_forest_leader"
+        },
+        {
+          "id": "obj_celebrate",
+          "description": "参与森林庆典",
+          "type": "story",
+          "target": "forest_celebration"
+        }
+      ],
+      "rewards": {
+        "experience": 1000,
+        "reputation": {
+          "faction_freehold": 300
+        },
+        "gold": 500,
+        "items": [
+          "item_ancient_tree_essence"
+        ]
+      },
       "failure_condition": null,
       "start_npc": "npc_forest_leader",
       "end_npc": "npc_forest_leader",
@@ -356,14 +869,41 @@
       "type": "main",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_main_ch01_start"],
-      "objectives": [
-        {"id": "obj_enter_oasis", "description": "进入南部绿洲区域", "type": "location", "target": "loc_oasis_entrance"},
-        {"id": "obj_find_market", "description": "找到绿洲市场", "type": "location", "target": "loc_oasis_market"},
-        {"id": "obj_talk_merchant", "description": "与萨拉丁·金砂交谈", "type": "npc", "target": "npc_oasis_merchant"},
-        {"id": "obj_accept_invite", "description": "接受商会的邀请", "type": "story", "target": "accept_invite"}
+      "prerequisites": [
+        "quest_main_ch01_start"
       ],
-      "rewards": {"experience": 200, "reputation": {"faction_harvest": 50}},
+      "objectives": [
+        {
+          "id": "obj_enter_oasis",
+          "description": "进入南部绿洲区域",
+          "type": "location",
+          "target": "loc_oasis_entrance"
+        },
+        {
+          "id": "obj_find_market",
+          "description": "找到绿洲市场",
+          "type": "location",
+          "target": "loc_oasis_market"
+        },
+        {
+          "id": "obj_talk_merchant",
+          "description": "与萨拉丁·金砂交谈",
+          "type": "npc",
+          "target": "npc_oasis_merchant"
+        },
+        {
+          "id": "obj_accept_invite",
+          "description": "接受商会的邀请",
+          "type": "story",
+          "target": "accept_invite"
+        }
+      ],
+      "rewards": {
+        "experience": 200,
+        "reputation": {
+          "faction_harvest": 50
+        }
+      },
       "failure_condition": null,
       "start_npc": null,
       "end_npc": "npc_oasis_merchant",
@@ -376,15 +916,48 @@
       "type": "main",
       "chapter": "chapter_02",
       "status": "locked",
-      "prerequisites": ["quest_oasis_ch2_main1"],
-      "objectives": [
-        {"id": "obj_talk_scout", "description": "找到侦察员哈立德", "type": "npc", "target": "npc_oasis_scout"},
-        {"id": "obj_explore_desert", "description": "探索沙漠边缘", "type": "explore", "target": "loc_oasis_desert_edge"},
-        {"id": "obj_find_clues", "description": "寻找神秘商队线索", "type": "explore", "target": 3},
-        {"id": "obj_defeat_bandits", "description": "击败沿途强盗", "type": "combat", "target": 4},
-        {"id": "obj_report_clues", "description": "向哈立德报告发现", "type": "npc", "target": "npc_oasis_scout"}
+      "prerequisites": [
+        "quest_oasis_ch2_main1"
       ],
-      "rewards": {"experience": 350, "reputation": {"faction_harvest": 80}, "gold": 150},
+      "objectives": [
+        {
+          "id": "obj_talk_scout",
+          "description": "找到侦察员哈立德",
+          "type": "npc",
+          "target": "npc_oasis_scout"
+        },
+        {
+          "id": "obj_explore_desert",
+          "description": "探索沙漠边缘",
+          "type": "explore",
+          "target": "loc_oasis_desert_edge"
+        },
+        {
+          "id": "obj_find_clues",
+          "description": "寻找神秘商队线索",
+          "type": "explore",
+          "target": 3
+        },
+        {
+          "id": "obj_defeat_bandits",
+          "description": "击败沿途强盗",
+          "type": "combat",
+          "target": 4
+        },
+        {
+          "id": "obj_report_clues",
+          "description": "向哈立德报告发现",
+          "type": "npc",
+          "target": "npc_oasis_scout"
+        }
+      ],
+      "rewards": {
+        "experience": 350,
+        "reputation": {
+          "faction_harvest": 80
+        },
+        "gold": 150
+      },
       "failure_condition": null,
       "start_npc": "npc_oasis_scout",
       "end_npc": "npc_oasis_scout",
@@ -397,16 +970,54 @@
       "type": "main",
       "chapter": "chapter_02",
       "status": "locked",
-      "prerequisites": ["quest_oasis_ch2_main2"],
-      "objectives": [
-        {"id": "obj_talk_priest", "description": "与赛义德·圣光交谈", "type": "npc", "target": "npc_oasis_priest"},
-        {"id": "obj_enter_temple", "description": "进入神庙地下", "type": "location", "target": "loc_oasis_temple"},
-        {"id": "obj_solve_puzzles", "description": "解开古老谜题", "type": "explore", "target": 3},
-        {"id": "obj_defeat_undead", "description": "击败不死守卫", "type": "combat", "target": 6},
-        {"id": "obj_find_secret", "description": "找到沙漠之神的秘密", "type": "story", "target": "find_desert_secret"},
-        {"id": "obj_return_temple", "description": "返回神庙报告", "type": "npc", "target": "npc_oasis_priest"}
+      "prerequisites": [
+        "quest_oasis_ch2_main2"
       ],
-      "rewards": {"experience": 500, "reputation": {"faction_harvest": 120}, "gold": 220},
+      "objectives": [
+        {
+          "id": "obj_talk_priest",
+          "description": "与赛义德·圣光交谈",
+          "type": "npc",
+          "target": "npc_oasis_priest"
+        },
+        {
+          "id": "obj_enter_temple",
+          "description": "进入神庙地下",
+          "type": "location",
+          "target": "loc_oasis_temple"
+        },
+        {
+          "id": "obj_solve_puzzles",
+          "description": "解开古老谜题",
+          "type": "explore",
+          "target": 3
+        },
+        {
+          "id": "obj_defeat_undead",
+          "description": "击败不死守卫",
+          "type": "combat",
+          "target": 6
+        },
+        {
+          "id": "obj_find_secret",
+          "description": "找到沙漠之神的秘密",
+          "type": "story",
+          "target": "find_desert_secret"
+        },
+        {
+          "id": "obj_return_temple",
+          "description": "返回神庙报告",
+          "type": "npc",
+          "target": "npc_oasis_priest"
+        }
+      ],
+      "rewards": {
+        "experience": 500,
+        "reputation": {
+          "faction_harvest": 120
+        },
+        "gold": 220
+      },
       "failure_condition": null,
       "start_npc": "npc_oasis_priest",
       "end_npc": "npc_oasis_priest",
@@ -419,17 +1030,58 @@
       "type": "main",
       "chapter": "chapter_02",
       "status": "locked",
-      "prerequisites": ["quest_oasis_ch2_main3"],
-      "objectives": [
-        {"id": "obj_receive_distress", "description": "收到商队求救信号", "type": "story", "target": "receive_distress"},
-        {"id": "obj_rush_desert", "description": "赶往商队被困地点", "type": "travel", "target": "loc_oasis_desert_deep"},
-        {"id": "obj_defeat_ambush", "description": "击败伏击者", "type": "combat", "target": 10},
-        {"id": "obj_rescue_caravan", "description": "救出商队成员", "type": "rescue", "target": 3},
-        {"id": "obj_escort_back", "description": "护送商队返回绿洲", "type": "travel", "target": "loc_oasis_market"},
-        {"id": "obj_report_merchant", "description": "向萨拉丁报告", "type": "npc", "target": "npc_oasis_merchant"}
+      "prerequisites": [
+        "quest_oasis_ch2_main3"
       ],
-      "rewards": {"experience": 650, "reputation": {"faction_harvest": 150}, "gold": 300},
-      "failure_condition": {"type": "time_limit", "minutes": 30},
+      "objectives": [
+        {
+          "id": "obj_receive_distress",
+          "description": "收到商队求救信号",
+          "type": "story",
+          "target": "receive_distress"
+        },
+        {
+          "id": "obj_rush_desert",
+          "description": "赶往商队被困地点",
+          "type": "travel",
+          "target": "loc_oasis_desert_deep"
+        },
+        {
+          "id": "obj_defeat_ambush",
+          "description": "击败伏击者",
+          "type": "combat",
+          "target": 10
+        },
+        {
+          "id": "obj_rescue_caravan",
+          "description": "救出商队成员",
+          "type": "rescue",
+          "target": 3
+        },
+        {
+          "id": "obj_escort_back",
+          "description": "护送商队返回绿洲",
+          "type": "travel",
+          "target": "loc_oasis_market"
+        },
+        {
+          "id": "obj_report_merchant",
+          "description": "向萨拉丁报告",
+          "type": "npc",
+          "target": "npc_oasis_merchant"
+        }
+      ],
+      "rewards": {
+        "experience": 650,
+        "reputation": {
+          "faction_harvest": 150
+        },
+        "gold": 300
+      },
+      "failure_condition": {
+        "type": "time_limit",
+        "minutes": 30
+      },
       "start_npc": "npc_oasis_merchant",
       "end_npc": "npc_oasis_merchant",
       "region": "region_expansion_southoasis"
@@ -441,15 +1093,51 @@
       "type": "main",
       "chapter": "chapter_02",
       "status": "locked",
-      "prerequisites": ["quest_oasis_ch2_main4"],
-      "objectives": [
-        {"id": "obj_enter_throne", "description": "进入沙漠帝王陵墓", "type": "location", "target": "loc_boss_desert_emperor"},
-        {"id": "obj_defeat_boss", "description": "击败沙漠帝王", "type": "boss", "target": "boss_desert_emperor"},
-        {"id": "obj_claim_treasure", "description": "获取帝王宝藏", "type": "collect", "target": 1},
-        {"id": "obj_return_merchant", "description": "向萨拉丁报告胜利", "type": "npc", "target": "npc_oasis_merchant"},
-        {"id": "obj_celebrate", "description": "参加商会庆功宴", "type": "story", "target": "oasis_celebration"}
+      "prerequisites": [
+        "quest_oasis_ch2_main4"
       ],
-      "rewards": {"experience": 1200, "reputation": {"faction_harvest": 350}, "gold": 600, "items": ["item_desert_emperor_crown"]},
+      "objectives": [
+        {
+          "id": "obj_enter_throne",
+          "description": "进入沙漠帝王陵墓",
+          "type": "location",
+          "target": "loc_boss_desert_emperor"
+        },
+        {
+          "id": "obj_defeat_boss",
+          "description": "击败沙漠帝王",
+          "type": "boss",
+          "target": "boss_desert_emperor"
+        },
+        {
+          "id": "obj_claim_treasure",
+          "description": "获取帝王宝藏",
+          "type": "collect",
+          "target": 1
+        },
+        {
+          "id": "obj_return_merchant",
+          "description": "向萨拉丁报告胜利",
+          "type": "npc",
+          "target": "npc_oasis_merchant"
+        },
+        {
+          "id": "obj_celebrate",
+          "description": "参加商会庆功宴",
+          "type": "story",
+          "target": "oasis_celebration"
+        }
+      ],
+      "rewards": {
+        "experience": 1200,
+        "reputation": {
+          "faction_harvest": 350
+        },
+        "gold": 600,
+        "items": [
+          "item_desert_emperor_crown"
+        ]
+      },
       "failure_condition": null,
       "start_npc": "npc_oasis_merchant",
       "end_npc": "npc_oasis_merchant",
@@ -462,14 +1150,39 @@
       "type": "side",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_forest_ch2_main1"],
-      "objectives": [
-        {"id": "obj_talk_healer", "description": "与梅拉·绿叶交谈", "type": "npc", "target": "npc_forest_healer"},
-        {"id": "obj_collect_herbs", "description": "收集月光草", "type": "collect", "target": 8},
-        {"id": "obj_collect_crystals", "description": "收集魔法水晶", "type": "collect", "target": 3},
-        {"id": "obj_return_healer", "description": "将材料交给梅拉", "type": "npc", "target": "npc_forest_healer"}
+      "prerequisites": [
+        "quest_forest_ch2_main1"
       ],
-      "rewards": {"experience": 180, "gold": 80},
+      "objectives": [
+        {
+          "id": "obj_talk_healer",
+          "description": "与梅拉·绿叶交谈",
+          "type": "npc",
+          "target": "npc_forest_healer"
+        },
+        {
+          "id": "obj_collect_herbs",
+          "description": "收集月光草",
+          "type": "collect",
+          "target": 8
+        },
+        {
+          "id": "obj_collect_crystals",
+          "description": "收集魔法水晶",
+          "type": "collect",
+          "target": 3
+        },
+        {
+          "id": "obj_return_healer",
+          "description": "将材料交给梅拉",
+          "type": "npc",
+          "target": "npc_forest_healer"
+        }
+      ],
+      "rewards": {
+        "experience": 180,
+        "gold": 80
+      },
       "failure_condition": null,
       "start_npc": "npc_forest_healer",
       "end_npc": "npc_forest_healer",
@@ -482,14 +1195,39 @@
       "type": "side",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_forest_ch2_main1"],
-      "objectives": [
-        {"id": "obj_find_traveler", "description": "找到迷路的旅人", "type": "npc", "target": "npc_lost_traveler"},
-        {"id": "obj_defeat_threats", "description": "清除周围威胁", "type": "combat", "target": 4},
-        {"id": "obj_guide_out", "description": "引导旅人离开迷雾", "type": "travel", "target": "loc_forest_camp"},
-        {"id": "obj_receive_thanks", "description": "接受旅人的感谢", "type": "npc", "target": "npc_lost_traveler"}
+      "prerequisites": [
+        "quest_forest_ch2_main1"
       ],
-      "rewards": {"experience": 150, "gold": 60},
+      "objectives": [
+        {
+          "id": "obj_find_traveler",
+          "description": "找到迷路的旅人",
+          "type": "npc",
+          "target": "npc_lost_traveler"
+        },
+        {
+          "id": "obj_defeat_threats",
+          "description": "清除周围威胁",
+          "type": "combat",
+          "target": 4
+        },
+        {
+          "id": "obj_guide_out",
+          "description": "引导旅人离开迷雾",
+          "type": "travel",
+          "target": "loc_forest_camp"
+        },
+        {
+          "id": "obj_receive_thanks",
+          "description": "接受旅人的感谢",
+          "type": "npc",
+          "target": "npc_lost_traveler"
+        }
+      ],
+      "rewards": {
+        "experience": 150,
+        "gold": 60
+      },
       "failure_condition": null,
       "start_npc": null,
       "end_npc": "npc_lost_traveler",
@@ -502,15 +1240,48 @@
       "type": "side",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_forest_ch2_main2"],
-      "objectives": [
-        {"id": "obj_find_ruins", "description": "找到精灵遗迹入口", "type": "explore", "target": "loc_forest_ruins"},
-        {"id": "obj_explore_ruins", "description": "探索遗迹内部", "type": "explore", "target": 4},
-        {"id": "obj_defeat_guardian", "description": "击败遗迹守护者", "type": "combat", "target": 2},
-        {"id": "obj_retrieve_artifact", "description": "获取精灵遗物", "type": "collect", "target": 1},
-        {"id": "obj_report_leader", "description": "向艾琳报告发现", "type": "npc", "target": "npc_forest_leader"}
+      "prerequisites": [
+        "quest_forest_ch2_main2"
       ],
-      "rewards": {"experience": 280, "reputation": {"faction_freehold": 60}, "gold": 100},
+      "objectives": [
+        {
+          "id": "obj_find_ruins",
+          "description": "找到精灵遗迹入口",
+          "type": "explore",
+          "target": "loc_forest_ruins"
+        },
+        {
+          "id": "obj_explore_ruins",
+          "description": "探索遗迹内部",
+          "type": "explore",
+          "target": 4
+        },
+        {
+          "id": "obj_defeat_guardian",
+          "description": "击败遗迹守护者",
+          "type": "combat",
+          "target": 2
+        },
+        {
+          "id": "obj_retrieve_artifact",
+          "description": "获取精灵遗物",
+          "type": "collect",
+          "target": 1
+        },
+        {
+          "id": "obj_report_leader",
+          "description": "向艾琳报告发现",
+          "type": "npc",
+          "target": "npc_forest_leader"
+        }
+      ],
+      "rewards": {
+        "experience": 280,
+        "reputation": {
+          "faction_freehold": 60
+        },
+        "gold": 100
+      },
       "failure_condition": null,
       "start_npc": "npc_forest_guide",
       "end_npc": "npc_forest_leader",
@@ -523,14 +1294,39 @@
       "type": "side",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_oasis_ch2_main1"],
-      "objectives": [
-        {"id": "obj_talk_trader", "description": "与阿米尔交谈", "type": "npc", "target": "npc_oasis_trader"},
-        {"id": "obj_collect_gems", "description": "收集沙漠宝石", "type": "collect", "target": 5},
-        {"id": "obj_collect_spices", "description": "收集稀有香料", "type": "collect", "target": 3},
-        {"id": "obj_return_trader", "description": "将商品交给阿米尔", "type": "npc", "target": "npc_oasis_trader"}
+      "prerequisites": [
+        "quest_oasis_ch2_main1"
       ],
-      "rewards": {"experience": 200, "gold": 150},
+      "objectives": [
+        {
+          "id": "obj_talk_trader",
+          "description": "与阿米尔交谈",
+          "type": "npc",
+          "target": "npc_oasis_trader"
+        },
+        {
+          "id": "obj_collect_gems",
+          "description": "收集沙漠宝石",
+          "type": "collect",
+          "target": 5
+        },
+        {
+          "id": "obj_collect_spices",
+          "description": "收集稀有香料",
+          "type": "collect",
+          "target": 3
+        },
+        {
+          "id": "obj_return_trader",
+          "description": "将商品交给阿米尔",
+          "type": "npc",
+          "target": "npc_oasis_trader"
+        }
+      ],
+      "rewards": {
+        "experience": 200,
+        "gold": 150
+      },
       "failure_condition": null,
       "start_npc": "npc_oasis_trader",
       "end_npc": "npc_oasis_trader",
@@ -543,14 +1339,39 @@
       "type": "side",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_oasis_ch2_main1"],
-      "objectives": [
-        {"id": "obj_talk_priest", "description": "与赛义德交谈", "type": "npc", "target": "npc_oasis_priest"},
-        {"id": "obj_patrol_temple", "description": "巡逻神庙周边", "type": "explore", "target": "loc_oasis_temple"},
-        {"id": "obj_defeat_graverobbers", "description": "击败盗墓者", "type": "combat", "target": 6},
-        {"id": "obj_report_priest", "description": "向赛义德报告", "type": "npc", "target": "npc_oasis_priest"}
+      "prerequisites": [
+        "quest_oasis_ch2_main1"
       ],
-      "rewards": {"experience": 250, "gold": 100},
+      "objectives": [
+        {
+          "id": "obj_talk_priest",
+          "description": "与赛义德交谈",
+          "type": "npc",
+          "target": "npc_oasis_priest"
+        },
+        {
+          "id": "obj_patrol_temple",
+          "description": "巡逻神庙周边",
+          "type": "explore",
+          "target": "loc_oasis_temple"
+        },
+        {
+          "id": "obj_defeat_graverobbers",
+          "description": "击败盗墓者",
+          "type": "combat",
+          "target": 6
+        },
+        {
+          "id": "obj_report_priest",
+          "description": "向赛义德报告",
+          "type": "npc",
+          "target": "npc_oasis_priest"
+        }
+      ],
+      "rewards": {
+        "experience": 250,
+        "gold": 100
+      },
       "failure_condition": null,
       "start_npc": "npc_oasis_priest",
       "end_npc": "npc_oasis_priest",
@@ -563,15 +1384,48 @@
       "type": "side",
       "chapter": "chapter_02",
       "status": "available",
-      "prerequisites": ["quest_oasis_ch2_main2"],
-      "objectives": [
-        {"id": "obj_talk_scout", "description": "与哈立德交谈", "type": "npc", "target": "npc_oasis_scout"},
-        {"id": "obj_explore_dunes", "description": "探索沙丘区域", "type": "explore", "target": "loc_oasis_dunes"},
-        {"id": "obj_find_water_source", "description": "寻找隐藏水源", "type": "explore", "target": 1},
-        {"id": "obj_defeat_dangers", "description": "击败沙漠危险生物", "type": "combat", "target": 5},
-        {"id": "obj_return_scout", "description": "返回向哈立德报告", "type": "npc", "target": "npc_oasis_scout"}
+      "prerequisites": [
+        "quest_oasis_ch2_main2"
       ],
-      "rewards": {"experience": 300, "reputation": {"faction_harvest": 70}, "gold": 120},
+      "objectives": [
+        {
+          "id": "obj_talk_scout",
+          "description": "与哈立德交谈",
+          "type": "npc",
+          "target": "npc_oasis_scout"
+        },
+        {
+          "id": "obj_explore_dunes",
+          "description": "探索沙丘区域",
+          "type": "explore",
+          "target": "loc_oasis_dunes"
+        },
+        {
+          "id": "obj_find_water_source",
+          "description": "寻找隐藏水源",
+          "type": "explore",
+          "target": 1
+        },
+        {
+          "id": "obj_defeat_dangers",
+          "description": "击败沙漠危险生物",
+          "type": "combat",
+          "target": 5
+        },
+        {
+          "id": "obj_return_scout",
+          "description": "返回向哈立德报告",
+          "type": "npc",
+          "target": "npc_oasis_scout"
+        }
+      ],
+      "rewards": {
+        "experience": 300,
+        "reputation": {
+          "faction_harvest": 70
+        },
+        "gold": 120
+      },
       "failure_condition": null,
       "start_npc": "npc_oasis_scout",
       "end_npc": "npc_oasis_scout",
@@ -584,14 +1438,41 @@
       "type": "main",
       "chapter": "chapter_03",
       "status": "available",
-      "prerequisites": ["quest_oasis_ch2_main5"],
-      "objectives": [
-        {"id": "obj_enter_volcano", "description": "进入熔火裂谷区域", "type": "location", "target": "loc_volcano_outpost"},
-        {"id": "obj_talk_commander", "description": "与维克托·烈焰交谈", "type": "npc", "target": "npc_volcano_commander"},
-        {"id": "obj_survey_outpost", "description": "视察矿业前哨", "type": "explore", "target": "loc_volcano_outpost"},
-        {"id": "obj_accept_mission", "description": "接受地底调查任务", "type": "story", "target": "accept_mission"}
+      "prerequisites": [
+        "quest_oasis_ch2_main5"
       ],
-      "rewards": {"experience": 300, "reputation": {"faction_ironward": 80}},
+      "objectives": [
+        {
+          "id": "obj_enter_volcano",
+          "description": "进入熔火裂谷区域",
+          "type": "location",
+          "target": "loc_volcano_outpost"
+        },
+        {
+          "id": "obj_talk_commander",
+          "description": "与维克托·烈焰交谈",
+          "type": "npc",
+          "target": "npc_volcano_commander"
+        },
+        {
+          "id": "obj_survey_outpost",
+          "description": "视察矿业前哨",
+          "type": "explore",
+          "target": "loc_volcano_outpost"
+        },
+        {
+          "id": "obj_accept_mission",
+          "description": "接受地底调查任务",
+          "type": "story",
+          "target": "accept_mission"
+        }
+      ],
+      "rewards": {
+        "experience": 300,
+        "reputation": {
+          "faction_ironward": 80
+        }
+      },
       "failure_condition": null,
       "start_npc": null,
       "end_npc": "npc_volcano_commander",
@@ -604,15 +1485,48 @@
       "type": "main",
       "chapter": "chapter_03",
       "status": "locked",
-      "prerequisites": ["quest_volcano_ch3_main1"],
-      "objectives": [
-        {"id": "obj_enter_mine", "description": "进入深渊矿脉", "type": "location", "target": "loc_volcano_deep_mine"},
-        {"id": "obj_find_clues", "description": "寻找矿工失踪线索", "type": "explore", "target": 3},
-        {"id": "obj_defeat_creatures", "description": "击败地底生物", "type": "combat", "target": 6},
-        {"id": "obj_find_source", "description": "找到异变源头", "type": "explore", "target": "loc_deep_source"},
-        {"id": "obj_report_commander", "description": "返回向维克托报告", "type": "npc", "target": "npc_volcano_commander"}
+      "prerequisites": [
+        "quest_volcano_ch3_main1"
       ],
-      "rewards": {"experience": 500, "reputation": {"faction_ironward": 120}, "gold": 200},
+      "objectives": [
+        {
+          "id": "obj_enter_mine",
+          "description": "进入深渊矿脉",
+          "type": "location",
+          "target": "loc_volcano_deep_mine"
+        },
+        {
+          "id": "obj_find_clues",
+          "description": "寻找矿工失踪线索",
+          "type": "explore",
+          "target": 3
+        },
+        {
+          "id": "obj_defeat_creatures",
+          "description": "击败地底生物",
+          "type": "combat",
+          "target": 6
+        },
+        {
+          "id": "obj_find_source",
+          "description": "找到异变源头",
+          "type": "explore",
+          "target": "loc_deep_source"
+        },
+        {
+          "id": "obj_report_commander",
+          "description": "返回向维克托报告",
+          "type": "npc",
+          "target": "npc_volcano_commander"
+        }
+      ],
+      "rewards": {
+        "experience": 500,
+        "reputation": {
+          "faction_ironward": 120
+        },
+        "gold": 200
+      },
       "failure_condition": null,
       "start_npc": "npc_volcano_commander",
       "end_npc": "npc_volcano_commander",
@@ -625,17 +1539,58 @@
       "type": "main",
       "chapter": "chapter_03",
       "status": "locked",
-      "prerequisites": ["quest_volcano_ch3_main2"],
-      "objectives": [
-        {"id": "obj_talk_smith", "description": "与赫尔墨斯·熔炉交谈", "type": "npc", "target": "npc_volcano_smith"},
-        {"id": "obj_reach_crater", "description": "前往烈焰火山口", "type": "location", "target": "loc_volcano_crater"},
-        {"id": "obj_close_valve1", "description": "关闭东侧地热阀门", "type": "story", "target": "valve_east"},
-        {"id": "obj_close_valve2", "description": "关闭西侧地热阀门", "type": "story", "target": "valve_west"},
-        {"id": "obj_defeat_fire_guardian", "description": "击败火焰守卫", "type": "combat", "target": 2},
-        {"id": "obj_report_smith", "description": "返回向赫尔墨斯报告", "type": "npc", "target": "npc_volcano_smith"}
+      "prerequisites": [
+        "quest_volcano_ch3_main2"
       ],
-      "rewards": {"experience": 650, "reputation": {"faction_ironward": 150}, "gold": 280},
-      "failure_condition": {"type": "time_limit", "minutes": 25},
+      "objectives": [
+        {
+          "id": "obj_talk_smith",
+          "description": "与赫尔墨斯·熔炉交谈",
+          "type": "npc",
+          "target": "npc_volcano_smith"
+        },
+        {
+          "id": "obj_reach_crater",
+          "description": "前往烈焰火山口",
+          "type": "location",
+          "target": "loc_volcano_crater"
+        },
+        {
+          "id": "obj_close_valve1",
+          "description": "关闭东侧地热阀门",
+          "type": "story",
+          "target": "valve_east"
+        },
+        {
+          "id": "obj_close_valve2",
+          "description": "关闭西侧地热阀门",
+          "type": "story",
+          "target": "valve_west"
+        },
+        {
+          "id": "obj_defeat_fire_guardian",
+          "description": "击败火焰守卫",
+          "type": "combat",
+          "target": 2
+        },
+        {
+          "id": "obj_report_smith",
+          "description": "返回向赫尔墨斯报告",
+          "type": "npc",
+          "target": "npc_volcano_smith"
+        }
+      ],
+      "rewards": {
+        "experience": 650,
+        "reputation": {
+          "faction_ironward": 150
+        },
+        "gold": 280
+      },
+      "failure_condition": {
+        "type": "time_limit",
+        "minutes": 25
+      },
       "start_npc": "npc_volcano_smith",
       "end_npc": "npc_volcano_smith",
       "region": "region_north_volcano"
@@ -647,14 +1602,42 @@
       "type": "main",
       "chapter": "chapter_03",
       "status": "locked",
-      "prerequisites": ["quest_volcano_ch3_main3"],
-      "objectives": [
-        {"id": "obj_descend_deep", "description": "深入矿脉最底层", "type": "location", "target": "loc_volcano_deep_mine"},
-        {"id": "obj_find_nest", "description": "找到熔岩巨兽巢穴", "type": "explore", "target": "loc_lava_beast_nest"},
-        {"id": "obj_defat_minions", "description": "清除巨兽仆从", "type": "combat", "target": 10},
-        {"id": "obj_prepare_fight", "description": "做好战斗准备", "type": "story", "target": "prepare_boss_fight"}
+      "prerequisites": [
+        "quest_volcano_ch3_main3"
       ],
-      "rewards": {"experience": 800, "reputation": {"faction_ironward": 200}, "gold": 350},
+      "objectives": [
+        {
+          "id": "obj_descend_deep",
+          "description": "深入矿脉最底层",
+          "type": "location",
+          "target": "loc_volcano_deep_mine"
+        },
+        {
+          "id": "obj_find_nest",
+          "description": "找到熔岩巨兽巢穴",
+          "type": "explore",
+          "target": "loc_lava_beast_nest"
+        },
+        {
+          "id": "obj_defat_minions",
+          "description": "清除巨兽仆从",
+          "type": "combat",
+          "target": 10
+        },
+        {
+          "id": "obj_prepare_fight",
+          "description": "做好战斗准备",
+          "type": "story",
+          "target": "prepare_boss_fight"
+        }
+      ],
+      "rewards": {
+        "experience": 800,
+        "reputation": {
+          "faction_ironward": 200
+        },
+        "gold": 350
+      },
       "failure_condition": null,
       "start_npc": "npc_volcano_commander",
       "end_npc": "npc_volcano_miner",
@@ -667,15 +1650,51 @@
       "type": "main",
       "chapter": "chapter_03",
       "status": "locked",
-      "prerequisites": ["quest_volcano_ch3_main4"],
-      "objectives": [
-        {"id": "obj_enter_arena", "description": "进入熔岩巨兽巢穴", "type": "location", "target": "loc_boss_lava_beast"},
-        {"id": "obj_defeat_boss", "description": "击败熔岩巨兽", "type": "boss", "target": "boss_lava_beast"},
-        {"id": "obj_claim_reward", "description": "获取Boss掉落奖励", "type": "collect", "target": 1},
-        {"id": "obj_report_commander", "description": "向维克托报告胜利", "type": "npc", "target": "npc_volcano_commander"},
-        {"id": "obj_celebrate", "description": "参加矿业前哨庆功宴", "type": "story", "target": "volcano_celebration"}
+      "prerequisites": [
+        "quest_volcano_ch3_main4"
       ],
-      "rewards": {"experience": 1500, "reputation": {"faction_ironward": 400}, "gold": 600, "items": ["item_lava_beast_core"]},
+      "objectives": [
+        {
+          "id": "obj_enter_arena",
+          "description": "进入熔岩巨兽巢穴",
+          "type": "location",
+          "target": "loc_boss_lava_beast"
+        },
+        {
+          "id": "obj_defeat_boss",
+          "description": "击败熔岩巨兽",
+          "type": "boss",
+          "target": "boss_lava_beast"
+        },
+        {
+          "id": "obj_claim_reward",
+          "description": "获取Boss掉落奖励",
+          "type": "collect",
+          "target": 1
+        },
+        {
+          "id": "obj_report_commander",
+          "description": "向维克托报告胜利",
+          "type": "npc",
+          "target": "npc_volcano_commander"
+        },
+        {
+          "id": "obj_celebrate",
+          "description": "参加矿业前哨庆功宴",
+          "type": "story",
+          "target": "volcano_celebration"
+        }
+      ],
+      "rewards": {
+        "experience": 1500,
+        "reputation": {
+          "faction_ironward": 400
+        },
+        "gold": 600,
+        "items": [
+          "item_lava_beast_core"
+        ]
+      },
       "failure_condition": null,
       "start_npc": "npc_volcano_commander",
       "end_npc": "npc_volcano_commander",
@@ -688,15 +1707,48 @@
       "type": "side",
       "chapter": "chapter_03",
       "status": "available",
-      "prerequisites": ["quest_volcano_ch3_main1"],
-      "objectives": [
-        {"id": "obj_talk_smith", "description": "与赫尔墨斯交谈", "type": "npc", "target": "npc_volcano_smith"},
-        {"id": "obj_enter_mine", "description": "进入深渊矿脉", "type": "location", "target": "loc_volcano_deep_mine"},
-        {"id": "obj_mine_dragonsteel", "description": "采集龙钢矿石", "type": "collect", "target": 8},
-        {"id": "obj_defeat_lizards", "description": "击退熔岩蜥蜴", "type": "combat", "target": 5},
-        {"id": "obj_return_smith", "description": "将矿石交给赫尔墨斯", "type": "npc", "target": "npc_volcano_smith"}
+      "prerequisites": [
+        "quest_volcano_ch3_main1"
       ],
-      "rewards": {"experience": 300, "reputation": {"faction_ironward": 60}, "gold": 150},
+      "objectives": [
+        {
+          "id": "obj_talk_smith",
+          "description": "与赫尔墨斯交谈",
+          "type": "npc",
+          "target": "npc_volcano_smith"
+        },
+        {
+          "id": "obj_enter_mine",
+          "description": "进入深渊矿脉",
+          "type": "location",
+          "target": "loc_volcano_deep_mine"
+        },
+        {
+          "id": "obj_mine_dragonsteel",
+          "description": "采集龙钢矿石",
+          "type": "collect",
+          "target": 8
+        },
+        {
+          "id": "obj_defeat_lizards",
+          "description": "击退熔岩蜥蜴",
+          "type": "combat",
+          "target": 5
+        },
+        {
+          "id": "obj_return_smith",
+          "description": "将矿石交给赫尔墨斯",
+          "type": "npc",
+          "target": "npc_volcano_smith"
+        }
+      ],
+      "rewards": {
+        "experience": 300,
+        "reputation": {
+          "faction_ironward": 60
+        },
+        "gold": 150
+      },
       "failure_condition": null,
       "start_npc": "npc_volcano_smith",
       "end_npc": "npc_volcano_smith",
@@ -709,16 +1761,54 @@
       "type": "side",
       "chapter": "chapter_03",
       "status": "available",
-      "prerequisites": ["quest_volcano_ch3_main1"],
-      "objectives": [
-        {"id": "obj_talk_geologist", "description": "与莉娜·岩心交谈", "type": "npc", "target": "npc_volcano_geologist"},
-        {"id": "obj_install_sensor1", "description": "在浅层矿道安装监测仪", "type": "story", "target": "sensor_shallow"},
-        {"id": "obj_install_sensor2", "description": "在深层矿道安装监测仪", "type": "story", "target": "sensor_deep"},
-        {"id": "obj_install_sensor3", "description": "在热液区域安装监测仪", "type": "story", "target": "sensor_thermal"},
-        {"id": "obj_defeat_hazards", "description": "清除安装路线上的危险生物", "type": "combat", "target": 4},
-        {"id": "obj_report_geologist", "description": "向莉娜报告安装完成", "type": "npc", "target": "npc_volcano_geologist"}
+      "prerequisites": [
+        "quest_volcano_ch3_main1"
       ],
-      "rewards": {"experience": 350, "reputation": {"faction_ironward": 70}, "gold": 120},
+      "objectives": [
+        {
+          "id": "obj_talk_geologist",
+          "description": "与莉娜·岩心交谈",
+          "type": "npc",
+          "target": "npc_volcano_geologist"
+        },
+        {
+          "id": "obj_install_sensor1",
+          "description": "在浅层矿道安装监测仪",
+          "type": "story",
+          "target": "sensor_shallow"
+        },
+        {
+          "id": "obj_install_sensor2",
+          "description": "在深层矿道安装监测仪",
+          "type": "story",
+          "target": "sensor_deep"
+        },
+        {
+          "id": "obj_install_sensor3",
+          "description": "在热液区域安装监测仪",
+          "type": "story",
+          "target": "sensor_thermal"
+        },
+        {
+          "id": "obj_defeat_hazards",
+          "description": "清除安装路线上的危险生物",
+          "type": "combat",
+          "target": 4
+        },
+        {
+          "id": "obj_report_geologist",
+          "description": "向莉娜报告安装完成",
+          "type": "npc",
+          "target": "npc_volcano_geologist"
+        }
+      ],
+      "rewards": {
+        "experience": 350,
+        "reputation": {
+          "faction_ironward": 70
+        },
+        "gold": 120
+      },
       "failure_condition": null,
       "start_npc": "npc_volcano_geologist",
       "end_npc": "npc_volcano_geologist",
@@ -731,14 +1821,41 @@
       "type": "main",
       "chapter": "chapter_03",
       "status": "available",
-      "prerequisites": ["quest_volcano_ch3_main5"],
-      "objectives": [
-        {"id": "obj_enter_glacier", "description": "进入永霜冰原区域", "type": "location", "target": "loc_glacier_station"},
-        {"id": "obj_talk_scholar", "description": "与伊莎贝拉·冰渊交谈", "type": "npc", "target": "npc_glacier_scholar"},
-        {"id": "obj_visit_lake", "description": "前往永冻之湖", "type": "location", "target": "loc_glacier_frozen_lake"},
-        {"id": "obj_accept_research", "description": "接受遗迹研究任务", "type": "story", "target": "accept_research"}
+      "prerequisites": [
+        "quest_volcano_ch3_main5"
       ],
-      "rewards": {"experience": 350, "reputation": {"faction_shadowveil": 80}},
+      "objectives": [
+        {
+          "id": "obj_enter_glacier",
+          "description": "进入永霜冰原区域",
+          "type": "location",
+          "target": "loc_glacier_station"
+        },
+        {
+          "id": "obj_talk_scholar",
+          "description": "与伊莎贝拉·冰渊交谈",
+          "type": "npc",
+          "target": "npc_glacier_scholar"
+        },
+        {
+          "id": "obj_visit_lake",
+          "description": "前往永冻之湖",
+          "type": "location",
+          "target": "loc_glacier_frozen_lake"
+        },
+        {
+          "id": "obj_accept_research",
+          "description": "接受遗迹研究任务",
+          "type": "story",
+          "target": "accept_research"
+        }
+      ],
+      "rewards": {
+        "experience": 350,
+        "reputation": {
+          "faction_shadowveil": 80
+        }
+      },
       "failure_condition": null,
       "start_npc": null,
       "end_npc": "npc_glacier_scholar",
@@ -751,16 +1868,54 @@
       "type": "main",
       "chapter": "chapter_03",
       "status": "locked",
-      "prerequisites": ["quest_glacier_ch3_main1"],
-      "objectives": [
-        {"id": "obj_talk_explorer", "description": "与奥拉夫·冰原交谈", "type": "npc", "target": "npc_glacier_explorer"},
-        {"id": "obj_break_ice", "description": "突破永冻之湖冰层", "type": "story", "target": "break_ice"},
-        {"id": "obj_explore_chamber", "description": "探索冰封密室", "type": "explore", "target": 4},
-        {"id": "obj_defeat_ice_guardian", "description": "击败冰封守卫", "type": "combat", "target": 3},
-        {"id": "obj_retrieve_data", "description": "获取封印技术数据", "type": "collect", "target": 1},
-        {"id": "obj_report_scholar", "description": "返回向伊莎贝拉报告", "type": "npc", "target": "npc_glacier_scholar"}
+      "prerequisites": [
+        "quest_glacier_ch3_main1"
       ],
-      "rewards": {"experience": 550, "reputation": {"faction_shadowveil": 130}, "gold": 220},
+      "objectives": [
+        {
+          "id": "obj_talk_explorer",
+          "description": "与奥拉夫·冰原交谈",
+          "type": "npc",
+          "target": "npc_glacier_explorer"
+        },
+        {
+          "id": "obj_break_ice",
+          "description": "突破永冻之湖冰层",
+          "type": "story",
+          "target": "break_ice"
+        },
+        {
+          "id": "obj_explore_chamber",
+          "description": "探索冰封密室",
+          "type": "explore",
+          "target": 4
+        },
+        {
+          "id": "obj_defeat_ice_guardian",
+          "description": "击败冰封守卫",
+          "type": "combat",
+          "target": 3
+        },
+        {
+          "id": "obj_retrieve_data",
+          "description": "获取封印技术数据",
+          "type": "collect",
+          "target": 1
+        },
+        {
+          "id": "obj_report_scholar",
+          "description": "返回向伊莎贝拉报告",
+          "type": "npc",
+          "target": "npc_glacier_scholar"
+        }
+      ],
+      "rewards": {
+        "experience": 550,
+        "reputation": {
+          "faction_shadowveil": 130
+        },
+        "gold": 220
+      },
       "failure_condition": null,
       "start_npc": "npc_glacier_explorer",
       "end_npc": "npc_glacier_scholar",
@@ -773,16 +1928,52 @@
       "type": "main",
       "chapter": "chapter_03",
       "status": "locked",
-      "prerequisites": ["quest_glacier_ch3_main2"],
-      "objectives": [
-        {"id": "obj_talk_guardian", "description": "与艾拉·寒铁交谈", "type": "npc", "target": "npc_glacier_guardian"},
-        {"id": "obj_seal_crack1", "description": "修复东部封印裂缝", "type": "story", "target": "seal_east"},
-        {"id": "obj_seal_crack2", "description": "修复西部封印裂缝", "type": "story", "target": "seal_west"},
-        {"id": "obj_defeat_leak_creatures", "description": "消灭封印泄漏的生物", "type": "combat", "target": 8},
-        {"id": "obj_report_guardian", "description": "向艾拉报告修复完成", "type": "npc", "target": "npc_glacier_guardian"}
+      "prerequisites": [
+        "quest_glacier_ch3_main2"
       ],
-      "rewards": {"experience": 700, "reputation": {"faction_shadowveil": 160}, "gold": 300},
-      "failure_condition": {"type": "time_limit", "minutes": 30},
+      "objectives": [
+        {
+          "id": "obj_talk_guardian",
+          "description": "与艾拉·寒铁交谈",
+          "type": "npc",
+          "target": "npc_glacier_guardian"
+        },
+        {
+          "id": "obj_seal_crack1",
+          "description": "修复东部封印裂缝",
+          "type": "story",
+          "target": "seal_east"
+        },
+        {
+          "id": "obj_seal_crack2",
+          "description": "修复西部封印裂缝",
+          "type": "story",
+          "target": "seal_west"
+        },
+        {
+          "id": "obj_defeat_leak_creatures",
+          "description": "消灭封印泄漏的生物",
+          "type": "combat",
+          "target": 8
+        },
+        {
+          "id": "obj_report_guardian",
+          "description": "向艾拉报告修复完成",
+          "type": "npc",
+          "target": "npc_glacier_guardian"
+        }
+      ],
+      "rewards": {
+        "experience": 700,
+        "reputation": {
+          "faction_shadowveil": 160
+        },
+        "gold": 300
+      },
+      "failure_condition": {
+        "type": "time_limit",
+        "minutes": 30
+      },
       "start_npc": "npc_glacier_guardian",
       "end_npc": "npc_glacier_guardian",
       "region": "region_frost_glacier"
@@ -794,15 +1985,48 @@
       "type": "main",
       "chapter": "chapter_03",
       "status": "locked",
-      "prerequisites": ["quest_glacier_ch3_main3"],
-      "objectives": [
-        {"id": "obj_talk_hermit", "description": "与凌霜·隐者交谈", "type": "npc", "target": "npc_glacier_hermit"},
-        {"id": "obj_climb_peak", "description": "攀登霜冠之巅", "type": "location", "target": "loc_glacier_peak"},
-        {"id": "obj_find_palace", "description": "找到冰之宫殿入口", "type": "explore", "target": "loc_ice_palace"},
-        {"id": "obj_defeat_elite", "description": "击败冰之宫殿精英守卫", "type": "combat", "target": 4},
-        {"id": "obj_prepare_boss", "description": "准备挑战冰霜女皇", "type": "story", "target": "prepare_boss_fight"}
+      "prerequisites": [
+        "quest_glacier_ch3_main3"
       ],
-      "rewards": {"experience": 900, "reputation": {"faction_shadowveil": 220}, "gold": 400},
+      "objectives": [
+        {
+          "id": "obj_talk_hermit",
+          "description": "与凌霜·隐者交谈",
+          "type": "npc",
+          "target": "npc_glacier_hermit"
+        },
+        {
+          "id": "obj_climb_peak",
+          "description": "攀登霜冠之巅",
+          "type": "location",
+          "target": "loc_glacier_peak"
+        },
+        {
+          "id": "obj_find_palace",
+          "description": "找到冰之宫殿入口",
+          "type": "explore",
+          "target": "loc_ice_palace"
+        },
+        {
+          "id": "obj_defeat_elite",
+          "description": "击败冰之宫殿精英守卫",
+          "type": "combat",
+          "target": 4
+        },
+        {
+          "id": "obj_prepare_boss",
+          "description": "准备挑战冰霜女皇",
+          "type": "story",
+          "target": "prepare_boss_fight"
+        }
+      ],
+      "rewards": {
+        "experience": 900,
+        "reputation": {
+          "faction_shadowveil": 220
+        },
+        "gold": 400
+      },
       "failure_condition": null,
       "start_npc": "npc_glacier_hermit",
       "end_npc": "npc_glacier_explorer",
@@ -815,15 +2039,51 @@
       "type": "main",
       "chapter": "chapter_03",
       "status": "locked",
-      "prerequisites": ["quest_glacier_ch3_main4"],
-      "objectives": [
-        {"id": "obj_enter_throne", "description": "进入冰霜女皇王座", "type": "location", "target": "loc_boss_frost_queen"},
-        {"id": "obj_defeat_boss", "description": "击败冰霜女皇", "type": "boss", "target": "boss_frost_queen"},
-        {"id": "obj_seal_power", "description": "使用封印碎片封印远古力量", "type": "story", "target": "seal_ancient_power"},
-        {"id": "obj_report_scholar", "description": "向伊莎贝拉报告", "type": "npc", "target": "npc_glacier_scholar"},
-        {"id": "obj_celebrate", "description": "参加研究站庆功", "type": "story", "target": "glacier_celebration"}
+      "prerequisites": [
+        "quest_glacier_ch3_main4"
       ],
-      "rewards": {"experience": 1800, "reputation": {"faction_shadowveil": 500}, "gold": 800, "items": ["item_frost_queen_crown"]},
+      "objectives": [
+        {
+          "id": "obj_enter_throne",
+          "description": "进入冰霜女皇王座",
+          "type": "location",
+          "target": "loc_boss_frost_queen"
+        },
+        {
+          "id": "obj_defeat_boss",
+          "description": "击败冰霜女皇",
+          "type": "boss",
+          "target": "boss_frost_queen"
+        },
+        {
+          "id": "obj_seal_power",
+          "description": "使用封印碎片封印远古力量",
+          "type": "story",
+          "target": "seal_ancient_power"
+        },
+        {
+          "id": "obj_report_scholar",
+          "description": "向伊莎贝拉报告",
+          "type": "npc",
+          "target": "npc_glacier_scholar"
+        },
+        {
+          "id": "obj_celebrate",
+          "description": "参加研究站庆功",
+          "type": "story",
+          "target": "glacier_celebration"
+        }
+      ],
+      "rewards": {
+        "experience": 1800,
+        "reputation": {
+          "faction_shadowveil": 500
+        },
+        "gold": 800,
+        "items": [
+          "item_frost_queen_crown"
+        ]
+      },
       "failure_condition": null,
       "start_npc": "npc_glacier_scholar",
       "end_npc": "npc_glacier_scholar",
@@ -836,15 +2096,48 @@
       "type": "side",
       "chapter": "chapter_03",
       "status": "available",
-      "prerequisites": ["quest_glacier_ch3_main1"],
-      "objectives": [
-        {"id": "obj_talk_scholar", "description": "与伊莎贝拉交谈", "type": "npc", "target": "npc_glacier_scholar"},
-        {"id": "obj_find_artifacts", "description": "在遗迹中寻找远古遗物", "type": "explore", "target": 3},
-        {"id": "obj_collect_crystals", "description": "收集冰魄水晶", "type": "collect", "target": 5},
-        {"id": "obj_defeat_ice_creatures", "description": "击败冰原生物", "type": "combat", "target": 4},
-        {"id": "obj_return_scholar", "description": "将遗物交给伊莎贝拉", "type": "npc", "target": "npc_glacier_scholar"}
+      "prerequisites": [
+        "quest_glacier_ch3_main1"
       ],
-      "rewards": {"experience": 350, "reputation": {"faction_shadowveil": 70}, "gold": 180},
+      "objectives": [
+        {
+          "id": "obj_talk_scholar",
+          "description": "与伊莎贝拉交谈",
+          "type": "npc",
+          "target": "npc_glacier_scholar"
+        },
+        {
+          "id": "obj_find_artifacts",
+          "description": "在遗迹中寻找远古遗物",
+          "type": "explore",
+          "target": 3
+        },
+        {
+          "id": "obj_collect_crystals",
+          "description": "收集冰魄水晶",
+          "type": "collect",
+          "target": 5
+        },
+        {
+          "id": "obj_defeat_ice_creatures",
+          "description": "击败冰原生物",
+          "type": "combat",
+          "target": 4
+        },
+        {
+          "id": "obj_return_scholar",
+          "description": "将遗物交给伊莎贝拉",
+          "type": "npc",
+          "target": "npc_glacier_scholar"
+        }
+      ],
+      "rewards": {
+        "experience": 350,
+        "reputation": {
+          "faction_shadowveil": 70
+        },
+        "gold": 180
+      },
       "failure_condition": null,
       "start_npc": "npc_glacier_scholar",
       "end_npc": "npc_glacier_scholar",
@@ -857,19 +2150,814 @@
       "type": "side",
       "chapter": "chapter_03",
       "status": "available",
-      "prerequisites": ["quest_glacier_ch3_main1"],
-      "objectives": [
-        {"id": "obj_talk_guardian", "description": "与艾拉·寒铁交谈", "type": "npc", "target": "npc_glacier_guardian"},
-        {"id": "obj_gather_materials", "description": "收集封印材料", "type": "collect", "target": 6},
-        {"id": "obj_repair_crack1", "description": "修复北部冰层裂缝", "type": "story", "target": "crack_north"},
-        {"id": "obj_repair_crack2", "description": "修复南部冰层裂缝", "type": "story", "target": "crack_south"},
-        {"id": "obj_report_guardian", "description": "向艾拉报告修复完成", "type": "npc", "target": "npc_glacier_guardian"}
+      "prerequisites": [
+        "quest_glacier_ch3_main1"
       ],
-      "rewards": {"experience": 300, "reputation": {"faction_shadowveil": 60}, "gold": 130},
+      "objectives": [
+        {
+          "id": "obj_talk_guardian",
+          "description": "与艾拉·寒铁交谈",
+          "type": "npc",
+          "target": "npc_glacier_guardian"
+        },
+        {
+          "id": "obj_gather_materials",
+          "description": "收集封印材料",
+          "type": "collect",
+          "target": 6
+        },
+        {
+          "id": "obj_repair_crack1",
+          "description": "修复北部冰层裂缝",
+          "type": "story",
+          "target": "crack_north"
+        },
+        {
+          "id": "obj_repair_crack2",
+          "description": "修复南部冰层裂缝",
+          "type": "story",
+          "target": "crack_south"
+        },
+        {
+          "id": "obj_report_guardian",
+          "description": "向艾拉报告修复完成",
+          "type": "npc",
+          "target": "npc_glacier_guardian"
+        }
+      ],
+      "rewards": {
+        "experience": 300,
+        "reputation": {
+          "faction_shadowveil": 60
+        },
+        "gold": 130
+      },
       "failure_condition": null,
       "start_npc": "npc_glacier_guardian",
       "end_npc": "npc_glacier_guardian",
       "region": "region_frost_glacier"
+    },
+    {
+      "quest_id": "quest_starfall_ch4_main1",
+      "title": "荒原抵达",
+      "description": "抵达星陨荒原，向丰收商会勘探队长马库斯·铁钻报到，了解天裂事件的核心区域情况",
+      "type": "main",
+      "chapter": "chapter_04",
+      "status": "available",
+      "prerequisites": [
+        "quest_glacier_ch3_main5"
+      ],
+      "objectives": [
+        {
+          "id": "obj_enter_starfall",
+          "description": "进入星陨荒原区域",
+          "type": "location",
+          "target": "loc_starfall_observatory"
+        },
+        {
+          "id": "obj_talk_surveyor",
+          "description": "与马库斯·铁钻交谈",
+          "type": "npc",
+          "target": "npc_starfall_surveyor"
+        },
+        {
+          "id": "obj_survey_observatory",
+          "description": "视察陨星观察站",
+          "type": "explore",
+          "target": "loc_starfall_observatory"
+        },
+        {
+          "id": "obj_accept_survey_mission",
+          "description": "接受勘探任务",
+          "type": "story",
+          "target": "accept_mission"
+        }
+      ],
+      "rewards": {
+        "experience": 800,
+        "reputation": {
+          "faction_harvest": 80
+        },
+        "gold": 100
+      },
+      "failure_condition": null,
+      "start_npc": null,
+      "end_npc": "npc_starfall_surveyor",
+      "region": "region_starfall_wastes"
+    },
+    {
+      "quest_id": "quest_starfall_ch4_main2",
+      "title": "异星能量",
+      "description": "深入辐射荒原收集异星能量样本，遭遇流浪商人老杰克，得知天裂核心的光柱方向并非向上而是向下的异常现象",
+      "type": "main",
+      "chapter": "chapter_04",
+      "status": "locked",
+      "prerequisites": [
+        "quest_starfall_ch4_main1"
+      ],
+      "objectives": [
+        {
+          "id": "obj_enter_radiation",
+          "description": "进入辐射荒原",
+          "type": "location",
+          "target": "loc_radiation_wastes"
+        },
+        {
+          "id": "obj_collect_samples",
+          "description": "收集异星能量样本",
+          "type": "collect",
+          "target": 5
+        },
+        {
+          "id": "obj_defeat_mutants",
+          "description": "击退变异生物",
+          "type": "combat",
+          "target": 6
+        },
+        {
+          "id": "obj_meet_jack",
+          "description": "与老杰克·星尘交谈",
+          "type": "npc",
+          "target": "npc_starfall_merchant"
+        },
+        {
+          "id": "obj_learn_underground",
+          "description": "得知光柱方向异常",
+          "type": "story",
+          "target": "underground_truth"
+        }
+      ],
+      "rewards": {
+        "experience": 1200,
+        "reputation": {
+          "faction_harvest": 100
+        },
+        "gold": 200
+      },
+      "failure_condition": null,
+      "start_npc": "npc_starfall_surveyor",
+      "end_npc": "npc_starfall_merchant",
+      "region": "region_starfall_wastes"
+    },
+    {
+      "quest_id": "quest_starfall_ch4_main3",
+      "title": "远古星门",
+      "description": "前往远古星门遗迹，协助暗影面纱考古学家塞拉芬娜·暗纹解读星门符文，得知天裂事件与地底深渊的关联",
+      "type": "main",
+      "chapter": "chapter_04",
+      "status": "locked",
+      "prerequisites": [
+        "quest_starfall_ch4_main2"
+      ],
+      "objectives": [
+        {
+          "id": "obj_reach_stargate",
+          "description": "前往远古星门",
+          "type": "location",
+          "target": "loc_ancient_stargate"
+        },
+        {
+          "id": "obj_talk_archaeologist",
+          "description": "与塞拉芬娜·暗纹交谈",
+          "type": "npc",
+          "target": "npc_starfall_archaeologist"
+        },
+        {
+          "id": "obj_help_decipher",
+          "description": "协助解读星门符文",
+          "type": "explore",
+          "target": 4
+        },
+        {
+          "id": "obj_defend_ruins",
+          "description": "击退入侵遗迹的变异生物",
+          "type": "combat",
+          "target": 8
+        },
+        {
+          "id": "obj_learn_door_truth",
+          "description": "得知天裂与地底深渊的关联",
+          "type": "story",
+          "target": "door_truth"
+        }
+      ],
+      "rewards": {
+        "experience": 1500,
+        "reputation": {
+          "faction_shadowveil": 120,
+          "faction_harvest": 50
+        },
+        "gold": 250
+      },
+      "failure_condition": null,
+      "start_npc": "npc_starfall_merchant",
+      "end_npc": "npc_starfall_archaeologist",
+      "region": "region_starfall_wastes"
+    },
+    {
+      "quest_id": "quest_starfall_ch4_main4",
+      "title": "天裂核心",
+      "description": "在天裂核心边缘收集能量波动数据，与自由领地侦察兵艾拉·疾风合作，确认地底才是天裂事件的真正源头",
+      "type": "main",
+      "chapter": "chapter_04",
+      "status": "locked",
+      "prerequisites": [
+        "quest_starfall_ch4_main3"
+      ],
+      "objectives": [
+        {
+          "id": "obj_meet_scout",
+          "description": "与艾拉·疾风会面",
+          "type": "npc",
+          "target": "npc_starfall_scout"
+        },
+        {
+          "id": "obj_approach_core",
+          "description": "接近天裂核心边缘",
+          "type": "location",
+          "target": "loc_rift_core"
+        },
+        {
+          "id": "obj_record_energy",
+          "description": "记录能量波动数据",
+          "type": "story",
+          "target": 3
+        },
+        {
+          "id": "obj_survive_distortion",
+          "description": "在空间扭曲中存活",
+          "type": "combat",
+          "target": 4
+        },
+        {
+          "id": "obj_confirm_source",
+          "description": "确认地底是真正源头",
+          "type": "story",
+          "target": "confirm_source"
+        }
+      ],
+      "rewards": {
+        "experience": 2000,
+        "reputation": {
+          "faction_freehold": 150,
+          "faction_shadowveil": 80
+        },
+        "gold": 300
+      },
+      "failure_condition": null,
+      "start_npc": "npc_starfall_archaeologist",
+      "end_npc": "npc_starfall_scout",
+      "region": "region_starfall_wastes"
+    },
+    {
+      "quest_id": "quest_starfall_ch4_main5",
+      "title": "真相碎片",
+      "description": "击败星陨泰坦——远古星门残留能量激活的守护者，获取它守护的远古核心碎片，开启通往深渊裂隙的入口",
+      "type": "main",
+      "chapter": "chapter_04",
+      "status": "locked",
+      "prerequisites": [
+        "quest_starfall_ch4_main4"
+      ],
+      "objectives": [
+        {
+          "id": "obj_locate_titan",
+          "description": "找到星陨泰坦的位置",
+          "type": "explore",
+          "target": "loc_rift_core"
+        },
+        {
+          "id": "obj_defeat_titan",
+          "description": "击败星陨泰坦",
+          "type": "combat",
+          "target": "boss_starfall_titan"
+        },
+        {
+          "id": "obj_collect_fragment",
+          "description": "获取远古核心碎片",
+          "type": "collect",
+          "target": 1
+        },
+        {
+          "id": "obj_activate_rift_entrance",
+          "description": "激活深渊裂隙入口",
+          "type": "story",
+          "target": "activate_entrance"
+        },
+        {
+          "id": "obj_report_scout",
+          "description": "向艾拉·疾风报告",
+          "type": "npc",
+          "target": "npc_starfall_scout"
+        }
+      ],
+      "rewards": {
+        "experience": 3000,
+        "reputation": {
+          "faction_freehold": 200,
+          "faction_harvest": 100,
+          "faction_shadowveil": 100
+        },
+        "gold": 500
+      },
+      "failure_condition": null,
+      "start_npc": "npc_starfall_scout",
+      "end_npc": "npc_starfall_scout",
+      "region": "region_starfall_wastes"
+    },
+    {
+      "quest_id": "quest_starfall_side1",
+      "title": "辐射样本采集",
+      "description": "帮助丰收商会勘探队长马库斯收集辐射荒原上不同区域的辐射样本，用于分析异星能量的分布规律",
+      "type": "side",
+      "chapter": "chapter_04",
+      "status": "available",
+      "prerequisites": [
+        "quest_starfall_ch4_main1"
+      ],
+      "objectives": [
+        {
+          "id": "obj_talk_surveyor",
+          "description": "与马库斯·铁钻交谈",
+          "type": "npc",
+          "target": "npc_starfall_surveyor"
+        },
+        {
+          "id": "obj_collect_shallow",
+          "description": "采集浅层辐射样本",
+          "type": "collect",
+          "target": 3
+        },
+        {
+          "id": "obj_collect_deep",
+          "description": "采集深层辐射样本",
+          "type": "collect",
+          "target": 2
+        },
+        {
+          "id": "obj_defeat_mutants",
+          "description": "击退采集路线上的变异生物",
+          "type": "combat",
+          "target": 5
+        },
+        {
+          "id": "obj_return_surveyor",
+          "description": "将样本交给马库斯",
+          "type": "npc",
+          "target": "npc_starfall_surveyor"
+        }
+      ],
+      "rewards": {
+        "experience": 1000,
+        "reputation": {
+          "faction_harvest": 100
+        },
+        "gold": 200
+      },
+      "failure_condition": null,
+      "start_npc": "npc_starfall_surveyor",
+      "end_npc": "npc_starfall_surveyor",
+      "region": "region_starfall_wastes"
+    },
+    {
+      "quest_id": "quest_starfall_side2",
+      "title": "失踪勘探队",
+      "description": "调查失踪的前一队商会勘探队员，找回他们携带的研究笔记，协助暗影面纱考古学家塞拉芬娜解读星门符文",
+      "type": "side",
+      "chapter": "chapter_04",
+      "status": "available",
+      "prerequisites": [
+        "quest_starfall_ch4_main1"
+      ],
+      "objectives": [
+        {
+          "id": "obj_talk_archaeologist",
+          "description": "与塞拉芬娜·暗纹交谈",
+          "type": "npc",
+          "target": "npc_starfall_archaeologist"
+        },
+        {
+          "id": "obj_find_camp",
+          "description": "找到失踪勘探队的最后营地",
+          "type": "explore",
+          "target": "lost_camp"
+        },
+        {
+          "id": "obj_find_clues",
+          "description": "寻找失踪线索",
+          "type": "explore",
+          "target": 3
+        },
+        {
+          "id": "obj_defeat_predator",
+          "description": "击败袭击勘探队的变异生物",
+          "type": "combat",
+          "target": 4
+        },
+        {
+          "id": "obj_recover_notes",
+          "description": "找回研究笔记",
+          "type": "collect",
+          "target": 1
+        },
+        {
+          "id": "obj_return_archaeologist",
+          "description": "将笔记交给塞拉芬娜",
+          "type": "npc",
+          "target": "npc_starfall_archaeologist"
+        }
+      ],
+      "rewards": {
+        "experience": 1200,
+        "reputation": {
+          "faction_shadowveil": 120,
+          "faction_harvest": 60
+        },
+        "gold": 250
+      },
+      "failure_condition": null,
+      "start_npc": "npc_starfall_archaeologist",
+      "end_npc": "npc_starfall_archaeologist",
+      "region": "region_starfall_wastes"
+    },
+    {
+      "quest_id": "quest_abyss_ch4_main1",
+      "title": "地底入口",
+      "description": "从天裂核心进入深渊裂隙，与暗影面纱首席研究员维克多·深渊会面，了解远古文明的最终秘密",
+      "type": "main",
+      "chapter": "chapter_04",
+      "status": "locked",
+      "prerequisites": [
+        "quest_starfall_ch4_main5"
+      ],
+      "objectives": [
+        {
+          "id": "obj_enter_abyss",
+          "description": "进入深渊裂隙",
+          "type": "location",
+          "target": "loc_rift_entrance"
+        },
+        {
+          "id": "obj_talk_researcher",
+          "description": "与维克多·深渊交谈",
+          "type": "npc",
+          "target": "npc_abyss_researcher"
+        },
+        {
+          "id": "obj_survey_entrance",
+          "description": "视察裂隙入口营地",
+          "type": "explore",
+          "target": "loc_rift_entrance"
+        },
+        {
+          "id": "obj_accept_descent",
+          "description": "接受下降任务",
+          "type": "story",
+          "target": "accept_descent"
+        }
+      ],
+      "rewards": {
+        "experience": 2500,
+        "reputation": {
+          "faction_shadowveil": 150
+        },
+        "gold": 300
+      },
+      "failure_condition": null,
+      "start_npc": null,
+      "end_npc": "npc_abyss_researcher",
+      "region": "region_abyss_rift"
+    },
+    {
+      "quest_id": "quest_abyss_ch4_main2",
+      "title": "水晶回响",
+      "description": "深入水晶大厅，与铁卫联盟探险家托尔·铁靴会合，记录水晶共振频率以追踪远古文明的核心知识位置",
+      "type": "main",
+      "chapter": "chapter_04",
+      "status": "locked",
+      "prerequisites": [
+        "quest_abyss_ch4_main1"
+      ],
+      "objectives": [
+        {
+          "id": "obj_reach_crystal_hall",
+          "description": "前往水晶大厅",
+          "type": "location",
+          "target": "loc_crystal_hall"
+        },
+        {
+          "id": "obj_talk_explorer",
+          "description": "与托尔·铁靴交谈",
+          "type": "npc",
+          "target": "npc_abyss_explorer"
+        },
+        {
+          "id": "obj_record_resonance",
+          "description": "记录水晶共振频率",
+          "type": "explore",
+          "target": 5
+        },
+        {
+          "id": "obj_defend_creatures",
+          "description": "击退地底生物",
+          "type": "combat",
+          "target": 8
+        },
+        {
+          "id": "obj_locate_core_source",
+          "description": "定位核心知识位置",
+          "type": "story",
+          "target": "locate_source"
+        }
+      ],
+      "rewards": {
+        "experience": 3000,
+        "reputation": {
+          "faction_ironward": 120,
+          "faction_shadowveil": 100
+        },
+        "gold": 400
+      },
+      "failure_condition": null,
+      "start_npc": "npc_abyss_researcher",
+      "end_npc": "npc_abyss_explorer",
+      "region": "region_abyss_rift"
+    },
+    {
+      "quest_id": "quest_abyss_ch4_main3",
+      "title": "深渊之眼",
+      "description": "前往深渊之眼，与自由领地学者琳娜·书页合作破译深渊之眼附近的水晶记忆，得知远古文明引发天裂的真正原因",
+      "type": "main",
+      "chapter": "chapter_04",
+      "status": "locked",
+      "prerequisites": [
+        "quest_abyss_ch4_main2"
+      ],
+      "objectives": [
+        {
+          "id": "obj_reach_eye",
+          "description": "前往深渊之眼",
+          "type": "location",
+          "target": "loc_abyss_eye"
+        },
+        {
+          "id": "obj_talk_scholar",
+          "description": "与琳娜·书页交谈",
+          "type": "npc",
+          "target": "npc_abyss_scholar"
+        },
+        {
+          "id": "obj_survive_distortion",
+          "description": "在空间扭曲中存活",
+          "type": "combat",
+          "target": 5
+        },
+        {
+          "id": "obj_decipher_crystal",
+          "description": "破译水晶记忆",
+          "type": "explore",
+          "target": 4
+        },
+        {
+          "id": "obj_learn_sacrifice",
+          "description": "得知远古文明的牺牲真相",
+          "type": "story",
+          "target": "sacrifice_truth"
+        }
+      ],
+      "rewards": {
+        "experience": 4000,
+        "reputation": {
+          "faction_freehold": 150,
+          "faction_shadowveil": 120
+        },
+        "gold": 500
+      },
+      "failure_condition": null,
+      "start_npc": "npc_abyss_explorer",
+      "end_npc": "npc_abyss_scholar",
+      "region": "region_abyss_rift"
+    },
+    {
+      "quest_id": "quest_abyss_ch4_main4",
+      "title": "远古核心",
+      "description": "深入远古核心室，与远古守护AI残影对话，得知虚空使者的存在与封印松动的危机",
+      "type": "main",
+      "chapter": "chapter_04",
+      "status": "locked",
+      "prerequisites": [
+        "quest_abyss_ch4_main3"
+      ],
+      "objectives": [
+        {
+          "id": "obj_reach_core_chamber",
+          "description": "前往远古核心室",
+          "type": "location",
+          "target": "loc_ancient_core_chamber"
+        },
+        {
+          "id": "obj_meet_ai_echo",
+          "description": "与远古 AI 残影对话",
+          "type": "npc",
+          "target": "npc_abyss_ai_echo"
+        },
+        {
+          "id": "obj_defend_mechanisms",
+          "description": "击退失控的远古守护机制",
+          "type": "combat",
+          "target": 6
+        },
+        {
+          "id": "obj_learn_void_truth",
+          "description": "得知虚空使者的存在",
+          "type": "story",
+          "target": "void_truth"
+        },
+        {
+          "id": "obj_learn_seal_failure",
+          "description": "得知封印松动的危机",
+          "type": "story",
+          "target": "seal_failure"
+        }
+      ],
+      "rewards": {
+        "experience": 5000,
+        "reputation": {
+          "faction_shadowveil": 200,
+          "faction_freehold": 100
+        },
+        "gold": 600
+      },
+      "failure_condition": null,
+      "start_npc": "npc_abyss_scholar",
+      "end_npc": "npc_abyss_ai_echo",
+      "region": "region_abyss_rift"
+    },
+    {
+      "quest_id": "quest_abyss_ch4_main5",
+      "title": "终极真相",
+      "description": "击败深渊监视者——远古文明遗留的失控守护AI，获取其核心并带回远古核心室，由残影指引完成封印加固仪式，闭合天裂之谜",
+      "type": "main",
+      "chapter": "chapter_04",
+      "status": "locked",
+      "prerequisites": [
+        "quest_abyss_ch4_main4"
+      ],
+      "objectives": [
+        {
+          "id": "obj_locate_watcher",
+          "description": "找到深渊监视者",
+          "type": "explore",
+          "target": "loc_abyss_eye"
+        },
+        {
+          "id": "obj_defeat_watcher",
+          "description": "击败深渊监视者",
+          "type": "combat",
+          "target": "boss_abyss_watcher"
+        },
+        {
+          "id": "obj_collect_watcher_core",
+          "description": "获取深渊监视者核心",
+          "type": "collect",
+          "target": 1
+        },
+        {
+          "id": "obj_return_ai_echo",
+          "description": "回到远古核心室",
+          "type": "location",
+          "target": "loc_ancient_core_chamber"
+        },
+        {
+          "id": "obj_complete_ritual",
+          "description": "完成封印加固仪式",
+          "type": "story",
+          "target": "complete_seal"
+        }
+      ],
+      "rewards": {
+        "experience": 8000,
+        "reputation": {
+          "faction_shadowveil": 300,
+          "faction_ironward": 150,
+          "faction_freehold": 150,
+          "faction_harvest": 100
+        },
+        "gold": 1000
+      },
+      "failure_condition": null,
+      "start_npc": "npc_abyss_ai_echo",
+      "end_npc": "npc_abyss_ai_echo",
+      "region": "region_abyss_rift"
+    },
+    {
+      "quest_id": "quest_abyss_side1",
+      "title": "水晶采集",
+      "description": "帮助铁卫联盟探险家托尔·铁靴采集特殊共振水晶，校准他的能量探测器，以更好地绘制深渊裂隙地图",
+      "type": "side",
+      "chapter": "chapter_04",
+      "status": "available",
+      "prerequisites": [
+        "quest_abyss_ch4_main1"
+      ],
+      "objectives": [
+        {
+          "id": "obj_talk_explorer",
+          "description": "与托尔·铁靴交谈",
+          "type": "npc",
+          "target": "npc_abyss_explorer"
+        },
+        {
+          "id": "obj_collect_shallow",
+          "description": "采集浅层共振水晶",
+          "type": "collect",
+          "target": 5
+        },
+        {
+          "id": "obj_collect_deep",
+          "description": "采集深层共振水晶",
+          "type": "collect",
+          "target": 3
+        },
+        {
+          "id": "obj_defend_creatures",
+          "description": "击退采集路线上的地底生物",
+          "type": "combat",
+          "target": 6
+        },
+        {
+          "id": "obj_return_explorer",
+          "description": "将水晶交给托尔",
+          "type": "npc",
+          "target": "npc_abyss_explorer"
+        }
+      ],
+      "rewards": {
+        "experience": 1500,
+        "reputation": {
+          "faction_ironward": 120
+        },
+        "gold": 300
+      },
+      "failure_condition": null,
+      "start_npc": "npc_abyss_explorer",
+      "end_npc": "npc_abyss_explorer",
+      "region": "region_abyss_rift"
+    },
+    {
+      "quest_id": "quest_abyss_side2",
+      "title": "远古文献解读",
+      "description": "协助自由领地学者琳娜·书页拓印深渊之眼附近的水晶符文，破译远古文明的最后记忆片段",
+      "type": "side",
+      "chapter": "chapter_04",
+      "status": "available",
+      "prerequisites": [
+        "quest_abyss_ch4_main1"
+      ],
+      "objectives": [
+        {
+          "id": "obj_talk_scholar",
+          "description": "与琳娜·书页交谈",
+          "type": "npc",
+          "target": "npc_abyss_scholar"
+        },
+        {
+          "id": "obj_reach_eye",
+          "description": "前往深渊之眼附近",
+          "type": "location",
+          "target": "loc_abyss_eye"
+        },
+        {
+          "id": "obj_rubbing_runes",
+          "description": "拓印水晶符文",
+          "type": "collect",
+          "target": 6
+        },
+        {
+          "id": "obj_resist_hallucination",
+          "description": "抵抗远古记忆幻觉",
+          "type": "combat",
+          "target": 3
+        },
+        {
+          "id": "obj_return_scholar",
+          "description": "将拓印交给琳娜",
+          "type": "npc",
+          "target": "npc_abyss_scholar"
+        }
+      ],
+      "rewards": {
+        "experience": 1800,
+        "reputation": {
+          "faction_freehold": 150,
+          "faction_shadowveil": 80
+        },
+        "gold": 350
+      },
+      "failure_condition": null,
+      "start_npc": "npc_abyss_scholar",
+      "end_npc": "npc_abyss_scholar",
+      "region": "region_abyss_rift"
     }
   ]
 }

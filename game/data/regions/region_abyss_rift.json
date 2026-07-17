@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "region_id": "region_abyss_rift",
+  "name": "深渊裂隙",
+  "description": "从天裂核心向下延伸的地底深渊，远古文明留下的终极秘密埋藏于此。巨大的水晶簇在地底散发着幽蓝光芒，记录着已逝文明的知识。暗影面纱在此建立秘密研究基地，试图解读远古文献的最终真相。深入裂隙越深，时间与空间的扭曲就越发明显，仿佛步入另一个维度。",
+  "type": "expansion",
+  "terrain": ["cavern", "abyss", "crystal"],
+  "climate": "underground",
+  "resource_level": "very_high",
+  "risk_level": "extreme",
+  "status": "active",
+  "factions": [
+    {"faction_id": "faction_shadowveil", "influence": 0.5, "presence": "strong"},
+    {"faction_id": "faction_ironward", "influence": 0.2, "presence": "exploring"},
+    {"faction_id": "faction_freehold", "influence": 0.2, "presence": "minor"}
+  ],
+  "key_locations": [
+    {"location_id": "loc_rift_entrance", "name": "裂隙入口", "type": "entrance", "description": "通往地底深渊的唯一入口，被暗影面纱建立了防御工事，向下延伸的水晶通道发出微弱蓝光"},
+    {"location_id": "loc_crystal_hall", "name": "水晶大厅", "type": "cavern", "description": "巨大的地底洞窟，巨大水晶簇遍布其中，每根水晶都记录着远古文明的一段记忆碎片"},
+    {"location_id": "loc_abyss_eye", "name": "深渊之眼", "type": "landmark", "description": "地底最深处的巨型垂直竖井，向下看去仿佛凝视深渊本身，传说是远古文明观测宇宙的窗口"},
+    {"location_id": "loc_ancient_core_chamber", "name": "远古核心室", "type": "ruins", "description": "远古文明遗留的核心控制室，巨大的机械装置与水晶融合，似乎是整个天裂事件的源头"}
+  ],
+  "available_quests": ["quest_abyss_ch4_main1", "quest_abyss_side1", "quest_abyss_side2"],
+  "npcs": ["npc_abyss_researcher", "npc_abyss_explorer", "npc_abyss_scholar", "npc_abyss_ai_echo"]
+}

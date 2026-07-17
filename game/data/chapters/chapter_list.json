@@ -42,6 +42,20 @@
       "regions": ["region_north_volcano", "region_frost_glacier"],
       "level_range": [15, 30],
       "estimated_time": "5-7 hours"
+    },
+    {
+      "chapter_id": "chapter_04",
+      "name": "天裂之谜",
+      "description": "追溯天裂事件的源头，探索星陨荒原的核心真相与深渊裂隙下的远古文明秘密，揭示世界崩坏的终极答案",
+      "theme": "truth_revelation",
+      "status": "locked",
+      "prerequisites": ["chapter_03"],
+      "unlock_condition": "complete_chapter_03",
+      "main_quests": ["quest_starfall_ch4_main1", "quest_starfall_ch4_main2", "quest_starfall_ch4_main3", "quest_starfall_ch4_main4", "quest_starfall_ch4_main5", "quest_abyss_ch4_main1", "quest_abyss_ch4_main2", "quest_abyss_ch4_main3", "quest_abyss_ch4_main4", "quest_abyss_ch4_main5"],
+      "side_quests": ["quest_starfall_side1", "quest_starfall_side2", "quest_abyss_side1", "quest_abyss_side2"],
+      "regions": ["region_starfall_wastes", "region_abyss_rift"],
+      "level_range": [30, 50],
+      "estimated_time": "8-10 hours"
     }
   ]
 }
