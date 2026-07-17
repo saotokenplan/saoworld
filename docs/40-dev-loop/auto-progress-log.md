@@ -21,9 +21,9 @@
   - 赛季结算设计支持默认段位奖励 + Top 10 排名加成配置，可通过 `Idempotency-Key` 头实现幂等结算
 - 修改文件：约 11 个（1 新增仓储 + 7 修改代码 + 1 修改测试 + 2 新增文档）
 - 验证：player-service 309 个测试全部通过（+21）；ruff 检查通过（0 错误）；mypy 新增代码 0 错误
-- 提交拆分：docs(dev-loop) + feat(player) + test(player) + docs(project-status)（详见执行摘要）
-- 合并状态：待合并到 feature-prd
-- 工作分支：auto/auto-20260718-1800（合并完成后删除）
+- 提交拆分：docs(dev-loop) 1c76251 + feat(player) 8a623c7 + test(player) 3533c5a + docs(project-status) 3ab96e2
+- 合并状态：✅ 已合并到 feature-prd（merge commit: 88605f2，本地合并完成，远程推送待凭据就绪）
+- 工作分支：auto/auto-20260718-1800 已删除
 
 ## 2026-07-18 17:30 — auto-20260718-1700
 

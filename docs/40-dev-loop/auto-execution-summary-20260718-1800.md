@@ -266,8 +266,14 @@ tier_order = case(*[(PlayerRating.tier == t, i) for i, t in enumerate(TIER_ORDER
 
 ## 五、合并结果
 
-- 工作分支：`auto/auto-20260718-1800`
+- 工作分支：`auto/auto-20260718-1800`（已删除）
 - 目标分支：`feature-prd`
 - 合并方式：`git merge --no-ff`
-- 合并状态：见下方提交记录
-- 合并 commit hash：（待合并后填入）
+- 合并 commit hash：`88605f2`
+- 合并状态：✅ 本地合并成功，远程推送待凭据就绪（与历轮任务一致）
+- 提交记录：
+  - `1c76251` docs(dev-loop): 新增 M3-05 赛季排行系统任务文档与执行摘要
+  - `8a623c7` feat(player): 实现 M3-05 赛季排行系统
+  - `3533c5a` test(player): 补充 M3-05 赛季排行系统测试用例
+  - `3ab96e2` docs(project-status): 更新 M3-05 赛季排行系统完成状态
+  - `88605f2` Merge auto task: auto-20260718-1800 - M3-05 赛季排行系统
