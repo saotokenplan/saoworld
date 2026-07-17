@@ -2,6 +2,21 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-18 14:30 — auto-20260718-1400
+
+- 任务：客户端经济系统面板 GUT 测试补齐（闭合 auto-20260718-1300 遗留问题）
+- 分支：auto/auto-20260718-1400
+- 状态：✅ 已完成
+- 工作内容：
+  - 新增 test_wallet_panel.gd（11 个用例）——WalletPanel 信号、TRANSACTION_TYPE_NAMES 常量、初始状态、金币余额显示刷新（含零值）、交易流水列表渲染（空/有数据/未知类型回退）、错误处理、clear 重置、close_pressed 信号发射
+  - 新增 test_trade_panel.gd（14 个用例）——TradePanel 信号、STATUS_NAMES/TRADE_STATUS_NAMES 常量、初始状态、交易列表渲染、详情面板状态机按钮（pending/sent/completed/cancelled）、详情文本格式化、错误处理、clear 重置、close_pressed 信号发射
+  - 新增 test_auction_panel.gd（13 个用例）——AuctionPanel 信号、AUCTION_STATUS_NAMES 常量、初始状态、拍卖列表渲染（含物品名回退到 item_key）、详情面板状态机按钮（active 显示竞价/一口价、buyout_price=0 隐藏一口价、closed 隐藏所有）、详情文本格式化、错误处理、clear 重置、close_pressed 信号发射
+  - 更新 game/tests/README.md 测试清单（新增 3 行测试文件记录 + UI 组件测试覆盖说明）
+  - 验证：player-service 259 个测试全部通过，无回归
+  - 客户端 GUT 测试从约 317 个增加到约 355 个（+38）
+- 修改文件：7 个（3 新建测试 + 1 新建计划 + 1 新建摘要 + 2 修改文档）
+- 合并状态：待合并
+
 ## 2026-07-18 13:15 — auto-20260718-1300
 
 - 任务：客户端经济系统 UI（钱包/交易/拍卖行）

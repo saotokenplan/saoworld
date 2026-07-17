@@ -66,6 +66,11 @@
 | test_guild_manager.gd | GuildManager 公会管理（含公会战 API 方法、信号、参数校验） | 25 |
 | test_guild_war_panel.gd | GuildWarPanel 公会战争面板（信号、状态机、按钮、记分板） | 21 |
 | test_friend_collab_quest_panel.gd | FriendCollabQuestPanel 好友协作任务面板（信号、状态机、按钮） | 21 |
+| test_wallet_manager.gd | WalletManager 钱包系统管理（信号、初始状态、getter 副本隔离、reset） | 9 |
+| test_trade_manager.gd | TradeManager 交易与拍卖行管理（信号、初始状态、参数校验、reset） | 22 |
+| test_wallet_panel.gd | WalletPanel 钱包面板（信号、常量、显示刷新、错误处理、clear） | 11 |
+| test_trade_panel.gd | TradePanel 交易面板（信号、常量、列表与详情刷新、状态机按钮、clear） | 14 |
+| test_auction_panel.gd | AuctionPanel 拍卖行面板（信号、常量、列表与详情刷新、状态机按钮、clear） | 13 |
 
 ## 测试覆盖范围
 
@@ -103,6 +108,9 @@
 - **FeedbackPanel**：反馈表单、输入验证、长度限制、加载状态、消息显示、表单清空
 - **GuildWarPanel**：信号声明、初始状态、clear 重置、类型/状态本地化、状态机按钮（declared/accepted/in_progress/completed/cancelled）、详情展示、列表渲染、记分板渲染
 - **FriendCollabQuestPanel**：信号声明、初始状态、clear 重置、类型/状态本地化、状态机按钮（pending_invite/active/completed/failed/expired）、详情展示、列表渲染、进度格式化、奖励格式化
+- **WalletPanel**：信号声明（close_pressed）、TRANSACTION_TYPE_NAMES 常量（6 种交易类型）、初始状态、金币余额显示刷新（含零值）、交易流水列表渲染（空/有数据/未知类型）、错误处理、clear 重置、close_pressed 信号发射
+- **TradePanel**：信号声明（close_pressed/trade_selected）、STATUS_NAMES/TRADE_STATUS_NAMES 常量、初始状态、交易列表渲染（空/有数据）、详情面板状态机按钮（pending 显示接受/拒绝、sent 显示取消、completed/cancelled 隐藏所有）、详情文本格式化、错误处理、clear 重置、close_pressed 信号发射
+- **AuctionPanel**：信号声明（close_pressed/listing_selected）、AUCTION_STATUS_NAMES 常量、初始状态、拍卖列表渲染（空/有数据/物品名回退到 item_key）、详情面板状态机按钮（active 显示竞价/一口价、buyout_price=0 隐藏一口价、closed 隐藏所有）、详情文本格式化、错误处理、clear 重置、close_pressed 信号发射
 
 ### 场景与角色测试
 - **Player**：初始状态、重置状态、移动状态信号、输入方向、配置加载
