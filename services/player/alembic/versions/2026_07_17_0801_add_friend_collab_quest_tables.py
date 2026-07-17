@@ -7,7 +7,6 @@ Create Date: 2026-07-17 08:01:00.000000
 """
 from typing import Sequence, Union
 
-from alembic import op
 
 
 revision: str = "2026_07_17_0801"
