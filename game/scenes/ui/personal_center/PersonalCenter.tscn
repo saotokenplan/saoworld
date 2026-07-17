@@ -1,6 +1,9 @@
-[gd_scene load_steps=2 format=3 uid="uid://personal_center_001"]
+[gd_scene load_steps=5 format=3 uid="uid://personal_center_001"]
 
 [ext_resource type="Script" path="res://scripts/ui/personal_center.gd" id="1_personal_center"]
+[ext_resource type="PackedScene" path="res://scenes/ui/economy/WalletPanel.tscn" id="2_wallet_panel"]
+[ext_resource type="PackedScene" path="res://scenes/ui/economy/TradePanel.tscn" id="3_trade_panel"]
+[ext_resource type="PackedScene" path="res://scenes/ui/economy/AuctionPanel.tscn" id="4_auction_panel"]
 
 [node name="PersonalCenter" type="Control"]
 layout_mode = 3
@@ -120,3 +123,19 @@ layout_mode = 2
 [node name="EquipmentList" type="ItemList" parent="MarginContainer/VBoxContainer/TabContainer/装备"]
 layout_mode = 2
 size_flags_vertical = 3
+
+[node name="经济" type="VBoxContainer" parent="MarginContainer/VBoxContainer/TabContainer"]
+layout_mode = 2
+
+[node name="EconomyTabContainer" type="TabContainer" parent="MarginContainer/VBoxContainer/TabContainer/经济"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="WalletPanel" parent="MarginContainer/VBoxContainer/TabContainer/经济/EconomyTabContainer"]
+instance = ExtResource("2_wallet_panel")
+
+[node name="TradePanel" parent="MarginContainer/VBoxContainer/TabContainer/经济/EconomyTabContainer"]
+instance = ExtResource("3_trade_panel")
+
+[node name="AuctionPanel" parent="MarginContainer/VBoxContainer/TabContainer/经济/EconomyTabContainer"]
+instance = ExtResource("4_auction_panel")
