@@ -16,9 +16,9 @@
   - 附带修复：补全经济系统 top-traders API、修复好友协作任务过期查询类型错误
 - 修改文件：约 13 个（2 新增 + 9 修改代码/测试 + 3 文档）
 - 验证：player-service 288 个测试全部通过（+29）；ruff 检查通过（0 错误）；mypy 检查通过（0 错误）
-- 提交拆分：待提交
-- 合并状态：⏳ 待合并到 feature-prd
-- 工作分支：auto/auto-20260718-1700
+- 提交拆分：docs(dev-loop) 61497f7 + feat(player) db5c5ab + feat(player) 8d96a4c + test(player) 54beccb + docs(project-status) 80b4663 + chore(player) d9c565f
+- 合并状态：✅ 已合并到 feature-prd（merge commit: 2708661）
+- 工作分支：auto/auto-20260718-1700 已删除
 
 ## 2026-07-17 20:30 — auto-20260718-1600
 
