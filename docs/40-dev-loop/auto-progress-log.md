@@ -2,6 +2,24 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-17 20:30 — auto-20260718-1600
+
+- 任务：M3-03 经济系统运营监控指标
+- 分支：auto/auto-20260718-1600
+- 状态：✅ 已完成
+- 工作内容：
+  - player-service 新增 12 个经济系统 Prometheus 指标（交易/拍卖/钱包三大类，含 Counter 和 Gauge）
+  - player-service 新增 EconomicRepository 仓储层（6 个统计查询方法）
+  - player-service 新增 6 个经济统计 API 端点（运营侧：概览/交易/拍卖/钱包/趋势/排行）
+  - player-service 新增 8 个经济系统 Schema、6 个错误码、`economy:read` Scope、审计动作常量
+  - ops-service 扩展 DashboardMetrics，新增 6 个经济系统 Schema
+  - ops-service 新增 3 个经济仪表盘 API 端点（概览/趋势/交易统计）
+  - 新增 14 个测试用例（player-service 7 个 + ops-service 7 个）
+- 修改文件：约 15 个（1 新增仓储 + 14 修改代码/测试/文档）
+- 验证：player-service 24 个经济系统测试全部通过；ops-service 14 个分析仪表盘测试全部通过；ops-service ruff 检查通过（0 错误）；ops-service mypy 检查通过（0 错误）
+- 提交拆分：待拆分提交
+- 合并状态：⏳ 待合并到 feature-prd
+
 ## 2026-07-18 15:30 — auto-20260718-1500
 
 - 任务：M3-02 第四章「天裂之谜」区域开发（2 个新区域）
