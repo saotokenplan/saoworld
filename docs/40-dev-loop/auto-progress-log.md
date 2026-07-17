@@ -17,8 +17,9 @@
   - 新增 14 个测试用例（player-service 7 个 + ops-service 7 个）
 - 修改文件：约 15 个（1 新增仓储 + 14 修改代码/测试/文档）
 - 验证：player-service 24 个经济系统测试全部通过；ops-service 14 个分析仪表盘测试全部通过；ops-service ruff 检查通过（0 错误）；ops-service mypy 检查通过（0 错误）
-- 提交拆分：待拆分提交
-- 合并状态：⏳ 待合并到 feature-prd
+- 提交拆分：docs(dev-loop) 2a334f9 + feat(player) fd497a9 + feat(ops) d67182e + test(player,ops) 9dc85de
+- 合并状态：✅ 已合并到 feature-prd（merge commit: 75dff20，本地合并完成，远程推送待凭据就绪）
+- 工作分支：auto/auto-20260718-1600 已删除
 
 ## 2026-07-18 15:30 — auto-20260718-1500
 
