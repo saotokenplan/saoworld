@@ -138,5 +138,12 @@
 
 - 合并方式：`git merge --no-ff auto/auto-20260718-0000`
 - 目标分支：feature-prd
-- 合并状态：待执行（详见后续合并步骤）
-- 合并提交：待生成
+- 合并状态：✅ 本地合并完成，待推送到远程
+- 合并提交：`e360dda`（Merge auto task: auto-20260718-0000 - M3-01 客户端公会战与好友协作任务 UI）
+- 冲突处理：`docs/00-governance/project-status.md` 出现 1 处内容冲突（远程新增了「后续迭代方向」短期/中期更详细的描述，本地标记公会战/协作任务 UI 为已完成），人工解决后采用合并版本：保留远程的短期经济系统 UI 描述，中期项标记 `~~客户端公会战/协作任务UI~~（基础版已完成）`
+- 工作分支：`auto/auto-20260718-0000` 已删除
+- 提交拆分：
+  - `52cfb79` docs(dev-loop): 补充 M3-01 客户端公会战与协作任务 UI 计划与执行摘要
+  - `0ee7205` feat(game): 实现公会战与好友协作任务客户端 UI 与 Manager 扩展
+  - `8c99d6c` test(game): 补充公会战与协作任务 GUT 测试用例
+- 远程推送状态：⚠️ 未推送（CI 沙箱未配置 GitHub 认证凭据，`git push origin feature-prd` 失败，本地合并提交 `e360dda` 已就绪，待具备凭据时执行 `git push origin feature-prd`）

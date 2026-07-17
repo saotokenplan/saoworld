@@ -18,6 +18,8 @@
   - 新增 4 个测试文件共 74 个 GUT 测试用例（test_guild_manager +16、test_friend_manager +16、test_guild_war_panel 新建 21、test_friend_collab_quest_panel 新建 21）
   - 验证：vote-service 112 测试 + player-service 259 测试全部通过，无回归
   - M3 里程碑启动，首个任务 M3-01 完成
+- 提交拆分：docs(dev-loop) 52cfb79 + feat(game) 0ee7205 + test(game) 8c99d6c
+- 合并状态：✅ 已合并到 feature-prd（merge commit: e360dda，本地合并完成，远程推送待凭据就绪）
 
 ## 2026-07-17 08:00 — auto-20260717-0800
 
