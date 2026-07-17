@@ -593,3 +593,93 @@ def set_wallet_active_wallets(count: int) -> None:
         count: 活跃钱包数量
     """
     WALLET_ACTIVE_WALLETS.set(count)
+
+
+# 匹配系统相关指标
+MATCH_QUEUE_JOINED_TOTAL = Counter(
+    "match_queue_joined_total",
+    "加入匹配队列次数",
+    labelnames=["player_id", "match_mode"],
+)
+
+MATCH_QUEUE_LEFT_TOTAL = Counter(
+    "match_queue_left_total",
+    "退出匹配队列次数",
+    labelnames=["player_id", "match_mode"],
+)
+
+MATCH_ROOMS_CREATED_TOTAL = Counter(
+    "match_rooms_created_total",
+    "创建对战房间数",
+    labelnames=["match_mode"],
+)
+
+MATCH_RESULTS_SUBMITTED_TOTAL = Counter(
+    "match_results_submitted_total",
+    "提交对战结果数",
+    labelnames=["match_mode"],
+)
+
+MATCH_RATING_CHANGES_TOTAL = Counter(
+    "match_rating_changes_total",
+    "段位积分变动次数",
+    labelnames=["player_id"],
+)
+
+MATCH_QUEUE_WAIT_TIME_SECONDS = Counter(
+    "match_queue_wait_time_seconds",
+    "匹配等待时间（秒）",
+    labelnames=["match_mode"],
+)
+
+MATCH_ACTIVE_QUEUE_SIZE = Gauge(
+    "match_active_queue_size",
+    "当前匹配队列人数",
+    labelnames=["match_mode"],
+)
+
+MATCH_ACTIVE_ROOMS = Gauge(
+    "match_active_rooms",
+    "当前活跃对战房间数",
+    labelnames=["match_mode"],
+)
+
+
+def record_match_queue_joined(player_id: str, match_mode: str) -> None:
+    """记录加入匹配队列。"""
+    MATCH_QUEUE_JOINED_TOTAL.labels(player_id=player_id, match_mode=match_mode).inc()
+
+
+def record_match_queue_left(player_id: str, match_mode: str) -> None:
+    """记录退出匹配队列。"""
+    MATCH_QUEUE_LEFT_TOTAL.labels(player_id=player_id, match_mode=match_mode).inc()
+
+
+def record_match_room_created(match_mode: str) -> None:
+    """记录创建对战房间。"""
+    MATCH_ROOMS_CREATED_TOTAL.labels(match_mode=match_mode).inc()
+
+
+def record_match_result_submitted(match_mode: str) -> None:
+    """记录提交对战结果。"""
+    MATCH_RESULTS_SUBMITTED_TOTAL.labels(match_mode=match_mode).inc()
+
+
+def record_match_rating_change(player_id: str) -> None:
+    """记录段位积分变动。"""
+    MATCH_RATING_CHANGES_TOTAL.labels(player_id=player_id).inc()
+
+
+def record_match_queue_wait_time(match_mode: str, wait_seconds: float) -> None:
+    """记录匹配等待时间。"""
+    MATCH_QUEUE_WAIT_TIME_SECONDS.labels(match_mode=match_mode).inc(wait_seconds)
+
+
+def set_match_active_queue_size(match_mode: str, count: int) -> None:
+    """设置当前匹配队列人数。"""
+    MATCH_ACTIVE_QUEUE_SIZE.labels(match_mode=match_mode).set(count)
+
+
+def set_match_active_rooms(match_mode: str, count: int) -> None:
+    """设置当前活跃对战房间数。"""
+    MATCH_ACTIVE_ROOMS.labels(match_mode=match_mode).set(count)

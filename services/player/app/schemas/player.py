@@ -1292,3 +1292,295 @@ class EconomicTrendPoint(BaseModel):
 class TopTraderItem(BaseModel):
     player_id: str
     trade_count: int
+
+
+# === 匹配系统相关 Schema ===
+
+
+class MatchTier(str, Enum):
+    BRONZE = "bronze"
+    SILVER = "silver"
+    GOLD = "gold"
+    PLATINUM = "platinum"
+    DIAMOND = "diamond"
+    MASTER = "master"
+    CHALLENGER = "challenger"
+
+
+class MatchMode(str, Enum):
+    SOLO_1V1 = "solo_1v1"
+
+
+class MatchQueueStatus(str, Enum):
+    QUEUING = "queuing"
+    MATCHED = "matched"
+    CANCELLED = "cancelled"
+    TIMEOUT = "timeout"
+
+
+class MatchRoomStatus(str, Enum):
+    WAITING = "waiting"
+    READY = "ready"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+
+class MatchSeasonStatus(str, Enum):
+    UPCOMING = "upcoming"
+    ACTIVE = "active"
+    ENDED = "ended"
+    ARCHIVED = "archived"
+
+
+class PlayerRatingResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    rating_id: uuid.UUID
+    player_id: uuid.UUID
+    season_id: uuid.UUID
+    tier: MatchTier
+    division: int
+    rating_points: int
+    wins: int
+    losses: int
+    draws: int
+    win_streak: int
+    best_tier: MatchTier
+    best_division: int
+    win_rate: float = 0.0
+    total_matches: int = 0
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    def model_validate(cls, obj: Any, *args: Any, **kwargs: Any) -> "PlayerRatingResponse":
+        if hasattr(obj, "__table__"):
+            obj_dict = {}
+            for attr in [
+                "rating_id", "player_id", "season_id", "tier", "division",
+                "rating_points", "wins", "losses", "draws", "win_streak",
+                "best_tier", "best_division", "created_at", "updated_at",
+            ]:
+                try:
+                    value = getattr(obj, attr)
+                    obj_dict[attr] = value
+                except Exception:
+                    obj_dict[attr] = None
+            total = obj_dict.get("wins", 0) + obj_dict.get("losses", 0) + obj_dict.get("draws", 0)
+            obj_dict["total_matches"] = total
+            obj_dict["win_rate"] = round(obj_dict.get("wins", 0) / total, 4) if total > 0 else 0.0
+            return super().model_validate(obj_dict, *args, **kwargs)
+        return super().model_validate(obj, *args, **kwargs)
+
+
+class MatchQueueResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    queue_id: uuid.UUID
+    player_id: uuid.UUID
+    season_id: uuid.UUID
+    match_mode: MatchMode
+    status: MatchQueueStatus
+    tier: MatchTier
+    division: int
+    player_level: int
+    joined_at: datetime
+    matched_at: datetime | None = None
+    timeout_at: datetime | None = None
+    match_room_id: uuid.UUID | None = None
+    wait_time_seconds: int = 0
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    def model_validate(cls, obj: Any, *args: Any, **kwargs: Any) -> "MatchQueueResponse":
+        if hasattr(obj, "__table__"):
+            from datetime import datetime, timezone
+            obj_dict = {}
+            for attr in [
+                "queue_id", "player_id", "season_id", "match_mode", "status",
+                "tier", "division", "player_level", "joined_at", "matched_at",
+                "timeout_at", "match_room_id", "created_at", "updated_at",
+            ]:
+                try:
+                    value = getattr(obj, attr)
+                    obj_dict[attr] = value
+                except Exception:
+                    obj_dict[attr] = None
+            if obj_dict.get("joined_at"):
+                now = datetime.now(timezone.utc)
+                joined = obj_dict["joined_at"]
+                if hasattr(joined, "replace"):
+                    if joined.tzinfo is None:
+                        joined = joined.replace(tzinfo=timezone.utc)
+                    wait_time = (now - joined).total_seconds()
+                    obj_dict["wait_time_seconds"] = int(max(0, wait_time))
+            return super().model_validate(obj_dict, *args, **kwargs)
+        return super().model_validate(obj, *args, **kwargs)
+
+
+class MatchRoomResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    room_id: uuid.UUID
+    season_id: uuid.UUID
+    match_mode: MatchMode
+    status: MatchRoomStatus
+    player1_id: uuid.UUID
+    player2_id: uuid.UUID
+    player1_ready: bool = False
+    player2_ready: bool = False
+    winner_id: uuid.UUID | None = None
+    started_at: datetime | None = None
+    ended_at: datetime | None = None
+    duration_seconds: int | None = None
+    match_data: dict | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    def model_validate(cls, obj: Any, *args: Any, **kwargs: Any) -> "MatchRoomResponse":
+        if hasattr(obj, "__table__"):
+            obj_dict = {}
+            for attr in [
+                "room_id", "season_id", "match_mode", "status",
+                "player1_id", "player2_id", "player1_ready", "player2_ready",
+                "winner_id", "started_at", "ended_at", "duration_seconds",
+                "match_data_jsonb", "created_at", "updated_at",
+            ]:
+                try:
+                    value = getattr(obj, attr)
+                    obj_dict[attr] = value
+                except Exception:
+                    obj_dict[attr] = None
+            obj_dict["match_data"] = obj_dict.pop("match_data_jsonb", None)
+            return super().model_validate(obj_dict, *args, **kwargs)
+        return super().model_validate(obj, *args, **kwargs)
+
+
+class MatchResultResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    result_id: uuid.UUID
+    room_id: uuid.UUID
+    season_id: uuid.UUID
+    match_mode: MatchMode
+    winner_id: uuid.UUID | None = None
+    loser_id: uuid.UUID | None = None
+    is_draw: bool = False
+    winner_rating_change: int = 0
+    loser_rating_change: int = 0
+    winner_tier_before: MatchTier
+    winner_division_before: int
+    winner_tier_after: MatchTier
+    winner_division_after: int
+    loser_tier_before: MatchTier
+    loser_division_before: int
+    loser_tier_after: MatchTier
+    loser_division_after: int
+    match_data: dict | None = None
+    submitted_by: uuid.UUID
+    created_at: datetime
+
+    @classmethod
+    def model_validate(cls, obj: Any, *args: Any, **kwargs: Any) -> "MatchResultResponse":
+        if hasattr(obj, "__table__"):
+            obj_dict = {}
+            for attr in [
+                "result_id", "room_id", "season_id", "match_mode",
+                "winner_id", "loser_id", "is_draw", "winner_rating_change",
+                "loser_rating_change", "winner_tier_before", "winner_division_before",
+                "winner_tier_after", "winner_division_after", "loser_tier_before",
+                "loser_division_before", "loser_tier_after", "loser_division_after",
+                "match_data_jsonb", "submitted_by", "created_at",
+            ]:
+                try:
+                    value = getattr(obj, attr)
+                    obj_dict[attr] = value
+                except Exception:
+                    obj_dict[attr] = None
+            obj_dict["match_data"] = obj_dict.pop("match_data_jsonb", None)
+            return super().model_validate(obj_dict, *args, **kwargs)
+        return super().model_validate(obj, *args, **kwargs)
+
+
+class MatchSeasonResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    season_id: uuid.UUID
+    season_key: str
+    season_name: str
+    status: MatchSeasonStatus
+    start_at: datetime
+    end_at: datetime
+    description: str | None = None
+    reward_config: dict | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    def model_validate(cls, obj: Any, *args: Any, **kwargs: Any) -> "MatchSeasonResponse":
+        if hasattr(obj, "__table__"):
+            obj_dict = {}
+            for attr in [
+                "season_id", "season_key", "season_name", "status",
+                "start_at", "end_at", "description", "reward_jsonb",
+                "created_at", "updated_at",
+            ]:
+                try:
+                    value = getattr(obj, attr)
+                    obj_dict[attr] = value
+                except Exception:
+                    obj_dict[attr] = None
+            obj_dict["reward_config"] = obj_dict.pop("reward_jsonb", None)
+            return super().model_validate(obj_dict, *args, **kwargs)
+        return super().model_validate(obj, *args, **kwargs)
+
+
+class JoinMatchQueueRequest(BaseModel):
+    match_mode: MatchMode = MatchMode.SOLO_1V1
+
+
+class LeaveMatchQueueRequest(BaseModel):
+    pass
+
+
+class SubmitMatchResultRequest(BaseModel):
+    winner_id: uuid.UUID
+    match_data: dict | None = None
+
+
+class CreateMatchSeasonRequest(BaseModel):
+    season_key: str = Field(min_length=1, max_length=64)
+    season_name: str = Field(min_length=1, max_length=128)
+    start_at: datetime
+    end_at: datetime
+    description: str | None = Field(default=None, max_length=500)
+    reward_config: dict | None = None
+
+
+class UpdateMatchSeasonStatusRequest(BaseModel):
+    status: MatchSeasonStatus
+
+
+class MatchHistoryListResponse(BaseModel):
+    results: list[MatchResultResponse]
+    total: int
+
+
+class MatchLeaderboardItem(BaseModel):
+    player_id: uuid.UUID
+    player_name: str = ""
+    tier: MatchTier
+    division: int
+    rating_points: int
+    wins: int
+    losses: int
+    win_rate: float = 0.0
+    rank: int = 0
+
+
+class MatchLeaderboardResponse(BaseModel):
+    items: list[MatchLeaderboardItem]
+    total: int
