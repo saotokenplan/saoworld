@@ -36,6 +36,8 @@ InventoryManager="*res://scripts/autoload/InventoryManager.gd"
 FeedbackManager="*res://scripts/autoload/FeedbackManager.gd"
 GuildManager="*res://scripts/autoload/GuildManager.gd"
 FriendManager="*res://scripts/autoload/FriendManager.gd"
+WalletManager="*res://scripts/autoload/WalletManager.gd"
+TradeManager="*res://scripts/autoload/TradeManager.gd"
 
 [display]
 

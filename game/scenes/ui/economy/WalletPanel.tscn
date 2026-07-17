@@ -1,0 +1,72 @@
+[gd_scene load_steps=3 format=3 uid="uid://b9c8d7e6f2a1"]
+
+[ext_resource type="Script" path="res://scripts/ui/economy/wallet_panel.gd" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="2"]
+bg_color = Color(0.15, 0.15, 0.18, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.35, 0.35, 0.4, 1)
+
+[node name="WalletPanel" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_minimum_size = Vector2(800, 600)
+script = ExtResource("1")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchors_preset = 8
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = 10.0
+margin_right = 10.0
+margin_bottom = 10.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+anchors_preset = 8
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 40)
+
+[node name="TitleLabel" type="Label" parent="MarginContainer/VBoxContainer/Header"]
+text = "钱包"
+add_theme_font_size_override("font_size", 20)
+horizontal_alignment = 0
+
+[node name="CloseButton" type="Button" parent="MarginContainer/VBoxContainer/Header"]
+text = "关闭"
+custom_minimum_size = Vector2(80, 30)
+
+[node name="GoldLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+text = "金币余额: 0"
+add_theme_font_size_override("font_size", 18)
+add_theme_color_override("font_color", Color(1, 0.85, 0.3, 1))
+
+[node name="TransactionsLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+text = "交易流水"
+add_theme_font_size_override("font_size", 16)
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBoxContainer"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 300)
+
+[node name="TransactionsList" type="ItemList" parent="MarginContainer/VBoxContainer/ScrollContainer"]
+anchors_preset = 8
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_minimum_size = Vector2(760, 300)
+
+[node name="EmptyLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+visible = false
+text = "暂无交易记录"
+horizontal_alignment = 1
+
+[node name="LoadingLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+text = "加载中..."
+horizontal_alignment = 1

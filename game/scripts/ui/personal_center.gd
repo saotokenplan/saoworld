@@ -27,6 +27,12 @@ signal closed
 # 装备标签页
 @onready var equipment_list: ItemList = $MarginContainer/VBoxContainer/TabContainer/装备/EquipmentList
 
+# 经济标签页
+@onready var economy_tab_container: TabContainer = $MarginContainer/VBoxContainer/TabContainer/经济/EconomyTabContainer
+@onready var wallet_panel: Control = $MarginContainer/VBoxContainer/TabContainer/经济/EconomyTabContainer/WalletPanel
+@onready var trade_panel: Control = $MarginContainer/VBoxContainer/TabContainer/经济/EconomyTabContainer/TradePanel
+@onready var auction_panel: Control = $MarginContainer/VBoxContainer/TabContainer/经济/EconomyTabContainer/AuctionPanel
+
 var _feedback_panel: Control = null
 
 func _ready() -> void:
