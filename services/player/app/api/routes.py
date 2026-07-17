@@ -70,6 +70,13 @@ from app.core.metrics import (
     record_match_queue_left,
     record_match_result_submitted,
     record_match_rating_change,
+    record_match_leaderboard_query,
+    record_match_player_rank_query,
+    record_match_tier_distribution_query,
+    record_match_season_settlement,
+    record_match_season_reward_grant,
+    set_match_season_active_players,
+    set_match_tier_distribution,
 )
 from app.repositories.audit_repo import (
     ACTION_ACHIEVEMENT_CREATE,
@@ -145,6 +152,7 @@ from app.repositories.audit_repo import (
     RESOURCE_MATCH_ROOM,
     RESOURCE_MATCH_RESULT,
     RESOURCE_PLAYER_RATING,
+    RESOURCE_MATCH_SEASON_REWARD,
     ACTION_ECONOMY_OVERVIEW_QUERY,
     ACTION_ECONOMY_TRADE_STATS_QUERY,
     ACTION_ECONOMY_AUCTION_STATS_QUERY,
@@ -159,6 +167,13 @@ from app.repositories.audit_repo import (
     ACTION_MATCH_SEASON_STATUS_UPDATE,
     ACTION_MATCH_RATING_QUERY,
     ACTION_MATCH_HISTORY_QUERY,
+    ACTION_MATCH_LEADERBOARD_QUERY,
+    ACTION_MATCH_RANK_QUERY,
+    ACTION_MATCH_TIER_DISTRIBUTION_QUERY,
+    ACTION_MATCH_NEIGHBORS_QUERY,
+    ACTION_MATCH_SEASON_SETTLE,
+    ACTION_MATCH_REWARD_QUERY,
+    ACTION_MATCH_REWARD_GRANT,
     AuditRepository,
 )
 from app.repositories.achievement_repo import (
@@ -190,6 +205,7 @@ from app.repositories.match_repo import (
     MatchResultRepository,
     calculate_rating_change,
 )
+from app.repositories.season_reward_repo import SeasonRewardRepository
 from app.schemas.player import (
     AcceptQuestRequest,
     AchievementDefinitionListResponse,
@@ -313,6 +329,14 @@ from app.schemas.player import (
     UpdateMatchSeasonStatusRequest,
     MatchLeaderboardItem,
     MatchLeaderboardResponse,
+    PlayerRankResponse,
+    TierDistributionItem,
+    TierDistributionResponse,
+    LeaderboardNeighborsResponse,
+    SeasonRewardItem,
+    SeasonRewardListResponse,
+    SettleSeasonRequest,
+    SeasonSettlementResponse,
 )
 
 router = APIRouter()
@@ -8022,7 +8046,7 @@ async def get_match_history(
     "/player/match/leaderboard",
     responses={
         401: {"description": "Unauthorized"},
-        404: {"description": "No active season"},
+        404: {"description": "No active season or season not found"},
     },
     tags=["match"],
 )
@@ -8030,6 +8054,7 @@ async def get_match_leaderboard(
     request: Request,
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    season_id: uuid.UUID | None = Query(default=None, description="指定历史赛季ID，不传则查当前赛季"),
     current_user: UserPayload = RequireMatchReadScope,
     db: AsyncSession = Depends(get_db),
 ) -> EnvelopeResponse[MatchLeaderboardResponse]:
@@ -8037,18 +8062,30 @@ async def get_match_leaderboard(
     request_id = _make_request_id("req_match_leaderboard")
 
     season_repo = MatchSeasonRepository(db)
-    current_season = await season_repo.get_current_season()
-    if current_season is None:
-        raise_player_error(
-            PlayerErrorCodes.NO_ACTIVE_SEASON,
-            "当前没有活跃的赛季",
-            request_id,
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
+    if season_id is not None:
+        target_season = await season_repo.get_season(season_id)
+        if target_season is None:
+            raise_player_error(
+                PlayerErrorCodes.MATCH_SEASON_NOT_FOUND,
+                "指定的赛季不存在",
+                request_id,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        target_season_id = target_season.season_id
+    else:
+        current_season = await season_repo.get_current_season()
+        if current_season is None:
+            raise_player_error(
+                PlayerErrorCodes.NO_ACTIVE_SEASON,
+                "当前没有活跃的赛季",
+                request_id,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        target_season_id = current_season.season_id
 
     rating_repo = PlayerRatingRepository(db)
     ratings, total = await rating_repo.get_leaderboard(
-        current_season.season_id, limit=limit, offset=offset
+        target_season_id, limit=limit, offset=offset
     )
 
     items: list[MatchLeaderboardItem] = []
@@ -8072,9 +8109,353 @@ async def get_match_leaderboard(
             )
         )
 
+    record_match_leaderboard_query(str(target_season_id))
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=str(current_user.user_id),
+        operator_role=current_user.role.value,
+        action=ACTION_MATCH_LEADERBOARD_QUERY,
+        resource_type=RESOURCE_PLAYER_RATING,
+        resource_id=target_season_id,
+        result_status=status.HTTP_200_OK,
+    )
+    await db.commit()
+
     return EnvelopeResponse(
         request_id=request_id,
         data=MatchLeaderboardResponse(items=items, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/match/leaderboard/me",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "No active season or player rating not found"},
+    },
+    tags=["match"],
+)
+async def get_my_rank(
+    request: Request,
+    season_id: uuid.UUID | None = Query(default=None, description="指定历史赛季ID"),
+    current_user: UserPayload = RequireMatchReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[PlayerRankResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_match_rank")
+
+    season_repo = MatchSeasonRepository(db)
+    if season_id is not None:
+        target_season = await season_repo.get_season(season_id)
+        if target_season is None:
+            raise_player_error(
+                PlayerErrorCodes.MATCH_SEASON_NOT_FOUND,
+                "指定的赛季不存在",
+                request_id,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        target_season_id = target_season.season_id
+    else:
+        current_season = await season_repo.get_current_season()
+        if current_season is None:
+            raise_player_error(
+                PlayerErrorCodes.NO_ACTIVE_SEASON,
+                "当前没有活跃的赛季",
+                request_id,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        target_season_id = current_season.season_id
+
+    rating_repo = PlayerRatingRepository(db)
+    player_uuid = uuid.UUID(current_user.user_id)
+    rating = await rating_repo.get_player_rating(player_uuid, target_season_id)
+    if rating is None:
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_RATING_NOT_FOUND,
+            "您在该赛季暂无段位记录",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    rank = await rating_repo.get_player_rank(player_uuid, target_season_id)
+    if rank is None:
+        rank = 0
+    total_players = await rating_repo.count_active_players(target_season_id)
+
+    player_repo = PlayerRepository(db)
+    player = await player_repo.get_player_by_id(player_uuid)
+    player_name = player.display_name if player else ""
+
+    total_matches = rating.wins + rating.losses + rating.draws
+    win_rate = rating.wins / total_matches if total_matches > 0 else 0.0
+
+    record_match_player_rank_query(str(target_season_id))
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=str(current_user.user_id),
+        operator_role=current_user.role.value,
+        action=ACTION_MATCH_RANK_QUERY,
+        resource_type=RESOURCE_PLAYER_RATING,
+        resource_id=rating.rating_id,
+        result_status=status.HTTP_200_OK,
+    )
+    await db.commit()
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=PlayerRankResponse(
+            player_id=current_user.user_id,
+            player_name=player_name,
+            season_id=target_season_id,
+            rank=rank,
+            tier=MatchTier(rating.tier),
+            division=rating.division,
+            rating_points=rating.rating_points,
+            wins=rating.wins,
+            losses=rating.losses,
+            draws=rating.draws,
+            win_streak=rating.win_streak,
+            best_tier=MatchTier(rating.best_tier),
+            best_division=rating.best_division,
+            win_rate=round(win_rate, 4),
+            total_matches=total_matches,
+            total_players=total_players,
+        ),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/match/leaderboard/tier-distribution",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "No active season"},
+    },
+    tags=["match"],
+)
+async def get_tier_distribution(
+    request: Request,
+    season_id: uuid.UUID | None = Query(default=None, description="指定历史赛季ID"),
+    current_user: UserPayload = RequireMatchReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[TierDistributionResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_match_tier_dist")
+
+    season_repo = MatchSeasonRepository(db)
+    if season_id is not None:
+        target_season = await season_repo.get_season(season_id)
+        if target_season is None:
+            raise_player_error(
+                PlayerErrorCodes.MATCH_SEASON_NOT_FOUND,
+                "指定的赛季不存在",
+                request_id,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        target_season_id = target_season.season_id
+    else:
+        current_season = await season_repo.get_current_season()
+        if current_season is None:
+            raise_player_error(
+                PlayerErrorCodes.NO_ACTIVE_SEASON,
+                "当前没有活跃的赛季",
+                request_id,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        target_season_id = current_season.season_id
+
+    rating_repo = PlayerRatingRepository(db)
+    distribution = await rating_repo.get_tier_distribution(target_season_id)
+    total_players = sum(distribution.values())
+
+    items: list[TierDistributionItem] = []
+    # 按段位从高到低输出
+    tier_order = ["challenger", "master", "diamond", "platinum", "gold", "silver", "bronze"]
+    for tier in tier_order:
+        count = distribution.get(tier, 0)
+        percentage = round(count / total_players * 100, 2) if total_players > 0 else 0.0
+        items.append(
+            TierDistributionItem(
+                tier=MatchTier(tier),
+                count=count,
+                percentage=percentage,
+            )
+        )
+        set_match_tier_distribution(str(target_season_id), tier, count)
+
+    set_match_season_active_players(str(target_season_id), total_players)
+    record_match_tier_distribution_query(str(target_season_id))
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=str(current_user.user_id),
+        operator_role=current_user.role.value,
+        action=ACTION_MATCH_TIER_DISTRIBUTION_QUERY,
+        resource_type=RESOURCE_PLAYER_RATING,
+        resource_id=target_season_id,
+        result_status=status.HTTP_200_OK,
+    )
+    await db.commit()
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=TierDistributionResponse(
+            season_id=target_season_id,
+            total_players=total_players,
+            distribution=items,
+        ),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/match/leaderboard/neighbors",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "No active season or player rating not found"},
+    },
+    tags=["match"],
+)
+async def get_leaderboard_neighbors(
+    request: Request,
+    before: int = Query(default=2, ge=0, le=10),
+    after: int = Query(default=2, ge=0, le=10),
+    season_id: uuid.UUID | None = Query(default=None, description="指定历史赛季ID"),
+    current_user: UserPayload = RequireMatchReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[LeaderboardNeighborsResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_match_neighbors")
+
+    season_repo = MatchSeasonRepository(db)
+    if season_id is not None:
+        target_season = await season_repo.get_season(season_id)
+        if target_season is None:
+            raise_player_error(
+                PlayerErrorCodes.MATCH_SEASON_NOT_FOUND,
+                "指定的赛季不存在",
+                request_id,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        target_season_id = target_season.season_id
+    else:
+        current_season = await season_repo.get_current_season()
+        if current_season is None:
+            raise_player_error(
+                PlayerErrorCodes.NO_ACTIVE_SEASON,
+                "当前没有活跃的赛季",
+                request_id,
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        target_season_id = current_season.season_id
+
+    rating_repo = PlayerRatingRepository(db)
+    player_uuid = uuid.UUID(current_user.user_id)
+    neighbors, my_rank = await rating_repo.get_neighbors(
+        player_uuid, target_season_id, before=before, after=after
+    )
+    if my_rank is None:
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_RATING_NOT_FOUND,
+            "您在该赛季暂无段位记录",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    start_rank = max(1, my_rank - before)
+    items: list[MatchLeaderboardItem] = []
+    player_repo = PlayerRepository(db)
+    for idx, rating in enumerate(neighbors):
+        player = await player_repo.get_player_by_id(rating.player_id)
+        player_name = player.display_name if player else ""
+        total_matches = rating.wins + rating.losses + rating.draws
+        win_rate = rating.wins / total_matches if total_matches > 0 else 0.0
+        items.append(
+            MatchLeaderboardItem(
+                player_id=rating.player_id,
+                player_name=player_name,
+                tier=MatchTier(rating.tier),
+                division=rating.division,
+                rating_points=rating.rating_points,
+                wins=rating.wins,
+                losses=rating.losses,
+                win_rate=round(win_rate, 4),
+                rank=start_rank + idx,
+            )
+        )
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=str(current_user.user_id),
+        operator_role=current_user.role.value,
+        action=ACTION_MATCH_NEIGHBORS_QUERY,
+        resource_type=RESOURCE_PLAYER_RATING,
+        resource_id=target_season_id,
+        result_status=status.HTTP_200_OK,
+    )
+    await db.commit()
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=LeaderboardNeighborsResponse(
+            season_id=target_season_id,
+            my_rank=my_rank,
+            items=items,
+        ),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/match/rewards",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["match"],
+)
+async def get_my_season_rewards(
+    request: Request,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireMatchReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[SeasonRewardListResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_match_rewards")
+
+    reward_repo = SeasonRewardRepository(db)
+    player_uuid = uuid.UUID(current_user.user_id)
+    grants, total = await reward_repo.list_grants_by_player(
+        player_uuid, limit=limit, offset=offset
+    )
+
+    items = [SeasonRewardItem.model_validate(g) for g in grants]
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=str(current_user.user_id),
+        operator_role=current_user.role.value,
+        action=ACTION_MATCH_REWARD_QUERY,
+        resource_type=RESOURCE_MATCH_SEASON_REWARD,
+        resource_id=player_uuid,
+        result_status=status.HTTP_200_OK,
+    )
+    await db.commit()
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=SeasonRewardListResponse(items=items, total=total),
         meta=PaginatedMeta(total=total, limit=limit, offset=offset),
         trace_id=trace_id,
     )
@@ -8227,6 +8608,276 @@ async def update_match_season_status(
         request_id=request_id,
         data=MatchSeasonResponse.model_validate(season),
         trace_id=x_trace_id,
+    )
+
+
+@ops_router.post(
+    "/match/seasons/{season_id}/settle",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Season not found"},
+        409: {"description": "Season not ended or already settled"},
+    },
+    tags=["ops-match"],
+)
+async def settle_match_season(
+    season_id: uuid.UUID,
+    body: SettleSeasonRequest,
+    request: Request,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    current_user: UserPayload = RequireMatchOpsScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[SeasonSettlementResponse]:
+    trace_id = x_trace_id or f"trace_{uuid.uuid4().hex[:12]}"
+    request_id = _make_request_id("req_ops_match_settle")
+
+    season_repo = MatchSeasonRepository(db)
+    season = await season_repo.get_season(season_id)
+    if season is None:
+        raise_player_error(
+            PlayerErrorCodes.MATCH_SEASON_NOT_FOUND,
+            "赛季不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    # 校验赛季状态：必须为 ended 才能结算
+    if season.status != "ended":
+        raise_player_error(
+            PlayerErrorCodes.MATCH_SEASON_NOT_ENDED,
+            f"赛季状态为 {season.status}，仅 ended 状态可结算",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    # 校验结算状态：必须为 unsettled 才能开始结算
+    if season.settlement_status == "settled":
+        # 幂等：返回已有结算结果
+        reward_repo = SeasonRewardRepository(db)
+        total_grants = await reward_repo.count_grants_by_season(season.season_id)
+        rating_repo = PlayerRatingRepository(db)
+        distribution = await rating_repo.get_tier_distribution(season.season_id)
+        total_players = await rating_repo.count_active_players(season.season_id)
+
+        audit_repo = AuditRepository(db)
+        await audit_repo.create_audit_log(
+            trace_id=trace_id,
+            request_id=request_id,
+            operator_id=str(current_user.user_id),
+            operator_role=current_user.role.value,
+            action=ACTION_MATCH_SEASON_SETTLE,
+            resource_type=RESOURCE_MATCH_SEASON,
+            resource_id=season.season_id,
+            reason="idempotent_replay",
+            request_payload_jsonb={"idempotency_key": idempotency_key},
+            result_status=status.HTTP_200_OK,
+        )
+        await db.commit()
+
+        return EnvelopeResponse(
+            request_id=request_id,
+            data=SeasonSettlementResponse(
+                season_id=season.season_id,
+                settlement_status=season.settlement_status,
+                settled_at=season.settled_at,
+                total_grants=total_grants,
+                total_players=total_players,
+                tier_distribution=distribution,
+            ),
+            trace_id=trace_id,
+        )
+
+    if season.settlement_status == "settling":
+        raise_player_error(
+            PlayerErrorCodes.MATCH_SEASON_SETTLEMENT_IN_PROGRESS,
+            "赛季正在结算中，请稍后查询",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    # 幂等键检查：如已有同幂等键的奖励记录，直接返回
+    reward_repo = SeasonRewardRepository(db)
+    existing_grant = await reward_repo.get_grant_by_idempotency_key(idempotency_key)
+    if existing_grant is not None:
+        total_grants = await reward_repo.count_grants_by_season(season.season_id)
+        rating_repo = PlayerRatingRepository(db)
+        distribution = await rating_repo.get_tier_distribution(season.season_id)
+        total_players = await rating_repo.count_active_players(season.season_id)
+        return EnvelopeResponse(
+            request_id=request_id,
+            data=SeasonSettlementResponse(
+                season_id=season.season_id,
+                settlement_status=season.settlement_status,
+                settled_at=season.settled_at,
+                total_grants=total_grants,
+                total_players=total_players,
+                tier_distribution=distribution,
+            ),
+            trace_id=trace_id,
+        )
+
+    # 标记为结算中
+    await season_repo.update_settlement_status(season.season_id, "settling")
+
+    # 列出该赛季所有段位记录（按排名顺序）
+    rating_repo = PlayerRatingRepository(db)
+    ratings = await rating_repo.list_all_ratings_for_settlement(
+        season.season_id, limit=body.batch_size, offset=0
+    )
+
+    # 默认奖励配置：按段位发放
+    default_reward_config = body.reward_config or season.reward_jsonb or {
+        "challenger": {"title": "挑战者之星", "currency": 5000},
+        "master": {"title": "宗师之力", "currency": 3000},
+        "diamond": {"title": "钻石之辉", "currency": 2000},
+        "platinum": {"title": "铂金之光", "currency": 1000},
+        "gold": {"title": "黄金之耀", "currency": 500},
+        "silver": {"title": "白银之翼", "currency": 200},
+        "bronze": {"title": "青铜之心", "currency": 100},
+    }
+
+    # 为每个有段位的玩家创建奖励发放记录
+    grants_created = 0
+    for rank_idx, rating in enumerate(ratings, start=1):
+        tier_reward = default_reward_config.get(rating.tier, {})
+        # 排名前 10 的玩家额外奖励
+        if rank_idx <= 10:
+            tier_reward = {
+                **tier_reward,
+                "rank_bonus": {
+                    "rank": rank_idx,
+                    "extra_currency": max(0, 1100 - rank_idx * 100),
+                },
+            }
+        try:
+            await reward_repo.create_grant(
+                season_id=season.season_id,
+                player_id=rating.player_id,
+                final_rank=rank_idx,
+                final_tier=rating.tier,
+                final_division=rating.division,
+                final_rating_points=rating.rating_points,
+                reward_payload=tier_reward,
+                idempotency_key=f"sr_{season.season_id}_{rating.player_id}",
+                trace_id=trace_id,
+                status="granted",
+            )
+            record_match_season_reward_grant(str(season.season_id), rating.tier)
+            grants_created += 1
+        except Exception:
+            # 单个玩家奖励发放失败不阻断整体结算，记录为 failed 状态
+            await reward_repo.create_grant(
+                season_id=season.season_id,
+                player_id=rating.player_id,
+                final_rank=rank_idx,
+                final_tier=rating.tier,
+                final_division=rating.division,
+                final_rating_points=rating.rating_points,
+                reward_payload=tier_reward,
+                idempotency_key=f"sr_{season.season_id}_{rating.player_id}_retry",
+                trace_id=trace_id,
+                status="failed",
+            )
+
+    # 标记为已结算
+    await season_repo.update_settlement_status(season.season_id, "settled")
+
+    # 重新查询最终分布
+    distribution = await rating_repo.get_tier_distribution(season.season_id)
+    total_players = await rating_repo.count_active_players(season.season_id)
+    total_grants = await reward_repo.count_grants_by_season(season.season_id)
+
+    record_match_season_settlement(str(season.season_id))
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=str(current_user.user_id),
+        operator_role=current_user.role.value,
+        action=ACTION_MATCH_SEASON_SETTLE,
+        resource_type=RESOURCE_MATCH_SEASON,
+        resource_id=season.season_id,
+        request_payload_jsonb={
+            "idempotency_key": idempotency_key,
+            "batch_size": body.batch_size,
+            "grants_created": grants_created,
+        },
+        result_status=status.HTTP_200_OK,
+    )
+    await db.commit()
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=SeasonSettlementResponse(
+            season_id=season.season_id,
+            settlement_status="settled",
+            settled_at=season.settled_at,
+            total_grants=total_grants,
+            total_players=total_players,
+            tier_distribution=distribution,
+        ),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.get(
+    "/match/seasons/{season_id}/rewards",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Season or rewards not found"},
+    },
+    tags=["ops-match"],
+)
+async def list_season_rewards(
+    season_id: uuid.UUID,
+    request: Request,
+    status_filter: str | None = Query(default=None, description="按状态过滤：pending/granted/failed"),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireMatchOpsScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[SeasonRewardListResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_ops_match_rewards")
+
+    season_repo = MatchSeasonRepository(db)
+    season = await season_repo.get_season(season_id)
+    if season is None:
+        raise_player_error(
+            PlayerErrorCodes.MATCH_SEASON_NOT_FOUND,
+            "赛季不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    reward_repo = SeasonRewardRepository(db)
+    grants, total = await reward_repo.list_grants_by_season(
+        season.season_id, status=status_filter, limit=limit, offset=offset
+    )
+
+    items = [SeasonRewardItem.model_validate(g) for g in grants]
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id,
+        request_id=request_id,
+        operator_id=str(current_user.user_id),
+        operator_role=current_user.role.value,
+        action=ACTION_MATCH_REWARD_GRANT,
+        resource_type=RESOURCE_MATCH_SEASON_REWARD,
+        resource_id=season.season_id,
+        result_status=status.HTTP_200_OK,
+    )
+    await db.commit()
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=SeasonRewardListResponse(items=items, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
     )
 
 

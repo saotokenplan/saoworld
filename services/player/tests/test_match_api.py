@@ -695,3 +695,567 @@ async def test_player_not_in_room(
     assert response.status_code == 403
     data = response.json()
     assert data["code"] == PlayerErrorCodes.PLAYER_NOT_IN_ROOM
+
+
+# === 赛季排行系统测试 ===
+
+
+@pytest_asyncio.fixture
+async def ended_season() -> MatchSeason:
+    """创建一个已结束的赛季（用于结算测试）。"""
+    from tests.conftest import TestSessionLocal
+
+    now = datetime.now(timezone.utc)
+    season = MatchSeason(
+        season_id=uuid.uuid4(),
+        season_key="s2025_ended_01",
+        season_name="2025 年已结束赛季",
+        status="ended",
+        start_at=now - timedelta(days=60),
+        end_at=now - timedelta(days=30),
+        settlement_status="unsettled",
+    )
+    async with TestSessionLocal() as session:
+        session.add(season)
+        await session.commit()
+        await session.refresh(season)
+    return season
+
+
+async def _create_rating(
+    player_id: str,
+    season_id: uuid.UUID,
+    tier: str,
+    division: int,
+    rating_points: int,
+    wins: int = 0,
+    losses: int = 0,
+) -> PlayerRating:
+    """辅助函数：直接创建段位记录。"""
+    from tests.conftest import TestSessionLocal
+
+    rating = PlayerRating(
+        rating_id=uuid.uuid4(),
+        player_id=uuid.UUID(player_id),
+        season_id=season_id,
+        tier=tier,
+        division=division,
+        rating_points=rating_points,
+        wins=wins,
+        losses=losses,
+    )
+    async with TestSessionLocal() as session:
+        session.add(rating)
+        await session.commit()
+    return rating
+
+
+@pytest.mark.asyncio
+async def test_get_match_leaderboard_tier_sort_order(
+    client: AsyncClient,
+    player_a: Player,
+    player_b: Player,
+    player_c: Player,
+    active_season: MatchSeason,
+    player_a_token: str,
+) -> None:
+    """排行榜段位排序正确性：challenger > master > diamond > ... > bronze。"""
+    await _create_rating(PLAYER_A_ID, active_season.season_id, "challenger", 1, 999, wins=20)
+    await _create_rating(PLAYER_B_ID, active_season.season_id, "master", 1, 800, wins=15)
+    await _create_rating(PLAYER_C_ID, active_season.season_id, "bronze", 5, 0, wins=1)
+
+    response = await client.get(
+        "/api/v1/player/match/leaderboard",
+        headers={"Authorization": f"Bearer {player_a_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    items = data["data"]["items"]
+    assert len(items) == 3
+    # challenger 应排第 1，master 第 2，bronze 第 3
+    assert items[0]["tier"] == "challenger"
+    assert items[0]["rank"] == 1
+    assert items[1]["tier"] == "master"
+    assert items[1]["rank"] == 2
+    assert items[2]["tier"] == "bronze"
+    assert items[2]["rank"] == 3
+
+
+@pytest.mark.asyncio
+async def test_get_match_leaderboard_with_season_id(
+    client: AsyncClient,
+    player_a: Player,
+    ended_season: MatchSeason,
+    player_a_token: str,
+) -> None:
+    """通过 season_id 查询历史赛季排行榜。"""
+    await _create_rating(PLAYER_A_ID, ended_season.season_id, "gold", 2, 500, wins=8)
+
+    response = await client.get(
+        f"/api/v1/player/match/leaderboard?season_id={ended_season.season_id}",
+        headers={"Authorization": f"Bearer {player_a_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["data"]["total"] >= 1
+    assert data["data"]["items"][0]["tier"] == "gold"
+
+
+@pytest.mark.asyncio
+async def test_get_match_leaderboard_invalid_season_id(
+    client: AsyncClient,
+    player_a_token: str,
+) -> None:
+    """查询不存在的赛季返回 404。"""
+    fake_id = uuid.uuid4()
+    response = await client.get(
+        f"/api/v1/player/match/leaderboard?season_id={fake_id}",
+        headers={"Authorization": f"Bearer {player_a_token}"},
+    )
+    assert response.status_code == 404
+    data = response.json()
+    assert data["code"] == PlayerErrorCodes.MATCH_SEASON_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_get_my_rank_success(
+    client: AsyncClient,
+    player_a: Player,
+    player_b: Player,
+    player_c: Player,
+    active_season: MatchSeason,
+    player_a_token: str,
+) -> None:
+    """查询玩家自身排名成功。"""
+    await _create_rating(PLAYER_A_ID, active_season.season_id, "gold", 2, 500, wins=8, losses=2)
+    await _create_rating(PLAYER_B_ID, active_season.season_id, "diamond", 1, 600, wins=12)
+    await _create_rating(PLAYER_C_ID, active_season.season_id, "bronze", 5, 0, wins=0, losses=5)
+
+    response = await client.get(
+        "/api/v1/player/match/leaderboard/me",
+        headers={"Authorization": f"Bearer {player_a_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["player_id"] == PLAYER_A_ID
+    assert data["tier"] == "gold"
+    assert data["rank"] == 2  # diamond 第一，gold 第二
+    assert data["total_players"] == 3
+    assert data["total_matches"] == 10
+    assert data["win_rate"] == 0.8
+
+
+@pytest.mark.asyncio
+async def test_get_my_rank_no_rating(
+    client: AsyncClient,
+    player_a: Player,
+    active_season: MatchSeason,
+    player_a_token: str,
+) -> None:
+    """玩家无段位记录返回 404。"""
+    response = await client.get(
+        "/api/v1/player/match/leaderboard/me",
+        headers={"Authorization": f"Bearer {player_a_token}"},
+    )
+    assert response.status_code == 404
+    data = response.json()
+    assert data["code"] == PlayerErrorCodes.PLAYER_RATING_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_get_tier_distribution(
+    client: AsyncClient,
+    player_a: Player,
+    player_b: Player,
+    player_c: Player,
+    active_season: MatchSeason,
+    player_a_token: str,
+) -> None:
+    """段位分布查询。"""
+    await _create_rating(PLAYER_A_ID, active_season.season_id, "gold", 2, 500)
+    await _create_rating(PLAYER_B_ID, active_season.season_id, "gold", 3, 400)
+    await _create_rating(PLAYER_C_ID, active_season.season_id, "bronze", 5, 0)
+
+    response = await client.get(
+        "/api/v1/player/match/leaderboard/tier-distribution",
+        headers={"Authorization": f"Bearer {player_a_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["total_players"] == 3
+    # distribution 按段位从高到低排序
+    distribution = {item["tier"]: item["count"] for item in data["distribution"]}
+    assert distribution["gold"] == 2
+    assert distribution["bronze"] == 1
+    assert distribution["challenger"] == 0
+    # 检查百分比总和接近 100
+    total_pct = sum(item["percentage"] for item in data["distribution"])
+    assert abs(total_pct - 100.0) < 0.1
+
+
+@pytest.mark.asyncio
+async def test_get_leaderboard_neighbors(
+    client: AsyncClient,
+    player_a: Player,
+    player_b: Player,
+    player_c: Player,
+    active_season: MatchSeason,
+    player_b_token: str,
+) -> None:
+    """附近玩家查询：player_b 排第 2，应能看到前后各 1 名。"""
+    await _create_rating(PLAYER_A_ID, active_season.season_id, "diamond", 1, 600, wins=12)
+    await _create_rating(PLAYER_B_ID, active_season.season_id, "gold", 2, 500, wins=8)
+    await _create_rating(PLAYER_C_ID, active_season.season_id, "bronze", 5, 0, wins=0)
+
+    response = await client.get(
+        "/api/v1/player/match/leaderboard/neighbors?before=1&after=1",
+        headers={"Authorization": f"Bearer {player_b_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["my_rank"] == 2
+    assert len(data["items"]) == 3  # 前1 + 自己 + 后1
+    # 验证排名顺序
+    ranks = [item["rank"] for item in data["items"]]
+    assert ranks == [1, 2, 3]
+
+
+@pytest.mark.asyncio
+async def test_get_leaderboard_neighbors_no_rating(
+    client: AsyncClient,
+    player_a: Player,
+    active_season: MatchSeason,
+    player_a_token: str,
+) -> None:
+    """附近玩家查询：玩家无段位记录返回 404。"""
+    response = await client.get(
+        "/api/v1/player/match/leaderboard/neighbors",
+        headers={"Authorization": f"Bearer {player_a_token}"},
+    )
+    assert response.status_code == 404
+    assert response.json()["code"] == PlayerErrorCodes.PLAYER_RATING_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_get_my_season_rewards_empty(
+    client: AsyncClient,
+    player_a: Player,
+    player_a_token: str,
+) -> None:
+    """玩家无奖励记录时返回空列表。"""
+    response = await client.get(
+        "/api/v1/player/match/rewards",
+        headers={"Authorization": f"Bearer {player_a_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["items"] == []
+    assert data["total"] == 0
+
+
+@pytest.mark.asyncio
+async def test_settle_match_season_success(
+    client: AsyncClient,
+    player_a: Player,
+    player_b: Player,
+    player_c: Player,
+    ended_season: MatchSeason,
+    ops_token: str,
+) -> None:
+    """赛季结算成功。"""
+    await _create_rating(PLAYER_A_ID, ended_season.season_id, "challenger", 1, 999, wins=20)
+    await _create_rating(PLAYER_B_ID, ended_season.season_id, "gold", 2, 500, wins=8)
+    await _create_rating(PLAYER_C_ID, ended_season.season_id, "bronze", 5, 0, wins=1)
+
+    response = await client.post(
+        f"/api/v1/ops/match/seasons/{ended_season.season_id}/settle",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-settle-001",
+        },
+        json={"batch_size": 100},
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["season_id"] == str(ended_season.season_id)
+    assert data["settlement_status"] == "settled"
+    assert data["total_grants"] == 3
+    assert data["total_players"] == 3
+    assert data["tier_distribution"]["challenger"] == 1
+    assert data["tier_distribution"]["gold"] == 1
+    assert data["tier_distribution"]["bronze"] == 1
+    assert data["settled_at"] is not None
+
+
+@pytest.mark.asyncio
+async def test_settle_match_season_not_ended(
+    client: AsyncClient,
+    player_a: Player,
+    active_season: MatchSeason,
+    ops_token: str,
+) -> None:
+    """结算未结束赛季返回 409。"""
+    response = await client.post(
+        f"/api/v1/ops/match/seasons/{active_season.season_id}/settle",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-settle-not-ended",
+        },
+        json={},
+    )
+    assert response.status_code == 409
+    assert response.json()["code"] == PlayerErrorCodes.MATCH_SEASON_NOT_ENDED
+
+
+@pytest.mark.asyncio
+async def test_settle_match_season_already_settled(
+    client: AsyncClient,
+    player_a: Player,
+    player_b: Player,
+    ended_season: MatchSeason,
+    ops_token: str,
+) -> None:
+    """结算已结算赛季返回幂等结果。"""
+    await _create_rating(PLAYER_A_ID, ended_season.season_id, "gold", 1, 700, wins=15)
+    await _create_rating(PLAYER_B_ID, ended_season.season_id, "silver", 2, 300, wins=5)
+
+    # 第一次结算
+    response1 = await client.post(
+        f"/api/v1/ops/match/seasons/{ended_season.season_id}/settle",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-settle-idemp-1",
+        },
+        json={},
+    )
+    assert response1.status_code == 200
+    assert response1.json()["data"]["total_grants"] == 2
+
+    # 第二次结算（不同幂等键）：应返回幂等结果，不重复发放
+    response2 = await client.post(
+        f"/api/v1/ops/match/seasons/{ended_season.season_id}/settle",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-settle-idemp-2",
+        },
+        json={},
+    )
+    assert response2.status_code == 200
+    data2 = response2.json()["data"]
+    assert data2["settlement_status"] == "settled"
+    assert data2["total_grants"] == 2  # 仍是 2，未重复发放
+
+
+@pytest.mark.asyncio
+async def test_settle_match_season_not_found(
+    client: AsyncClient,
+    ops_token: str,
+) -> None:
+    """结算不存在的赛季返回 404。"""
+    fake_id = uuid.uuid4()
+    response = await client.post(
+        f"/api/v1/ops/match/seasons/{fake_id}/settle",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-settle-not-found",
+        },
+        json={},
+    )
+    assert response.status_code == 404
+    assert response.json()["code"] == PlayerErrorCodes.MATCH_SEASON_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_list_season_rewards(
+    client: AsyncClient,
+    player_a: Player,
+    player_b: Player,
+    ended_season: MatchSeason,
+    ops_token: str,
+) -> None:
+    """运营查询赛季奖励列表。"""
+    await _create_rating(PLAYER_A_ID, ended_season.season_id, "gold", 1, 700, wins=15)
+    await _create_rating(PLAYER_B_ID, ended_season.season_id, "silver", 2, 300, wins=5)
+
+    # 先结算
+    await client.post(
+        f"/api/v1/ops/match/seasons/{ended_season.season_id}/settle",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-settle-for-list",
+        },
+        json={},
+    )
+
+    # 查询奖励列表
+    response = await client.get(
+        f"/api/v1/ops/match/seasons/{ended_season.season_id}/rewards",
+        headers={"Authorization": f"Bearer {ops_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["total"] == 2
+    # 按排名升序
+    assert data["items"][0]["final_rank"] == 1
+    assert data["items"][0]["final_tier"] == "gold"
+    assert data["items"][1]["final_rank"] == 2
+    assert data["items"][1]["final_tier"] == "silver"
+    # 验证奖励负载
+    assert data["items"][0]["reward_payload"] is not None
+    assert "title" in data["items"][0]["reward_payload"]
+
+
+@pytest.mark.asyncio
+async def test_list_season_rewards_with_status_filter(
+    client: AsyncClient,
+    player_a: Player,
+    ended_season: MatchSeason,
+    ops_token: str,
+) -> None:
+    """运营按状态过滤赛季奖励列表。"""
+    await _create_rating(PLAYER_A_ID, ended_season.season_id, "gold", 1, 700, wins=15)
+
+    # 先结算
+    await client.post(
+        f"/api/v1/ops/match/seasons/{ended_season.season_id}/settle",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-settle-for-filter",
+        },
+        json={},
+    )
+
+    # 仅查 granted 状态
+    response = await client.get(
+        f"/api/v1/ops/match/seasons/{ended_season.season_id}/rewards?status_filter=granted",
+        headers={"Authorization": f"Bearer {ops_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["total"] == 1
+    assert data["items"][0]["status"] == "granted"
+
+
+@pytest.mark.asyncio
+async def test_get_my_season_rewards_after_settle(
+    client: AsyncClient,
+    player_a: Player,
+    ended_season: MatchSeason,
+    player_a_token: str,
+    ops_token: str,
+) -> None:
+    """玩家在赛季结算后能查到自己的奖励。"""
+    await _create_rating(PLAYER_A_ID, ended_season.season_id, "diamond", 1, 800, wins=20)
+
+    # 运营结算
+    await client.post(
+        f"/api/v1/ops/match/seasons/{ended_season.season_id}/settle",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-settle-for-player-query",
+        },
+        json={},
+    )
+
+    # 玩家查询自己的奖励
+    response = await client.get(
+        "/api/v1/player/match/rewards",
+        headers={"Authorization": f"Bearer {player_a_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["total"] == 1
+    assert data["items"][0]["final_tier"] == "diamond"
+    assert data["items"][0]["final_rank"] == 1
+    assert data["items"][0]["status"] == "granted"
+
+
+@pytest.mark.asyncio
+async def test_get_match_leaderboard_unauthorized(client: AsyncClient) -> None:
+    """未授权访问排行榜返回 401。"""
+    response = await client.get("/api/v1/player/match/leaderboard")
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_get_my_rank_unauthorized(client: AsyncClient) -> None:
+    """未授权访问自身排名返回 401。"""
+    response = await client.get("/api/v1/player/match/leaderboard/me")
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_settle_match_season_forbidden(
+    client: AsyncClient,
+    ended_season: MatchSeason,
+    player_a_token: str,
+) -> None:
+    """普通玩家不能结算赛季，返回 403。"""
+    response = await client.post(
+        f"/api/v1/ops/match/seasons/{ended_season.season_id}/settle",
+        headers={
+            "Authorization": f"Bearer {player_a_token}",
+            "Idempotency-Key": "test-settle-forbidden",
+        },
+        json={},
+    )
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_get_tier_distribution_empty_season(
+    client: AsyncClient,
+    player_a: Player,
+    active_season: MatchSeason,
+    player_a_token: str,
+) -> None:
+    """空赛季段位分布返回全 0。"""
+    response = await client.get(
+        "/api/v1/player/match/leaderboard/tier-distribution",
+        headers={"Authorization": f"Bearer {player_a_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["total_players"] == 0
+    # 所有段位 count 应为 0
+    for item in data["distribution"]:
+        assert item["count"] == 0
+        assert item["percentage"] == 0.0
+
+
+@pytest.mark.asyncio
+async def test_settle_match_season_with_reward_config(
+    client: AsyncClient,
+    player_a: Player,
+    ended_season: MatchSeason,
+    ops_token: str,
+    player_a_token: str,
+) -> None:
+    """结算时使用自定义奖励配置。"""
+    await _create_rating(PLAYER_A_ID, ended_season.season_id, "master", 1, 800, wins=18)
+
+    custom_config = {
+        "master": {"title": "自定义宗师", "currency": 9999, "item": "rare_weapon"},
+    }
+    response = await client.post(
+        f"/api/v1/ops/match/seasons/{ended_season.season_id}/settle",
+        headers={
+            "Authorization": f"Bearer {ops_token}",
+            "Idempotency-Key": "test-settle-custom-cfg",
+        },
+        json={"reward_config": custom_config},
+    )
+    assert response.status_code == 200
+
+    # 玩家查询奖励，验证自定义配置生效
+    reward_resp = await client.get(
+        "/api/v1/player/match/rewards",
+        headers={"Authorization": f"Bearer {player_a_token}"},
+    )
+    assert reward_resp.status_code == 200
+    items = reward_resp.json()["data"]["items"]
+    assert len(items) == 1
+    assert items[0]["reward_payload"]["title"] == "自定义宗师"
+    assert items[0]["reward_payload"]["currency"] == 9999
+    # 排名前 10 应有 rank_bonus
+    assert "rank_bonus" in items[0]["reward_payload"]

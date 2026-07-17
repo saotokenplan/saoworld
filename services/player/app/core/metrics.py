@@ -683,3 +683,82 @@ def set_match_active_queue_size(match_mode: str, count: int) -> None:
 def set_match_active_rooms(match_mode: str, count: int) -> None:
     """设置当前活跃对战房间数。"""
     MATCH_ACTIVE_ROOMS.labels(match_mode=match_mode).set(count)
+
+
+# 赛季排行系统相关指标
+MATCH_LEADERBOARD_QUERIES_TOTAL = Counter(
+    "match_leaderboard_queries_total",
+    "排行榜查询次数",
+    labelnames=["season_id"],
+)
+
+MATCH_PLAYER_RANK_QUERIES_TOTAL = Counter(
+    "match_player_rank_queries_total",
+    "玩家自身排名查询次数",
+    labelnames=["season_id"],
+)
+
+MATCH_TIER_DISTRIBUTION_QUERIES_TOTAL = Counter(
+    "match_tier_distribution_queries_total",
+    "段位分布查询次数",
+    labelnames=["season_id"],
+)
+
+MATCH_SEASON_SETTLEMENTS_TOTAL = Counter(
+    "match_season_settlements_total",
+    "赛季结算次数",
+    labelnames=["season_id"],
+)
+
+MATCH_SEASON_REWARDS_GRANTED_TOTAL = Counter(
+    "match_season_rewards_granted_total",
+    "赛季奖励发放次数",
+    labelnames=["season_id", "tier"],
+)
+
+MATCH_SEASON_ACTIVE_PLAYERS = Gauge(
+    "match_season_active_players",
+    "赛季活跃玩家数",
+    labelnames=["season_id"],
+)
+
+MATCH_TIER_DISTRIBUTION = Gauge(
+    "match_tier_distribution",
+    "段位分布玩家数",
+    labelnames=["season_id", "tier"],
+)
+
+
+def record_match_leaderboard_query(season_id: str) -> None:
+    """记录排行榜查询。"""
+    MATCH_LEADERBOARD_QUERIES_TOTAL.labels(season_id=season_id).inc()
+
+
+def record_match_player_rank_query(season_id: str) -> None:
+    """记录玩家自身排名查询。"""
+    MATCH_PLAYER_RANK_QUERIES_TOTAL.labels(season_id=season_id).inc()
+
+
+def record_match_tier_distribution_query(season_id: str) -> None:
+    """记录段位分布查询。"""
+    MATCH_TIER_DISTRIBUTION_QUERIES_TOTAL.labels(season_id=season_id).inc()
+
+
+def record_match_season_settlement(season_id: str) -> None:
+    """记录赛季结算。"""
+    MATCH_SEASON_SETTLEMENTS_TOTAL.labels(season_id=season_id).inc()
+
+
+def record_match_season_reward_grant(season_id: str, tier: str) -> None:
+    """记录赛季奖励发放。"""
+    MATCH_SEASON_REWARDS_GRANTED_TOTAL.labels(season_id=season_id, tier=tier).inc()
+
+
+def set_match_season_active_players(season_id: str, count: int) -> None:
+    """设置赛季活跃玩家数。"""
+    MATCH_SEASON_ACTIVE_PLAYERS.labels(season_id=season_id).set(count)
+
+
+def set_match_tier_distribution(season_id: str, tier: str, count: int) -> None:
+    """设置段位分布玩家数。"""
+    MATCH_TIER_DISTRIBUTION.labels(season_id=season_id, tier=tier).set(count)

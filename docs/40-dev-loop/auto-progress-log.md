@@ -2,6 +2,29 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-18 18:30 — auto-20260718-1800
+
+- 任务：M3-05 赛季排行系统
+- 分支：auto/auto-20260718-1800
+- 状态：✅ 已完成
+- 工作内容：
+  - 修复排行榜 tier 排序 Bug——原 `desc(PlayerRating.tier)` 字符串排序导致 silver>gold>diamond>bronze 错误顺序，引入 `_tier_order_case()` SQLAlchemy `case()` 表达式按 challenger>master>diamond>platinum>gold>silver>bronze 正确排序
+  - 扩展 `MatchSeason` 表新增 `settlement_status`（unsettled/settling/settled）和 `settled_at` 字段（独立状态机，避免污染原有 status 流转）
+  - 新增 `season_reward_grants` 表（append-only 风格，含 `UNIQUE (season_id, player_id)` 防重幂等约束、`idempotency_key` 全局唯一、tier/division/rank CHECK 约束、状态机 pending/granted/failed）
+  - 新增 `SeasonRewardRepository` 仓储层（8 个方法：create_grant / get_grant_by_id / get_grant_by_season_player / get_grant_by_idempotency_key / list_grants_by_season / list_grants_by_player / update_grant_status / count_grants_by_season）
+  - 扩展 `PlayerRatingRepository`：get_player_rank（排名子查询）、get_tier_distribution（段位分布 GROUP BY）、get_neighbors（排名邻接）、count_active_players、list_all_ratings_for_settlement
+  - 扩展 `MatchSeasonRepository`：get_settlement_status、update_settlement_status
+  - 新增 8 个 Schema：PlayerRankResponse、TierDistributionItem、TierDistributionResponse、LeaderboardNeighborsResponse、SeasonRewardItem、SeasonRewardListResponse、SettleSeasonRequest、SeasonSettlementResponse
+  - 新增 6 个 API 端点（玩家侧 4 个：我的排名/段位分布/排名邻接玩家/我的赛季奖励；运营侧 2 个：赛季结算/查询赛季奖励列表）
+  - 扩展 `/player/match/leaderboard` 支持 `season_id` 历史赛季查询
+  - 新增 7 个错误码、7 个 Prometheus 指标、7 个审计动作常量、1 个资源类型常量
+  - 赛季结算设计支持默认段位奖励 + Top 10 排名加成配置，可通过 `Idempotency-Key` 头实现幂等结算
+- 修改文件：约 11 个（1 新增仓储 + 7 修改代码 + 1 修改测试 + 2 新增文档）
+- 验证：player-service 309 个测试全部通过（+21）；ruff 检查通过（0 错误）；mypy 新增代码 0 错误
+- 提交拆分：docs(dev-loop) + feat(player) + test(player) + docs(project-status)（详见执行摘要）
+- 合并状态：待合并到 feature-prd
+- 工作分支：auto/auto-20260718-1800（合并完成后删除）
+
 ## 2026-07-18 17:30 — auto-20260718-1700
 
 - 任务：M3-04 跨服匹配系统
