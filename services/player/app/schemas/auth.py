@@ -46,6 +46,10 @@ class Scope(str, Enum):
 
     ECONOMY_READ = "economy:read"
 
+    MATCH_READ = "match:read"
+    MATCH_WRITE = "match:write"
+    MATCH_OPS = "match:ops"
+
     REVIEW_APPROVE = "review:approve"
 
 
@@ -70,6 +74,8 @@ ROLE_SCOPES: dict[Role, list[Scope]] = {
         Scope.GUILD_WAR_WRITE,
         Scope.COLLAB_QUEST_READ,
         Scope.COLLAB_QUEST_WRITE,
+        Scope.MATCH_READ,
+        Scope.MATCH_WRITE,
     ],
     Role.OPS: [
         Scope.VOTES_HISTORY_READ,
@@ -82,6 +88,8 @@ ROLE_SCOPES: dict[Role, list[Scope]] = {
         Scope.ACHIEVEMENTS_READ,
         Scope.ACHIEVEMENTS_UNLOCK,
         Scope.ECONOMY_READ,
+        Scope.MATCH_READ,
+        Scope.MATCH_OPS,
     ],
     Role.REVIEWER: [
         Scope.CONTENT_READ,
@@ -104,6 +112,9 @@ ROLE_SCOPES: dict[Role, list[Scope]] = {
         Scope.ACHIEVEMENTS_READ,
         Scope.ACHIEVEMENTS_UNLOCK,
         Scope.ECONOMY_READ,
+        Scope.MATCH_READ,
+        Scope.MATCH_WRITE,
+        Scope.MATCH_OPS,
     ],
 }
 

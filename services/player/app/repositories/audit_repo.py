@@ -77,6 +77,23 @@ ACTION_ECONOMY_WALLET_STATS_QUERY = "economy_wallet_stats_query"
 ACTION_ECONOMY_TRENDS_QUERY = "economy_trends_query"
 ACTION_ECONOMY_TOP_TRADERS_QUERY = "economy_top_traders_query"
 
+# 匹配系统相关动作
+ACTION_MATCH_QUEUE_JOIN = "match_queue_join"
+ACTION_MATCH_QUEUE_LEAVE = "match_queue_leave"
+ACTION_MATCH_ROOM_CREATE = "match_room_create"
+ACTION_MATCH_ROOM_READY = "match_room_ready"
+ACTION_MATCH_RESULT_SUBMIT = "match_result_submit"
+ACTION_MATCH_SEASON_CREATE = "match_season_create"
+ACTION_MATCH_SEASON_STATUS_UPDATE = "match_season_status_update"
+ACTION_MATCH_RATING_QUERY = "match_rating_query"
+ACTION_MATCH_HISTORY_QUERY = "match_history_query"
+
+RESOURCE_MATCH_SEASON = "match_season"
+RESOURCE_MATCH_QUEUE = "match_queue"
+RESOURCE_MATCH_ROOM = "match_room"
+RESOURCE_MATCH_RESULT = "match_result"
+RESOURCE_PLAYER_RATING = "player_rating"
+
 RESOURCE_ECONOMY = "economy"
 
 RESOURCE_PLAYER = "player"

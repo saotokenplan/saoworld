@@ -25,6 +25,9 @@ from app.core.deps import (
     RequireCollabQuestReadScope,
     RequireCollabQuestWriteScope,
     RequireEconomyReadScope,
+    RequireMatchReadScope,
+    RequireMatchWriteScope,
+    RequireMatchOpsScope,
     UserPayload,
 )
 from app.core.errors import PlayerErrorCodes, raise_player_error
@@ -63,6 +66,10 @@ from app.core.metrics import (
     record_guild_war_participant_joined,
     record_collab_quest_created,
     record_collab_quest_completed,
+    record_match_queue_joined,
+    record_match_queue_left,
+    record_match_result_submitted,
+    record_match_rating_change,
 )
 from app.repositories.audit_repo import (
     ACTION_ACHIEVEMENT_CREATE,
@@ -133,12 +140,25 @@ from app.repositories.audit_repo import (
     RESOURCE_GUILD_WAR_PARTICIPANT,
     RESOURCE_COLLAB_QUEST,
     RESOURCE_ECONOMY,
+    RESOURCE_MATCH_SEASON,
+    RESOURCE_MATCH_QUEUE,
+    RESOURCE_MATCH_ROOM,
+    RESOURCE_MATCH_RESULT,
+    RESOURCE_PLAYER_RATING,
     ACTION_ECONOMY_OVERVIEW_QUERY,
     ACTION_ECONOMY_TRADE_STATS_QUERY,
     ACTION_ECONOMY_AUCTION_STATS_QUERY,
     ACTION_ECONOMY_WALLET_STATS_QUERY,
     ACTION_ECONOMY_TRENDS_QUERY,
     ACTION_ECONOMY_TOP_TRADERS_QUERY,
+    ACTION_MATCH_QUEUE_JOIN,
+    ACTION_MATCH_QUEUE_LEAVE,
+    ACTION_MATCH_ROOM_READY,
+    ACTION_MATCH_RESULT_SUBMIT,
+    ACTION_MATCH_SEASON_CREATE,
+    ACTION_MATCH_SEASON_STATUS_UPDATE,
+    ACTION_MATCH_RATING_QUERY,
+    ACTION_MATCH_HISTORY_QUERY,
     AuditRepository,
 )
 from app.repositories.achievement_repo import (
@@ -162,6 +182,14 @@ from app.repositories.wallet_repo import WalletRepository
 from app.repositories.guild_war_repo import GuildWarRepository
 from app.repositories.friend_collab_quest_repo import FriendCollabQuestRepository
 from app.repositories.economic_repo import EconomicRepository
+from app.repositories.match_repo import (
+    MatchSeasonRepository,
+    PlayerRatingRepository,
+    MatchQueueRepository,
+    MatchRoomRepository,
+    MatchResultRepository,
+    calculate_rating_change,
+)
 from app.schemas.player import (
     AcceptQuestRequest,
     AchievementDefinitionListResponse,
@@ -268,6 +296,23 @@ from app.schemas.player import (
     WalletStatsItem,
     EconomicTrendPoint,
     TopTraderItem,
+    MatchTier,
+    MatchMode,
+    MatchQueueStatus,
+    MatchRoomStatus,
+    MatchSeasonStatus,
+    PlayerRatingResponse,
+    MatchQueueResponse,
+    MatchRoomResponse,
+    MatchResultResponse,
+    MatchSeasonResponse,
+    JoinMatchQueueRequest,
+    LeaveMatchQueueRequest,
+    SubmitMatchResultRequest,
+    CreateMatchSeasonRequest,
+    UpdateMatchSeasonStatusRequest,
+    MatchLeaderboardItem,
+    MatchLeaderboardResponse,
 )
 
 router = APIRouter()
@@ -7353,7 +7398,7 @@ async def get_economic_trends(
 async def get_top_traders(
     request: Request,
     days: int = Query(7, ge=1, le=365),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     current_user: UserPayload = RequireEconomyReadScope,
@@ -7378,7 +7423,7 @@ async def get_top_traders(
     except Exception:
         raise_player_error(
             PlayerErrorCodes.ECONOMY_STATS_QUERY_FAILED,
-            "活跃交易者查询失败",
+            "交易排行查询失败",
             request_id,
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
@@ -7386,6 +7431,920 @@ async def get_top_traders(
     return EnvelopeResponse(
         request_id=request_id,
         data={"items": items, "total": total},
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+# === 匹配系统 API ===
+
+
+@router.get(
+    "/player/match/rating",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "No active season"},
+    },
+    tags=["match"],
+)
+async def get_my_rating(
+    request: Request,
+    current_user: UserPayload = RequireMatchReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[PlayerRatingResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_match_rating")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    season_repo = MatchSeasonRepository(db)
+    current_season = await season_repo.get_current_season()
+    if current_season is None:
+        raise_player_error(
+            PlayerErrorCodes.NO_ACTIVE_SEASON,
+            "当前没有活跃的赛季",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    rating_repo = PlayerRatingRepository(db)
+    rating = await rating_repo.get_or_create_rating(player_uuid, current_season.season_id)
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_MATCH_RATING_QUERY,
+        resource_type=RESOURCE_PLAYER_RATING,
+        resource_id=rating.rating_id,
+        request_payload_jsonb={"season_id": str(current_season.season_id)},
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=PlayerRatingResponse.model_validate(rating),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/match/queue/join",
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "No active season"},
+        409: {"description": "Already in queue"},
+    },
+    tags=["match"],
+)
+async def join_match_queue(
+    body: JoinMatchQueueRequest,
+    request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    current_user: UserPayload = RequireMatchWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[MatchQueueResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_match_queue_join")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    season_repo = MatchSeasonRepository(db)
+    current_season = await season_repo.get_current_season()
+    if current_season is None:
+        raise_player_error(
+            PlayerErrorCodes.NO_ACTIVE_SEASON,
+            "当前没有活跃的赛季",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    queue_repo = MatchQueueRepository(db)
+    in_queue = await queue_repo.is_player_in_queue(player_uuid, current_season.season_id)
+    if in_queue:
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_ALREADY_IN_QUEUE,
+            "玩家已在匹配队列中",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    rating_repo = PlayerRatingRepository(db)
+    rating = await rating_repo.get_or_create_rating(player_uuid, current_season.season_id)
+
+    player_repo = PlayerRepository(db)
+    player = await player_repo.get_player_by_id(player_uuid)
+    player_level = player.level if player else 1
+
+    queue_item = await queue_repo.join_queue(
+        player_id=player_uuid,
+        season_id=current_season.season_id,
+        match_mode=body.match_mode.value,
+        tier=rating.tier,
+        division=rating.division,
+        player_level=player_level,
+    )
+
+    record_match_queue_joined(str(player_uuid), body.match_mode.value)
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_MATCH_QUEUE_JOIN,
+        resource_type=RESOURCE_MATCH_QUEUE,
+        resource_id=queue_item.queue_id,
+        request_payload_jsonb={
+            "season_id": str(current_season.season_id),
+            "match_mode": body.match_mode.value,
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=MatchQueueResponse.model_validate(queue_item),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/match/queue/leave",
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Not in queue"},
+    },
+    tags=["match"],
+)
+async def leave_match_queue(
+    body: LeaveMatchQueueRequest,
+    request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    current_user: UserPayload = RequireMatchWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[MatchQueueResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_match_queue_leave")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    season_repo = MatchSeasonRepository(db)
+    current_season = await season_repo.get_current_season()
+    if current_season is None:
+        raise_player_error(
+            PlayerErrorCodes.NO_ACTIVE_SEASON,
+            "当前没有活跃的赛季",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    queue_repo = MatchQueueRepository(db)
+    queue_item = await queue_repo.leave_queue(player_uuid, current_season.season_id)
+    if queue_item is None:
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_NOT_IN_QUEUE,
+            "玩家不在匹配队列中",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    record_match_queue_left(str(player_uuid), queue_item.match_mode)
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_MATCH_QUEUE_LEAVE,
+        resource_type=RESOURCE_MATCH_QUEUE,
+        resource_id=queue_item.queue_id,
+        request_payload_jsonb={
+            "season_id": str(current_season.season_id),
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=MatchQueueResponse.model_validate(queue_item),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/match/queue/status",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["match"],
+)
+async def get_match_queue_status(
+    request: Request,
+    current_user: UserPayload = RequireMatchReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[MatchQueueResponse | None]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_match_queue_status")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    season_repo = MatchSeasonRepository(db)
+    current_season = await season_repo.get_current_season()
+    if current_season is None:
+        raise_player_error(
+            PlayerErrorCodes.NO_ACTIVE_SEASON,
+            "当前没有活跃的赛季",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    queue_repo = MatchQueueRepository(db)
+    queue_item = await queue_repo.get_player_queue_status(player_uuid, current_season.season_id)
+
+    data = MatchQueueResponse.model_validate(queue_item) if queue_item else None
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=data,
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/match/rooms/{room_id}",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Room not found"},
+    },
+    tags=["match"],
+)
+async def get_match_room(
+    room_id: uuid.UUID,
+    request: Request,
+    current_user: UserPayload = RequireMatchReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[MatchRoomResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_match_room")
+
+    room_repo = MatchRoomRepository(db)
+    room = await room_repo.get_room(room_id)
+    if room is None:
+        raise_player_error(
+            PlayerErrorCodes.MATCH_ROOM_NOT_FOUND,
+            "对战房间不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=MatchRoomResponse.model_validate(room),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/match/rooms/{room_id}/ready",
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Room not found"},
+        409: {"description": "Invalid room status"},
+    },
+    tags=["match"],
+)
+async def match_room_ready(
+    room_id: uuid.UUID,
+    request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    current_user: UserPayload = RequireMatchWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[MatchRoomResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_match_room_ready")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    room_repo = MatchRoomRepository(db)
+    room = await room_repo.get_room(room_id)
+    if room is None:
+        raise_player_error(
+            PlayerErrorCodes.MATCH_ROOM_NOT_FOUND,
+            "对战房间不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if room.status not in ("waiting", "ready"):
+        raise_player_error(
+            PlayerErrorCodes.MATCH_ROOM_INVALID_STATUS,
+            f"当前房间状态 {room.status} 不允许准备",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    if room.player1_id != player_uuid and room.player2_id != player_uuid:
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_NOT_IN_ROOM,
+            "玩家不在该对战房间中",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    room = await room_repo.player_ready(room_id, player_uuid)
+    assert room is not None
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_MATCH_ROOM_READY,
+        resource_type=RESOURCE_MATCH_ROOM,
+        resource_id=room.room_id,
+        request_payload_jsonb={"room_id": str(room_id)},
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=MatchRoomResponse.model_validate(room),
+        trace_id=trace_id,
+    )
+
+
+@router.post(
+    "/player/match/rooms/{room_id}/result",
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "Room not found"},
+        409: {"description": "Already completed or invalid status"},
+    },
+    tags=["match"],
+)
+async def submit_match_result(
+    room_id: uuid.UUID,
+    body: SubmitMatchResultRequest,
+    request: Request,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    current_user: UserPayload = RequireMatchWriteScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[MatchResultResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_match_result_submit")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    room_repo = MatchRoomRepository(db)
+    room = await room_repo.get_room(room_id)
+    if room is None:
+        raise_player_error(
+            PlayerErrorCodes.MATCH_ROOM_NOT_FOUND,
+            "对战房间不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if room.status == "completed":
+        raise_player_error(
+            PlayerErrorCodes.MATCH_ALREADY_COMPLETED,
+            "对战已完成，无法重复提交结果",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    if room.player1_id != player_uuid and room.player2_id != player_uuid:
+        raise_player_error(
+            PlayerErrorCodes.PLAYER_NOT_IN_ROOM,
+            "玩家不在该对战房间中",
+            request_id,
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    room = await room_repo.submit_result(room_id, body.winner_id, body.match_data)
+    assert room is not None
+
+    winner_id = room.winner_id
+    assert winner_id is not None
+    loser_id = room.player2_id if winner_id == room.player1_id else room.player1_id
+
+    rating_repo = PlayerRatingRepository(db)
+    winner_rating = await rating_repo.get_player_rating(winner_id, room.season_id)
+    loser_rating = await rating_repo.get_player_rating(loser_id, room.season_id)
+
+    if winner_rating is None or loser_rating is None:
+        winner_rating = await rating_repo.get_or_create_rating(winner_id, room.season_id)
+        loser_rating = await rating_repo.get_or_create_rating(loser_id, room.season_id)
+
+    winner_gain, loser_loss = calculate_rating_change(
+        winner_rating.tier, winner_rating.division,
+        loser_rating.tier, loser_rating.division,
+    )
+
+    winner_tier_before = winner_rating.tier
+    winner_division_before = winner_rating.division
+    loser_tier_before = loser_rating.tier
+    loser_division_before = loser_rating.division
+
+    await rating_repo.update_rating_after_match(
+        winner_id, room.season_id, is_winner=True, rating_change=winner_gain
+    )
+    await rating_repo.update_rating_after_match(
+        loser_id, room.season_id, is_winner=False, rating_change=loser_loss
+    )
+
+    winner_after = await rating_repo.get_player_rating(winner_id, room.season_id)
+    loser_after = await rating_repo.get_player_rating(loser_id, room.season_id)
+
+    result_repo = MatchResultRepository(db)
+    result = await result_repo.create_result(
+        room_id=room.room_id,
+        season_id=room.season_id,
+        match_mode=room.match_mode,
+        winner_id=winner_id,
+        loser_id=loser_id,
+        is_draw=False,
+        winner_rating_change=winner_gain,
+        loser_rating_change=-loser_loss,
+        winner_tier_before=winner_tier_before,
+        winner_division_before=winner_division_before,
+        winner_tier_after=winner_after.tier if winner_after else winner_tier_before,
+        winner_division_after=winner_after.division if winner_after else winner_division_before,
+        loser_tier_before=loser_tier_before,
+        loser_division_before=loser_division_before,
+        loser_tier_after=loser_after.tier if loser_after else loser_tier_before,
+        loser_division_after=loser_after.division if loser_after else loser_division_before,
+        submitted_by=player_uuid,
+        match_data=body.match_data,
+    )
+
+    record_match_result_submitted(room.match_mode)
+    record_match_rating_change(str(winner_id))
+    record_match_rating_change(str(loser_id))
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_MATCH_RESULT_SUBMIT,
+        resource_type=RESOURCE_MATCH_RESULT,
+        resource_id=result.result_id,
+        request_payload_jsonb={
+            "room_id": str(room_id),
+            "winner_id": str(body.winner_id),
+        },
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=MatchResultResponse.model_validate(result),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/match/history",
+    responses={
+        401: {"description": "Unauthorized"},
+    },
+    tags=["match"],
+)
+async def get_match_history(
+    request: Request,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireMatchReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[list[MatchResultResponse]]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_match_history")
+
+    try:
+        player_uuid = uuid.UUID(current_user.user_id)
+    except ValueError:
+        raise_player_error(
+            PlayerErrorCodes.INVALID_PLAYER_ID,
+            "无效的玩家ID格式",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    result_repo = MatchResultRepository(db)
+    results, total = await result_repo.get_player_match_history(
+        player_uuid, limit=limit, offset=offset
+    )
+
+    result_responses = [MatchResultResponse.model_validate(r) for r in results]
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=trace_id or _make_request_id("trace"),
+        request_id=request_id,
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_MATCH_HISTORY_QUERY,
+        resource_type=RESOURCE_MATCH_RESULT,
+        resource_id=player_uuid,
+        request_payload_jsonb={"limit": limit, "offset": offset},
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=result_responses,
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@router.get(
+    "/player/match/leaderboard",
+    responses={
+        401: {"description": "Unauthorized"},
+        404: {"description": "No active season"},
+    },
+    tags=["match"],
+)
+async def get_match_leaderboard(
+    request: Request,
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    current_user: UserPayload = RequireMatchReadScope,
+    db: AsyncSession = Depends(get_db),
+) -> EnvelopeResponse[MatchLeaderboardResponse]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_match_leaderboard")
+
+    season_repo = MatchSeasonRepository(db)
+    current_season = await season_repo.get_current_season()
+    if current_season is None:
+        raise_player_error(
+            PlayerErrorCodes.NO_ACTIVE_SEASON,
+            "当前没有活跃的赛季",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    rating_repo = PlayerRatingRepository(db)
+    ratings, total = await rating_repo.get_leaderboard(
+        current_season.season_id, limit=limit, offset=offset
+    )
+
+    items: list[MatchLeaderboardItem] = []
+    player_repo = PlayerRepository(db)
+    for idx, rating in enumerate(ratings):
+        player = await player_repo.get_player_by_id(rating.player_id)
+        player_name = player.display_name if player else ""
+        total_matches = rating.wins + rating.losses + rating.draws
+        win_rate = rating.wins / total_matches if total_matches > 0 else 0.0
+        items.append(
+            MatchLeaderboardItem(
+                player_id=rating.player_id,
+                player_name=player_name,
+                tier=MatchTier(rating.tier),
+                division=rating.division,
+                rating_points=rating.rating_points,
+                wins=rating.wins,
+                losses=rating.losses,
+                win_rate=round(win_rate, 4),
+                rank=offset + idx + 1,
+            )
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=MatchLeaderboardResponse(items=items, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+# === 运营侧匹配系统 API ===
+
+
+@ops_router.get(
+    "/match/seasons",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["ops-match"],
+)
+async def list_match_seasons(
+    request: Request,
+    status_filter: MatchSeasonStatus | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireMatchOpsScope,
+) -> EnvelopeResponse[list[MatchSeasonResponse]]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_ops_match_seasons")
+
+    season_repo = MatchSeasonRepository(db)
+    seasons, total = await season_repo.list_seasons(
+        status=status_filter.value if status_filter else None,
+        limit=limit,
+        offset=offset,
+    )
+
+    season_responses = [MatchSeasonResponse.model_validate(s) for s in seasons]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=season_responses,
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.post(
+    "/match/seasons",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"description": "Invalid request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        409: {"description": "Season already exists"},
+    },
+    tags=["ops-match"],
+)
+async def create_match_season(
+    body: CreateMatchSeasonRequest,
+    request: Request,
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireMatchOpsScope,
+) -> EnvelopeResponse[MatchSeasonResponse]:
+    request_id = _make_request_id("req_ops_match_season_create")
+
+    season_repo = MatchSeasonRepository(db)
+    existing = await season_repo.get_season_by_key(body.season_key)
+    if existing is not None:
+        raise_player_error(
+            PlayerErrorCodes.MATCH_SEASON_ALREADY_EXISTS,
+            f"赛季 {body.season_key} 已存在",
+            request_id,
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    season = await season_repo.create_season(
+        season_key=body.season_key,
+        season_name=body.season_name,
+        start_at=body.start_at,
+        end_at=body.end_at,
+        description=body.description,
+        reward_config=body.reward_config,
+    )
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_MATCH_SEASON_CREATE,
+        resource_type=RESOURCE_MATCH_SEASON,
+        resource_id=season.season_id,
+        request_id=request_id,
+        request_payload_jsonb=body.model_dump(mode="json"),
+        result_status=201,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=MatchSeasonResponse.model_validate(season),
+        trace_id=x_trace_id,
+    )
+
+
+@ops_router.patch(
+    "/match/seasons/{season_id}/status",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        404: {"description": "Season not found"},
+        409: {"description": "Invalid status transition"},
+    },
+    tags=["ops-match"],
+)
+async def update_match_season_status(
+    season_id: uuid.UUID,
+    body: UpdateMatchSeasonStatusRequest,
+    request: Request,
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireMatchOpsScope,
+) -> EnvelopeResponse[MatchSeasonResponse]:
+    request_id = _make_request_id("req_ops_match_season_status")
+
+    season_repo = MatchSeasonRepository(db)
+    season = await season_repo.update_season_status(season_id, body.status.value)
+    if season is None:
+        raise_player_error(
+            PlayerErrorCodes.MATCH_SEASON_NOT_FOUND,
+            "赛季不存在",
+            request_id,
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        trace_id=x_trace_id or _make_request_id("trace"),
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_MATCH_SEASON_STATUS_UPDATE,
+        resource_type=RESOURCE_MATCH_SEASON,
+        resource_id=season.season_id,
+        request_id=request_id,
+        request_payload_jsonb={"status": body.status.value},
+        result_status=200,
+    )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=MatchSeasonResponse.model_validate(season),
+        trace_id=x_trace_id,
+    )
+
+
+@ops_router.get(
+    "/match/queues",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["ops-match"],
+)
+async def list_match_queues(
+    request: Request,
+    season_id: uuid.UUID | None = Query(default=None),
+    status_filter: MatchQueueStatus | None = Query(default=None),
+    match_mode: MatchMode | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireMatchOpsScope,
+) -> EnvelopeResponse[list[MatchQueueResponse]]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_ops_match_queues")
+
+    queue_repo = MatchQueueRepository(db)
+    queues, total = await queue_repo.list_queues(
+        season_id=season_id,
+        status=status_filter.value if status_filter else None,
+        match_mode=match_mode.value if match_mode else None,
+        limit=limit,
+        offset=offset,
+    )
+
+    queue_responses = [MatchQueueResponse.model_validate(q) for q in queues]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=queue_responses,
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.get(
+    "/match/rooms",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["ops-match"],
+)
+async def list_match_rooms(
+    request: Request,
+    season_id: uuid.UUID | None = Query(default=None),
+    status_filter: MatchRoomStatus | None = Query(default=None),
+    player_id: uuid.UUID | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireMatchOpsScope,
+) -> EnvelopeResponse[list[MatchRoomResponse]]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_ops_match_rooms")
+
+    room_repo = MatchRoomRepository(db)
+    rooms, total = await room_repo.list_rooms(
+        season_id=season_id,
+        status=status_filter.value if status_filter else None,
+        player_id=player_id,
+        limit=limit,
+        offset=offset,
+    )
+
+    room_responses = [MatchRoomResponse.model_validate(r) for r in rooms]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=room_responses,
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.get(
+    "/match/results",
+    responses={
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["ops-match"],
+)
+async def list_match_results(
+    request: Request,
+    season_id: uuid.UUID | None = Query(default=None),
+    player_id: uuid.UUID | None = Query(default=None),
+    match_mode: MatchMode | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireMatchOpsScope,
+) -> EnvelopeResponse[list[MatchResultResponse]]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_ops_match_results")
+
+    result_repo = MatchResultRepository(db)
+    results, total = await result_repo.list_results(
+        season_id=season_id,
+        player_id=player_id,
+        match_mode=match_mode.value if match_mode else None,
+        limit=limit,
+        offset=offset,
+    )
+
+    result_responses = [MatchResultResponse.model_validate(r) for r in results]
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=result_responses,
         meta=PaginatedMeta(total=total, limit=limit, offset=offset),
         trace_id=trace_id,
     )

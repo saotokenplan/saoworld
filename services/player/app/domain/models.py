@@ -781,3 +781,264 @@ class WalletTransaction(Base):
         Index("wallet_transactions_player_idx", "player_id", "created_at"),
         Index("wallet_transactions_wallet_idx", "wallet_id", "created_at"),
     )
+
+
+class MatchSeason(Base):
+    """匹配赛季表。"""
+
+    __tablename__ = "match_seasons"
+
+    season_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    season_key: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    season_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="upcoming", server_default="upcoming", index=True
+    )
+    start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    end_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reward_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    schema_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('upcoming', 'active', 'ended', 'archived')",
+            name="match_seasons_status_check",
+        ),
+        Index("match_seasons_status_idx", "status"),
+        Index("match_seasons_time_idx", "start_at", "end_at"),
+    )
+
+
+class PlayerRating(Base):
+    """玩家段位表。"""
+
+    __tablename__ = "player_ratings"
+
+    rating_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    season_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    tier: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="bronze", server_default="bronze", index=True
+    )
+    division: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=5, server_default="5"
+    )
+    rating_points: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    wins: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    losses: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    draws: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    win_streak: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    best_tier: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="bronze", server_default="bronze"
+    )
+    best_division: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=5, server_default="5"
+    )
+    schema_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "tier IN ('bronze', 'silver', 'gold', 'platinum', 'diamond', 'master', 'challenger')",
+            name="player_ratings_tier_check",
+        ),
+        CheckConstraint("division >= 1 AND division <= 5", name="player_ratings_division_check"),
+        CheckConstraint("rating_points >= 0", name="player_ratings_points_check"),
+        CheckConstraint("wins >= 0", name="player_ratings_wins_check"),
+        CheckConstraint("losses >= 0", name="player_ratings_losses_check"),
+        CheckConstraint("draws >= 0", name="player_ratings_draws_check"),
+        CheckConstraint("win_streak >= 0", name="player_ratings_win_streak_check"),
+        Index("player_ratings_player_season_idx", "player_id", "season_id", unique=True),
+        Index("player_ratings_season_tier_idx", "season_id", "tier"),
+    )
+
+
+class MatchQueue(Base):
+    """匹配队列表。"""
+
+    __tablename__ = "match_queues"
+
+    queue_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    season_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    match_mode: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="solo_1v1", server_default="solo_1v1", index=True
+    )
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="queuing", server_default="queuing", index=True
+    )
+    tier: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="bronze", server_default="bronze"
+    )
+    division: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=5, server_default="5"
+    )
+    player_level: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
+    joined_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    matched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    match_room_id: Mapped[uuid.UUID | None] = mapped_column(UUIDType(), nullable=True, index=True)
+    timeout_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    schema_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('queuing', 'matched', 'cancelled', 'timeout')",
+            name="match_queues_status_check",
+        ),
+        CheckConstraint(
+            "match_mode IN ('solo_1v1', 'team_2v2', 'team_3v3')",
+            name="match_queues_mode_check",
+        ),
+        CheckConstraint(
+            "tier IN ('bronze', 'silver', 'gold', 'platinum', 'diamond', 'master', 'challenger')",
+            name="match_queues_tier_check",
+        ),
+        CheckConstraint("division >= 1 AND division <= 5", name="match_queues_division_check"),
+        CheckConstraint("player_level >= 1", name="match_queues_level_check"),
+        Index("match_queues_player_status_idx", "player_id", "status"),
+        Index("match_queues_mode_status_idx", "match_mode", "status"),
+        Index("match_queues_joined_idx", "joined_at"),
+    )
+
+
+class MatchRoom(Base):
+    """对战房间表。"""
+
+    __tablename__ = "match_rooms"
+
+    room_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    season_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    match_mode: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="solo_1v1", server_default="solo_1v1", index=True
+    )
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="waiting", server_default="waiting", index=True
+    )
+    player1_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    player2_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    player1_ready: Mapped[bool] = mapped_column(
+        nullable=False, default=False, server_default="false"
+    )
+    player2_ready: Mapped[bool] = mapped_column(
+        nullable=False, default=False, server_default="false"
+    )
+    winner_id: Mapped[uuid.UUID | None] = mapped_column(UUIDType(), nullable=True, index=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    match_data_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    schema_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('waiting', 'ready', 'in_progress', 'completed', 'cancelled')",
+            name="match_rooms_status_check",
+        ),
+        CheckConstraint(
+            "match_mode IN ('solo_1v1', 'team_2v2', 'team_3v3')",
+            name="match_rooms_mode_check",
+        ),
+        CheckConstraint(
+            "duration_seconds IS NULL OR duration_seconds >= 0",
+            name="match_rooms_duration_check",
+        ),
+        Index("match_rooms_season_status_idx", "season_id", "status"),
+        Index("match_rooms_player1_idx", "player1_id", "created_at"),
+        Index("match_rooms_player2_idx", "player2_id", "created_at"),
+    )
+
+
+class MatchResult(Base):
+    """对战结果表。"""
+
+    __tablename__ = "match_results"
+
+    result_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    room_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, unique=True)
+    season_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    match_mode: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="solo_1v1", server_default="solo_1v1", index=True
+    )
+    winner_id: Mapped[uuid.UUID | None] = mapped_column(UUIDType(), nullable=True, index=True)
+    loser_id: Mapped[uuid.UUID | None] = mapped_column(UUIDType(), nullable=True, index=True)
+    is_draw: Mapped[bool] = mapped_column(
+        nullable=False, default=False, server_default="false"
+    )
+    winner_rating_change: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    loser_rating_change: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    winner_tier_before: Mapped[str] = mapped_column(String(32), nullable=False)
+    winner_division_before: Mapped[int] = mapped_column(Integer, nullable=False)
+    winner_tier_after: Mapped[str] = mapped_column(String(32), nullable=False)
+    winner_division_after: Mapped[int] = mapped_column(Integer, nullable=False)
+    loser_tier_before: Mapped[str] = mapped_column(String(32), nullable=False)
+    loser_division_before: Mapped[int] = mapped_column(Integer, nullable=False)
+    loser_tier_after: Mapped[str] = mapped_column(String(32), nullable=False)
+    loser_division_after: Mapped[int] = mapped_column(Integer, nullable=False)
+    match_data_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    submitted_by: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False)
+    schema_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "match_mode IN ('solo_1v1', 'team_2v2', 'team_3v3')",
+            name="match_results_mode_check",
+        ),
+        Index("match_results_season_idx", "season_id", "created_at"),
+        Index("match_results_winner_idx", "winner_id", "created_at"),
+        Index("match_results_loser_idx", "loser_id", "created_at"),
+    )

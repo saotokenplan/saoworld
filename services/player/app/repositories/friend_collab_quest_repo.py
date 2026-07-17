@@ -287,7 +287,7 @@ class FriendCollabQuestRepository:
         stmt = select(FriendCollabQuest).where(
             and_(
                 FriendCollabQuest.status.in_(["pending_invite", "active"]),
-                FriendCollabQuest.expires_at is not None,
+                FriendCollabQuest.expires_at.is_not(None),
                 FriendCollabQuest.expires_at < now,
             )
         )
