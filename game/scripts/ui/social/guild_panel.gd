@@ -11,6 +11,7 @@ signal close_pressed
 @onready var member_list: ItemList = $TabContainer/MembersTab/VBoxContainer/MemberList
 @onready var refresh_button: Button = $TabContainer/MembersTab/VBoxContainer/RefreshButton
 @onready var guild_quest_panel: Control = $TabContainer/QuestTab/GuildQuestPanel
+@onready var guild_war_panel: Control = $TabContainer/WarTab/GuildWarPanel
 
 var _current_guild_id: String = ""
 
@@ -23,12 +24,15 @@ func _ready() -> void:
 
 func set_guild_id(guild_id: String) -> void:
 	_current_guild_id = guild_id
+	if guild_war_panel:
+		guild_war_panel.set_guild_id(guild_id)
 
 func refresh() -> void:
 	if _current_guild_id != "":
 		GuildManager.fetch_guild_info(_current_guild_id)
 		GuildManager.fetch_guild_members(_current_guild_id)
 		GuildManager.fetch_guild_quests(_current_guild_id)
+		guild_war_panel.refresh()
 
 func _on_close_pressed() -> void:
 	close_pressed.emit()

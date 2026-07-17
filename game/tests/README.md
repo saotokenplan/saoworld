@@ -35,7 +35,7 @@
 | test_content_manager.gd | ContentManager 内容更新管理 | 22 |
 | test_save_manager.gd | SaveManager 存档系统管理（含异步存档、缓存机制） | 24 |
 | test_player_manager.gd | PlayerManager 玩家信息管理（含索引优化、声望预排序、并行请求） | 41 |
-| test_friend_manager.gd | FriendManager 好友系统管理 | 15 |
+| test_friend_manager.gd | FriendManager 好友系统管理（含协作任务方法、信号、参数校验） | 31 |
 | test_private_chat_manager.gd | PrivateChatManager 私聊系统管理 | 11 |
 | test_combat_manager.gd | CombatManager 战斗系统管理 | 13 |
 | test_npc_dialog.gd | NPCDialog 对话交互组件 | 13 |
@@ -63,6 +63,9 @@
 | test_world_map_navigation.gd | WorldMap 区域导航与进入 | 5 |
 | test_enemy.gd | Enemy 怪物实体 | 8 |
 | test_personal_center.gd | PersonalCenter 个人中心 | 1 |
+| test_guild_manager.gd | GuildManager 公会管理（含公会战 API 方法、信号、参数校验） | 25 |
+| test_guild_war_panel.gd | GuildWarPanel 公会战争面板（信号、状态机、按钮、记分板） | 21 |
+| test_friend_collab_quest_panel.gd | FriendCollabQuestPanel 好友协作任务面板（信号、状态机、按钮） | 21 |
 
 ## 测试覆盖范围
 
@@ -78,7 +81,7 @@
 - **InventoryManager**：背包数据管理、物品添加/移除/使用
 - **SaveManager**：存档读写、自动保存、备份管理、异步存档（Thread）、存档信息缓存（TTL）、缓存失效机制
 - **FeedbackManager**：反馈提交管理、类型/优先级验证、快捷方法（bug/suggestion/question）、待处理请求追踪、响应解析
-- **FriendManager**：好友列表/待处理请求管理、信号声明、好友关系判定、好友计数
+- **FriendManager**：好友列表/待处理请求管理、信号声明、好友关系判定、好友计数、协作任务方法参数校验、协作任务信号声明、协作任务 getter 副本隔离、reset 清理协作任务状态
 - **PrivateChatManager**：未读消息缓存管理、信号声明、加载状态、未读数查询
 - **EquipmentPanel**：装备列表显示、属性统计、信号声明（back_pressed/equip_item/unequip_item）
 
@@ -98,6 +101,8 @@
 - **WorldMap**：区域渲染、状态标识、点击选择、详情展示、区域导航
 - **ReputationPanel**：声望列表、详情展示、信号声明
 - **FeedbackPanel**：反馈表单、输入验证、长度限制、加载状态、消息显示、表单清空
+- **GuildWarPanel**：信号声明、初始状态、clear 重置、类型/状态本地化、状态机按钮（declared/accepted/in_progress/completed/cancelled）、详情展示、列表渲染、记分板渲染
+- **FriendCollabQuestPanel**：信号声明、初始状态、clear 重置、类型/状态本地化、状态机按钮（pending_invite/active/completed/failed/expired）、详情展示、列表渲染、进度格式化、奖励格式化
 
 ### 场景与角色测试
 - **Player**：初始状态、重置状态、移动状态信号、输入方向、配置加载

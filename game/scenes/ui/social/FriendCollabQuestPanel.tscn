@@ -1,0 +1,137 @@
+[gd_scene load_steps=2 format=3 uid="uid://friendcollabquestpanel001"]
+
+[ext_resource type="Script" path="res://scripts/ui/social/friend_collab_quest_panel.gd" id="1_fcqp"]
+
+[node name="FriendCollabQuestPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_fcqp")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "好友协作任务"
+
+[node name="ModeContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ActiveButton" type="Button" parent="VBoxContainer/ModeContainer"]
+layout_mode = 2
+text = "进行中"
+toggle_mode = true
+button_pressed = true
+
+[node name="PendingButton" type="Button" parent="VBoxContainer/ModeContainer"]
+layout_mode = 2
+text = "待处理"
+toggle_mode = true
+
+[node name="HistoryButton" type="Button" parent="VBoxContainer/ModeContainer"]
+layout_mode = 2
+text = "历史"
+toggle_mode = true
+
+[node name="QuestList" type="ItemList" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 120)
+
+[node name="QuestDetail" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="QuestTitle" type="Label" parent="VBoxContainer/QuestDetail"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "选择任务查看详情"
+
+[node name="QuestType" type="Label" parent="VBoxContainer/QuestDetail"]
+layout_mode = 2
+text = "类型: --"
+
+[node name="QuestStatus" type="Label" parent="VBoxContainer/QuestDetail"]
+layout_mode = 2
+text = "状态: --"
+
+[node name="QuestDescription" type="Label" parent="VBoxContainer/QuestDetail"]
+layout_mode = 2
+autowrap_mode = 1
+text = ""
+
+[node name="QuestProgress" type="Label" parent="VBoxContainer/QuestDetail"]
+layout_mode = 2
+text = "进度: --"
+
+[node name="QuestRewards" type="Label" parent="VBoxContainer/QuestDetail"]
+layout_mode = 2
+text = "奖励: --"
+
+[node name="ActionButtonRow" type="HBoxContainer" parent="VBoxContainer/QuestDetail"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AcceptButton" type="Button" parent="VBoxContainer/QuestDetail/ActionButtonRow"]
+layout_mode = 2
+text = "接受邀请"
+disabled = true
+
+[node name="RejectButton" type="Button" parent="VBoxContainer/QuestDetail/ActionButtonRow"]
+layout_mode = 2
+text = "拒绝邀请"
+disabled = true
+
+[node name="CompleteButton" type="Button" parent="VBoxContainer/QuestDetail/ActionButtonRow"]
+layout_mode = 2
+text = "完成任务"
+disabled = true
+
+[node name="CreateSection" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="CreateLabel" type="Label" parent="VBoxContainer/CreateSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "创建协作任务"
+
+[node name="FriendIdInput" type="LineEdit" parent="VBoxContainer/CreateSection"]
+layout_mode = 2
+placeholder_text = "好友ID"
+
+[node name="TitleInput" type="LineEdit" parent="VBoxContainer/CreateSection"]
+layout_mode = 2
+placeholder_text = "任务标题"
+
+[node name="TypeInput" type="LineEdit" parent="VBoxContainer/CreateSection"]
+layout_mode = 2
+placeholder_text = "类型 (hunt/explore/collect/escort/challenge)"
+
+[node name="DescInput" type="LineEdit" parent="VBoxContainer/CreateSection"]
+layout_mode = 2
+placeholder_text = "任务描述（可选）"
+
+[node name="CreateButton" type="Button" parent="VBoxContainer/CreateSection"]
+layout_mode = 2
+text = "创建协作任务"
+
+[node name="RefreshButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "刷新任务列表"
