@@ -10,11 +10,28 @@ signal guild_quest_progress_updated
 signal guild_quest_reward_claimed
 signal guild_error(error_code: String, message: String)
 
+# 公会战相关信号
+signal guild_wars_loaded
+signal guild_war_history_loaded
+signal guild_war_detail_loaded
+signal guild_war_scoreboard_loaded
+signal guild_war_declared
+signal guild_war_accepted
+signal guild_war_cancelled
+signal guild_war_joined
+signal guild_war_completed
+
 var _guild_info: Dictionary = {}
 var _guild_members: Array = []
 var _guild_quests: Array = []
 var _guild_quest_progress: Dictionary = {}
 var _is_loading: bool = false
+
+# 公会战相关状态
+var _active_wars: Array = []
+var _war_history: Array = []
+var _current_war_detail: Dictionary = {}
+var _war_scoreboard: Dictionary = {}
 
 func _ready() -> void:
 	APIManager.auth_error.connect(_on_auth_error)
@@ -201,6 +218,165 @@ func get_guild_info() -> Dictionary:
 func get_guild_member_count() -> int:
 	return _guild_members.size()
 
+# === 公会战相关 API ===
+
+func declare_war(defender_guild_id: String, war_type: String, reward_config: Dictionary) -> void:
+	if defender_guild_id == "":
+		guild_error.emit("INVALID_GUILD_ID", "目标公会ID不能为空")
+		return
+	if war_type == "":
+		war_type = "territory"
+
+	_set_loading(true)
+	var body: Dictionary = {
+		"defender_guild_id": defender_guild_id,
+		"war_type": war_type,
+		"reward_config": reward_config
+	}
+	var result: Dictionary = APIManager.post("/guild/wars", body)
+
+	if result.get("success", false):
+		_current_war_detail = result.get("data", {})
+		guild_war_declared.emit()
+	else:
+		_handle_error(result)
+
+	_set_loading(false)
+
+func accept_war(war_id: String) -> void:
+	if war_id == "":
+		guild_error.emit("INVALID_WAR_ID", "战争ID不能为空")
+		return
+
+	_set_loading(true)
+	var result: Dictionary = APIManager.post("/guild/wars/%s/accept" % war_id)
+
+	if result.get("success", false):
+		_current_war_detail = result.get("data", {})
+		guild_war_accepted.emit()
+	else:
+		_handle_error(result)
+
+	_set_loading(false)
+
+func cancel_war(war_id: String) -> void:
+	if war_id == "":
+		guild_error.emit("INVALID_WAR_ID", "战争ID不能为空")
+		return
+
+	_set_loading(true)
+	var result: Dictionary = APIManager.post("/guild/wars/%s/cancel" % war_id)
+
+	if result.get("success", false):
+		_current_war_detail = result.get("data", {})
+		guild_war_cancelled.emit()
+	else:
+		_handle_error(result)
+
+	_set_loading(false)
+
+func fetch_active_wars() -> void:
+	_set_loading(true)
+	var result: Dictionary = APIManager.get("/guild/wars/active")
+
+	if result.get("success", false):
+		var data: Dictionary = result.get("data", {})
+		_active_wars = data.get("wars", data.get("items", []))
+		guild_wars_loaded.emit()
+	else:
+		_handle_error(result)
+
+	_set_loading(false)
+
+func fetch_war_history(limit: int = 20, offset: int = 0) -> void:
+	_set_loading(true)
+	var result: Dictionary = APIManager.get("/guild/wars/history?limit=%d&offset=%d" % [limit, offset])
+
+	if result.get("success", false):
+		var data: Dictionary = result.get("data", {})
+		_war_history = data.get("wars", data.get("items", []))
+		guild_war_history_loaded.emit()
+	else:
+		_handle_error(result)
+
+	_set_loading(false)
+
+func fetch_war_detail(war_id: String) -> void:
+	if war_id == "":
+		guild_error.emit("INVALID_WAR_ID", "战争ID不能为空")
+		return
+
+	_set_loading(true)
+	var result: Dictionary = APIManager.get("/guild/wars/%s" % war_id)
+
+	if result.get("success", false):
+		_current_war_detail = result.get("data", {})
+		guild_war_detail_loaded.emit()
+	else:
+		_handle_error(result)
+
+	_set_loading(false)
+
+func join_war(war_id: String, guild_id: String) -> void:
+	if war_id == "" or guild_id == "":
+		guild_error.emit("INVALID_PARAMS", "战争ID和公会ID不能为空")
+		return
+
+	_set_loading(true)
+	var body: Dictionary = {"guild_id": guild_id}
+	var result: Dictionary = APIManager.post("/guild/wars/%s/join" % war_id, body)
+
+	if result.get("success", false):
+		guild_war_joined.emit()
+	else:
+		_handle_error(result)
+
+	_set_loading(false)
+
+func fetch_war_scoreboard(war_id: String) -> void:
+	if war_id == "":
+		guild_error.emit("INVALID_WAR_ID", "战争ID不能为空")
+		return
+
+	_set_loading(true)
+	var result: Dictionary = APIManager.get("/guild/wars/%s/scoreboard" % war_id)
+
+	if result.get("success", false):
+		_war_scoreboard = result.get("data", {})
+		guild_war_scoreboard_loaded.emit()
+	else:
+		_handle_error(result)
+
+	_set_loading(false)
+
+func complete_war(war_id: String) -> void:
+	if war_id == "":
+		guild_error.emit("INVALID_WAR_ID", "战争ID不能为空")
+		return
+
+	_set_loading(true)
+	var result: Dictionary = APIManager.post("/guild/wars/%s/complete" % war_id)
+
+	if result.get("success", false):
+		_current_war_detail = result.get("data", {})
+		guild_war_completed.emit()
+	else:
+		_handle_error(result)
+
+	_set_loading(false)
+
+func get_active_wars() -> Array:
+	return _active_wars.duplicate()
+
+func get_war_history() -> Array:
+	return _war_history.duplicate()
+
+func get_war_detail() -> Dictionary:
+	return _current_war_detail.duplicate()
+
+func get_war_scoreboard() -> Dictionary:
+	return _war_scoreboard.duplicate()
+
 func is_loading() -> bool:
 	return _is_loading
 
@@ -217,4 +393,8 @@ func reset() -> void:
 	_guild_members.clear()
 	_guild_quests.clear()
 	_guild_quest_progress.clear()
+	_active_wars.clear()
+	_war_history.clear()
+	_current_war_detail.clear()
+	_war_scoreboard.clear()
 	_is_loading = false

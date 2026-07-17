@@ -3,11 +3,12 @@ extends Control
 signal close_pressed
 signal friend_selected(friend_id: String)
 
-@onready var friend_list: ItemList = $VBoxContainer/FriendList
-@onready var pending_list: ItemList = $VBoxContainer/PendingList
-@onready var friend_id_input: LineEdit = $VBoxContainer/AddFriendBar/FriendIdInput
-@onready var add_friend_button: Button = $VBoxContainer/AddFriendBar/AddFriendButton
-@onready var close_button: Button = $VBoxContainer/CloseButton
+@onready var friend_list: ItemList = $TabContainer/FriendsTab/VBoxContainer/FriendList
+@onready var pending_list: ItemList = $TabContainer/FriendsTab/VBoxContainer/PendingList
+@onready var friend_id_input: LineEdit = $TabContainer/FriendsTab/VBoxContainer/AddFriendBar/FriendIdInput
+@onready var add_friend_button: Button = $TabContainer/FriendsTab/VBoxContainer/AddFriendBar/AddFriendButton
+@onready var close_button: Button = $TabContainer/FriendsTab/VBoxContainer/CloseButton
+@onready var collab_quest_panel: Control = $TabContainer/CollabTab/FriendCollabQuestPanel
 
 func _ready() -> void:
 	add_friend_button.pressed.connect(_on_add_friend_pressed)
@@ -62,3 +63,5 @@ func update_pending_list(requests: Array) -> void:
 func refresh() -> void:
 	FriendManager.fetch_friends()
 	FriendManager.fetch_pending_requests()
+	if collab_quest_panel:
+		collab_quest_panel.refresh()

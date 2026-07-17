@@ -1,0 +1,113 @@
+[gd_scene load_steps=2 format=3 uid="uid://guildwarpanel001"]
+
+[ext_resource type="Script" path="res://scripts/ui/social/guild_war_panel.gd" id="1_gwp"]
+
+[node name="GuildWarPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_gwp")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "公会战争"
+
+[node name="ModeContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ActiveButton" type="Button" parent="VBoxContainer/ModeContainer"]
+layout_mode = 2
+text = "进行中"
+toggle_mode = true
+button_pressed = true
+
+[node name="HistoryButton" type="Button" parent="VBoxContainer/ModeContainer"]
+layout_mode = 2
+text = "历史"
+toggle_mode = true
+
+[node name="WarList" type="ItemList" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 150)
+
+[node name="WarDetail" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="WarTitle" type="Label" parent="VBoxContainer/WarDetail"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "选择战争查看详情"
+
+[node name="WarStatus" type="Label" parent="VBoxContainer/WarDetail"]
+layout_mode = 2
+text = "状态: --"
+
+[node name="WarType" type="Label" parent="VBoxContainer/WarDetail"]
+layout_mode = 2
+text = "类型: --"
+
+[node name="WarScore" type="Label" parent="VBoxContainer/WarDetail"]
+layout_mode = 2
+text = "比分: 0 : 0"
+
+[node name="WarReward" type="Label" parent="VBoxContainer/WarDetail"]
+layout_mode = 2
+text = "奖励: --"
+
+[node name="ActionButtonRow" type="HBoxContainer" parent="VBoxContainer/WarDetail"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AcceptButton" type="Button" parent="VBoxContainer/WarDetail/ActionButtonRow"]
+layout_mode = 2
+text = "接受宣战"
+disabled = true
+
+[node name="CancelButton" type="Button" parent="VBoxContainer/WarDetail/ActionButtonRow"]
+layout_mode = 2
+text = "取消战争"
+disabled = true
+
+[node name="JoinButton" type="Button" parent="VBoxContainer/WarDetail/ActionButtonRow"]
+layout_mode = 2
+text = "加入战争"
+disabled = true
+
+[node name="CompleteButton" type="Button" parent="VBoxContainer/WarDetail/ActionButtonRow"]
+layout_mode = 2
+text = "完成战争"
+disabled = true
+
+[node name="ScoreboardLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "记分板"
+
+[node name="ScoreboardList" type="ItemList" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 120)
+
+[node name="RefreshButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "刷新战争列表"
