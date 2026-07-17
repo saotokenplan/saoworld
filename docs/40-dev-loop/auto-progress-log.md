@@ -16,9 +16,9 @@
 - 修改文件：5 个（2 新增迁移脚本 + 2 修复迁移脚本 down_revision + 1 新增计划文档）
 - 新增文档：3 个（计划文档 + 执行摘要 + 进度日志追加）
 - 验证：player-service 309/309 测试通过；ruff 0 错误；mypy 0 错误；Alembic 链路完整
-- 提交拆分：待执行（计划 fix(player) 修复链路 + feat(player) 新增迁移 + docs(dev-loop) 文档）
-- 合并状态：待执行
-- 工作分支：auto/auto-20260718-1900（合并完成后删除）
+- 提交拆分：fix(player) 6397bad + feat(player) 15b414c + docs(dev-loop) ca08a0b
+- 合并状态：✅ 已合并到 feature-prd（merge commit: ff320ad，本地合并完成，远程推送待凭据就绪）
+- 工作分支：auto/auto-20260718-1900 已删除
 
 ## 2026-07-18 18:30 — auto-20260718-1800
 

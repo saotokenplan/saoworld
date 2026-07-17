@@ -101,11 +101,11 @@
 
 ## 合并结果
 
-- 工作分支：`auto/auto-20260718-1900`
+- 工作分支：`auto/auto-20260718-1900`（已删除）
 - 目标分支：`feature-prd`
 - 合并方式：`git merge --no-ff`
-- 合并提交：待执行合并后填入
-- 推送状态：待执行推送后填入
+- 合并提交：`ff320ad443fe0c2b6906878ab26bd16cd5062d9d`
+- 推送状态：⚠️ 本地合并完成；远程推送失败（CI 沙箱无 GitHub 凭据），待凭据就绪后执行 `git push origin feature-prd`
 
 ## 验收对照
 
@@ -117,4 +117,4 @@
 | 测试通过 | 309 个测试无回归 | ✅ 309/309 通过 |
 | Ruff 检查 | 0 错误 | ✅ All checks passed |
 | Mypy 检查 | 0 错误 | ✅ Success: no issues found |
-| 合并到 feature-prd | --no-ff 合并 | 待执行 |
+| 合并到 feature-prd | --no-ff 合并 | ✅ 合并提交 `ff320ad`（本地完成） |
