@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "region_id": "region_starfall_wastes",
+  "name": "星陨荒原",
+  "description": "天裂事件的核心发生地，一片被巨大陨石坑遍布的荒凉原野。空气中弥漫着异星能量的辐射，地壳上留下了永远无法愈合的伤疤。丰收商会看中此处稀有的异星矿物，暗影面纱则在此挖掘天裂事件的真相，多方势力在这片危险的土地上暗中角力。",
+  "type": "expansion",
+  "terrain": ["crater", "wasteland", "ruins"],
+  "climate": "harsh",
+  "resource_level": "high",
+  "risk_level": "very_high",
+  "status": "active",
+  "factions": [
+    {"faction_id": "faction_harvest", "influence": 0.4, "presence": "strong"},
+    {"faction_id": "faction_shadowveil", "influence": 0.3, "presence": "exploring"},
+    {"faction_id": "faction_freehold", "influence": 0.2, "presence": "minor"}
+  ],
+  "key_locations": [
+    {"location_id": "loc_starfall_observatory", "name": "陨星观察站", "type": "outpost", "description": "丰收商会建立的勘探前哨，配备先进的能量检测设备，是荒原上最安全的避风港"},
+    {"location_id": "loc_radiation_wastes", "name": "辐射荒原", "type": "wasteland", "description": "天裂事件中心地带，地面残留着强烈的异星辐射，扭曲的植物和变异生物在此出没"},
+    {"location_id": "loc_ancient_stargate", "name": "远古星门", "type": "landmark", "description": "半埋于地下的远古文明遗迹，巨大的石质门框上刻满未知符文，似乎是某种传送装置"},
+    {"location_id": "loc_rift_core", "name": "天裂核心", "type": "landmark", "description": "天裂事件最核心的爆炸点，地壳在此处彻底崩塌，下方深不见底的裂隙散发着诡异的蓝光"}
+  ],
+  "available_quests": ["quest_starfall_ch4_main1", "quest_starfall_side1", "quest_starfall_side2"],
+  "npcs": ["npc_starfall_surveyor", "npc_starfall_archaeologist", "npc_starfall_merchant", "npc_starfall_scout"]
+}
