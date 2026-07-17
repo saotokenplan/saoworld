@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Sequence
 
-from sqlalchemy import and_, or_, select, func, desc
+from sqlalchemy import and_, or_, select, func, desc, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.models import (
@@ -36,6 +36,12 @@ def index_to_tier(index: int) -> str:
     if index >= len(TIER_ORDER):
         return TIER_ORDER[-1]
     return TIER_ORDER[index]
+
+
+def _tier_order_case() -> case:
+    """构造 tier -> int 的 CASE 表达式，用于正确排序段位。"""
+    whens = [(PlayerRating.tier == t, i) for i, t in enumerate(TIER_ORDER)]
+    return case(*whens, else_=-1)
 
 
 class MatchSeasonRepository:
@@ -123,6 +129,32 @@ class MatchSeasonRepository:
         if season is None:
             return None
         season.status = status
+        season.updated_at = datetime.now(timezone.utc)
+        await self.db.flush()
+        return season
+
+    async def get_settlement_status(
+        self, season_id: uuid.UUID
+    ) -> str | None:
+        season = await self.get_season(season_id)
+        if season is None:
+            return None
+        return season.settlement_status
+
+    async def update_settlement_status(
+        self,
+        season_id: uuid.UUID,
+        settlement_status: str,
+        settled_at: datetime | None = None,
+    ) -> MatchSeason | None:
+        season = await self.get_season(season_id)
+        if season is None:
+            return None
+        season.settlement_status = settlement_status
+        if settled_at is not None:
+            season.settled_at = settled_at
+        elif settlement_status == "settled":
+            season.settled_at = datetime.now(timezone.utc)
         season.updated_at = datetime.now(timezone.utc)
         await self.db.flush()
         return season
@@ -237,11 +269,12 @@ class PlayerRatingRepository:
             select(PlayerRating).where(PlayerRating.season_id == season_id).subquery()
         )
 
+        tier_order = _tier_order_case()
         query = (
             select(PlayerRating)
             .where(PlayerRating.season_id == season_id)
             .order_by(
-                desc(PlayerRating.tier),
+                desc(tier_order),
                 PlayerRating.division,
                 desc(PlayerRating.rating_points),
                 desc(PlayerRating.wins),
@@ -255,6 +288,132 @@ class PlayerRatingRepository:
         total = count_result.scalar_one() or 0
 
         return result.scalars().all(), total
+
+    async def get_player_rank(
+        self, player_id: uuid.UUID, season_id: uuid.UUID
+    ) -> int | None:
+        """查询玩家在指定赛季的排名，无段位记录返回 None。"""
+        rating = await self.get_player_rating(player_id, season_id)
+        if rating is None:
+            return None
+
+        target_tier_idx = tier_to_index(rating.tier)
+        tier_order = _tier_order_case()
+        better_query = select(func.count()).where(
+            and_(
+                PlayerRating.season_id == season_id,
+                or_(
+                    tier_order > target_tier_idx,
+                    and_(
+                        tier_order == target_tier_idx,
+                        or_(
+                            PlayerRating.division < rating.division,
+                            and_(
+                                PlayerRating.division == rating.division,
+                                or_(
+                                    PlayerRating.rating_points > rating.rating_points,
+                                    and_(
+                                        PlayerRating.rating_points == rating.rating_points,
+                                        PlayerRating.wins > rating.wins,
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        )
+        better_count = await self.db.scalar(better_query) or 0
+        return better_count + 1
+
+    async def get_tier_distribution(
+        self, season_id: uuid.UUID
+    ) -> dict[str, int]:
+        """返回各段位的玩家数量分布，key 为 tier 名，value 为数量。"""
+        tier_order = _tier_order_case()
+        query = (
+            select(PlayerRating.tier, func.count())
+            .where(PlayerRating.season_id == season_id)
+            .group_by(PlayerRating.tier, tier_order)
+            .order_by(desc(tier_order))
+        )
+        result = await self.db.execute(query)
+        distribution: dict[str, int] = {tier: 0 for tier in TIER_ORDER}
+        for tier, count in result.all():
+            if tier in distribution:
+                distribution[tier] = int(count)
+        return distribution
+
+    async def get_neighbors(
+        self,
+        player_id: uuid.UUID,
+        season_id: uuid.UUID,
+        before: int = 2,
+        after: int = 2,
+    ) -> tuple[Sequence[PlayerRating], int | None]:
+        """返回排名附近的玩家列表。
+
+        Returns:
+            (neighbors, my_rank) - neighbors 包含玩家自身及附近 N 名玩家；
+            my_rank 为玩家自身排名，无段位记录时返回 (空列表, None)。
+        """
+        rating = await self.get_player_rating(player_id, season_id)
+        if rating is None:
+            return [], None
+
+        my_rank = await self.get_player_rank(player_id, season_id)
+        if my_rank is None:
+            return [], None
+
+        start = max(0, my_rank - 1 - before)
+        window_size = before + 1 + after
+
+        tier_order = _tier_order_case()
+        query = (
+            select(PlayerRating)
+            .where(PlayerRating.season_id == season_id)
+            .order_by(
+                desc(tier_order),
+                PlayerRating.division,
+                desc(PlayerRating.rating_points),
+                desc(PlayerRating.wins),
+            )
+            .limit(window_size)
+            .offset(start)
+        )
+        result = await self.db.execute(query)
+        return result.scalars().all(), my_rank
+
+    async def count_active_players(self, season_id: uuid.UUID) -> int:
+        """统计赛季活跃玩家数（有段位记录的玩家）。"""
+        query = select(func.count()).select_from(
+            select(PlayerRating).where(PlayerRating.season_id == season_id).subquery()
+        )
+        result = await self.db.scalar(query)
+        return int(result or 0)
+
+    async def list_all_ratings_for_settlement(
+        self,
+        season_id: uuid.UUID,
+        limit: int = 200,
+        offset: int = 0,
+    ) -> Sequence[PlayerRating]:
+        """列出赛季所有段位记录（用于结算），按排名顺序返回。"""
+        tier_order = _tier_order_case()
+        query = (
+            select(PlayerRating)
+            .where(PlayerRating.season_id == season_id)
+            .order_by(
+                desc(tier_order),
+                PlayerRating.division,
+                desc(PlayerRating.rating_points),
+                desc(PlayerRating.wins),
+            )
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self.db.execute(query)
+        return result.scalars().all()
 
 
 class MatchQueueRepository:

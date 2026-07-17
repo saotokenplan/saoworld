@@ -1516,6 +1516,8 @@ class MatchSeasonResponse(BaseModel):
     end_at: datetime
     description: str | None = None
     reward_config: dict | None = None
+    settlement_status: str = "unsettled"
+    settled_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -1526,6 +1528,7 @@ class MatchSeasonResponse(BaseModel):
             for attr in [
                 "season_id", "season_key", "season_name", "status",
                 "start_at", "end_at", "description", "reward_jsonb",
+                "settlement_status", "settled_at",
                 "created_at", "updated_at",
             ]:
                 try:
@@ -1584,3 +1587,102 @@ class MatchLeaderboardItem(BaseModel):
 class MatchLeaderboardResponse(BaseModel):
     items: list[MatchLeaderboardItem]
     total: int
+
+
+# === 赛季排行系统 Schema ===
+
+
+class PlayerRankResponse(BaseModel):
+    """玩家自身排名查询响应。"""
+
+    player_id: uuid.UUID
+    player_name: str = ""
+    season_id: uuid.UUID
+    rank: int
+    tier: MatchTier
+    division: int
+    rating_points: int
+    wins: int
+    losses: int
+    draws: int
+    win_streak: int
+    best_tier: MatchTier
+    best_division: int
+    win_rate: float = 0.0
+    total_matches: int = 0
+    total_players: int = 0
+
+
+class TierDistributionItem(BaseModel):
+    tier: MatchTier
+    count: int
+    percentage: float = 0.0
+
+
+class TierDistributionResponse(BaseModel):
+    season_id: uuid.UUID
+    total_players: int
+    distribution: list[TierDistributionItem]
+
+
+class LeaderboardNeighborsResponse(BaseModel):
+    season_id: uuid.UUID
+    my_rank: int
+    items: list[MatchLeaderboardItem]
+
+
+class SeasonRewardItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    grant_id: uuid.UUID
+    season_id: uuid.UUID
+    player_id: uuid.UUID
+    final_rank: int
+    final_tier: MatchTier
+    final_division: int
+    final_rating_points: int
+    reward_payload: dict | None = None
+    status: str
+    granted_at: datetime | None = None
+    created_at: datetime
+
+    @classmethod
+    def model_validate(cls, obj: Any, *args: Any, **kwargs: Any) -> "SeasonRewardItem":
+        if hasattr(obj, "__table__"):
+            obj_dict = {}
+            for attr in [
+                "grant_id", "season_id", "player_id",
+                "final_rank", "final_tier", "final_division", "final_rating_points",
+                "reward_payload_jsonb", "status", "granted_at", "created_at",
+            ]:
+                try:
+                    value = getattr(obj, attr)
+                    obj_dict[attr] = value
+                except Exception:
+                    obj_dict[attr] = None
+            obj_dict["reward_payload"] = obj_dict.pop("reward_payload_jsonb", None)
+            return super().model_validate(obj_dict, *args, **kwargs)
+        return super().model_validate(obj, *args, **kwargs)
+
+
+class SeasonRewardListResponse(BaseModel):
+    items: list[SeasonRewardItem]
+    total: int
+
+
+class SettleSeasonRequest(BaseModel):
+    """赛季结算请求。"""
+
+    reward_config: dict | None = None
+    batch_size: int = Field(default=200, ge=1, le=500)
+
+
+class SeasonSettlementResponse(BaseModel):
+    """赛季结算结果。"""
+
+    season_id: uuid.UUID
+    settlement_status: str
+    settled_at: datetime | None = None
+    total_grants: int
+    total_players: int
+    tier_distribution: dict[str, int]

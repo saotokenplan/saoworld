@@ -798,6 +798,14 @@ class MatchSeason(Base):
     end_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     reward_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    settlement_status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="unsettled",
+        server_default="unsettled",
+        index=True,
+    )
+    settled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     schema_version: Mapped[int] = mapped_column(
         Integer, nullable=False, default=1, server_default="1"
     )
@@ -813,8 +821,13 @@ class MatchSeason(Base):
             "status IN ('upcoming', 'active', 'ended', 'archived')",
             name="match_seasons_status_check",
         ),
+        CheckConstraint(
+            "settlement_status IN ('unsettled', 'settling', 'settled')",
+            name="match_seasons_settlement_status_check",
+        ),
         Index("match_seasons_status_idx", "status"),
         Index("match_seasons_time_idx", "start_at", "end_at"),
+        Index("match_seasons_settlement_idx", "settlement_status"),
     )
 
 
@@ -1041,4 +1054,56 @@ class MatchResult(Base):
         Index("match_results_season_idx", "season_id", "created_at"),
         Index("match_results_winner_idx", "winner_id", "created_at"),
         Index("match_results_loser_idx", "loser_id", "created_at"),
+    )
+
+
+class SeasonRewardGrant(Base):
+    """赛季奖励发放记录表（append-only 风格，支持幂等）。"""
+
+    __tablename__ = "season_reward_grants"
+
+    grant_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), primary_key=True, default=uuid.uuid4)
+    season_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    player_id: Mapped[uuid.UUID] = mapped_column(UUIDType(), nullable=False, index=True)
+    final_rank: Mapped[int] = mapped_column(Integer, nullable=False)
+    final_tier: Mapped[str] = mapped_column(String(32), nullable=False)
+    final_division: Mapped[int] = mapped_column(Integer, nullable=False)
+    final_rating_points: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    reward_payload_jsonb: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="pending", server_default="pending", index=True
+    )
+    granted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
+    trace_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    schema_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "final_tier IN ('bronze', 'silver', 'gold', 'platinum', 'diamond', 'master', 'challenger')",
+            name="season_reward_grants_tier_check",
+        ),
+        CheckConstraint(
+            "final_division >= 1 AND final_division <= 5",
+            name="season_reward_grants_division_check",
+        ),
+        CheckConstraint(
+            "final_rank >= 1",
+            name="season_reward_grants_rank_check",
+        ),
+        CheckConstraint(
+            "status IN ('pending', 'granted', 'failed')",
+            name="season_reward_grants_status_check",
+        ),
+        Index("season_reward_grants_season_player_idx", "season_id", "player_id", unique=True),
+        Index("season_reward_grants_season_rank_idx", "season_id", "final_rank"),
+        Index("season_reward_grants_player_idx", "player_id", "created_at"),
     )
