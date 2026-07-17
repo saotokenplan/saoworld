@@ -3,6 +3,7 @@ from typing import Any, cast
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import metrics
 from app.domain.models import PlayerTrade, TradeCoin, TradeItem
 from app.repositories.inventory_repo import InventoryRepository
 from app.repositories.wallet_repo import WalletRepository
@@ -67,6 +68,10 @@ class TradeRepository:
 
         await self.db.commit()
         await self.db.refresh(trade)
+
+        total_coin_amount = offer_coins + request_coins
+        metrics.record_trade_created(str(initiator_id), total_coin_amount)
+
         return trade
 
     async def get_trade_by_id(self, trade_id: Any) -> PlayerTrade | None:
@@ -151,6 +156,14 @@ class TradeRepository:
         trade.status = "completed"
         await self.db.commit()
         await self.db.refresh(trade)
+
+        total_coin_amount = 0
+        for coin in offer_coins:
+            total_coin_amount += coin.amount
+        for coin in request_coins:
+            total_coin_amount += coin.amount
+        metrics.record_trade_completed(str(trade.initiator_id), total_coin_amount)
+
         return trade
 
     async def reject_trade(self, trade_id: Any, player_id: Any) -> PlayerTrade | None:
@@ -180,6 +193,9 @@ class TradeRepository:
         trade.status = "cancelled"
         await self.db.commit()
         await self.db.refresh(trade)
+
+        metrics.record_trade_cancelled(str(player_id))
+
         return trade
 
     async def get_trade_items(self, trade_id: Any, from_player_id: Any) -> list[TradeItem]:

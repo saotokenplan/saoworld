@@ -1239,3 +1239,56 @@ class WalletTransactionResponse(BaseModel):
 class WalletTransactionListResponse(BaseModel):
     transactions: list[WalletTransactionResponse]
     total: int
+
+
+# === 经济统计相关 Schema ===
+
+
+class EconomicOverview(BaseModel):
+    total_trades: int
+    completed_trades: int
+    trade_completion_rate: float
+    total_auctions: int
+    active_auctions: int
+    sold_auctions: int
+    total_wallets: int
+    total_gold_supply: int
+    total_transactions: int
+
+
+class TradeStatsItem(BaseModel):
+    date: str
+    total_trades: int
+    completed_trades: int
+    cancelled_trades: int
+    completion_rate: float
+
+
+class AuctionStatsItem(BaseModel):
+    date: str
+    total_listings: int
+    sold_listings: int
+    active_listings: int
+    total_volume: int
+    sell_through_rate: float
+
+
+class WalletStatsItem(BaseModel):
+    date: str
+    total_transactions: int
+    active_players: int
+    total_income: int
+    total_expense: int
+
+
+class EconomicTrendPoint(BaseModel):
+    period: str
+    trade_count: int
+    completed_trades: int
+    auction_count: int
+    auction_volume: int
+
+
+class TopTraderItem(BaseModel):
+    player_id: str
+    trade_count: int

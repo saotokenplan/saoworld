@@ -24,6 +24,7 @@ from app.core.deps import (
     RequireGuildWarWriteScope,
     RequireCollabQuestReadScope,
     RequireCollabQuestWriteScope,
+    RequireEconomyReadScope,
     UserPayload,
 )
 from app.core.errors import PlayerErrorCodes, raise_player_error
@@ -131,6 +132,13 @@ from app.repositories.audit_repo import (
     RESOURCE_GUILD_WAR,
     RESOURCE_GUILD_WAR_PARTICIPANT,
     RESOURCE_COLLAB_QUEST,
+    RESOURCE_ECONOMY,
+    ACTION_ECONOMY_OVERVIEW_QUERY,
+    ACTION_ECONOMY_TRADE_STATS_QUERY,
+    ACTION_ECONOMY_AUCTION_STATS_QUERY,
+    ACTION_ECONOMY_WALLET_STATS_QUERY,
+    ACTION_ECONOMY_TRENDS_QUERY,
+    ACTION_ECONOMY_TOP_TRADERS_QUERY,
     AuditRepository,
 )
 from app.repositories.achievement_repo import (
@@ -153,6 +161,7 @@ from app.repositories.auction_repo import AuctionRepository
 from app.repositories.wallet_repo import WalletRepository
 from app.repositories.guild_war_repo import GuildWarRepository
 from app.repositories.friend_collab_quest_repo import FriendCollabQuestRepository
+from app.repositories.economic_repo import EconomicRepository
 from app.schemas.player import (
     AcceptQuestRequest,
     AchievementDefinitionListResponse,
@@ -253,6 +262,12 @@ from app.schemas.player import (
     FriendCollabQuestListResponse,
     CreateFriendCollabQuestRequest,
     UpdateFriendCollabQuestProgressRequest,
+    EconomicOverview,
+    TradeStatsItem,
+    AuctionStatsItem,
+    WalletStatsItem,
+    EconomicTrendPoint,
+    TopTraderItem,
 )
 
 router = APIRouter()
@@ -7117,6 +7132,260 @@ async def get_collab_quest_history(
     return EnvelopeResponse(
         request_id=request_id,
         data=FriendCollabQuestListResponse(quests=quest_responses, total=total),
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.get("/economy/overview", tags=["economy"])
+async def get_economy_overview(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireEconomyReadScope,
+) -> EnvelopeResponse[EconomicOverview]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_econ_overview")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ECONOMY_OVERVIEW_QUERY,
+        resource_type=RESOURCE_ECONOMY,
+        resource_id=None,
+        trace_id=trace_id,
+    )
+
+    try:
+        econ_repo = EconomicRepository(db)
+        overview_data = await econ_repo.get_economy_overview()
+        overview = EconomicOverview(**overview_data)
+    except Exception:
+        raise_player_error(
+            PlayerErrorCodes.ECONOMY_STATS_QUERY_FAILED,
+            "经济统计查询失败",
+            request_id,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=overview,
+        trace_id=trace_id,
+    )
+
+
+@ops_router.get("/economy/trades", tags=["economy"])
+async def get_trade_stats(
+    request: Request,
+    days: int = Query(7, ge=1, le=365),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireEconomyReadScope,
+) -> EnvelopeResponse[dict]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_econ_trades")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ECONOMY_TRADE_STATS_QUERY,
+        resource_type=RESOURCE_ECONOMY,
+        resource_id=None,
+        trace_id=trace_id,
+    )
+
+    try:
+        econ_repo = EconomicRepository(db)
+        stats, total = await econ_repo.get_trade_stats(days=days, limit=limit, offset=offset)
+        items = [TradeStatsItem(**item) for item in stats]
+    except Exception:
+        raise_player_error(
+            PlayerErrorCodes.ECONOMY_STATS_QUERY_FAILED,
+            "交易统计查询失败",
+            request_id,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data={"items": items, "total": total},
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.get("/economy/auctions", tags=["economy"])
+async def get_auction_stats(
+    request: Request,
+    days: int = Query(7, ge=1, le=365),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireEconomyReadScope,
+) -> EnvelopeResponse[dict]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_econ_auctions")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ECONOMY_AUCTION_STATS_QUERY,
+        resource_type=RESOURCE_ECONOMY,
+        resource_id=None,
+        trace_id=trace_id,
+    )
+
+    try:
+        econ_repo = EconomicRepository(db)
+        stats, total = await econ_repo.get_auction_stats(days=days, limit=limit, offset=offset)
+        items = [AuctionStatsItem(**item) for item in stats]
+    except Exception:
+        raise_player_error(
+            PlayerErrorCodes.ECONOMY_STATS_QUERY_FAILED,
+            "拍卖统计查询失败",
+            request_id,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data={"items": items, "total": total},
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.get("/economy/wallets", tags=["economy"])
+async def get_wallet_stats(
+    request: Request,
+    days: int = Query(7, ge=1, le=365),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireEconomyReadScope,
+) -> EnvelopeResponse[dict]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_econ_wallets")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ECONOMY_WALLET_STATS_QUERY,
+        resource_type=RESOURCE_ECONOMY,
+        resource_id=None,
+        trace_id=trace_id,
+    )
+
+    try:
+        econ_repo = EconomicRepository(db)
+        stats, total = await econ_repo.get_wallet_stats(days=days, limit=limit, offset=offset)
+        items = [WalletStatsItem(**item) for item in stats]
+    except Exception:
+        raise_player_error(
+            PlayerErrorCodes.ECONOMY_STATS_QUERY_FAILED,
+            "钱包统计查询失败",
+            request_id,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data={"items": items, "total": total},
+        meta=PaginatedMeta(total=total, limit=limit, offset=offset),
+        trace_id=trace_id,
+    )
+
+
+@ops_router.get("/economy/trends", tags=["economy"])
+async def get_economic_trends(
+    request: Request,
+    days: int = Query(30, ge=1, le=365),
+    granularity: str = Query("day"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireEconomyReadScope,
+) -> EnvelopeResponse[dict]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_econ_trends")
+
+    if granularity not in ("day", "week"):
+        raise_player_error(
+            PlayerErrorCodes.INVALID_TREND_GRANULARITY,
+            "无效的趋势粒度，仅支持 day 或 week",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ECONOMY_TRENDS_QUERY,
+        resource_type=RESOURCE_ECONOMY,
+        resource_id=None,
+        trace_id=trace_id,
+    )
+
+    try:
+        econ_repo = EconomicRepository(db)
+        trends = await econ_repo.get_economic_trends(days=days, granularity=granularity)
+        items = [EconomicTrendPoint(**item) for item in trends]
+    except Exception:
+        raise_player_error(
+            PlayerErrorCodes.ECONOMY_STATS_QUERY_FAILED,
+            "经济趋势查询失败",
+            request_id,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data={"items": items, "total": len(items)},
+        trace_id=trace_id,
+    )
+
+
+@ops_router.get("/economy/top-traders", tags=["economy"])
+async def get_top_traders(
+    request: Request,
+    days: int = Query(7, ge=1, le=365),
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireEconomyReadScope,
+) -> EnvelopeResponse[dict]:
+    trace_id = _get_trace_id(request)
+    request_id = _make_request_id("req_econ_top_traders")
+
+    audit_repo = AuditRepository(db)
+    await audit_repo.create_audit_log(
+        operator_id=current_user.user_id,
+        operator_role=current_user.role.value,
+        action=ACTION_ECONOMY_TOP_TRADERS_QUERY,
+        resource_type=RESOURCE_ECONOMY,
+        resource_id=None,
+        trace_id=trace_id,
+    )
+
+    try:
+        econ_repo = EconomicRepository(db)
+        traders, total = await econ_repo.get_top_traders(days=days, limit=limit, offset=offset)
+        items = [TopTraderItem(**item) for item in traders]
+    except Exception:
+        raise_player_error(
+            PlayerErrorCodes.ECONOMY_STATS_QUERY_FAILED,
+            "活跃交易者查询失败",
+            request_id,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    return EnvelopeResponse(
+        request_id=request_id,
+        data={"items": items, "total": total},
         meta=PaginatedMeta(total=total, limit=limit, offset=offset),
         trace_id=trace_id,
     )

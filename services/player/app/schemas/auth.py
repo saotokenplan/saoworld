@@ -44,6 +44,8 @@ class Scope(str, Enum):
     COLLAB_QUEST_READ = "collab_quest:read"
     COLLAB_QUEST_WRITE = "collab_quest:write"
 
+    ECONOMY_READ = "economy:read"
+
     REVIEW_APPROVE = "review:approve"
 
 
@@ -79,6 +81,7 @@ ROLE_SCOPES: dict[Role, list[Scope]] = {
         Scope.CONTENT_ROLLBACK,
         Scope.ACHIEVEMENTS_READ,
         Scope.ACHIEVEMENTS_UNLOCK,
+        Scope.ECONOMY_READ,
     ],
     Role.REVIEWER: [
         Scope.CONTENT_READ,
@@ -100,6 +103,7 @@ ROLE_SCOPES: dict[Role, list[Scope]] = {
         Scope.REVIEW_APPROVE,
         Scope.ACHIEVEMENTS_READ,
         Scope.ACHIEVEMENTS_UNLOCK,
+        Scope.ECONOMY_READ,
     ],
 }
 

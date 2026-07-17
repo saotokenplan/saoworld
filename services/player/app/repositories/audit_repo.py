@@ -69,6 +69,16 @@ ACTION_COLLAB_QUEST_PROGRESS = "collab_quest_progress"
 ACTION_COLLAB_QUEST_COMPLETE = "collab_quest_complete"
 ACTION_COLLAB_QUEST_FAIL = "collab_quest_fail"
 
+# 经济统计相关动作
+ACTION_ECONOMY_OVERVIEW_QUERY = "economy_overview_query"
+ACTION_ECONOMY_TRADE_STATS_QUERY = "economy_trade_stats_query"
+ACTION_ECONOMY_AUCTION_STATS_QUERY = "economy_auction_stats_query"
+ACTION_ECONOMY_WALLET_STATS_QUERY = "economy_wallet_stats_query"
+ACTION_ECONOMY_TRENDS_QUERY = "economy_trends_query"
+ACTION_ECONOMY_TOP_TRADERS_QUERY = "economy_top_traders_query"
+
+RESOURCE_ECONOMY = "economy"
+
 RESOURCE_PLAYER = "player"
 RESOURCE_REGION = "region"
 RESOURCE_QUEST = "quest"

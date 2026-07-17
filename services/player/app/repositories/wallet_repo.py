@@ -3,6 +3,7 @@ from typing import Any, cast
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import metrics
 from app.domain.models import PlayerWallet, WalletTransaction
 
 MAX_GOLD = 9999999
@@ -62,6 +63,9 @@ class WalletRepository:
 
         await self.db.commit()
         await self.db.refresh(wallet)
+
+        metrics.record_wallet_transaction(str(player_id), transaction_type, amount)
+
         return wallet
 
     async def spend_coins(
@@ -91,6 +95,9 @@ class WalletRepository:
 
         await self.db.commit()
         await self.db.refresh(wallet)
+
+        metrics.record_wallet_transaction(str(player_id), transaction_type, amount)
+
         return wallet
 
     async def transfer_coins(

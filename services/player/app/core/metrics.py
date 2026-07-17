@@ -419,3 +419,177 @@ def record_collab_quest_created(initiator_id: str) -> None:
 def record_collab_quest_completed(initiator_id: str) -> None:
     """记录一次好友协作任务完成。"""
     COLLAB_QUESTS_COMPLETED_TOTAL.labels(initiator_id=initiator_id).inc()
+
+
+PLAYER_TRADES_CREATED_TOTAL = Counter(
+    "player_trades_created_total",
+    "玩家交易创建次数",
+    labelnames=["initiator_id"],
+)
+
+PLAYER_TRADES_COMPLETED_TOTAL = Counter(
+    "player_trades_completed_total",
+    "玩家交易完成次数",
+    labelnames=["initiator_id"],
+)
+
+PLAYER_TRADES_CANCELLED_TOTAL = Counter(
+    "player_trades_cancelled_total",
+    "玩家交易取消次数",
+    labelnames=["initiator_id"],
+)
+
+PLAYER_TRADE_VOLUME_COINS_TOTAL = Counter(
+    "player_trade_volume_coins_total",
+    "玩家交易金币总量",
+    labelnames=["initiator_id"],
+)
+
+
+def record_trade_created(initiator_id: str, coin_amount: int = 0) -> None:
+    """记录一次交易创建。
+
+    Args:
+        initiator_id: 发起者玩家ID
+        coin_amount: 交易涉及的金币数量
+    """
+    PLAYER_TRADES_CREATED_TOTAL.labels(initiator_id=initiator_id).inc()
+    if coin_amount > 0:
+        PLAYER_TRADE_VOLUME_COINS_TOTAL.labels(initiator_id=initiator_id).inc(coin_amount)
+
+
+def record_trade_completed(initiator_id: str, coin_amount: int = 0) -> None:
+    """记录一次交易完成。
+
+    Args:
+        initiator_id: 发起者玩家ID
+        coin_amount: 交易涉及的金币数量
+    """
+    PLAYER_TRADES_COMPLETED_TOTAL.labels(initiator_id=initiator_id).inc()
+    if coin_amount > 0:
+        PLAYER_TRADE_VOLUME_COINS_TOTAL.labels(initiator_id=initiator_id).inc(coin_amount)
+
+
+def record_trade_cancelled(initiator_id: str) -> None:
+    """记录一次交易取消。
+
+    Args:
+        initiator_id: 发起者玩家ID
+    """
+    PLAYER_TRADES_CANCELLED_TOTAL.labels(initiator_id=initiator_id).inc()
+
+
+AUCTION_LISTINGS_CREATED_TOTAL = Counter(
+    "auction_listings_created_total",
+    "拍卖挂单创建次数",
+    labelnames=["seller_id"],
+)
+
+AUCTION_LISTINGS_SOLD_TOTAL = Counter(
+    "auction_listings_sold_total",
+    "拍卖成交次数",
+    labelnames=["seller_id"],
+)
+
+AUCTION_BIDS_PLACED_TOTAL = Counter(
+    "auction_bids_placed_total",
+    "拍卖出价次数",
+    labelnames=["bidder_id"],
+)
+
+AUCTION_VOLUME_COINS_TOTAL = Counter(
+    "auction_volume_coins_total",
+    "拍卖成交金币总量",
+    labelnames=["seller_id"],
+)
+
+AUCTION_ACTIVE_LISTINGS = Gauge(
+    "auction_active_listings",
+    "活跃拍卖挂单数",
+)
+
+
+def record_auction_listing_created(seller_id: str) -> None:
+    """记录一次拍卖挂单创建。
+
+    Args:
+        seller_id: 卖家玩家ID
+    """
+    AUCTION_LISTINGS_CREATED_TOTAL.labels(seller_id=seller_id).inc()
+
+
+def record_auction_listing_sold(seller_id: str, amount: int) -> None:
+    """记录一次拍卖成交。
+
+    Args:
+        seller_id: 卖家玩家ID
+        amount: 成交金额
+    """
+    AUCTION_LISTINGS_SOLD_TOTAL.labels(seller_id=seller_id).inc()
+    AUCTION_VOLUME_COINS_TOTAL.labels(seller_id=seller_id).inc(amount)
+
+
+def record_auction_bid_placed(bidder_id: str) -> None:
+    """记录一次拍卖出价。
+
+    Args:
+        bidder_id: 出价者玩家ID
+    """
+    AUCTION_BIDS_PLACED_TOTAL.labels(bidder_id=bidder_id).inc()
+
+
+def set_auction_active_listings(count: int) -> None:
+    """设置活跃拍卖挂单数。
+
+    Args:
+        count: 活跃挂单数量
+    """
+    AUCTION_ACTIVE_LISTINGS.set(count)
+
+
+WALLET_TRANSACTIONS_TOTAL = Counter(
+    "wallet_transactions_total",
+    "钱包交易次数",
+    labelnames=["player_id", "transaction_type"],
+)
+
+WALLET_TOTAL_GOLD_SUPPLY = Gauge(
+    "wallet_total_gold_supply",
+    "总货币供应量（金币）",
+)
+
+WALLET_ACTIVE_WALLETS = Gauge(
+    "wallet_active_wallets",
+    "活跃钱包数",
+)
+
+
+def record_wallet_transaction(player_id: str, transaction_type: str, amount: int) -> None:
+    """记录一次钱包交易。
+
+    Args:
+        player_id: 玩家ID
+        transaction_type: 交易类型
+        amount: 交易金额（绝对值）
+    """
+    WALLET_TRANSACTIONS_TOTAL.labels(
+        player_id=player_id, transaction_type=transaction_type
+    ).inc(abs(amount))
+
+
+def set_wallet_total_gold_supply(amount: int) -> None:
+    """设置总货币供应量。
+
+    Args:
+        amount: 总金币供应量
+    """
+    WALLET_TOTAL_GOLD_SUPPLY.set(amount)
+
+
+def set_wallet_active_wallets(count: int) -> None:
+    """设置活跃钱包数。
+
+    Args:
+        count: 活跃钱包数量
+    """
+    WALLET_ACTIVE_WALLETS.set(count)
