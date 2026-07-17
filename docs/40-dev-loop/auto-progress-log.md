@@ -19,7 +19,9 @@
 - 修改文件：11 个（5 新建内容/脚本 + 6 修改文档/数据）
 - 数据规模变化：region 7→9、chapter 3→4、npc 22→30、quest 42→56、monster 7→9
 - 验证：所有 7 个 JSON 文件 python -m json.tool 验证通过；verify_ch4_content.py 8 类引用完整性检查全部通过
-- 合并状态：待合并到 feature-prd（执行中）
+- 提交拆分：docs(dev-loop) fd5a906 + feat(game) e6f6535 + chore(tools) f271be6
+- 合并状态：✅ 已合并到 feature-prd（merge commit: fd5a1a5，本地合并完成，远程推送待凭据就绪）
+- 工作分支：auto/auto-20260718-1500 已删除
 
 ## 2026-07-18 14:30 — auto-20260718-1400
 
