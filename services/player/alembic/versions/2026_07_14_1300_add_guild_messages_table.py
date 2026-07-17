@@ -1,7 +1,7 @@
 """Add guild_messages table
 
 Revision ID: 2026_07_14_1300_add_guild_messages_table
-Revises:
+Revises: 2026_07_14_1100
 Create Date: 2026-07-14 13:00:00.000000
 
 """
@@ -13,7 +13,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "2026_07_14_1300_add_guild_messages_table"
-down_revision: Union[str, None] = None
+down_revision: Union[str, None] = "2026_07_14_1100"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

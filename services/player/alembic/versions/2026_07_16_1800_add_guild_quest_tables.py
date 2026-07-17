@@ -1,7 +1,7 @@
 """add guild_quests and guild_quest_progress tables
 
 Revision ID: 2026_07_16_1800
-Revises: 2026_07_14_1700
+Revises: 2026_07_14_1700_add_player_equipment
 Create Date: 2026-07-16 18:00:00.000000
 
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 revision: str = "2026_07_16_1800"
-down_revision: Union[str, None] = "2026_07_14_1700"
+down_revision: Union[str, None] = "2026_07_14_1700_add_player_equipment"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

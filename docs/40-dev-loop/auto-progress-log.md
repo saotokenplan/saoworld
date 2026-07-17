@@ -2,6 +2,24 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-18 19:30 — auto-20260718-1900
+
+- 任务：M3-04/M3-05 Alembic 迁移脚本补全
+- 分支：auto/auto-20260718-1900
+- 状态：✅ 已完成
+- 工作内容：
+  - 为 M3-04 跨服匹配系统补全 Alembic 迁移脚本（`2026_07_18_1900_add_match_system_tables.py`），创建 5 张核心表完整 DDL（match_seasons/player_ratings/match_queues/match_rooms/match_results），含 CHECK 约束、索引、唯一约束，down_revision=`2026_07_17_0801`
+  - 为 M3-05 赛季排行系统补全 Alembic 迁移脚本（`2026_07_18_1901_add_season_reward_grants.py`），扩展 match_seasons 表新增 settlement_status/settled_at 字段，新增 season_reward_grants 表（15 字段、4 个 CHECK 约束、UNIQUE 防重幂等）
+  - 修复历史迁移链路断裂 2 处：`2026_07_14_1300_add_guild_messages_table.py` 的 down_revision 从 None 改为 `2026_07_14_1100`；`2026_07_16_1800_add_guild_quest_tables.py` 的 down_revision 从不存在的 `2026_07_14_1700` 改为正确的 `2026_07_14_1700_add_player_equipment`
+  - 验证：Alembic 单 head 链路（root c9d0e1f2a3b4 → head 2026_07_18_1901，17 个 revision），ruff 检查 0 错误，mypy 检查 0 错误，player-service 309 个测试全部通过无回归
+  - 闭合 `42-release-rollback.md` 规范"数据库迁移脚本已评审并在预发布环境验证"灰度发布前强制门禁
+- 修改文件：5 个（2 新增迁移脚本 + 2 修复迁移脚本 down_revision + 1 新增计划文档）
+- 新增文档：3 个（计划文档 + 执行摘要 + 进度日志追加）
+- 验证：player-service 309/309 测试通过；ruff 0 错误；mypy 0 错误；Alembic 链路完整
+- 提交拆分：待执行（计划 fix(player) 修复链路 + feat(player) 新增迁移 + docs(dev-loop) 文档）
+- 合并状态：待执行
+- 工作分支：auto/auto-20260718-1900（合并完成后删除）
+
 ## 2026-07-18 18:30 — auto-20260718-1800
 
 - 任务：M3-05 赛季排行系统
