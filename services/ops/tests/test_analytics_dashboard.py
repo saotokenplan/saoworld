@@ -114,3 +114,68 @@ async def test_get_vote_analytics_requires_auth(
 ) -> None:
     response = await async_client.get("/api/v1/ops/analytics/dashboard/votes")
     assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_get_economy_overview_returns_default_when_no_data(
+    async_client: AsyncClient, test_token: str
+) -> None:
+    response = await async_client.get(
+        "/api/v1/ops/analytics/dashboard/economy/overview",
+        headers={"Authorization": f"Bearer {test_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "request_id" in data
+    assert "data" in data
+    overview = data["data"]
+    assert "total_gold_supply" in overview
+    assert "total_wallets" in overview
+    assert "total_trades" in overview
+    assert "total_auctions" in overview
+    assert "active_auctions" in overview
+
+
+@pytest.mark.asyncio
+async def test_get_economy_overview_requires_auth(
+    async_client: AsyncClient,
+) -> None:
+    response = await async_client.get("/api/v1/ops/analytics/dashboard/economy/overview")
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_get_economy_trends_returns_empty_when_no_data(
+    async_client: AsyncClient, test_token: str
+) -> None:
+    response = await async_client.get(
+        "/api/v1/ops/analytics/dashboard/economy/trends",
+        headers={"Authorization": f"Bearer {test_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "data" in data
+    assert isinstance(data["data"], list)
+
+
+@pytest.mark.asyncio
+async def test_get_economy_trade_stats_returns_empty_when_no_data(
+    async_client: AsyncClient, test_token: str
+) -> None:
+    response = await async_client.get(
+        "/api/v1/ops/analytics/dashboard/economy/trade-stats",
+        headers={"Authorization": f"Bearer {test_token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "data" in data
+    assert isinstance(data["data"], list)
+    assert "meta" in data
+
+
+@pytest.mark.asyncio
+async def test_get_economy_trade_stats_requires_auth(
+    async_client: AsyncClient,
+) -> None:
+    response = await async_client.get("/api/v1/ops/analytics/dashboard/economy/trade-stats")
+    assert response.status_code == 401

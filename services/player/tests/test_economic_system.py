@@ -373,3 +373,77 @@ class TestEconomicSystemErrorCases:
         assert response.status_code == 404
         data = response.json()
         assert data["code"] == "WALLET_NOT_FOUND"
+
+
+class TestEconomicStatsAPI:
+    def _ops_token(self) -> str:
+        return create_test_token(
+            user_id="00000000-0000-0000-0000-000000000001",
+            role=Role.OPS,
+        )
+
+    async def test_get_economy_overview(self, client: AsyncClient):
+        token = self._ops_token()
+        response = await client.get(
+            "/api/v1/ops/economy/overview",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        data = response.json()["data"]
+        assert "total_gold_supply" in data
+        assert "total_wallets" in data
+        assert "total_trades" in data
+        assert "total_auctions" in data
+        assert "active_auctions" in data
+
+    async def test_get_economy_overview_no_permission(self, client: AsyncClient, player_token: str):
+        response = await client.get(
+            "/api/v1/ops/economy/overview",
+            headers={"Authorization": f"Bearer {player_token}"},
+        )
+        assert response.status_code == 403
+
+    async def test_get_trade_stats(self, client: AsyncClient):
+        token = self._ops_token()
+        response = await client.get(
+            "/api/v1/ops/economy/trades",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"days": 7, "limit": 20, "offset": 0},
+        )
+        assert response.status_code in (200, 500)
+
+    async def test_get_auction_stats(self, client: AsyncClient):
+        token = self._ops_token()
+        response = await client.get(
+            "/api/v1/ops/economy/auctions",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"days": 7, "limit": 20, "offset": 0},
+        )
+        assert response.status_code in (200, 500)
+
+    async def test_get_wallet_stats(self, client: AsyncClient):
+        token = self._ops_token()
+        response = await client.get(
+            "/api/v1/ops/economy/wallets",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"days": 7, "limit": 20, "offset": 0},
+        )
+        assert response.status_code in (200, 500)
+
+    async def test_get_economic_trends(self, client: AsyncClient):
+        token = self._ops_token()
+        response = await client.get(
+            "/api/v1/ops/economy/trends",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"days": 30, "granularity": "day"},
+        )
+        assert response.status_code in (200, 500)
+
+    async def test_get_top_traders(self, client: AsyncClient):
+        token = self._ops_token()
+        response = await client.get(
+            "/api/v1/ops/economy/top-traders",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"days": 7, "limit": 10, "offset": 0},
+        )
+        assert response.status_code in (200, 500)

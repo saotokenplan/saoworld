@@ -39,6 +39,56 @@ class ErrorResponse(BaseModel):
     details: list[ErrorDetail] | None = None
 
 
+class EconomicOverview(BaseModel):
+    total_trades: int = 0
+    completed_trades: int = 0
+    trade_completion_rate: float = 0.0
+    total_auctions: int = 0
+    active_auctions: int = 0
+    sold_auctions: int = 0
+    total_wallets: int = 0
+    total_gold_supply: int = 0
+    total_transactions: int = 0
+
+
+class TradeStatsItem(BaseModel):
+    date: str
+    total_trades: int
+    completed_trades: int
+    cancelled_trades: int
+    completion_rate: float
+
+
+class AuctionStatsItem(BaseModel):
+    date: str
+    total_listings: int
+    sold_listings: int
+    active_listings: int
+    total_volume: int
+    sell_through_rate: float
+
+
+class WalletStatsItem(BaseModel):
+    date: str
+    total_transactions: int
+    active_players: int
+    total_income: int
+    total_expense: int
+
+
+class EconomicTrendPoint(BaseModel):
+    period: str
+    trade_count: int
+    completed_trades: int
+    auction_count: int
+    auction_volume: int
+
+
+class TopTraderItem(BaseModel):
+    player_id: str
+    trade_count: int
+
+
 class DashboardMetrics(BaseModel):
     total_players: int = 0
     total_vote_cycles: int = 0
@@ -49,6 +99,7 @@ class DashboardMetrics(BaseModel):
     open_vote_cycle: bool = False
     active_generation_requests: int = 0
     pending_review_count: int = 0
+    economy: EconomicOverview | None = None
 
 
 class DashboardResponse(BaseModel):

@@ -4,6 +4,7 @@ from typing import Any, cast
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import metrics
 from app.domain.models import AuctionListing
 from app.repositories.inventory_repo import InventoryRepository
 from app.repositories.wallet_repo import WalletRepository
@@ -48,6 +49,9 @@ class AuctionRepository:
         self.db.add(listing)
         await self.db.commit()
         await self.db.refresh(listing)
+
+        metrics.record_auction_listing_created(str(seller_id))
+
         return listing
 
     async def get_listing_by_id(self, listing_id: Any) -> AuctionListing | None:
@@ -166,6 +170,9 @@ class AuctionRepository:
 
         await self.db.commit()
         await self.db.refresh(listing)
+
+        metrics.record_auction_bid_placed(str(bidder_id))
+
         return listing
 
     async def buyout(self, listing_id: Any, buyer_id: Any) -> AuctionListing | None:
@@ -213,6 +220,9 @@ class AuctionRepository:
 
         await self.db.commit()
         await self.db.refresh(listing)
+
+        metrics.record_auction_listing_sold(str(listing.seller_id), listing.buyout_price or 0)
+
         return listing
 
     async def cancel_listing(self, listing_id: Any, seller_id: Any) -> AuctionListing | None:
