@@ -6,6 +6,7 @@ from typing import Sequence
 
 from sqlalchemy import and_, or_, select, func, desc, case
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.elements import ColumnElement
 
 from app.domain.models import (
     MatchSeason,
@@ -38,7 +39,7 @@ def index_to_tier(index: int) -> str:
     return TIER_ORDER[index]
 
 
-def _tier_order_case() -> case:
+def _tier_order_case() -> ColumnElement[int]:
     """构造 tier -> int 的 CASE 表达式，用于正确排序段位。"""
     whens = [(PlayerRating.tier == t, i) for i, t in enumerate(TIER_ORDER)]
     return case(*whens, else_=-1)

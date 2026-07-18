@@ -8210,7 +8210,7 @@ async def get_my_rank(
     return EnvelopeResponse(
         request_id=request_id,
         data=PlayerRankResponse(
-            player_id=current_user.user_id,
+            player_id=uuid.UUID(current_user.user_id),
             player_name=player_name,
             season_id=target_season_id,
             rank=rank,
