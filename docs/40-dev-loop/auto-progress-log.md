@@ -2,6 +2,23 @@
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
 
+## 2026-07-19 12:00 — auto-20260719-1200
+
+- 任务：公测启动检查清单验收与更新
+- 分支：auto/auto-20260719-1200
+- 状态：✅ 已完成
+- 工作内容：
+  - 系统性审计 `docs/40-dev-loop/ops-runbooks/checklist-public-beta-launch.md` 共 98 项检查项
+  - 静态验收 83 项（标记 `[x]` + 附验收证据），运行时验证项标注 15 项
+  - 修正过时测试数量：player-service 202→309、ops-service 106→127
+  - 发现并修复 player-service 与 content-service 的 CORS 通配符安全问题（`allow_origins=["*"]` → `settings.allowed_origins` 白名单）
+  - 闭合 S8-05 安全审计遗留缺陷（该审计声称修复全部 8 服务 CORS，实际遗漏 player/content 两服务）
+  - 验证 8 个后端服务共 1151 个测试全部通过、ruff 0 错误、mypy 0 错误
+- 修改文件：7 个（1 检查清单更新 + 2 CORS 安全修复 + 1 项目状态更新 + 1 计划 + 1 摘要 + 1 进度日志）
+- 验证：1151 个后端测试全部通过；ruff 0 错误；mypy 0 错误
+- 合并状态：待合并到 feature-prd
+- 工作分支：auto/auto-20260719-1200（合并完成后删除）
+
 ## 2026-07-19 11:00 — auto-20260719-1100
 
 - 任务：项目就绪状态持续验证
