@@ -112,4 +112,8 @@
 
 ## 合并状态
 
-待提交并合并到 feature-prd。
+✅ 已合并到 feature-prd（merge commit: a56aead，本地合并完成，远程推送待凭据就绪）
+
+## 工作分支状态
+
+auto/auto-20260718-2200 已删除
