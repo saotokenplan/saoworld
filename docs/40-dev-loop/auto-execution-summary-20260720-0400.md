@@ -61,6 +61,7 @@
 
 ## 合并状态
 
-- 合并状态：待合并
+- 合并状态：✅ 已本地合并到 feature-prd（merge commit: 本地合并成功）
 - 工作分支：auto/auto-20260720-0400
 - 目标分支：feature-prd
+- 说明：由于远程沙箱环境限制，无法推送到 GitHub 远程仓库。本地合并已完成，需在有认证权限的环境执行 `git push origin feature-prd` 完成远程同步。
