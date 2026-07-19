@@ -39,4 +39,5 @@
 - 项目持续保持灰度发布就绪状态
 
 ## 合并结果
-- 待合并到 feature-prd 分支
+- ✅ 已合并到 feature-prd 分支（merge commit: fc12476）
+- 工作分支 auto/auto-20260719-2300 已删除
