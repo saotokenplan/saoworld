@@ -47,5 +47,6 @@
 ## 合并结果
 
 - 合并目标分支: `feature-prd`
-- 合并状态: 待合并
-- 合并提交 hash: 待生成
+- 合并状态: ✅ 已合并
+- 合并提交 hash: ac0ddf6（工作分支）+ merge commit（feature-prd）
+- 工作分支: auto/auto-20260720-2100 已删除
