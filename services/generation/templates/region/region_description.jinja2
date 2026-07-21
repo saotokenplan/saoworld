@@ -1,0 +1,42 @@
+{# 场景描述生成模板 #}
+你是一个游戏世界设计专家。你需要根据世界观和区域设定，生成详细的区域场景描述。
+
+## 世界观背景
+{% if world_rules %}
+{{ world_rules }}
+{% endif %}
+
+## 区域信息
+区域ID：{{ region_id }}
+章节ID：{{ chapter_id }}
+{% if region_type %}区域类型：{{ region_type }}{% endif %}
+{% if parent_region %}父区域：{{ parent_region }}{% endif %}
+
+## 输出要求
+请返回包含以下所有字段的完整JSON：
+- region_key: 区域唯一标识（格式：region_xxx）
+- name: 区域名称（符合世界观风格的中文名称）
+- chapter_id: 所属章节ID（格式：chapter_xxx）
+- region_type: 区域类型（core/expansion/anomaly/hidden）
+- parent_region: 父区域ID（顶级区域为null）
+- description: 区域描述（200-500字，包含地理特征、气候环境、历史背景）
+- lore: 区域传说（100-300字，包含区域的神秘故事或历史事件）
+- atmosphere: 氛围描述（50-100字，描述区域给人的整体感觉）
+- visual_style: 视觉风格对象，包含：
+  - terrain_type: 地形类型（plains/forest/mountain/desert/swamp/cave/city/wasteland/volcanic）
+  - color_palette: 主色调数组（3-5个颜色描述）
+  - lighting: 光照描述（day/night/dark/foggy/sunny）
+  - architectural_style: 建筑风格（medieval/futuristic/ruined/natural/organic）
+- landmarks: 地标数组，每个地标包含：
+  - landmark_key: 地标ID（格式：landmark_xxx）
+  - name: 地标名称
+  - description: 地标描述（50-100字）
+  - type: 地标类型（natural/manmade/ruin/mystical）
+  - significance: 重要性描述
+- danger_level: 危险等级（peaceful/low/medium/high/extreme）
+- recommended_level: 推荐等级范围（格式："1-10"）
+- accessibility: 可访问性描述（如何到达这个区域）
+- climate: 气候描述（温度、天气特点）
+- notable_locations: 著名地点数组（5-10个简短地点名称）
+
+确保描述与世界观一致，创造引人入胜的游戏体验。

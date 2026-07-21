@@ -17,6 +17,7 @@ from app.core.npc_data_adapter import NPCDataAdapter
 from app.core.monster_data_adapter import MonsterDataAdapter
 from app.core.quality_scorer import QualityScorer
 from app.core.quest_data_adapter import QuestDataAdapter
+from app.core.region_data_adapter import RegionDataAdapter
 from app.core.settlement_data_adapter import SettlementDataAdapter
 from app.core.template_manager import TemplateManager
 
@@ -46,6 +47,7 @@ class ContentGenerator:
         monster_adapter: MonsterDataAdapter | None = None,
         boss_adapter: BossDataAdapter | None = None,
         item_adapter: ItemDataAdapter | None = None,
+        region_adapter: RegionDataAdapter | None = None,
     ):
         self.llm_adapter = llm_adapter or get_llm_adapter()
         self.template_manager = template_manager or TemplateManager(settings.template_dir)
@@ -58,6 +60,7 @@ class ContentGenerator:
         self.monster_adapter = monster_adapter or MonsterDataAdapter()
         self.boss_adapter = boss_adapter or BossDataAdapter()
         self.item_adapter = item_adapter or ItemDataAdapter()
+        self.region_adapter = region_adapter or RegionDataAdapter()
 
     async def generate_npc(
         self,
@@ -185,7 +188,7 @@ class ContentGenerator:
             context: 额外上下文信息
 
         Returns:
-            生成的区域数据
+            生成的区域数据（已转换为 world-service 兼容格式）
 
         Raises:
             ContentGenerationError: 生成失败或质量不达标
@@ -207,6 +210,12 @@ class ContentGenerator:
             logger.error(f"LLM generation failed: {e}")
             raise ContentGenerationError(f"LLM generation failed: {e}")
 
+        try:
+            response = self.region_adapter.ensure_minimum_completeness(response, min_completeness=0.90)
+        except ValueError as e:
+            logger.warning(f"Region data completeness check failed: {e}")
+            raise ContentGenerationError(str(e))
+
         score_result = self.quality_scorer.score_region(response)
         if not score_result.is_acceptable():
             logger.warning(
@@ -217,7 +226,8 @@ class ContentGenerator:
                 quality_score=score_result.score,
             )
 
-        return response
+        adapted = self.region_adapter.adapt(response)
+        return adapted
 
     async def generate_settlement(
         self,
@@ -467,9 +477,11 @@ class ContentGenerator:
                 "failure_condition。确保所有字段填写完整。"
             ),
             "region": (
-                "你是一个游戏区域设计专家。你需要根据世界观和章节进度，设计出有特色的区域。"
-                "返回的JSON必须包含：name（名字）、difficulty（难度easy/normal/hard/extreme）、"
-                "region_id（区域ID）、chapter_id（章节ID）、description（描述）、features（特色列表）。"
+                "你是一个游戏世界设计专家。你需要根据世界观和区域设定，生成详细的区域场景描述。"
+                "返回的JSON必须包含所有必需字段：region_key、name、chapter_id、region_type（core/expansion/anomaly/hidden）、"
+                "parent_region、description、lore、atmosphere、visual_style（包含terrain_type、color_palette、lighting、architectural_style）、"
+                "landmarks（数组，每个包含landmark_key、name、description、type、significance）、danger_level、"
+                "recommended_level、accessibility、climate、notable_locations。确保所有字段填写完整。"
             ),
             "settlement": (
                 "你是一个游戏聚落设计专家。你需要根据区域设定和世界观，设计出符合背景的完整聚落。"
@@ -619,23 +631,47 @@ class ContentGenerator:
         context: dict[str, Any] | None,
     ) -> str:
         """构建区域生成提示。"""
-        prompt_parts = ["请设计一个游戏区域。"]
+        prompt_parts = ["请设计一个游戏区域场景描述。"]
 
         if chapter_id:
             prompt_parts.append(f"章节：{chapter_id}")
         if context:
+            if "region_id" in context:
+                prompt_parts.append(f"区域ID：{context['region_id']}")
+            if "region_type" in context:
+                prompt_parts.append(f"区域类型：{context['region_type']}")
+            if "parent_region" in context:
+                prompt_parts.append(f"父区域：{context['parent_region']}")
             if "theme" in context:
                 prompt_parts.append(f"主题：{context['theme']}")
-            if "difficulty" in context:
-                prompt_parts.append(f"建议难度：{context['difficulty']}")
+            if "world_rules" in context:
+                prompt_parts.append(f"世界规则：{context['world_rules']}")
 
-        prompt_parts.append("\n请返回包含以下字段的JSON：")
-        prompt_parts.append("- name: 区域名字")
-        prompt_parts.append("- difficulty: 难度（easy/normal/hard/extreme）")
-        prompt_parts.append("- region_id: 区域ID（格式：region_xxx）")
-        prompt_parts.append("- chapter_id: 所属章节ID")
-        prompt_parts.append("- description: 区域描述（50-200字）")
-        prompt_parts.append("- features: 区域特色列表（字符串数组）")
+        prompt_parts.append("\n请返回包含以下所有字段的完整JSON：")
+        prompt_parts.append("- region_key: 区域唯一标识（格式：region_xxx）")
+        prompt_parts.append("- name: 区域名称（符合世界观风格的中文名称）")
+        prompt_parts.append("- chapter_id: 所属章节ID（格式：chapter_xxx）")
+        prompt_parts.append("- region_type: 区域类型（core/expansion/anomaly/hidden）")
+        prompt_parts.append("- parent_region: 父区域ID（顶级区域为null）")
+        prompt_parts.append("- description: 区域描述（200-500字，包含地理特征、气候环境、历史背景）")
+        prompt_parts.append("- lore: 区域传说（100-300字，包含区域的神秘故事或历史事件）")
+        prompt_parts.append("- atmosphere: 氛围描述（50-100字，描述区域给人的整体感觉）")
+        prompt_parts.append("- visual_style: 视觉风格对象，包含：")
+        prompt_parts.append("  - terrain_type: 地形类型（plains/forest/mountain/desert/swamp/cave/city/wasteland/volcanic/ocean/lake/river/glacier/jungle）")
+        prompt_parts.append("  - color_palette: 主色调数组（3-5个颜色描述）")
+        prompt_parts.append("  - lighting: 光照描述（day/night/dark/foggy/sunny）")
+        prompt_parts.append("  - architectural_style: 建筑风格（medieval/futuristic/ruined/natural/organic）")
+        prompt_parts.append("- landmarks: 地标数组，每个地标包含：")
+        prompt_parts.append("  - landmark_key: 地标ID（格式：landmark_xxx）")
+        prompt_parts.append("  - name: 地标名称")
+        prompt_parts.append("  - description: 地标描述（50-100字）")
+        prompt_parts.append("  - type: 地标类型（natural/manmade/ruin/mystical）")
+        prompt_parts.append("  - significance: 重要性描述")
+        prompt_parts.append("- danger_level: 危险等级（peaceful/low/medium/high/extreme）")
+        prompt_parts.append("- recommended_level: 推荐等级范围（格式：\"1-10\"）")
+        prompt_parts.append("- accessibility: 可访问性描述（如何到达这个区域）")
+        prompt_parts.append("- climate: 气候描述（温度、天气特点）")
+        prompt_parts.append("- notable_locations: 著名地点数组（5-10个简短地点名称）")
 
         return "\n".join(prompt_parts)
 
