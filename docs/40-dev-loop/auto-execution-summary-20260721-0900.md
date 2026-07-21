@@ -36,4 +36,4 @@
 
 ## 合并状态
 
-待合并到 feature-prd
+✅ 已合并到 feature-prd（merge commit: d98ce40；远程推送因环境无认证凭据失败）
