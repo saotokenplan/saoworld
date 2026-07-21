@@ -126,3 +126,46 @@ class TestContentSafetyChecker:
         result = checker.check(content)
         assert result.score < 100
         assert result.score > 0
+
+    def test_all_age_rating_escalates_mature_theme(self):
+        checker = ContentSafetyChecker({
+            "banned_words": [],
+            "high_risk_topics": [],
+            "target_age_rating": "all",
+        })
+        content = {
+            "schema_version": 1,
+            "quests": [
+                {
+                    "quest_id": "quest_1",
+                    "description": "这是一段包含血腥和死亡描写的内容。",
+                }
+            ],
+        }
+
+        result = checker.check(content)
+
+        mature_issues = [issue for issue in result.issues if issue.issue_type == "mature_theme"]
+        assert mature_issues
+        assert all(issue.severity == IssueSeverity.HIGH for issue in mature_issues)
+
+    def test_banned_word_threshold_exceeded_adds_aggregate_issue(self):
+        checker = ContentSafetyChecker({
+            "banned_words": ["违禁药品", "赌博"],
+            "high_risk_topics": [],
+            "target_age_rating": "teen",
+            "max_banned_words_per_content": 1,
+        })
+        content = {
+            "schema_version": 1,
+            "npcs": [
+                {
+                    "npc_id": "npc_1",
+                    "description": "他售卖违禁药品，还组织赌博。",
+                }
+            ],
+        }
+
+        result = checker.check(content)
+
+        assert any(issue.issue_type == "banned_word_threshold_exceeded" for issue in result.issues)

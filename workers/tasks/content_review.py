@@ -56,6 +56,16 @@ def _map_risk_level(issues: list[dict[str, Any]]) -> str:
     return "low"
 
 
+def _determine_overall_result(results: list[dict[str, Any]]) -> str:
+    review_results = {result.get("result") for result in results}
+
+    if "rejected" in review_results:
+        return "rejected"
+    if review_results == {"approved"}:
+        return "approved"
+    return "manual_review"
+
+
 @app.task(bind=True, max_retries=3, retry_backoff=2, name="workers.tasks.content_review.run_world_consistency_review")
 def run_world_consistency_review(
     self,
@@ -449,15 +459,7 @@ def run_full_content_review(
         results.append(run_duplication_review(content_package_id, trace_id))
 
         total_score = sum(r.get("score", 0) for r in results) / len(results) if results else 0
-        all_passed = all(r.get("result") == "passed" for r in results)
-        any_failed = any(r.get("result") == "failed" for r in results)
-
-        if any_failed:
-            overall_result = "failed"
-        elif all_passed:
-            overall_result = "passed"
-        else:
-            overall_result = "needs_review"
+        overall_result = _determine_overall_result(results)
 
         total_issues = sum(r.get("issues_count", 0) for r in results)
 
