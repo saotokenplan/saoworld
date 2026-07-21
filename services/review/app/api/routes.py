@@ -21,6 +21,8 @@ from app.repositories.review_repo import ReviewRepository
 from app.schemas.review import (
     ApproveReviewRequest,
     ApproveReviewResponse,
+    AutoReviewRequest,
+    AutoReviewResponse,
     CreateReviewRequest,
     CreateReviewResponse,
     EnvelopeResponse,
@@ -553,3 +555,108 @@ async def reject_review_object(
         ),
         trace_id=x_trace_id,
     )
+
+
+@ops_router.post(
+    "/review/auto",
+    status_code=status.HTTP_200_OK,
+    responses={
+        400: {"description": "Invalid request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+    },
+    tags=["ops"],
+)
+async def auto_review(
+    body: AutoReviewRequest,
+    request: Request,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[AutoReviewResponse]:
+    from app.core.auto_review_engine import auto_review_engine
+
+    request_id = _make_request_id("req_ops_auto_review")
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    try:
+        result = auto_review_engine.evaluate(
+            object_type=body.object_type,
+            object_payload=body.object_payload,
+            quality_score=body.quality_score,
+        )
+
+        repo = ReviewRepository(db)
+        risk_level = "low" if result["auto_result"] == "approved" else "medium"
+        if result["auto_result"] == "rejected":
+            risk_level = "high"
+
+        review = await repo.create_review(
+            object_id=body.object_id,
+            object_type=body.object_type,
+            review_type="auto",
+            trace_id=body.trace_id,
+            quality_score=body.quality_score,
+            detail={
+                "auto_result": result["auto_result"],
+                "reason": result["reason"],
+                "rule_results": result["rule_results"],
+                "is_automatic": result["is_automatic"],
+            },
+            result=result["auto_result"],
+            risk_level=risk_level,
+        )
+
+        record_review_create()
+
+        if result["is_automatic"]:
+            record_review_result(result["auto_result"])
+
+        audit_repo = AuditRepository(db)
+        await audit_repo.create_audit_log(
+            trace_id=trace_id,
+            operator_id=current_user.user_id,
+            operator_role=current_user.role.value,
+            action=ACTION_REVIEW_RECORD_CREATE,
+            resource_type=RESOURCE_REVIEW_RECORD,
+            resource_id=review.review_id,
+            request_payload_jsonb={
+                "object_id": str(body.object_id),
+                "object_type": body.object_type,
+                "auto_result": result["auto_result"],
+                "is_automatic": result["is_automatic"],
+                "reason": result["reason"],
+            },
+            result_status=200,
+        )
+
+        return EnvelopeResponse(
+            request_id=request_id,
+            data=AutoReviewResponse(
+                object_id=body.object_id,
+                auto_result=result["auto_result"],
+                reason=result["reason"],
+                is_automatic=result["is_automatic"],
+                rule_results=[
+                    {"rule": r["rule"], "result": r["result"], "error": r.get("error")}
+                    for r in result["rule_results"]
+                ],
+                request_id_=request_id,
+                trace_id=trace_id,
+            ),
+            trace_id=trace_id,
+        )
+
+    except Exception as e:
+        logger.error(
+            "auto_review_failed",
+            error=str(e),
+            request_id=request_id,
+            trace_id=trace_id,
+        )
+        raise_review_error(
+            ReviewErrorCodes.INTERNAL_ERROR,
+            f"自动审核失败: {str(e)}",
+            request_id,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

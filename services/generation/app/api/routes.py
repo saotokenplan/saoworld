@@ -41,6 +41,8 @@ from app.schemas.generation import (
     GenerationRequestListResponse,
     GenerationRequestResponse,
     GenerationRequestStatus,
+    GenerateRegionRequest,
+    GenerateRegionResponse,
     HealthResponse,
     PaginatedMeta,
     UpdateGenerationStatusRequest,
@@ -791,3 +793,91 @@ async def get_generation_cost(
         ),
         trace_id=trace_id,
     )
+
+
+@ops_router.post(
+    "/generation/regions",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"description": "Invalid request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        500: {"description": "Generation failed"},
+    },
+    tags=["ops"],
+)
+async def generate_region(
+    body: GenerateRegionRequest,
+    request: Request,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[GenerateRegionResponse]:
+    from app.core.content_generator import get_content_generator
+
+    request_id = _make_request_id("req_ops_gen_region")
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    try:
+        generator = get_content_generator()
+
+        context: dict[str, object] = {}
+        if body.region_id:
+            context["region_id"] = body.region_id
+        if body.region_type:
+            context["region_type"] = body.region_type
+        if body.parent_region:
+            context["parent_region"] = body.parent_region
+        if body.theme:
+            context["theme"] = body.theme
+        if body.world_rules:
+            context["world_rules"] = body.world_rules
+
+        generated_data = await generator.generate_region(
+            chapter_id=body.chapter_id,
+            context=context,
+        )
+
+        repo = GenerationRepository(db)
+        obj = await repo.create_generated_object(
+            request_id=uuid.uuid4(),
+            object_type="region",
+            object_payload=generated_data,
+            schema_version=1,
+        )
+
+        record_generated_object_status(obj.status)
+
+        audit_repo = AuditRepository(db)
+        await audit_repo.create_audit_log(
+            trace_id=trace_id,
+            operator_id=current_user.user_id,
+            operator_role=current_user.role.value,
+            action=ACTION_GENERATED_OBJECT_CREATE,
+            resource_type=RESOURCE_GENERATED_OBJECT,
+            resource_id=obj.object_id,
+            request_payload_jsonb=body.model_dump(mode="json"),
+            result_status=201,
+        )
+
+        response_data = GenerateRegionResponse(**generated_data)
+
+        return EnvelopeResponse(
+            request_id=request_id,
+            data=response_data,
+            trace_id=trace_id,
+        )
+
+    except Exception as e:
+        logger.error(
+            "region_generation_failed",
+            error=str(e),
+            request_id=request_id,
+            trace_id=trace_id,
+        )
+        raise_generation_error(
+            GenerationErrorCodes.INTERNAL_ERROR,
+            f"区域生成失败: {str(e)}",
+            request_id,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

@@ -184,3 +184,45 @@ class CostQueryRequest(BaseModel):
     start_date: datetime | None = None
     end_date: datetime | None = None
     period: str = Field(default="daily", pattern="^(daily|monthly|custom)$")
+
+
+class RegionVisualStyle(BaseModel):
+    terrain_type: str = Field(min_length=1, max_length=32)
+    color_palette: list[str] = Field(min_length=1, max_length=10)
+    lighting: str = Field(min_length=1, max_length=32)
+    architectural_style: str = Field(min_length=1, max_length=32)
+
+
+class RegionLandmark(BaseModel):
+    landmark_key: str = Field(min_length=1, max_length=64)
+    name: str = Field(min_length=1, max_length=128)
+    description: str = Field(min_length=1, max_length=500)
+    type: str = Field(min_length=1, max_length=32)
+    significance: str = Field(min_length=1, max_length=500)
+
+
+class GenerateRegionRequest(BaseModel):
+    chapter_id: str | None = None
+    region_id: str | None = None
+    region_type: str | None = None
+    parent_region: str | None = None
+    theme: str | None = None
+    world_rules: str | None = None
+
+
+class GenerateRegionResponse(BaseModel):
+    region_key: str
+    name: str
+    chapter_id: str
+    region_type: str
+    parent_region: str | None
+    description: str | None
+    lore: str | None
+    atmosphere: str | None
+    visual_style: RegionVisualStyle | None
+    landmarks: list[RegionLandmark] = []
+    danger_level: str
+    recommended_level: str
+    accessibility: str | None
+    climate: str | None
+    notable_locations: list[str] = []

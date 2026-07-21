@@ -135,3 +135,27 @@ class RejectReviewResponse(BaseModel):
     risk_level: RiskLevel
     request_id_: str
     trace_id: str | None = None
+
+
+class AutoReviewRequest(BaseModel):
+    object_id: uuid.UUID
+    object_type: str = Field(min_length=1, max_length=64)
+    object_payload: dict[str, object]
+    quality_score: float | None = Field(default=None, ge=0, le=1)
+    trace_id: str = Field(min_length=1, max_length=128)
+
+
+class AutoReviewRuleResult(BaseModel):
+    rule: str
+    result: str | None
+    error: str | None = None
+
+
+class AutoReviewResponse(BaseModel):
+    object_id: uuid.UUID
+    auto_result: str
+    reason: str
+    is_automatic: bool
+    rule_results: list[AutoReviewRuleResult]
+    request_id_: str
+    trace_id: str | None = None
