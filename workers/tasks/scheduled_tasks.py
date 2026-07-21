@@ -2,7 +2,7 @@ import logging
 
 from workers.celery_app import app
 from workers.tasks.gate_scan import daily_gate_scan as daily_gate_scan_task
-from workers.tasks.content_review import run_world_consistency_review
+from workers.tasks.content_review import run_full_content_review
 from workers.tasks.analytics_pipeline import run_daily_analytics
 
 logger = logging.getLogger(__name__)
@@ -33,11 +33,19 @@ def sync_metrics_gauge(self) -> dict[str, str]:
 
 
 @app.task(bind=True, queue="scheduled")
-def daily_content_review(self) -> dict[str, str]:
+def daily_content_review(self, content_package_id: str | None = None) -> dict[str, str]:
     logger.info("Running scheduled daily content review")
+    if content_package_id is None:
+        logger.warning("Daily content review skipped: content_package_id is required")
+        return {"status": "skipped", "reason": "content_package_id_required"}
+
     try:
-        result = run_world_consistency_review(request_id="daily_review")
-        return {"status": "success", "result": str(result)}
+        result = run_full_content_review(content_package_id=content_package_id, trace_id="daily_review")
+        return {
+            "status": "success",
+            "result": str(result),
+            "content_package_id": content_package_id,
+        }
     except Exception as e:
         logger.error(f"Daily content review failed: {e}")
         return {"status": "failed", "error": str(e)}

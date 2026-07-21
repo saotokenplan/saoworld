@@ -45,8 +45,13 @@ class ContentSafetyChecker(BaseChecker):
                         details={"banned_word": word},
                     )
 
-        if banned_count > max_banned:
-            pass
+        if max_banned > 0 and banned_count > max_banned:
+            result.add_issue(
+                issue_type="banned_word_threshold_exceeded",
+                severity=IssueSeverity.CRITICAL,
+                message=f"违禁词命中次数超过阈值: {banned_count}/{max_banned}",
+                details={"banned_count": banned_count, "max_banned_words_per_content": max_banned},
+            )
 
     def _check_high_risk_topics(self, all_text: list[tuple[str, str]], result: CheckResult) -> None:
         high_risk_topics = self.config.get("high_risk_topics", [])
@@ -68,8 +73,7 @@ class ContentSafetyChecker(BaseChecker):
         self, content_data: dict[str, Any], all_text: list[tuple[str, str]], result: CheckResult
     ) -> None:
         target_age_rating = self.config.get("target_age_rating", "teen")
-        if target_age_rating == "all":
-            return
+        severity = IssueSeverity.HIGH if target_age_rating == "all" else IssueSeverity.MEDIUM
 
         mature_themes = [
             "死亡",
@@ -90,17 +94,12 @@ class ContentSafetyChecker(BaseChecker):
                     if mature_count <= 5:
                         result.add_issue(
                             issue_type="mature_theme",
-                            severity=IssueSeverity.MEDIUM,
+                            severity=severity,
                             message=f"内容包含成人向主题元素: {theme}",
                             location=location,
                             details={"theme": theme},
                         )
                     break
-
-        if target_age_rating == "all" and mature_count > 0:
-            for issue in result.issues:
-                if issue.issue_type == "mature_theme":
-                    issue.severity = IssueSeverity.HIGH
 
     def _check_violence_content(self, all_text: list[tuple[str, str]], result: CheckResult) -> None:
         extreme_violence = [
