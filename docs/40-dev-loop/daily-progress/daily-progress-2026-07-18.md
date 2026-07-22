@@ -41,7 +41,7 @@
 
 - `docs/00-governance/project-status.md`
   - 项目级主状态页
-- `docs/30-api/40-dev-loop/auto-progress-log.md`
+- `docs/40-dev-loop/auto-progress-log.md`
   - 自动推进累计摘要与近期快照
 - 相关周报
   - 用于查看 M3 / P3 阶段的周度汇总
