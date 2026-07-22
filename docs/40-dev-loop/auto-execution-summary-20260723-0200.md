@@ -31,9 +31,10 @@
 ## 四、提交与合并记录
 
 - 提交拆分：
-  1. `docs(requirements)`：M4 阈值调优预案主交付物 + 引用同步
-  2. `docs(dev-loop)`：本轮自动化过程材料（计划/摘要/日志/循环日志）
-- 合并：合并结果、合并提交 hash 与远程推送状态见本节收尾时回填（合并完成后补充）。
+  1. `docs(requirements)` 2f018f0：M4 阈值调优预案主交付物 + 引用同步
+  2. `docs(dev-loop)` 8ed675e：本轮自动化过程材料（计划/摘要/日志/循环日志）
+- 合并结果：`--no-ff` 合并回 `feature-prd` 成功，无冲突；合并提交 hash `cd201a7`。
+- 远程推送状态：工作分支两笔提交均已推送 `origin/auto/auto-20260723-0200`；合并提交已推送 `origin/feature-prd` 并经 `git fetch` + `merge-base --is-ancestor` 校验确认（首次推送即成功，无重试）。
 
 ## 五、后续建议
 
