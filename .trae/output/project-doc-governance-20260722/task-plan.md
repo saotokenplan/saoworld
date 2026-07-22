@@ -27,8 +27,8 @@
    - `docs/40-dev-loop` 下多处深层目录仍缺局部 `README.md`
    - 自动归档目录存在可读性断层
 4. **外部代码和测试中存在坏路径**
-   - `tools/perf_test/threshold.py` 仍引用旧的 `docs/packages/...` 路径
-   - `tools/agents/ops_agent/tests/test_ops_agent.py` 仍引用已过时的 `docs/reports/...` 路径
+   - `tools/perf_test/threshold.py` 仍引用旧的专题包目录写法
+   - `tools/agents/ops_agent/tests/test_ops_agent.py` 仍引用已过时的历史报告目录写法
 5. **专题化再包装目录存在双写风险**
    - `docs/10-requirements/packages/first-slice/` 已收瘦，但仍需防止回到“第二套规范”
 

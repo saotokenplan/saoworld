@@ -53,7 +53,7 @@
 
 - [ ] `tools/perf_test/threshold.py` 中的旧 docs 路径已修复
 - [ ] `tools/agents/ops_agent/tests/test_ops_agent.py` 中的旧 docs 路径已修复
-- [ ] 本轮触达的活文件中不存在明显残留的 `docs/packages/` 或 `docs/reports/` 旧路径
+- [ ] 本轮触达的活文件中不存在明显残留的专题包旧路径或旧报告目录路径
 
 ## G. 终验与回滚
 

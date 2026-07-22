@@ -8,7 +8,7 @@
 ## 本轮工具调用摘要
 
 - `Read`：读取命中的历史归档文件与规划清单
-- `Grep`：扫描 `docs/packages/`、`docs/reports/`、`docs/runbook/` 旧路径命中情况
+- `Grep`：扫描旧专题包路径、旧报告目录路径和旧 runbook 目录路径的命中情况
 - `RunCommand`：对 2026-07 归档目录执行机械性路径替换并核对工作区
 - `apply_patch`：修正规划清单措辞与少量历史文件路径
 
@@ -16,8 +16,8 @@
 
 - 将规划清单中的验收项收紧为“活文件口径”
 - 对 `docs/40-dev-loop/archives/auto-generated/2026-07/` 下命中的历史文件执行路径映射修正：
-  - `docs/packages/first-slice/` -> `docs/10-requirements/packages/first-slice/`
-  - `docs/runbook/` -> `docs/40-dev-loop/runbooks/`
+  - 旧专题包目录写法 -> 当前 `docs/10-requirements/packages/first-slice/`
+  - 旧 runbook 目录写法 -> 当前 `docs/40-dev-loop/runbooks/`
 - 归档路径收口后，全仓旧路径 grep 仅剩规划产物中的问题描述文本
 
 ## 本轮修改文件清单
@@ -30,11 +30,11 @@
 
 ## 本轮发现的问题
 
-- 历史归档中的旧路径别名主要集中在 `docs/packages/first-slice/` 和 `docs/runbook/`
+- 历史归档中的旧路径别名主要集中在旧专题包目录写法和旧 runbook 目录写法
 - 规划产物本身仍保留“旧路径风险描述”，因此 grep 仍会命中 3 行，但这些不是无效引用而是问题说明
 
 ## 本轮校验结果
 
-- `grep docs/packages/|docs/reports/|docs/runbook/` 全仓扫描：仅剩规划产物中的问题描述文本
+- 全仓旧路径扫描：仅剩规划产物中的问题描述文本
 - 归档路径批量替换完成，未发现活文件残留旧路径
 - 工作区修改集中在规划产物与历史归档文件
