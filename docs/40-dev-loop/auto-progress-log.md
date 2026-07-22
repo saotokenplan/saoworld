@@ -21,6 +21,12 @@
 
 ## 近期快照
 
+### 2026-07-23 03:10
+
+- 结论：M4 规划期白名单第三项落地 —— WP3 审核效率看板指标定义（`docs/10-requirements/M4-审核效率看板指标定义.md`，draft）。
+- 变化：登记 review 服务六项埋点/配置缺口（无耗时埋点、auto 路径 manual_review 不计数、metrics.yaml 与代码标签不一致等），全部列为 WP3 实施期改造项；白名单五项已落地三项。
+- 详细报告：`auto-execution-summary-20260723-0310.md`
+
 ### 2026-07-23 02:04
 
 - 结论：M4 规划期白名单第二项落地 —— WP2 阈值调优预案（`docs/10-requirements/M4-阈值调优预案.md`，draft）。
