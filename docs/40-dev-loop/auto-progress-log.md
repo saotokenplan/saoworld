@@ -1,6 +1,7 @@
 # 自动推进进度日志
 
 > 记录每小时自动推进任务的执行情况，按时间倒序排列。
+> 说明：2026-07 的自动产物已归档到 `archives/auto-generated/2026-07/`；历史日志条目中若仍出现旧文件名，按其产生时点理解。
 
 ## 2026-07-22 13:15 — auto-20260722-1315（无新工作·优雅结束 + 周期性收拢）
 
@@ -13,7 +14,7 @@
   - 实地核验运行时环境：docker daemon 未运行、PG 5432 无监听、Redis 6379 无监听 → 预发布环境不可用，且被 #2 决策门禁前置阻塞
   - 工作树此前滞留 08:43/09:36 两份状态报告 + 已修改进度日志/自动化记忆（前序轮次按节流指引未提交遗留）；本轮按 0746 先例做周期性收拢，统一提交并合并推送，恢复干净工作树
   - 距上次真实代码提交（2026-07-21 每周审查，约 41h）无新需求/缺陷/M4 解锁信号
-- 交付物：docs/40-dev-loop/auto-status-report-20260722-1315.md + 收拢 0843/0936 报告 + 进度日志 + 自动化记忆；合并提交落 origin/feature-prd
+- 交付物：docs/40-dev-loop/archives/auto-generated/2026-07/status/auto-status-report-20260722-1315.md + 收拢 0843/0936 报告 + 进度日志 + 自动化记忆；合并提交落 origin/feature-prd
 
 ## 2026-07-22 09:36 — auto-20260722-0936（无新工作·优雅结束）
 
@@ -24,7 +25,7 @@
   - 核对 project-status.md「下一阶段建议」76 项：69 项删除线已完成 + 顶部 7 项未删除线（与 08:43 持平）
   - 研判 7 个未删除线项同前序轮次；独立复测运行时环境（docker/PG/Redis）确认不可用，被 #2 决策门禁前置阻塞
   - 距上次真实代码提交（2026-07-21 每周审查）约 37h；未提交/未推送（遵循节流指引）
-- 交付物：docs/40-dev-loop/auto-status-report-20260722-0936.md
+- 交付物：docs/40-dev-loop/archives/auto-generated/2026-07/status/auto-status-report-20260722-0936.md
 
 ## 2026-07-22 06:44 — auto-20260722-0644（无新工作·优雅结束）
 
@@ -37,7 +38,7 @@
   - 额外实地核验运行时环境：docker daemon 未运行、PG 客户端存在但 5432 无监听、Redis 6379 无监听 → 预发布环境不可用，且被 #2 决策门禁前置阻塞
   - 距上次真实代码提交（2026-07-21 每周审查）约 6.8h，无新需求/缺陷/M4 解锁信号
   - 遵循节流指引，不创建验证型噪声分支/合并
-- 交付物：docs/40-dev-loop/auto-status-report-20260722-0644.md
+- 交付物：docs/40-dev-loop/archives/auto-generated/2026-07/status/auto-status-report-20260722-0644.md
 
 ## 2026-07-22 04:48 — auto-20260722-0448（无新工作·优雅结束）
 
@@ -49,7 +50,7 @@
   - 研判 7 个未删除线项：#2 灰度发布决策需人工、#3/#4 需 PostgreSQL 预发布环境（本地 SQLite 不可运行）、#5 明确「不抢跑」、#6 已每周自动化、#1/#7 属发布就绪期元治理/高风险重构
   - 确认 project-status.md 相对 origin/feature-prd 无差异（自 03:51 回合起无更新）；距上次真实代码提交（2026-07-21 每周审查）约 6h，无新需求/缺陷/M4 解锁信号
   - 遵循节流指引，不创建验证型噪声分支/合并
-- 交付物：docs/40-dev-loop/auto-status-report-20260722-0448.md
+- 交付物：docs/40-dev-loop/archives/auto-generated/2026-07/status/auto-status-report-20260722-0448.md
 
 ## 2026-07-22 03:51 — auto-20260722-0351（无新工作·优雅结束）
 
@@ -61,7 +62,7 @@
   - 研判 7 个未删除线项：#2 灰度发布决策需人工、#3/#4 需 PostgreSQL 预发布环境（本地 SQLite 不可运行）、#5 明确「不抢跑」、#6 已每周自动化、#1/#7 属发布就绪期元治理/高风险重构
   - 距上一回合（02:53）仅约 58 分钟，project-status.md 无更新，无新需求/缺陷/M4 解锁信号
   - 遵循节流指引，不创建验证型噪声分支/合并
-- 交付物：docs/40-dev-loop/auto-status-report-20260722-0351.md
+- 交付物：docs/40-dev-loop/archives/auto-generated/2026-07/status/auto-status-report-20260722-0351.md
 - 结论：技术实现全部完成，等待运营决策解锁 M4 / 新需求；7 个未删除线项均被人为决策或不可得基础设施阻塞
 
 ## 2026-07-21 10:00 — auto-20260721-1000
@@ -674,7 +675,7 @@
 - 分支：auto/auto-20260719-1200
 - 状态：✅ 已完成
 - 工作内容：
-  - 系统性审计 `docs/40-dev-loop/ops-runbooks/checklist-public-beta-launch.md` 共 98 项检查项
+  - 系统性审计 `docs/40-dev-loop/runbooks/operations/checklist-public-beta-launch.md` 共 98 项检查项
   - 静态验收 83 项（标记 `[x]` + 附验收证据），运行时验证项标注 15 项
   - 修正过时测试数量：player-service 202→309、ops-service 106→127
   - 发现并修复 player-service 与 content-service 的 CORS 通配符安全问题（`allow_origins=["*"]` → `settings.allowed_origins` 白名单）
@@ -2142,8 +2143,8 @@
   3. 更新 daily-progress-2026-07-13.md 同步 Sprint 4 完成状态（85% → 100%）
   4. 更新 S4-06 状态为已完成，添加收尾验证记录
 - 验证：ruff check 通过，历史记录显示 683 后端测试 + 226 agents 测试 + 64 tools 测试通过
-- 计划文档：docs/40-dev-loop/auto-plan-20260714-0800.md
-- 执行摘要：docs/40-dev-loop/auto-execution-summary-20260714-0800.md
+- 计划文档：docs/40-dev-loop/archives/auto-generated/2026-07/plan/auto-plan-20260714-0800.md
+- 执行摘要：docs/40-dev-loop/archives/auto-generated/2026-07/execution/auto-execution-summary-20260714-0800.md
 
 ## 2026-07-14 07:00 — auto-20260714-0700
 
@@ -2158,8 +2159,8 @@
   5. 投票权重边界校验：添加最终权重 ≤10.0 的校验
   6. 测试验证：vote-service 52 个测试全部通过，ruff / mypy 通过
 - 验证：vote-service 52 测试通过，代码质量检查通过
-- 计划文档：docs/40-dev-loop/auto-plan-20260714-0700.md
-- 执行摘要：docs/40-dev-loop/auto-execution-summary-20260714-0700.md
+- 计划文档：docs/40-dev-loop/archives/auto-generated/2026-07/plan/auto-plan-20260714-0700.md
+- 执行摘要：docs/40-dev-loop/archives/auto-generated/2026-07/execution/auto-execution-summary-20260714-0700.md
 
 ## 2026-07-14 06:00 — auto-20260714-0600
 
@@ -2187,8 +2188,8 @@
   4. 更新 project-status.md，将 S4-06 标记为已完成
   5. 更新当前阶段描述，添加 "Sprint 4 投票体验优化全部完成"
 - 验证：vote-service 97 个测试全部通过，ruff / mypy 检查通过
-- 计划文档：docs/40-dev-loop/auto-plan-20260713-0805.md
-- 执行摘要：docs/40-dev-loop/auto-execution-summary-20260713-0805.md
+- 计划文档：docs/40-dev-loop/archives/auto-generated/2026-07/plan/auto-plan-20260713-0805.md
+- 执行摘要：docs/40-dev-loop/archives/auto-generated/2026-07/execution/auto-execution-summary-20260713-0805.md
 
 ## 2026-07-14 05:00 — auto-20260714-0500
 
@@ -2206,7 +2207,7 @@
   8. 补充 vote-service 测试 6 个、content-service 测试 2 个、客户端 GUT 测试 11 个
   9. 更新 project-status.md 与 daily-progress-2026-07-13.md，生成执行摘要
 - 验证：vote-service 97 个测试通过，content-service 67 个测试通过，ruff / mypy 检查通过；客户端 GUT 测试因沙箱无 Godot 环境未实际运行
-- 计划文档：docs/40-dev-loop/auto-plan-20260714-0500.md
+- 计划文档：docs/40-dev-loop/archives/auto-generated/2026-07/plan/auto-plan-20260714-0500.md
 
 ## 2026-07-14 02:00 — auto-20260714-0200
 
@@ -2240,11 +2241,11 @@
   - 创建 `tools/perf_test/` 工具包（6 个核心模块 + pyproject.toml + 6 个测试文件）
   - 63 个单元测试全部通过
   - 4 个门禁注册（G-UNIT-013、G-NONFUNC-001/002/003）
-  - 1 个 Runbook（docs/runbook/gates/perf-test.md）
+  - 1 个 Runbook（docs/40-dev-loop/runbooks/gates/perf-test.md）
   - tools/README.md 与 project-status.md 同步更新
 - 验证：ruff / mypy / pytest 全部通过，vote-service（80）、content-service（65）、loop_logging（36）无回归
-- 计划文档：docs/40-dev-loop/auto-plan-20260713-0208.md
-- 执行摘要：docs/40-dev-loop/auto-execution-summary-20260713-0208.md
+- 计划文档：docs/40-dev-loop/archives/auto-generated/2026-07/plan/auto-plan-20260713-0208.md
+- 执行摘要：docs/40-dev-loop/archives/auto-generated/2026-07/execution/auto-execution-summary-20260713-0208.md
 
 ## 2026-07-14 01:00 — auto-20260714-0100
 
@@ -2260,7 +2261,7 @@
   - 核对 project-status.md「下一阶段建议」69 项，确认全部已完成（删除线标记）
   - 确认 03:00–09:00 连续 7 个「就绪状态持续验证」为重复文档噪声，建议为循环增加「是否有新工作」门禁以节流
   - 唯一真实阻塞仍为运营灰度发布决策
-- 交付物：docs/40-dev-loop/auto-status-report-20260721-2300.md
+- 交付物：docs/40-dev-loop/archives/auto-generated/2026-07/status/auto-status-report-20260721-2300.md
 - 结论：技术实现全部完成，等待运营决策解锁 M4 / 新需求
 
 ## 2026-07-22 02:53 — auto-20260722-0253（无新工作·优雅结束）
@@ -2273,7 +2274,7 @@
   - 研判 7 个未删除线项：#2 灰度发布决策需人工、#3/#4 需 PostgreSQL 预发布环境（本地 SQLite 不可运行）、#5 明确「不抢跑」、#6 已每周自动化、#1/#7 属发布就绪期元治理/高风险重构
   - 距上次真实代码提交（2026-07-21 每周审查）仅约 3.5h，无新需求/缺陷/M4 解锁信号
   - 遵循节流指引，不创建验证型噪声分支/合并
-- 交付物：docs/40-dev-loop/auto-status-report-20260722-0253.md
+- 交付物：docs/40-dev-loop/archives/auto-generated/2026-07/status/auto-status-report-20260722-0253.md
 - 结论：技术实现全部完成，等待运营决策解锁 M4 / 新需求；7 个未删除线项均被人为决策或不可得基础设施阻塞
 
 ## 2026-07-22 05:46 — auto-20260722-0546（无新工作·优雅结束）
@@ -2287,7 +2288,7 @@
   - 复核 306 个 auto-plan：大量「执行中」为 07-07～07-20 陈旧历史产物（已完成并合并、文档状态未回填），非实时待办，不予拾起
   - 距上次真实代码提交（2026-07-21 每周审查）约 6.5h，无新需求/缺陷/M4 解锁信号
   - 遵循节流指引，不创建验证型噪声分支/合并
-- 交付物：docs/40-dev-loop/auto-status-report-20260722-0546.md
+- 交付物：docs/40-dev-loop/archives/auto-generated/2026-07/status/auto-status-report-20260722-0546.md
 - 结论：技术实现全部完成，等待运营决策解锁 M4 / 新需求；7 个未删除线项均被人为决策或不可得基础设施阻塞
 
 ## 2026-07-22 07:46 — auto-20260722-0746（无新工作·优雅结束 + 文档收拢）
@@ -2301,28 +2302,28 @@
   - 研判 7 个未删除线项结论不变：#2 需人工决策、#3/#4 需 PostgreSQL 预发布环境、#5「不抢跑」、#6 已每周自动化、#1/#7 属发布就绪期元治理/高风险重构
   - 距上次真实代码提交（2026-07-21 每周审查）约 7.9h，无新需求/缺陷/M4 解锁信号
   - 发现前 5 轮「优雅结束」未提交，工作区累计 5 份状态报告 + auto-progress-log.md + automation memory.md 滞留本地；本轮一次性收拢并提交推送至 origin/feature-prd，清理工作树
-- 交付物：docs/40-dev-loop/auto-status-report-20260722-0746.md；收拢 02:53/03:51/04:48/05:46/06:44 五份状态报告至 origin/feature-prd
+- 交付物：docs/40-dev-loop/archives/auto-generated/2026-07/status/auto-status-report-20260722-0746.md；收拢 02:53/03:51/04:48/05:46/06:44 五份状态报告至 origin/feature-prd
 - 结论：技术实现全部完成，等待运营决策解锁 M4 / 新需求；7 个未删除线项均被人为决策或不可得基础设施阻塞
 
 ## 2026-07-22 08:43 — auto-20260722-0843（无新工作·优雅结束）
 - 研判：与 07:46 连续持平。project-status.md「下一阶段建议」76 项中 69 项删除线已完成，顶部 7 项未删除线且均不可由自动化自主执行（#2 需人工运营决策，为唯一硬阻塞；#3/#4 需 PostgreSQL/Redis/Docker 预发布环境；#5 明确「不抢跑」；#6 已每周自动化；#1/#7 属发布就绪期元治理/高风险重构）。
 - 运行时环境实测：docker 未运行、PG 5432 无监听、Redis 6379 无监听，预发布环境不可用，且被 #2 决策门禁前置阻塞。
 - 动作：未创建分支 / 未提交 / 未合并 / 未推送（遵循节流指引，不制造验证型噪声）。距上次真实代码提交（2026-07-21 每周审查）约 11.7h。
-- 交付物：docs/40-dev-loop/auto-status-report-20260722-0843.md；auto-progress-log.md 追加一条记录。
+- 交付物：docs/40-dev-loop/archives/auto-generated/2026-07/status/auto-status-report-20260722-0843.md；auto-progress-log.md 追加一条记录。
 - 结论：技术实现全部完成，等待运营决策解锁 M4 / 新需求；7 个未删除线项均被人为决策或不可得基础设施阻塞
 
 ## 2026-07-22 09:36 — auto-20260722-0936（无新工作·优雅结束）
 - 研判：与 08:43 连续持平。project-status.md「下一阶段建议」76 项中 69 项删除线已完成，顶部 7 项未删除线且均不可由自动化自主执行（#2 需人工运营决策，为唯一硬阻塞；#3/#4 需 PostgreSQL/Redis/Docker 预发布环境；#5 明确「不抢跑」；#6 已每周自动化；#1/#7 属发布就绪期元治理/高风险重构）。
 - 运行时环境独立复测：docker 未运行、PG 5432 无监听、Redis 6379 无监听，预发布环境不可用，且被 #2 决策门禁前置阻塞。
 - 动作：未创建分支 / 未提交 / 未合并 / 未推送（遵循节流指引，不制造验证型噪声）。距上次真实代码提交（2026-07-21 每周审查）约 37h。
-- 交付物：docs/40-dev-loop/auto-status-report-20260722-0936.md；auto-progress-log.md 追加一条记录。
+- 交付物：docs/40-dev-loop/archives/auto-generated/2026-07/status/auto-status-report-20260722-0936.md；auto-progress-log.md 追加一条记录。
 - 结论：技术实现全部完成，等待运营决策解锁 M4 / 新需求；7 个未删除线项均被人为决策或不可得基础设施阻塞
 
 ## 2026-07-22 16:42 — auto-20260722-1642（无新工作·优雅结束 + 周期性收拢）
 - 研判：与 13:15 连续持平。project-status.md「下一阶段建议」76 项中 69 项删除线已完成，顶部 7 项未删除线且均不可由自动化自主执行（#2 需人工运营决策，为唯一硬阻塞；#3/#4 需 PostgreSQL/Redis/Docker 预发布环境；#5 明确「不抢跑」；#6 已每周自动化；#1/#7 属发布就绪期元治理/高风险重构）。
 - 运行时环境独立复测：docker 未运行、PG 5432 无监听、Redis 6379 无监听，预发布环境不可用，且被 #2 决策门禁前置阻塞。
 - 动作：创建一次性收拢分支 auto/auto-20260722-1642，提交状态报告 + 进度日志 + 自动化记忆，--no-ff 合并回 origin/feature-prd，清理工作树（仿 0746/1315 周期性收拢，非按小时验证型噪声）。距上次真实代码提交（2026-07-21 每周审查）约 41h。
-- 交付物：docs/40-dev-loop/auto-status-report-20260722-1642.md；auto-progress-log.md 追加一条记录。
+- 交付物：docs/40-dev-loop/archives/auto-generated/2026-07/status/auto-status-report-20260722-1642.md；auto-progress-log.md 追加一条记录。
 - 结论：技术实现全部完成，等待运营决策解锁 M4 / 新需求；7 个未删除线项均被人为决策或不可得基础设施阻塞
 
 ## 2026-07-22 17:53 — auto-20260722-1753（无新工作·优雅结束）

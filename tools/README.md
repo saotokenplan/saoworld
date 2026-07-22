@@ -255,7 +255,7 @@ python tools/validate-commit-msg.py --message "feat(vote): 增加投票提交接
 
 ## 相关文档
 
-- 门禁 Runbook：`docs/runbook/gates/`
+- 门禁 Runbook：`docs/40-dev-loop/runbooks/gates/`
 - 门禁注册表：`docs/40-dev-loop/gate_registry.yaml`
 - 代理角色规范：`docs/40-dev-loop/p2-agent-design/`
 - 研发闭环规划：`docs/40-dev-loop/ai-coding-game-dev-loop-plan.md`

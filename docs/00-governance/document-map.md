@@ -69,6 +69,8 @@
 | `docs/40-dev-loop/loop-engineering-plan.md` | Loop Engineering 总方案、门禁、指标体系 | 治理设计较完整，但偏抽象 | 保留 | 与 `agent-loop-spec.md` 切分职责，避免双份描述同一流程 |
 | `docs/40-dev-loop/issue-templates-loop-engineering.md` | Gate 和 Rule 改进的 Issue 模板 | 实用性强，可直接复用 | 保留 | 后续迁移到真实工程仓库的 Issue Template 目录 |
 | `docs/40-dev-loop/log-schemas-loop-engineering.md` | 定义 session、CI、事故日志 schema | 结构清晰，适合作为观测标准 | 保留 | 补字段示例和日志采集入口，避免只停留在格式定义 |
+| `docs/40-dev-loop/runbooks/README.md` | 运行手册总入口 | 已正式并入研发闭环层 | 保留 | 作为门禁排障与运维操作的统一入口 |
+| `docs/10-requirements/packages/first-slice/README.md` | 第一版需求包入口 | 适合作为专题打包输出，但不应替代源规范 | 保留 | 明确其来源于 `20-specs/` 和 `30-api/` 的再包装关系 |
 | `docs/50-research/stack-research-ai-game-dev.md` | 引擎与整体技术栈选型论证 | 决策依据充分，但不适合做开发入口 | 保留 | 保留为调研归档，不再承载规范性内容 |
 | `docs/50-research/service-stack-comparison.md` | 比较 Python、TypeScript、Rust 的服务端职责 | 结论明确，适合辅助技术决策 | 保留 | 保留为历史决策依据，并补最终结论摘要 |
 
@@ -78,7 +80,10 @@
 - 涉及执行约束的新增内容，优先进入 `20-specs/`，避免散落到背景文档。
 - `10-requirements/` 中的文档不再重复维护接口、表结构、事件流等实现细节。
 - `40-dev-loop/` 中的流程性文档，需要标记“当前可执行”和“目标态演进”边界。
+- `40-dev-loop/runbooks/` 承接原运行手册内容，不再保留独立一级目录。
+- `40-dev-loop/archives/auto-generated/` 承接自动规划、执行摘要和状态快照等高噪音产物。
 - `50-research/` 中的调研文档只保留结论和依据，不承担实施规范角色。
+- `10-requirements/packages/` 用于专题需求包输出，但必须回指源规范而不是自成权威。
 
 ## 已补齐的治理与参考文档
 

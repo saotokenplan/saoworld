@@ -64,7 +64,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: ".trae/rules/10-python-backend.md"
-      runbook: "docs/runbook/gates/ruff.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/ruff.md"
       issues: []
 
   - id: G-STATIC-002
@@ -90,7 +90,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: ".trae/rules/10-python-backend.md"
-      runbook: "docs/runbook/gates/mypy.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/mypy.md"
       issues: []
 
   - id: G-UNIT-001
@@ -116,7 +116,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/30-api/api-overview.md"
-      runbook: "docs/runbook/gates/vote-tests.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/vote-tests.md"
       issues: []
 
   - id: G-UNIT-002
@@ -142,7 +142,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/30-api/api-overview.md"
-      runbook: "docs/runbook/gates/world-tests.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/world-tests.md"
       issues: []
 
   - id: G-UNIT-003
@@ -168,7 +168,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/30-api/api-overview.md"
-      runbook: "docs/runbook/gates/content-tests.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/content-tests.md"
       issues: []
 
   - id: G-UNIT-004
@@ -194,7 +194,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/20-specs/async-tasks-and-events/"
-      runbook: "docs/runbook/gates/workers-tests.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/workers-tests.md"
       issues: []
 
   - id: G-UNIT-005
@@ -220,7 +220,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/30-api/api-overview.md"
-      runbook: "docs/runbook/gates/generation-tests.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/generation-tests.md"
       issues: []
 
   - id: G-UNIT-006
@@ -246,7 +246,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/30-api/api-overview.md"
-      runbook: "docs/runbook/gates/review-tests.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/review-tests.md"
       issues: []
 
   - id: G-UNIT-007
@@ -272,7 +272,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/30-api/api-overview.md"
-      runbook: "docs/runbook/gates/player-tests.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/player-tests.md"
       issues: []
 
   - id: G-UNIT-008
@@ -298,7 +298,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/30-api/api-overview.md"
-      runbook: "docs/runbook/gates/ops-tests.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/ops-tests.md"
       issues: []
 
   - id: G-UNIT-009
@@ -324,7 +324,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/30-api/api-overview.md"
-      runbook: "docs/runbook/gates/gateway-tests.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/gateway-tests.md"
       issues: []
 
   - id: G-CONTENT-001
@@ -350,7 +350,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/20-specs/content-generation-spec.md"
-      runbook: "docs/runbook/gates/world_consistency.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/world_consistency.md"
       issues: []
 
   - id: G-CONTENT-002
@@ -376,7 +376,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/20-specs/content-generation-spec.md"
-      runbook: "docs/runbook/gates/reward_boundary.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/reward_boundary.md"
       issues: []
 
   - id: G-CONTENT-003
@@ -402,7 +402,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/20-specs/content-generation-spec.md"
-      runbook: "docs/runbook/gates/content_safety.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/content_safety.md"
       issues: []
 
   - id: G-CONTENT-004
@@ -428,7 +428,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/20-specs/content-generation-spec.md"
-      runbook: "docs/runbook/gates/duplication.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/duplication.md"
       issues: []
 
   - id: G-E2E-001
@@ -453,8 +453,8 @@ gates:
       hit_30d: 0
       false_positive_30d: 0
     links:
-      docs: "docs/packages/first-slice/"
-      runbook: "docs/runbook/gates/critical_e2e.md"
+      docs: "docs/10-requirements/packages/first-slice/"
+      runbook: "docs/40-dev-loop/runbooks/gates/critical_e2e.md"
       issues: []
 
   - id: G-UNIT-010
@@ -480,7 +480,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/40-dev-loop/loop-engineering-plan.md"
-      runbook: "docs/runbook/gates/loop_logging-tests.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/loop_logging-tests.md"
       issues: []
 
   - id: G-UNIT-011
@@ -506,7 +506,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/20-specs/content-generation-spec.md"
-      runbook: "docs/runbook/gates/content_check-tests.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/content_check-tests.md"
       issues: []
 
   - id: G-STATIC-003
@@ -532,7 +532,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: ".trae/rules/10-python-backend.md"
-      runbook: "docs/runbook/gates/ruff.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/ruff.md"
       issues: []
 
   - id: G-UNIT-012
@@ -558,7 +558,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/40-dev-loop/p2-agent-design/"
-      runbook: "docs/runbook/gates/agents-tests.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/agents-tests.md"
       issues: []
 
   - id: G-E2E-002
@@ -584,7 +584,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/40-dev-loop/"
-      runbook: "docs/runbook/gates/playtest_e2e.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/playtest_e2e.md"
       issues: []
 
   - id: G-UNIT-013
@@ -610,7 +610,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/20-specs/backend-data-spec.md"
-      runbook: "docs/runbook/gates/perf-test.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/perf-test.md"
       issues: []
 
   - id: G-NONFUNC-001
@@ -636,7 +636,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/20-specs/backend-data-spec.md"
-      runbook: "docs/runbook/gates/perf-test.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/perf-test.md"
       issues: []
 
   - id: G-NONFUNC-002
@@ -662,7 +662,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/20-specs/backend-data-spec.md"
-      runbook: "docs/runbook/gates/perf-test.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/perf-test.md"
       issues: []
 
   - id: G-NONFUNC-003
@@ -688,7 +688,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/20-specs/backend-data-spec.md"
-      runbook: "docs/runbook/gates/perf-test.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/perf-test.md"
       issues: []
 
   - id: G-NONFUNC-004
@@ -714,7 +714,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/20-specs/backend-data-spec.md"
-      runbook: "docs/runbook/gates/perf-test.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/perf-test.md"
       issues: []
 
   - id: G-NONFUNC-005
@@ -740,7 +740,7 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/20-specs/backend-data-spec.md"
-      runbook: "docs/runbook/gates/perf-test.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/perf-test.md"
       issues: []
 
   - id: G-NONFUNC-006
@@ -766,5 +766,5 @@ gates:
       false_positive_30d: 0
     links:
       docs: "docs/20-specs/backend-data-spec.md"
-      runbook: "docs/runbook/gates/perf-test.md"
+      runbook: "docs/40-dev-loop/runbooks/gates/perf-test.md"
       issues: []

@@ -68,7 +68,7 @@
 - **项目就绪状态持续验证（2026-07-19 15:00）**：执行周期性项目就绪状态验证，确认所有核心指标持续达标。验证结果：1）8 个后端服务共 1151 个测试全部通过（vote 112 + player 309 + world 120 + generation 228 + review 65 + content 113 + ops 127 + gateway 77）；2）所有 8 个后端服务 ruff 代码质量检查全部通过；3）所有 8 个后端服务 mypy 类型检查全部通过。项目持续保持灰度发布就绪状态，等待运营决策启动灰度发布流程。
 - **项目就绪状态持续验证（2026-07-19 14:00）**：执行周期性项目就绪状态验证，确认所有核心指标持续达标。验证结果：1）8 个后端服务共 1151 个测试全部通过（vote 112 + player 309 + world 120 + generation 228 + review 65 + content 113 + ops 127 + gateway 77）；2）所有 8 个后端服务 ruff 代码质量检查全部通过；3）所有 8 个后端服务 mypy 类型检查全部通过。项目持续保持灰度发布就绪状态，等待运营决策启动灰度发布流程。
 - **项目就绪状态持续验证（2026-07-19 13:00）**：执行周期性项目就绪状态验证，确认所有核心指标持续达标。验证结果：1）8 个后端服务共 1151 个测试全部通过（vote 112 + player 309 + world 120 + generation 228 + review 65 + content 113 + ops 127 + gateway 77）；2）所有 8 个后端服务 ruff 代码质量检查全部通过；3）所有 8 个后端服务 mypy 类型检查全部通过。项目持续保持灰度发布就绪状态，等待运营决策启动灰度发布流程。
-- **公测启动检查清单验收与安全修复（2026-07-19 12:00）**：完成 `docs/40-dev-loop/ops-runbooks/checklist-public-beta-launch.md` 公测启动检查清单系统性验收。1）逐项审计 98 项检查项，对 83 项可通过代码/配置/文档审查方式完成静态验收的项目标记为 `[x]` 并附验收证据；2）对 15 项需要部署环境（PostgreSQL + Redis + Docker）启动后才能验证的项目标注"运行时验证方法"，明确部署前必须执行的验证步骤；3）修正检查清单中过时的测试数量（player-service 202→309、ops-service 106→127，反映 M3-04/M3-05 与 M3-03 新增测试）；4）验收过程中发现并修复 player-service 与 content-service 的 CORS 通配符安全问题（`allow_origins=["*"]` → `settings.allowed_origins` 白名单），闭合 S8-05 安全审计遗留缺陷——该审计声称已修复全部 8 个服务 CORS，但实际遗漏 player-service 与 content-service；5）验证：8 个后端服务共 1151 个测试全部通过、ruff 0 错误、mypy 0 错误，无回归。公测启动检查清单已具备部署前完整可执行性，项目持续保持灰度发布就绪状态。
+- **公测启动检查清单验收与安全修复（2026-07-19 12:00）**：完成 `docs/40-dev-loop/runbooks/operations/checklist-public-beta-launch.md` 公测启动检查清单系统性验收。1）逐项审计 98 项检查项，对 83 项可通过代码/配置/文档审查方式完成静态验收的项目标记为 `[x]` 并附验收证据；2）对 15 项需要部署环境（PostgreSQL + Redis + Docker）启动后才能验证的项目标注"运行时验证方法"，明确部署前必须执行的验证步骤；3）修正检查清单中过时的测试数量（player-service 202→309、ops-service 106→127，反映 M3-04/M3-05 与 M3-03 新增测试）；4）验收过程中发现并修复 player-service 与 content-service 的 CORS 通配符安全问题（`allow_origins=["*"]` → `settings.allowed_origins` 白名单），闭合 S8-05 安全审计遗留缺陷——该审计声称已修复全部 8 个服务 CORS，但实际遗漏 player-service 与 content-service；5）验证：8 个后端服务共 1151 个测试全部通过、ruff 0 错误、mypy 0 错误，无回归。公测启动检查清单已具备部署前完整可执行性，项目持续保持灰度发布就绪状态。
 - **项目就绪状态持续验证（2026-07-19 11:00）**：执行周期性项目就绪状态验证，确认所有核心指标持续达标。验证结果：1）8 个后端服务共 1151 个测试全部通过（vote 112 + player 309 + world 120 + generation 228 + review 65 + content 113 + ops 127 + gateway 77）；2）所有 8 个后端服务 ruff 代码质量检查全部通过；3）所有 8 个后端服务 mypy 类型检查全部通过。项目持续保持灰度发布就绪状态，等待运营决策启动灰度发布流程。
 - **项目就绪状态持续验证（2026-07-19 10:00）**：执行周期性项目就绪状态验证，确认所有核心指标持续达标。验证结果：1）8 个后端服务共 1151 个测试全部通过（vote 112 + player 309 + world 120 + generation 228 + review 65 + content 113 + ops 127 + gateway 77）；2）所有 8 个后端服务 ruff 代码质量检查全部通过；3）所有 8 个后端服务 mypy 类型检查全部通过。项目持续保持灰度发布就绪状态，等待运营决策启动灰度发布流程。
 - **项目就绪状态持续验证（2026-07-19 09:00）**：执行周期性项目就绪状态验证，确认所有核心指标持续达标。验证结果：1）8 个后端服务共 1151 个测试全部通过（vote 112 + player 309 + world 120 + generation 228 + review 65 + content 113 + ops 127 + gateway 77）；2）所有 8 个后端服务 ruff 代码质量检查全部通过；3）所有 8 个后端服务 mypy 类型检查全部通过。项目持续保持灰度发布就绪状态，等待运营决策启动灰度发布流程。
@@ -281,7 +281,7 @@
 - **agents 模块根目录 pytest 模块命名冲突修复完成**：2026-07-09 23:00 修复 agents 模块从根目录运行 pytest 时的模块命名冲突问题。问题根因：9 个 agent 各有同名的 `input_schemas.py`、`output_schemas.py` 和 `error_handler.py`，当从 `tools/agents/` 根目录运行 pytest 时，Python 模块缓存导致后加载的 agent 导入到错误的模块，4 个 agent 的测试收集失败。修复方案：将所有 27 个文件（9 agents × 3 文件）重命名为带 agent 前缀的唯一名称（如 `product_input_schemas.py`、`product_output_schemas.py`、`product_error_handler.py`），并更新约 40+ 处导入引用。修复后从根目录运行 pytest 全部 226 个测试收集并执行成功，ruff 和 mypy 检查通过。P3 规划文档已同步更新（客户端 SDK 状态标记为已完成，第一阶段进度更新为 100%）。
 - **Sprint 1 P0 项 S1-11「NPC 与任务数据接口」完成**：2026-07-10 02:00 完成 world-service NPC 与任务数据接口。world-service 新增 `npcs` 与 `quest_definitions` 两张数据库表（含 CHECK 约束、唯一索引、复合索引），Alembic 迁移脚本就绪；提供 8 个新 API 端点：玩家侧 6 个（NPC 列表/详情/按 key 详情、Quest 列表/详情/按 key 详情），运营侧 2 个（NPC 创建、Quest 创建），统一遵循 envelope 响应、JWT 鉴权、Scope 校验、TraceId 透传；新增 4 个错误码（NPC_NOT_FOUND、QUEST_NOT_FOUND、NPC_KEY_EXISTS、QUEST_KEY_EXISTS），新增 2 类 Prometheus 指标（NPC/Quest 操作计数与按章节/按类型分组的 Gauge），新增 2 个审计动作常量（npc_create、quest_create）。world-service 测试从 49 个增加到 77 个（+28），全部通过 ruff 和 mypy 检查。本轮为 Sprint 1 后续 NPC 对话系统（S1-03）和玩家存档系统（S1-10）提供后端数据基础。
 - **Sprint 1 P0 项 S1-02「世界地图系统」完成**：2026-07-10 03:00 完成世界地图系统完善。WorldManager 新增区域类型常量（REGION_TYPE）、按章节筛选（get_regions_by_chapter）、按类型筛选（get_regions_by_type）、区域解锁状态判断（is_region_unlocked）、区域进度获取（get_region_progression）、区域声望获取（get_region_reputation）、区域搜索（search_regions）、区域排序（sort_regions）等功能。world_map.gd 新增区域类型标识（图标+名称）、状态/章节筛选功能、搜索功能、进度显示、声望显示、解锁状态高亮，支持从 WorldManager 获取服务端数据。WorldManager 测试从 13 个增加到 26 个（+13），为 Sprint 1 后续 NPC 对话系统（S1-03）和任务系统（S1-04）提供导航基础。
-- **性能压测工具 perf_test 已实现**：2026-07-13 02:08 完成核心接口性能压测工具，覆盖规范中要求的 p95 响应时间验证能力。`tools/perf_test/` 提供 6 个核心模块（stats、load_runner、threshold、report、scenarios、cli），基于 `httpx` + `asyncio` 异步执行，无需引入 locust/wrk 等外部压测框架；内置 6 个核心场景（vote_submit p95 < 300ms、vote_query p95 < 100ms、content_query p95 < 100ms、world_region_query p95 < 100ms、player_profile_query p95 < 200ms、content_package_detail p95 < 100ms）；支持 Markdown / JSON 报告输出与 blocker / warn 双级别阈值校验。62 个单元测试通过（6 个异步测试需 pytest-asyncio），ruff 和 mypy 检查通过。门禁注册表新增 4 个门禁（G-UNIT-013 perf_test 单测、G-NONFUNC-001 投票提交延迟、G-NONFUNC-002 投票查询延迟、G-NONFUNC-003 内容查询延迟），`docs/runbook/gates/perf-test.md` Runbook 已创建，tools/README.md 已同步更新。
+- **性能压测工具 perf_test 已实现**：2026-07-13 02:08 完成核心接口性能压测工具，覆盖规范中要求的 p95 响应时间验证能力。`tools/perf_test/` 提供 6 个核心模块（stats、load_runner、threshold、report、scenarios、cli），基于 `httpx` + `asyncio` 异步执行，无需引入 locust/wrk 等外部压测框架；内置 6 个核心场景（vote_submit p95 < 300ms、vote_query p95 < 100ms、content_query p95 < 100ms、world_region_query p95 < 100ms、player_profile_query p95 < 200ms、content_package_detail p95 < 100ms）；支持 Markdown / JSON 报告输出与 blocker / warn 双级别阈值校验。62 个单元测试通过（6 个异步测试需 pytest-asyncio），ruff 和 mypy 检查通过。门禁注册表新增 4 个门禁（G-UNIT-013 perf_test 单测、G-NONFUNC-001 投票提交延迟、G-NONFUNC-002 投票查询延迟、G-NONFUNC-003 内容查询延迟），`docs/40-dev-loop/runbooks/gates/perf-test.md` Runbook 已创建，tools/README.md 已同步更新。
 - **服务端性能优化完成（S8-02）**：2026-07-15 01:00 完成服务端性能优化，针对核心接口进行查询优化和索引增强。优化内容包括：1）vote-service `VoteCycle` 模型新增复合索引 `vote_cycles_status_time_idx`（status, starts_at, ends_at），加速开放周期查询；2）vote-service `get_vote_progress` 方法优化，减少重复遍历和无效查询，添加空候选快速返回路径；3）content-service `list_visible_packages` 方法优化，live 和 gray 内容包分开查询再合并，修复玩家特定灰度范围查询时的分页失效问题；4）world-service `Region` 模型新增 `regions_visible_idx` 和 `regions_chapter_visible_idx` 索引，加速可见区域查询。优化后 vote-service 112 个测试全部通过、content-service 67 个测试全部通过、world-service 120 个测试全部通过，ruff 检查通过。为灰度发布前的性能达标提供保障。
 
 ## 已确定事项
@@ -400,10 +400,10 @@
   - `alerts/alerts.yaml`：定义服务健康、HTTP 错误、延迟、数据库、业务指标、任务、事件总线、安全、资源 9 类告警规则，支持 critical/high/medium/low 四级严重程度
   - `dashboards/README.md`：仪表盘配置说明文档
 - **Runbook 文档体系已完善**：
-  - **门禁 Runbook（16个）**：`docs/runbook/gates/` 目录下 16 个门禁 Runbook 文档全部创建完成
+  - **门禁 Runbook（16个）**：`docs/40-dev-loop/runbooks/gates/` 目录下 16 个门禁 Runbook 文档全部创建完成
     - 覆盖：静态检查（2个：ruff、mypy）、单元测试（9个：vote/world/content/generation/review/player/ops/gateway/workers）、内容检查（4个：世界一致性、数值边界、内容安全、重复度）、E2E测试（1个：关键路径）
     - 每个 Runbook 包含：门禁概述、常见失败原因、解决方案、手动执行、升级路径五个章节
-  - **运维操作 Runbook（6个）**：`docs/runbook/operations/` 目录下 6 个运维操作 Runbook 文档全部创建完成
+  - **运维操作 Runbook（6个）**：`docs/40-dev-loop/runbooks/operations/` 目录下 6 个运维操作 Runbook 文档全部创建完成
     - 覆盖：灰度发布（OP-RELEASE-001）、全量发布（OP-RELEASE-002）、内容包回滚（OP-RELEASE-003）、服务部署（OP-DEPLOY-001）、数据库迁移（OP-DEPLOY-002）、首期内容初始化（OP-INIT-001）
     - 每个 Runbook 包含：操作概述、操作步骤、回滚方案、常见问题与解决方案、相关链接五个章节
   - Runbook 目录 README 已更新，包含门禁 Runbook 和运维操作 Runbook 两大类的完整索引
@@ -515,7 +515,7 @@
   - 测试用例 39 个全部通过（含仪表盘 + 运营操作 + 系统状态 + 审计日志 + 鉴权 + envelope 格式 + 健康检查客户端）
 - 本地开发基础设施：`infra/docker-compose.dev.yml`（PostgreSQL 16 + Redis 7）。
 - `.gitignore`、各目录 README 占位、`.env.example` 已配置。
-- `docs/packages/first-slice/` 第一版需求包：包含投票链路完整规范子集（功能特性、API 接口清单、数据模型定义、业务流程说明、验收标准），作为 MVP 投票链路验证的需求基线。
+- `docs/10-requirements/packages/first-slice/` 第一版需求包：包含投票链路完整规范子集（功能特性、API 接口清单、数据模型定义、业务流程说明、验收标准），作为 MVP 投票链路验证的需求基线。
 - **CI/CD 基础设施**：
   - GitHub Actions 工作流：`ci.yml`（lint、类型检查、测试、内容检查、E2E 测试）、`cd.yml`（灰度发布、全量发布、回滚）、`docker-build.yml`（Docker 构建）
   - CI 流水线新增：内容检查门禁（世界一致性、数值边界、内容安全、重复度四项检查）、E2E 端到端测试
@@ -590,7 +590,7 @@
   - 每个服务在 `tests/test_health.py` 新增 2 个测试（指标暴露 + 指标递增），共 16 个新增测试
   - Grafana 仪表盘 `infra/grafana/dashboards/game-dashboard.json` 扩展至 20 个面板，覆盖 HTTP 指标 + 8 个服务的业务指标
   - 全部 8 个服务通过 ruff、mypy、pytest（共 335 个测试用例）验证
-- **门禁 Runbook 文档**：`docs/runbook/` 目录已创建，包含 16 个门禁的运行手册（Ruff Lint、Mypy Typecheck、vote/world/content/generation/review/player/ops/gateway/workers 单元测试、四项内容检查、关键路径 E2E 测试），每个 runbook 包含门禁概述、常见失败原因、解决方案、手动执行方法和升级路径
+- **门禁 Runbook 文档**：`docs/40-dev-loop/runbooks/` 目录已创建，包含 16 个门禁的运行手册（Ruff Lint、Mypy Typecheck、vote/world/content/generation/review/player/ops/gateway/workers 单元测试、四项内容检查、关键路径 E2E 测试），每个 runbook 包含门禁概述、常见失败原因、解决方案、手动执行方法和升级路径
 - **门禁注册表完善**：`docs/40-dev-loop/gate_registry.yaml` 已补充完整，包含所有 8 个后端服务（vote、world、content、generation、review、player、ops、gateway）和 workers 的单元测试门禁配置，以及静态检查、内容检查、E2E 测试等门禁定义
 - **关键路径 E2E 测试脚本**：`tools/playtest/` 目录已创建，包含投票流程端到端测试（创建投票周期 → 添加候选项 → 开放投票 → 提交投票 → 关闭计票 → 验证结果），支持分步执行和完整流程测试
 - **事件总线基础设施**：`workers/events/` 目录已创建，基于 Redis Pub/Sub 实现，包含事件总线客户端、事件发布者、订阅者、7 个核心事件类型定义（vote.cycle.closed、vote.result.finalized、generation.request.created、generation.batch.completed、review.batch.completed、content.package.released、content.package.rolled_back）、事件处理器（投票结算触发内容生成、生成完成触发审核、审核通过触发布打包）
@@ -635,7 +635,7 @@
 7.5. ~~实现统一响应 envelope 格式对齐 `12-api-design.md` 规范。~~ 已完成（51 个测试全部通过）。
 7.6. ~~为玩家接口添加 JWT 认证（votes:read/votes:submit/votes:history:read scope）。~~ 已完成。
 7.7. ~~补充 votes 表 candidate_id_idx 索引和 winning_candidate_id FK 约束。~~ 已完成。
-8. ~~基于最小投票链路生成第一版需求包（可放在 `docs/packages/first-slice/`），包括从 `20-specs/` 抽出的相关规范子集。~~ 已完成，需求包包含投票周期管理、投票提交、结算、结果展示、审计日志等完整规范子集，以及 API 接口清单、数据模型定义、业务流程说明和验收标准。
+8. ~~基于最小投票链路生成第一版需求包（可放在 `docs/10-requirements/packages/first-slice/`），包括从 `20-specs/` 抽出的相关规范子集。~~ 已完成，需求包包含投票周期管理、投票提交、结算、结果展示、审计日志等完整规范子集，以及 API 接口清单、数据模型定义、业务流程说明和验收标准。
 9. ~~补异步任务和事件的 payload schema（不阻塞投票 MVP，但内容链路需要）。~~ 已完成，异步任务与事件 schema 规范已发布，包含 7 个核心任务 payload、7 个事件主题、重试策略、死信队列、全链路追踪规范。
 10. ~~初始化 content-service（内容包管理、灰度发布、回滚），为内容链路打基础。~~ 已完成（48 个测试全部通过）
 11. ~~初始化 generation-service（AI 内容生成请求与结果落库）。~~ 已完成（47 个测试全部通过）

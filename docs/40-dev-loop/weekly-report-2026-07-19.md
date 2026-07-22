@@ -296,7 +296,7 @@
 
 ### 7.3 关键文档更新
 
-- 公测启动检查清单：`docs/40-dev-loop/ops-runbooks/checklist-public-beta-launch.md`
+- 公测启动检查清单：`docs/40-dev-loop/runbooks/operations/checklist-public-beta-launch.md`
 - 项目状态文档：`docs/00-governance/project-status.md`
 - 每日进展报告：`docs/40-dev-loop/daily-progress/daily-progress-2026-07-*.md`
 

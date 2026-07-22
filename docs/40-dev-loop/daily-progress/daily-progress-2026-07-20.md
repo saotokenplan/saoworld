@@ -70,7 +70,7 @@
 
 - 规范文档：docs/20-specs/
 - API 文档：docs/30-api/
-- 运维手册：docs/40-dev-loop/ops-runbooks/
+- 运维手册：docs/40-dev-loop/runbooks/operations/
 
 ---
 

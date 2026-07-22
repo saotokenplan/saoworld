@@ -37,6 +37,7 @@
 - `40-dev-loop/`
   - AI Coding、Loop Engineering、门禁和日志 schema
   - 适合做流程治理、门禁建设和持续改进
+  - 目录内已正式吸纳 `runbooks/` 和 `archives/auto-generated/`
 - `50-research/`
   - 技术选型、方案比较和历史决策依据
   - 适合做引擎、后端和基础设施决策参考
@@ -52,11 +53,14 @@
 5. `00-governance/project-status.md`
 6. `00-governance/quick-start.md`
 7. `20-specs/README.md`
-8. `30-api/api-overview.md`
-9. `30-api/openapi-draft.md`
-10. `10-requirements/需求概述.md`
-11. `40-dev-loop/loop-engineering-plan.md`
-12. `50-research/stack-research-ai-game-dev.md`
+8. `30-api/README.md`
+9. `30-api/api-overview.md`
+10. `10-requirements/README.md`
+11. `10-requirements/需求概述.md`
+12. `40-dev-loop/README.md`
+13. `40-dev-loop/loop-engineering-plan.md`
+14. `50-research/README.md`
+15. `50-research/stack-research-ai-game-dev.md`
 
 ## 使用原则
 
@@ -64,7 +68,10 @@
 - `10-requirements/` 保留需求背景和高层方案，不再重复维护实现细节。
 - `30-api/` 承担接口参考索引，不替代 `20-specs/` 的后端规范。
 - `40-dev-loop/` 保留研发治理、门禁和 AI Coding 流程设计。
+- `40-dev-loop/runbooks/` 作为运行手册正式并入研发闭环层。
+- `40-dev-loop/archives/auto-generated/` 用于归档自动产物，避免一级目录噪音。
 - `50-research/` 保留技术选型依据和历史决策背景。
+- `10-requirements/packages/` 用于保存专题化需求包，不替代源规范。
 
 ## 与其他文档的关系
 
@@ -78,3 +85,5 @@
   - 最小阅读路径与最小实施顺序。
 - `00-governance/document-template-maintenance.md`
   - 模板持续维护规则。
+- `40-dev-loop/README.md`
+  - 研发闭环目录入口，区分方法论文档与自动产物。

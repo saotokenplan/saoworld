@@ -78,6 +78,7 @@ docs/
 - 放置需求背景、产品讨论、方案草案和立项语义文档。
 - 这些文档用于回答“为什么做”“希望做成什么”。
 - 若与 `20-specs/` 冲突，以 `20-specs/` 为准。
+- 若需要把规范内容按专题重新组织为需求包，可放在 `10-requirements/packages/` 下，但必须明确标注其为再包装输出，不替代源规范。
 
 ### `20-specs/`
 
@@ -94,6 +95,8 @@ docs/
 
 - 放置 AI Coding、Loop Engineering、门禁、日志 schema、Issue 模板等研发闭环文档。
 - 这些文档指导流程治理和持续改进，但不单独替代执行规范。
+- 运行手册统一并入 `40-dev-loop/runbooks/`。
+- 大量自动产物统一归档到 `40-dev-loop/archives/`，避免污染一级阅读路径。
 
 ### `50-research/`
 
@@ -112,6 +115,7 @@ docs/
 - `docs/README.md` 作为整个文档体系唯一总入口，必须长期保留在 `docs/` 根目录。
 - 当某个一级目录下文档数量较多且存在阅读顺序要求时，可在该目录下增加局部 `README.md`。
 - 当前 `20-specs/README.md` 继续保留，作为执行规范目录入口。
+- `40-dev-loop/runbooks/`、`40-dev-loop/archives/` 和 `10-requirements/packages/` 这类子目录应保留局部 `README.md`，说明其来源、定位和阅读方式。
 
 ## 新增文档落位规则
 
