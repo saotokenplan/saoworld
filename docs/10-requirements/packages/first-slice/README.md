@@ -23,8 +23,8 @@
 
 ## 当前定位
 
-- 本文档是 `docs/packages/first-slice/` 的入口说明，用于承载专题化的规范再包装结果。
-- 本目录当前作为历史保留的专题需求包目录存在，不视为新的一级权威层。
+- 本文档是 `docs/10-requirements/packages/first-slice/` 的入口说明，用于承载专题化的规范再包装结果。
+- 本目录当前作为 `10-requirements/` 下的专题需求包存在，不视为新的一级权威层。
 - 如本目录与源规范冲突，以 `docs/20-specs/` 和 `docs/30-api/` 为准。
 
 ## 范围
@@ -34,7 +34,7 @@
 ## 目录结构
 
 ```
-docs/packages/first-slice/
+docs/10-requirements/packages/first-slice/
 ├── README.md           # 本文件，需求包说明
 ├── scope.md            # 需求范围界定
 ├── features/           # 功能特性说明

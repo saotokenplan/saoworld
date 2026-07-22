@@ -184,7 +184,7 @@ curl -X GET "http://content-service:8003/api/v1/content/updates" \
 
 ```bash
 # 参考灰度发布 Runbook
-# docs/runbook/operations/gray-release.md
+# docs/40-dev-loop/runbooks/operations/gray-release.md
 ```
 
 **步骤 10：记录初始化结果**

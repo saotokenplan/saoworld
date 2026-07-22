@@ -126,7 +126,7 @@
 - `docs/30-api/openapi-draft.md`
   - 作为后续集中整理接口定义和样例收敛的入口文档
 - 首个需求包目录
-  - 例如 `docs/packages/first-slice/`
+  - 例如 `docs/10-requirements/packages/first-slice/`
 - 工程初始化说明
   - 如果后续开始建仓，应补充实际依赖安装、运行命令和目录说明
 

@@ -8,7 +8,7 @@
 | 覆盖风险类型 | performance, regression |
 | 触发方式 | 手动 / 灰度发布前 / 定期压测 |
 | 工具位置 | `tools/perf_test/` |
-| 规范来源 | `docs/20-specs/backend-data-spec.md`（响应时间要求）<br>`docs/packages/first-slice/acceptance/api-acceptance.md`<br>`docs/packages/first-slice/acceptance/vote-acceptance.md` |
+| 规范来源 | `docs/20-specs/backend-data-spec.md`（响应时间要求）<br>`docs/10-requirements/packages/first-slice/acceptance/api-acceptance.md`<br>`docs/10-requirements/packages/first-slice/acceptance/vote-acceptance.md` |
 
 本门禁用于验证项目核心接口的响应时间是否满足 `docs/20-specs/backend-data-spec.md` 等规范中的性能要求：
 
@@ -140,6 +140,6 @@ python -m perf_test.cli --base-url http://localhost:8001 \\
 - 工具 README：`tools/README.md`（待补充）
 - 规范来源：
   - `docs/20-specs/backend-data-spec.md`（响应时间要求）
-  - `docs/packages/first-slice/acceptance/api-acceptance.md`
-  - `docs/packages/first-slice/acceptance/vote-acceptance.md`
+  - `docs/10-requirements/packages/first-slice/acceptance/api-acceptance.md`
+  - `docs/10-requirements/packages/first-slice/acceptance/vote-acceptance.md`
 - 门禁注册表：`docs/40-dev-loop/gate_registry.yaml`

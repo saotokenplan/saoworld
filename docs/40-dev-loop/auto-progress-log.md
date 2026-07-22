@@ -674,7 +674,7 @@
 - 分支：auto/auto-20260719-1200
 - 状态：✅ 已完成
 - 工作内容：
-  - 系统性审计 `docs/40-dev-loop/ops-runbooks/checklist-public-beta-launch.md` 共 98 项检查项
+  - 系统性审计 `docs/40-dev-loop/runbooks/operations/checklist-public-beta-launch.md` 共 98 项检查项
   - 静态验收 83 项（标记 `[x]` + 附验收证据），运行时验证项标注 15 项
   - 修正过时测试数量：player-service 202→309、ops-service 106→127
   - 发现并修复 player-service 与 content-service 的 CORS 通配符安全问题（`allow_origins=["*"]` → `settings.allowed_origins` 白名单）
@@ -2240,7 +2240,7 @@
   - 创建 `tools/perf_test/` 工具包（6 个核心模块 + pyproject.toml + 6 个测试文件）
   - 63 个单元测试全部通过
   - 4 个门禁注册（G-UNIT-013、G-NONFUNC-001/002/003）
-  - 1 个 Runbook（docs/runbook/gates/perf-test.md）
+  - 1 个 Runbook（docs/40-dev-loop/runbooks/gates/perf-test.md）
   - tools/README.md 与 project-status.md 同步更新
 - 验证：ruff / mypy / pytest 全部通过，vote-service（80）、content-service（65）、loop_logging（36）无回归
 - 计划文档：docs/40-dev-loop/auto-plan-20260713-0208.md

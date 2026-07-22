@@ -262,7 +262,7 @@
 - 需求迭代计划：`docs/10-requirements/需求迭代计划.md`
 - 项目里程碑与验收标准：`docs/10-requirements/项目里程碑与验收标准.md`
 - 项目状态文档：`docs/00-governance/project-status.md`
-- 公测启动检查清单：`docs/40-dev-loop/ops-runbooks/checklist-public-beta-launch.md`
+- 公测启动检查清单：`docs/40-dev-loop/runbooks/operations/checklist-public-beta-launch.md`
 
 ---
 

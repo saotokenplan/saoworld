@@ -34,16 +34,12 @@
   - 门禁注册表
 - `daily-progress/`
   - 按日期记录的阶段性日报
-- `ops-runbooks/`
-  - 运营与发布相关运行手册
+- `runbooks/`
+  - 已正式并入的运行手册目录，包含门禁排障与运维操作
 - `p2-agent-design/`
   - 特定阶段或专题的 Agent 设计资料
-- `auto-plan-*.md`
-  - 自动规划产物
-- `auto-execution-summary-*.md`
-  - 自动执行摘要
-- `auto-status-report-*.md`
-  - 自动状态快照
+- `archives/auto-generated/`
+  - 自动规划、执行摘要和状态快照的归档目录
 - `auto-progress-log.md`
   - 自动流程的累计进展日志
 
@@ -52,15 +48,15 @@
 1. 先读 `loop-engineering-plan.md`，理解流程主框架
 2. 再读 `ai-coding-game-dev-loop-plan.md`，理解项目级落地方式
 3. 需要查看门禁和观测时，读 `gate_registry.yaml` 与 `log-schemas-loop-engineering.md`
-4. 需要查看最近自动化状态时，优先读 `auto-progress-log.md` 和最新的 `auto-status-report-*.md`
-5. 需要追溯具体某轮自动产物时，再按文件模式查看对应 `auto-plan-*` 或 `auto-execution-summary-*`
+4. 需要查看最近自动化状态时，优先读 `auto-progress-log.md` 和最近的周报/日报
+5. 需要追溯具体某轮自动产物时，再进入 `archives/auto-generated/`
 
 ## 自动产物阅读建议
 
 - `auto-progress-log.md` 是优先入口，用于了解累计进展
-- `auto-status-report-*.md` 适合查看某个时间点的状态快照
-- `auto-plan-*.md` 与 `auto-execution-summary-*.md` 主要用于审计和回溯，不建议作为一级阅读入口
-- 当前保留原始文件位置，以保证审计线索连续；后续如需进一步降噪，可按日期目录归档
+- 自动规划、执行摘要和状态快照已归档到 `archives/auto-generated/`
+- 归档文档主要用于审计和回溯，不建议作为一级阅读入口
+- 归档文档中可能保留迁移前的历史路径描述，应按其产生时点理解
 
 ## 维护边界
 
@@ -72,7 +68,7 @@
 
 - `docs/20-specs/agent-loop-spec.md`
   - 提供执行规范层的 Agent 约束；本目录补充流程设计和运行材料
-- `docs/runbook/`
-  - 作为历史保留的运行手册目录，与本目录的流程治理内容互补
+- `docs/40-dev-loop/runbooks/`
+  - 作为本目录下的运行手册子目录，承接原排障与运维说明
 - `docs/00-governance/`
   - 提供文档治理规则，负责定义本目录在整体体系中的位置

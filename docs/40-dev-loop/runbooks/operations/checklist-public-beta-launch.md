@@ -293,9 +293,9 @@
 ### 运营文档
 
 - [x] 投票周期管理操作手册已更新
-  - 验收证据：`docs/40-dev-loop/ops-runbooks/runbook-vote-cycle-management.md` 完整
+  - 验收证据：`docs/40-dev-loop/runbooks/operations/runbook-vote-cycle-management.md` 完整
 - [x] 运营事件配置操作手册已更新
-  - 验收证据：`docs/40-dev-loop/ops-runbooks/runbook-ops-event-management.md` 完整
+  - 验收证据：`docs/40-dev-loop/runbooks/operations/runbook-ops-event-management.md` 完整
 - [x] 公测启动检查清单已完成
   - 验收证据：本文件已通过 auto-20260719-1200 任务系统性验收
 
@@ -311,7 +311,7 @@
 ## 应急预案
 
 - [x] 服务故障应急预案
-  - 验收证据：`docs/40-dev-loop/ops-runbooks/runbook-ops-event-management.md` 含故障处理流程
+  - 验收证据：`docs/40-dev-loop/runbooks/operations/runbook-ops-event-management.md` 含故障处理流程
 - [ ] 数据库故障应急预案
   - 运行时验证方法：需补充 PostgreSQL 主从切换/数据恢复 runbook
 - [x] 内容回滚预案
