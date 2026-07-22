@@ -3,6 +3,8 @@
 > 版本：v1.0.0
 > 创建时间：2026-07-04
 
+> 说明：本文档用于快速理解最小投票链路会遇到的错误场景；正式错误码枚举与命名以 `docs/30-api/api-error-codes.md` 和 `docs/20-specs/backend-data-spec.md` 为准。如出现同义 code，优先以源规范收敛。
+
 ## 通用错误返回结构
 
 ```json
