@@ -3,6 +3,8 @@
 > 版本：v1.0.0
 > 创建时间：2026-07-04
 
+> 说明：本文档用于从功能视角解释投票关闭后的结算目标与结果输出；正式状态迁移、错误码、幂等策略和性能门槛以 `docs/20-specs/backend-data-spec.md` 与相关源规范为准。
+
 ## 功能描述
 
 投票结算是投票周期关闭后自动执行的计票流程，根据玩家投票结果确定获胜候选项。
@@ -23,14 +25,7 @@
 7. 系统更新投票周期状态为 finalized
 8. 系统记录结算审计日志
 
-## 计票规则
-
-### 投票有效性判断
-
-- 投票记录必须存在
-- 投票记录的 vote_cycle_id 必须匹配当前周期
-- 投票记录的 candidate_id 必须存在且状态为 active
-- 投票记录的 player_id 必须有效
+## 业务关注点
 
 ### 权重计算
 
@@ -40,60 +35,30 @@
 
 - 加权总分最高的候选项为获胜者
 - 若前两名差值小于阈值，则触发剧情一致性裁决
-- 获胜候选项状态更新为 selected
+- 获胜方向应可被后续内容链路消费
 
-## 结算结果
+## 结算结果摘要
 
-### 投票周期更新
-
-- status：closed → finalized
-- finalized_at：记录结算时间
-- winning_candidate_id：记录获胜候选项ID
-
-### 候选项更新
-
-- 获胜候选项：status = selected
-- 其他候选项：保持原有状态（active 或 withdrawn）
-
-### 投票记录
-
-- votes 表为 append-only，不做更新
-- 每个投票记录的权重已在提交时确定
+- 周期进入已结算阶段
+- 产出获胜候选项和结果统计
+- 保留对投票记录和结果的可追溯性
 
 ## 幂等性保障
 
 - 结算操作必须保证幂等
 - 同一投票周期多次调用结算接口只执行一次
-- 通过状态校验（必须为 closed 状态）保证幂等
+- 幂等实现细节以源规范和服务实现为准
 
 ## 审计要求
 
-结算操作必须记录审计日志，包含：
-- operator_id：系统或运营ID
-- operator_role：system 或 ops
-- action：vote_cycle_finalized
-- resource_type：vote_cycle
-- resource_id：vote_cycle_id
-- reason：结算原因
-- request_payload_jsonb：结算结果快照（各候选项票数、获胜者）
-- trace_id：追踪ID
-
-## 接口定义
-
-| 方法 | 路径 | Scope | 说明 |
-|------|------|-------|------|
-| POST | `/api/v1/ops/vote-cycles/{vote_cycle_id}/finalize` | ops:vote-cycles:write | 结算投票 |
-
-## 错误码
-
-| 错误码 | HTTP 状态码 | 说明 |
-|--------|------------|------|
-| VOTE_CYCLE_NOT_FOUND | 404 | 投票周期不存在 |
-| INVALID_VOTE_STATE | 409 | 投票周期状态不允许结算（非 closed） |
-| NO_CANDIDATES_FOUND | 409 | 投票周期下无有效候选项 |
+结算操作必须进入审计链，至少能够回溯结算发起者、目标周期、结算原因和结果摘要。
 
 ## 性能要求
 
-- 投票提交接口 p95 响应时间 < 300ms
 - 结算操作应在合理时间内完成（建议 < 5 秒）
 - 大量投票记录时应考虑分批处理
+
+## 源文档入口
+
+- 后端与数据规范：`docs/20-specs/backend-data-spec.md`
+- API 参考：`docs/30-api/api-overview.md`

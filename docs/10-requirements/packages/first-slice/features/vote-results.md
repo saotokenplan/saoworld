@@ -3,6 +3,8 @@
 > 版本：v1.0.0
 > 创建时间：2026-07-04
 
+> 说明：本文档用于从产品视角说明投票结果页应该向玩家和运营展示什么；正式查询接口、响应结构、分页规则和字段定义以 `docs/30-api/` 与 `docs/20-specs/backend-data-spec.md` 为准。
+
 ## 功能描述
 
 投票结果展示功能为玩家和运营提供投票周期状态、候选项信息、投票统计和历史结果查询能力。
@@ -17,105 +19,17 @@
 - 预计上线周期
 - 上一轮投票结果的实际落地情况
 
-## 查询接口
+## 结果查询视图
 
-### 获取当前投票周期
+### 当前投票
 
-**接口**：`GET /api/v1/votes/current`
+- 面向玩家展示当前开放周期、候选项摘要和投票窗口信息
+- 重点是帮助玩家理解“现在能投什么、影响什么、风险是什么”
 
-**说明**：获取当前开放的投票周期及其候选项信息
+### 历史结果
 
-**Scope**：`votes:read`
-
-**响应结构**：
-```json
-{
-  "request_id": "req_vote_current_xxx",
-  "data": {
-    "vote_cycle_id": "uuid-string",
-    "chapter_id": "chapter_01",
-    "status": "open",
-    "starts_at": "2026-07-04T00:00:00Z",
-    "ends_at": "2026-07-11T00:00:00Z",
-    "candidates": [
-      {
-        "candidate_id": "uuid-string",
-        "title": "候选项标题",
-        "summary": "候选项描述摘要",
-        "description": "详细描述",
-        "region_scope": ["region_id_1"],
-        "risk_tags": ["risk_tag_1"],
-        "status": "active",
-        "vote_count": 0
-      }
-    ],
-    "winning_candidate_id": null,
-    "finalized_at": null
-  },
-  "meta": {
-    "total": 1,
-    "limit": 20,
-    "offset": 0
-  }
-}
-```
-
-### 获取历史投票结果
-
-**接口**：`GET /api/v1/votes/history`
-
-**说明**：获取历史投票周期及其结果
-
-**Scope**：`votes:history:read`
-
-**查询参数**：
-- `limit`：每页数量，默认 20
-- `offset`：偏移量，默认 0
-- `chapter_id`：可选，按章节过滤
-
-**响应结构**：
-```json
-{
-  "request_id": "req_vote_history_xxx",
-  "data": [
-    {
-      "vote_cycle_id": "uuid-string",
-      "chapter_id": "chapter_01",
-      "status": "finalized",
-      "starts_at": "2026-06-27T00:00:00Z",
-      "ends_at": "2026-07-04T00:00:00Z",
-      "winning_candidate_id": "uuid-string",
-      "winning_candidate": {
-        "title": "获胜候选项",
-        "region_scope": ["region_id_1"]
-      },
-      "total_votes": 1000,
-      "candidate_results": [
-        {
-          "candidate_id": "uuid-string",
-          "title": "候选项A",
-          "vote_count": 600,
-          "vote_percentage": 60.0
-        },
-        {
-          "candidate_id": "uuid-string",
-          "title": "候选项B",
-          "vote_count": 400,
-          "vote_percentage": 40.0
-        }
-      ],
-      "finalized_at": "2026-07-04T00:05:00Z",
-      "content_package_id": "pkg_xxx"
-    }
-  ],
-  "meta": {
-    "total": 10,
-    "limit": 20,
-    "offset": 0
-  },
-  "trace_id": "trace_xxx"
-}
-```
+- 展示已结算周期、最终方向、候选项占比和落地情况
+- 支持按时间或章节回看历史结果
 
 ## 结果统计
 
@@ -138,6 +52,11 @@
 - 内容包 ID
 - 内容包标题
 - 发布状态（gray/live/archived）
+
+## 源文档入口
+
+- API 参考：`docs/30-api/api-overview.md`
+- 后端与数据规范：`docs/20-specs/backend-data-spec.md`
 - 影响区域
 - 上线时间
 
