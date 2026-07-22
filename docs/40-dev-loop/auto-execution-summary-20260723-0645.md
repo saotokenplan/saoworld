@@ -44,14 +44,12 @@
 
 | 项目 | 结果 |
 |------|------|
-| 主题提交 1 | `docs(requirements): 新增 M4 模板文本细化（WP1 规划期准备）并同步引用` |
-| 主题提交 2 | `docs(dev-loop): auto-20260723-0645 过程材料（计划/摘要/进度日志/循环日志）` |
-| 合并 | --no-ff 合并回 feature-prd，合并信息 `docs(requirements): merge auto-20260723-0645 M4 模板文本细化（WP1 规划期准备）` |
-| 远程推送 | 工作分支两笔提交推 origin/auto/auto-20260723-0645；合并提交推 origin/feature-prd |
+| 主题提交 1 | `65f03b1` `docs(requirements): 新增 M4 模板文本细化（WP1 规划期准备）并同步引用` |
+| 主题提交 2 | `55a1fdd` `docs(dev-loop): auto-20260723-0645 过程材料（计划/摘要/进度日志/循环日志）` |
+| 合并 | `415c2f4` --no-ff 合并回 feature-prd，合并信息 `docs(requirements): merge auto-20260723-0645 M4 模板文本细化（WP1 规划期准备）` |
+| 远程推送 | 工作分支两笔提交推 origin/auto/auto-20260723-0645（成功）；合并提交 16fb6ca..415c2f4 推 origin/feature-prd（一次成功，无重试） |
 | 校验与清理 | git fetch + merge-base 校验远程含合并提交后删除本地工作分支 |
-| 回填 | 本摘要合并记录回填后第二次小合并推送 |
-
-（具体 hash 以合并后回填为准。）
+| 回填 | 本摘要合并记录回填后经第二次小合并推送（hash 以该次合并为准） |
 
 ## 五、验证
 
