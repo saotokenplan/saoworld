@@ -16,7 +16,7 @@
 | 接口 | 方法 | Scope | 在最小链路中的作用 | 联调关注点 |
 |------|------|-------|------------------|------------|
 | `/api/v1/votes/current` | GET | `votes:read` | 给玩家展示当前开放周期和候选项 | 当前周期是否开放、候选项信息是否足够支持展示 |
-| `/api/v1/votes/submit` | POST | `votes:submit` | 接收玩家投票并返回确认结果 | 幂等键、玩家身份、候选项归属、风控拦截 |
+| `/api/v1/votes/submit` | POST | `votes:submit` | 接收玩家投票并返回提交结果 | 幂等键、玩家身份、候选项归属、风控拦截 |
 | `/api/v1/votes/history` | GET | `votes:history:read` | 展示历史结果与实际落地情况 | 分页、章节过滤、结果和内容包关联 |
 
 ## 运营接口

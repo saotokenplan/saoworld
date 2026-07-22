@@ -3,256 +3,58 @@
 > 版本：v1.0.0
 > 创建时间：2026-07-04
 
-## 概述
-
-审计追踪流程描述了系统如何记录和追踪所有敏感操作的详细信息，支持全链路追踪和问题排查。
-
-## 审计记录结构
-
-### 核心字段
+> 说明：本文档用于从流程视角说明投票链路中的关键动作如何被记录、追踪和回查；正式审计字段、访问控制、保留策略和存储要求以 `docs/20-specs/backend-data-spec.md` 与安全规范为准。
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| audit_id | UUID | 审计记录唯一标识 |
-| trace_id | VARCHAR(128) | 全链路追踪ID |
-| request_id | VARCHAR(128) | API请求ID |
-| operator_id | VARCHAR(128) | 操作者标识 |
-| operator_role | VARCHAR(16) | 操作者角色 |
-| action | VARCHAR(64) | 操作类型 |
-| resource_type | VARCHAR(64) | 资源类型 |
-| resource_id | UUID | 资源ID |
-| reason | TEXT | 操作原因 |
-| request_payload_jsonb | JSONB | 请求体快照 |
-| result_status | SMALLINT | 结果状态 |
-| created_at | TIMESTAMPTZ | 创建时间 |
-
-## 全链路追踪
-
-### 请求追踪头
-
-| 请求头 | 说明 | 必填 |
-|--------|------|------|
-| X-Request-Id | 请求ID，服务端生成或客户端传递 | 否 |
-| X-Trace-Id | 全链路追踪ID，客户端传递 | 写接口必填 |
-
-### 响应追踪头
-
-所有响应必须返回：
-- X-Request-Id：请求追踪ID
-- X-Trace-Id：全链路追踪ID（如果请求携带了）
-
-### 追踪流程
-
-1. 客户端发起请求时生成并携带 X-Trace-Id
-2. 网关服务接收请求，记录追踪ID
-3. 各后端服务处理请求时，传递追踪ID
-4. 所有写操作记录审计日志时，关联追踪ID
-5. 通过追踪ID可串联同一操作的全链路日志
-
-## 审计记录写入时机
-
-### 投票提交时
-
-**触发**：玩家提交投票
-
-**记录内容**：
-- operator_id：玩家ID
-- operator_role：player
-- action：vote_submit
-- resource_type：vote
-- resource_id：vote_id
-- request_payload_jsonb：请求体快照
-- trace_id：追踪ID
-
-### 投票周期创建时
-
-**触发**：运营创建投票周期
-
-**记录内容**：
-- operator_id：运营ID
-- operator_role：ops
-- action：vote_cycle_create
-- resource_type：vote_cycle
-- resource_id：vote_cycle_id
-- reason：创建原因
-- request_payload_jsonb：请求体快照
-- trace_id：追踪ID
-
-### 投票周期状态迁移时
-
-**触发**：运营执行状态迁移操作（计划、开放、关闭）
-
-**记录内容**：
-- operator_id：运营ID
-- operator_role：ops
-- action：vote_cycle_xxx（scheduled/opened/closed）
-- resource_type：vote_cycle
-- resource_id：vote_cycle_id
-- reason：操作原因
-- trace_id：追踪ID
-
-### 投票结算时
-
-**触发**：系统或运营执行结算操作
-
-**记录内容**：
-- operator_id：系统或运营ID
-- operator_role：system 或 ops
-- action：vote_cycle_finalized
-- resource_type：vote_cycle
-- resource_id：vote_cycle_id
-- reason：结算原因
-- request_payload_jsonb：结算结果快照
-- trace_id：追踪ID
-
-## 审计日志查询
-
-### 查询接口（运营）
-
-**按 trace_id 查询**：
-```
-GET /api/v1/ops/audit-logs?trace_id=xxx
-```
-
-**按 operator_id 查询**：
-```
-GET /api/v1/ops/audit-logs?operator_id=xxx&start_time=xxx&end_time=xxx
-```
+## 流程摘要
 
-**按 action 查询**：
-```
-GET /api/v1/ops/audit-logs?action=vote_submit&start_time=xxx&end_time=xxx
-```
+1. 客户端或运营写请求携带链路标识进入系统
+2. 服务在处理关键动作时同步写入审计记录
+3. 审计记录关联操作者、动作、资源、结果和时间
+4. 运营或系统通过 `trace_id`、资源标识和动作类型回查问题
 
-**按 resource_type 和 resource_id 查询**：
-```
-GET /api/v1/ops/audit-logs?resource_type=vote&resource_id=xxx
-```
-
-### 查询响应
+## 哪些动作必须进入审计链
 
-```json
-{
-  "request_id": "req_audit_query_xxx",
-  "data": [
-    {
-      "audit_id": "uuid-string",
-      "trace_id": "trace_xxx",
-      "request_id": "req_vote_submit_xxx",
-      "operator_id": "player_xxx",
-      "operator_role": "player",
-      "action": "vote_submit",
-      "resource_type": "vote",
-      "resource_id": "vote_xxx",
-      "reason": null,
-      "request_payload_jsonb": {...},
-      "result_status": 200,
-      "created_at": "2026-07-04T10:30:00Z"
-    }
-  ],
-  "meta": {
-    "total": 1,
-    "limit": 20,
-    "offset": 0
-  }
-}
-```
+- 玩家提交投票
+- 运营创建投票周期
+- 运营推进周期状态
+- 系统或运营执行结算
+- 其他会影响玩家结果或内容投放的敏感动作
 
-## 审计日志特性
+## 关键追踪点
 
-### Append-Only
+### 链路标识
 
-- 审计日志表为 append-only
-- 不允许 UPDATE 和 DELETE 操作
-- 应用数据库账号只授予 INSERT 和 SELECT 权限
+- 写接口需要具备 `trace_id`
+- 请求处理过程应保留 `request_id`
+- 同一操作链路中的关键动作需要能被串联回放
 
-### 分区策略
+### 审计记录内容
 
-- 按月对 created_at 做范围分区
-- 审计日志增长快，分区便于管理和归档
-- 建议保留期限：至少 6 个月
+- 要能知道是谁做了什么
+- 要能知道影响了哪个资源
+- 要能知道结果如何，以及必要时为什么这么做
 
-### 索引设计
+### 查询与回查
 
-| 索引名称 | 字段 | 类型 |
-|----------|------|------|
-| audit_logs_trace_id_idx | trace_id | 普通索引 |
-| audit_logs_operator_id_idx | operator_id, created_at | 复合索引 |
-| audit_logs_resource_idx | resource_type, resource_id | 复合索引 |
-| audit_logs_action_idx | action, created_at | 复合索引 |
+- 运营需要能按 `trace_id`、操作者或资源进行回查
+- 回查结果应支持定位投票、周期推进和结算等关键节点
+- 审计查询本身也应受到访问控制
 
-## 合规要求
+## 常见使用场景
 
-### 存储要求
+- 排查玩家为什么未成功投票
+- 回看某个周期是如何被创建、开放、关闭和结算的
+- 追踪结算结果如何流向后续内容链路
+- 复盘异常操作、冲突操作或风控拦截
 
-- 审计日志必须加密存储
-- 审计日志访问必须记录访问日志
-- 定期审计日志完整性检查
+## 与其他文档的关系
 
-### 保留期限
+- 数据视角请看 `../data/audit-model.md`
+- 功能视角请看 `../features/audit-logging.md`
+- 验收视角请看 `../acceptance/security-acceptance.md`
 
-- 审计日志保留期限：至少 6 个月
-- 超过保留期限的审计日志应归档或删除
+## 源文档入口
 
-### 访问控制
-
-- 审计日志查询只能由 ops 角色执行
-- 查询操作必须记录访问日志
-- 敏感审计记录的查询需二次确认
-
-## 问题排查流程
-
-### 步骤 1：获取追踪ID
-
-**来源**：
-- 请求响应头 X-Trace-Id
-- 请求响应体 request_id
-- 客户端日志
-
-### 步骤 2：查询审计日志
-
-**操作**：
-- 使用 trace_id 查询审计日志
-- 获取所有关联的操作记录
-
-### 步骤 3：分析日志
-
-**分析内容**：
-- 操作顺序
-- 操作结果
-- 请求体快照
-- 错误信息
-
-### 步骤 4：定位问题
-
-**定位依据**：
-- 异常操作的位置
-- 错误码和错误信息
-- 时间戳
-
-### 步骤 5：解决问题
-
-**解决方案**：
-- 根据分析结果采取相应措施
-- 记录解决方案
-- 验证修复效果
-
-## 审计日志完整性检查
-
-### 定期检查
-
-- 检查审计日志表是否正常写入
-- 检查索引是否正常工作
-- 检查分区是否正常管理
-
-### 异常检测
-
-- 检测审计日志写入失败
-- 检测追踪ID缺失
-- 检测异常操作模式
-
-### 告警规则
-
-- 审计日志写入失败超过阈值时告警
-- 异常操作模式触发告警
-- 敏感操作频繁执行时告警
+- 后端与数据规范：`docs/20-specs/backend-data-spec.md`
+- API 参考：`docs/30-api/`
+- 安全与工程规范：`docs/20-specs/engineering-conventions.md`
