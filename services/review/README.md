@@ -2,6 +2,12 @@
 
 内容审核服务 - 负责结构化校验、风险判断、质量评分和人工复核流转。
 
+## 文档定位
+
+- 本文档是 `review-service` 的本地入口，用于概览服务职责、启动方式和当前实现范围。
+- 本文档不替代 `docs/20-specs/` 中的正式执行规范，也不替代 `docs/30-api/` 中的接口参考。
+- 涉及审核状态机、风险等级、权限和发布前校验时，应回到上游规范确认。
+
 ## 技术栈
 
 - Python 3.11+
@@ -101,3 +107,12 @@ mypy app
 - [ ] 添加人工复核工作流
 - [ ] 添加审核规则模板管理
 - [ ] 添加审核质量评分与统计
+
+## 相关文档
+
+- `docs/20-specs/backend-data-spec.md` - 审核记录、状态机与审计基线
+- `docs/20-specs/content-generation-spec.md` - 内容生成、审核与发布前检查约束
+- `docs/30-api/api-overview.md` - 审核相关 API 总览
+- `docs/30-api/api-permissions.md` - 审核与运营接口权限矩阵
+- `docs/30-api/api-error-codes.md` - 标准错误码与冲突语义
+- `docs/40-dev-loop/runbooks/gates/` - 内容检查与质量门禁相关 runbook

@@ -2,6 +2,12 @@
 
 Generation service for the open-world AI game. Manages AI content generation requests, generated objects, skeleton validation, and state transitions.
 
+## Documentation Positioning
+
+- This README is the local entry for `generation-service`: it summarizes scope, startup flow, and current implementation status.
+- It does not replace the authoritative generation, data, and engineering constraints in `docs/20-specs/`.
+- API scopes, endpoint summaries, and shared error semantics should be checked against `docs/30-api/`.
+
 ## Tech Stack
 
 - FastAPI 0.111+
@@ -122,3 +128,12 @@ API documentation available at `/docs` when `GENERATION_DEBUG=true`.
 - [ ] Add template management
 - [ ] Add batch generation support
 - [ ] Add webhook/notification for generation completion
+
+## Related Docs
+
+- `docs/20-specs/backend-data-spec.md` - Generation request and generated object baseline
+- `docs/20-specs/content-generation-spec.md` - AI generation lifecycle, review, and packaging constraints
+- `docs/30-api/api-overview.md` - Generation-related API catalog
+- `docs/30-api/api-permissions.md` - Scope requirements for generation and review actions
+- `docs/30-api/api-error-codes.md` - Standard API error behavior
+- `docs/40-dev-loop/README.md` - Process-layer governance and automation context

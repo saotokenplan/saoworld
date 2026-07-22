@@ -2,6 +2,12 @@
 
 World service for the open-world AI game. Manages regions, factions, world state, quest visibility, and world skeleton snapshots.
 
+## Documentation Positioning
+
+- This README is the local entry for `world-service`: it summarizes the service scope, startup flow, and implemented capabilities.
+- It does not replace the authoritative constraints in `docs/20-specs/backend-data-spec.md` and `docs/20-specs/product-spec.md`.
+- API scopes, route references, and standard error behavior should be checked against `docs/30-api/`.
+
 ## Tech Stack
 
 - FastAPI 0.111+
@@ -121,3 +127,12 @@ API documentation available at `/docs` when `WORLD_DEBUG=true`.
 - [ ] Add faction management
 - [ ] Add world event system
 - [ ] Add cache layer for frequently accessed world data
+
+## Related Docs
+
+- `docs/20-specs/backend-data-spec.md` - Region, world state, and state-machine baseline
+- `docs/20-specs/product-spec.md` - World-facing product scope and region expectations
+- `docs/30-api/api-overview.md` - World API catalog and interface map
+- `docs/30-api/api-permissions.md` - Scope requirements for world endpoints
+- `docs/30-api/api-error-codes.md` - Standard API error behavior
+- `docs/10-requirements/技术方案.md` - High-level architecture background for world interactions

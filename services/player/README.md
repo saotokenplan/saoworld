@@ -2,6 +2,12 @@
 
 玩家服务 - 负责账号、角色、成长、声望、章节进度、玩家任务和区域解锁管理。
 
+## 文档定位
+
+- 本文档是 `player-service` 的本地入口，用于概览服务职责、启动方式和当前实现范围。
+- 本文档不替代 `docs/20-specs/` 中的正式执行规范，也不替代 `docs/30-api/` 中的接口参考。
+- 涉及玩家模型、任务状态机、权限和错误码时，应回到上游规范确认。
+
 ## 技术栈
 
 - Python 3.11+
@@ -119,3 +125,12 @@ mypy app
 - [ ] 添加玩家成长/经验系统
 - [ ] 添加玩家成就系统
 - [ ] 添加玩家好友/社交系统
+
+## 相关文档
+
+- `docs/20-specs/backend-data-spec.md` - 玩家、任务、区域解锁和状态约束
+- `docs/20-specs/product-spec.md` - 玩家成长和任务相关的产品背景
+- `docs/30-api/api-overview.md` - 玩家与运营接口总览
+- `docs/30-api/api-permissions.md` - 玩家与运营接口权限矩阵
+- `docs/30-api/api-error-codes.md` - 标准错误码与冲突语义
+- `docs/10-requirements/功能设计.md` - 玩家体验和玩法背景说明

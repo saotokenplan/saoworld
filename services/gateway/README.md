@@ -2,6 +2,12 @@
 
 API Gateway service for the open-world AI game. Provides unified entry point, authentication, rate limiting, request tracing, and reverse proxy to all backend services.
 
+## Documentation Positioning
+
+- This README is the local entry for `gateway-service`: it summarizes responsibilities, startup flow, and current implementation notes.
+- It does not replace the authoritative constraints in `docs/20-specs/backend-data-spec.md` and related engineering rules.
+- API scopes, route catalogs, and shared error conventions should be checked against `docs/30-api/`.
+
 ## Features
 
 - Unified API entry point for all clients
@@ -129,3 +135,12 @@ mypy app
 - [ ] Add caching layer for frequently accessed GET endpoints
 - [ ] Add WebSocket support for real-time features
 - [ ] Add API versioning strategy
+
+## Related Docs
+
+- `docs/20-specs/backend-data-spec.md` - Backend boundaries, shared headers, and gateway-facing contracts
+- `docs/20-specs/engineering-conventions.md` - Engineering and service-level conventions
+- `docs/30-api/api-overview.md` - API catalog and route surface
+- `docs/30-api/api-permissions.md` - Permission and scope reference
+- `docs/30-api/api-error-codes.md` - Standard error behavior
+- `docs/00-governance/project-status.md` - Current project phase and release-readiness context

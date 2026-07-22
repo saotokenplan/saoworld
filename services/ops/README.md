@@ -2,6 +2,12 @@
 
 运营管理服务 - 后台运营入口、仪表盘、运营操作记录、系统状态汇总监控。
 
+## 文档定位
+
+- 本文档是 `ops-service` 的本地入口，用于概览服务职责、启动方式和当前实现范围。
+- 本文档不替代 `docs/20-specs/` 中的正式执行规范，也不替代 `docs/30-api/` 中的接口参考。
+- 涉及权限、错误码、运营动作边界和发布流程时，应回到上游规范确认。
+
 ## 技术栈
 
 - Python 3.11+
@@ -111,3 +117,12 @@ mypy app
 - [ ] 添加运营数据统计报表
 - [ ] 添加玩家管理运营接口
 - [ ] 添加内容审核运营后台
+
+## 相关文档
+
+- `docs/20-specs/backend-data-spec.md` - 运营侧数据模型、审计要求和服务边界
+- `docs/20-specs/product-spec.md` - 运营动作涉及的产品边界与发布背景
+- `docs/30-api/api-overview.md` - 运营相关 API 总览
+- `docs/30-api/api-permissions.md` - 运营接口权限矩阵
+- `docs/30-api/api-error-codes.md` - 标准错误码与冲突语义
+- `docs/40-dev-loop/runbooks/operations/` - 发布、回滚、部署和迁移 runbook

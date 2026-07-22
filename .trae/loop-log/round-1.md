@@ -27,7 +27,7 @@
 - 完成 README 族群治理：
   - `tools/README.md`
   - `services/README.md`
-  - `services/vote/README.md`
+  - `services/*/README.md`
 - 完成深层目录入口补齐：
   - `docs/40-dev-loop/runbooks/gates/README.md`
   - `docs/40-dev-loop/runbooks/operations/README.md`
@@ -55,7 +55,14 @@
 - `docs/40-dev-loop/archives/auto-generated/2026-07/plan/README.md`
 - `docs/40-dev-loop/archives/auto-generated/2026-07/status/README.md`
 - `services/README.md`
+- `services/content/README.md`
+- `services/gateway/README.md`
+- `services/generation/README.md`
+- `services/ops/README.md`
+- `services/player/README.md`
+- `services/review/README.md`
 - `services/vote/README.md`
+- `services/world/README.md`
 - `tools/README.md`
 - `tools/agents/ops_agent/tests/test_ops_agent.py`
 - `tools/perf_test/threshold.py`

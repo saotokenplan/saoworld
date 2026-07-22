@@ -2,6 +2,12 @@
 
 Content service for the open-world AI game. Manages content packages, gray release, full release, rollback, and version archiving.
 
+## Documentation Positioning
+
+- This README is the local entry for `content-service`: it summarizes the service scope, startup flow, and implemented capabilities.
+- It does not replace the authoritative constraints in `docs/20-specs/backend-data-spec.md`, `docs/20-specs/product-spec.md`, and release-related specs.
+- API scopes, endpoint references, and standard error behavior should be checked against `docs/30-api/`.
+
 ## Tech Stack
 
 - FastAPI 0.111+
@@ -129,3 +135,12 @@ API documentation available at `/docs` when `CONTENT_DEBUG=true`.
 - [ ] Add content dependency management
 - [ ] Add batch release/rollback support
 - [ ] Add release schedule support
+
+## Related Docs
+
+- `docs/20-specs/backend-data-spec.md` - Content package data model, state machine, and async/event baseline
+- `docs/20-specs/product-spec.md` - Product scope and content update expectations
+- `docs/30-api/api-overview.md` - Content-related API catalog and upstream interface map
+- `docs/30-api/api-permissions.md` - Scope requirements for content endpoints
+- `docs/30-api/api-error-codes.md` - Standard API error and conflict semantics
+- `docs/40-dev-loop/runbooks/operations/` - Gray release, full release, rollback, and deployment runbooks
