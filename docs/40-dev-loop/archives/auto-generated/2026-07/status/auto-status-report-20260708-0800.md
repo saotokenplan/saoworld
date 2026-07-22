@@ -62,7 +62,7 @@
 
 - 规范文档：20-specs/ 下完整规范集
 - API 文档：30-api/ 下 8 个服务的 API 示例文档
-- 运行手册：docs/runbook/gates/ 下 16 个门禁 Runbook
+- 运行手册：docs/40-dev-loop/runbooks/gates/ 下 16 个门禁 Runbook
 - 代理规范：docs/40-dev-loop/p2-agent-design/ 下 9 个代理规范文档
 - README 文档：所有服务/模块的 README 已完善
 

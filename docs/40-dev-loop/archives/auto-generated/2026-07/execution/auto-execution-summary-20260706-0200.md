@@ -20,7 +20,7 @@
    - 事件总线集成测试（发布机制、订阅机制）
    - 统一响应格式集成测试（vote、content）
 
-3. **更新运行手册** - `docs/runbook/gates/critical_e2e.md`
+3. **更新运行手册** - `docs/40-dev-loop/runbooks/gates/critical_e2e.md`
    - 添加内容包和事件总线测试流程
    - 更新执行命令说明
 
@@ -33,7 +33,7 @@
 |----------|----------|------|
 | `tools/playtest/conftest.py` | 新增 | 测试夹具定义 |
 | `tools/playtest/test_full_integration.py` | 新增 | 集成测试用例 |
-| `docs/runbook/gates/critical_e2e.md` | 更新 | 添加测试流程说明 |
+| `docs/40-dev-loop/runbooks/gates/critical_e2e.md` | 更新 | 添加测试流程说明 |
 | `docs/00-governance/project-status.md` | 更新 | 记录完成状态 |
 | `docs/40-dev-loop/auto-plan-20260706-0200.md` | 新增 | 任务计划文档 |
 

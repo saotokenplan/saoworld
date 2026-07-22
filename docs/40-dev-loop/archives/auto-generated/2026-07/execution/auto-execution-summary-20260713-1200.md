@@ -23,7 +23,7 @@
 3. **P4 可观测性基础设施**
    - 8 个后端服务新增 OpenTelemetry 分布式追踪中间件（TracingMiddleware + setup_tracing）
    - 创建 SLO 定义文件（telemetry/slo/slo-definitions.yaml，8 个核心 SLO）
-   - 创建分布式追踪 Runbook（docs/runbook/gates/distributed-tracing.md）
+   - 创建分布式追踪 Runbook（docs/40-dev-loop/runbooks/gates/distributed-tracing.md）
 
 ## 修改的文件清单
 
@@ -63,7 +63,7 @@
 - `telemetry/slo/slo-definitions.yaml` - 新建
 
 ### 文档
-- `docs/runbook/gates/distributed-tracing.md` - 新建
+- `docs/40-dev-loop/runbooks/gates/distributed-tracing.md` - 新建
 - `docs/00-governance/project-status.md` - 更新状态
 - `docs/40-dev-loop/auto-plan-20260713-1200.md` - 更新状态为已完成
 

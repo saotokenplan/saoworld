@@ -8,7 +8,7 @@
 
 ## 本轮完成的工作清单
 
-### 1. 完善 docs/runbook/README.md 门禁列表
+### 1. 完善 docs/40-dev-loop/runbooks/README.md 门禁列表
 - 补充 G-UNIT-005 (generation-service 单元测试)
 - 补充 G-UNIT-006 (review-service 单元测试)
 - 补充 G-UNIT-007 (player-service 单元测试)
@@ -25,7 +25,7 @@
 
 | 文件路径 | 修改类型 | 说明 |
 |---------|---------|------|
-| `docs/runbook/README.md` | 更新 | 补充 5 个缺失的单元测试门禁 Runbook 链接 |
+| `docs/40-dev-loop/runbooks/README.md` | 更新 | 补充 5 个缺失的单元测试门禁 Runbook 链接 |
 | `docs/40-dev-loop/auto-plan-20260706-1800.md` | 新增 | 任务计划文档 |
 | `docs/40-dev-loop/auto-execution-summary-20260706-1800.md` | 新增 | 本执行摘要 |
 | `docs/40-dev-loop/auto-progress-log.md` | 更新 | 追加本轮执行记录 |

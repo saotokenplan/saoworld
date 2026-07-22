@@ -29,7 +29,7 @@
    - `test_cli.py`：13 个（CLI 参数解析与异常处理）
 4. 门禁注册与文档
    - 门禁注册表新增 4 个门禁：G-UNIT-013 / G-NONFUNC-001 / G-NONFUNC-002 / G-NONFUNC-003
-   - 创建 `docs/runbook/gates/perf-test.md` Runbook（包含 5 个章节）
+   - 创建 `docs/40-dev-loop/runbooks/gates/perf-test.md` Runbook（包含 5 个章节）
    - 更新 `tools/README.md`（新增第 5 大模块"Perf Test"说明 + 目录结构更新）
    - 更新 `docs/00-governance/project-status.md`（新增已落地资产 + 完成条目 + 下一阶段建议）
 
@@ -52,7 +52,7 @@
 - `tools/perf_test/tests/test_load_runner.py`
 - `tools/perf_test/tests/test_scenarios.py`
 - `tools/perf_test/tests/test_cli.py`
-- `docs/runbook/gates/perf-test.md`
+- `docs/40-dev-loop/runbooks/gates/perf-test.md`
 - `docs/40-dev-loop/auto-plan-20260713-0208.md`
 - `docs/40-dev-loop/auto-execution-summary-20260713-0208.md`（本文件）
 - `docs/40-dev-loop/auto-progress-log.md`

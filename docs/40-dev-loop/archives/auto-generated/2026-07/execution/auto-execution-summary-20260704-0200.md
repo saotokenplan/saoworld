@@ -126,6 +126,6 @@
 
 1. **优先级 P1**：初始化 CI/CD 配置（GitHub Actions 或类似工具），实现代码检查、测试、构建自动化
 2. **优先级 P1**：补充异步任务和事件的 payload schema 文档
-3. **优先级 P2**：基于最小投票链路生成第一版需求包（docs/packages/first-slice/）
+3. **优先级 P2**：基于最小投票链路生成第一版需求包（`docs/10-requirements/packages/first-slice/`）
 4. **优先级 P2**：在真实 PostgreSQL 环境中验证所有服务的 Alembic 迁移脚本
 5. **优先级 P3**：为各服务 pyproject.toml 显式添加 alembic 可选依赖声明

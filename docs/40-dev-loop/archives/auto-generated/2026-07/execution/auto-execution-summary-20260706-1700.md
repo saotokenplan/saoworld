@@ -10,7 +10,7 @@
 ## 本轮完成的工作清单
 
 ### 1. 创建门禁 Runbook 目录
-- 创建 `docs/runbook/gates/` 目录
+- 创建 `docs/40-dev-loop/runbooks/gates/` 目录
 
 ### 2. 静态检查类 Runbook（2个）
 - `ruff.md`（G-STATIC-001）- Ruff Lint 静态检查
@@ -43,22 +43,22 @@
 ## 修改的文件清单
 
 ### 新增文件（17个）
-- `docs/runbook/gates/ruff.md`
-- `docs/runbook/gates/mypy.md`
-- `docs/runbook/gates/vote-tests.md`
-- `docs/runbook/gates/world-tests.md`
-- `docs/runbook/gates/content-tests.md`
-- `docs/runbook/gates/workers-tests.md`
-- `docs/runbook/gates/generation-tests.md`
-- `docs/runbook/gates/review-tests.md`
-- `docs/runbook/gates/player-tests.md`
-- `docs/runbook/gates/ops-tests.md`
-- `docs/runbook/gates/gateway-tests.md`
-- `docs/runbook/gates/world_consistency.md`
-- `docs/runbook/gates/reward_boundary.md`
-- `docs/runbook/gates/content_safety.md`
-- `docs/runbook/gates/duplication.md`
-- `docs/runbook/gates/critical_e2e.md`
+- `docs/40-dev-loop/runbooks/gates/ruff.md`
+- `docs/40-dev-loop/runbooks/gates/mypy.md`
+- `docs/40-dev-loop/runbooks/gates/vote-tests.md`
+- `docs/40-dev-loop/runbooks/gates/world-tests.md`
+- `docs/40-dev-loop/runbooks/gates/content-tests.md`
+- `docs/40-dev-loop/runbooks/gates/workers-tests.md`
+- `docs/40-dev-loop/runbooks/gates/generation-tests.md`
+- `docs/40-dev-loop/runbooks/gates/review-tests.md`
+- `docs/40-dev-loop/runbooks/gates/player-tests.md`
+- `docs/40-dev-loop/runbooks/gates/ops-tests.md`
+- `docs/40-dev-loop/runbooks/gates/gateway-tests.md`
+- `docs/40-dev-loop/runbooks/gates/world_consistency.md`
+- `docs/40-dev-loop/runbooks/gates/reward_boundary.md`
+- `docs/40-dev-loop/runbooks/gates/content_safety.md`
+- `docs/40-dev-loop/runbooks/gates/duplication.md`
+- `docs/40-dev-loop/runbooks/gates/critical_e2e.md`
 - `docs/40-dev-loop/auto-plan-20260706-1700.md`
 
 ### 修改文件（1个）

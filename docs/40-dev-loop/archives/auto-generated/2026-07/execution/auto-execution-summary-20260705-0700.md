@@ -11,26 +11,26 @@
 
 ## 完成的工作
 
-### 1. 创建 docs/runbook/ 目录结构
+### 1. 创建 docs/40-dev-loop/runbooks/ 目录结构
 
-- 创建 `docs/runbook/README.md` - Runbook 目录概述文档
-- 创建 `docs/runbook/gates/` 目录
+- 创建 `docs/40-dev-loop/runbooks/README.md` - Runbook 目录概述文档
+- 创建 `docs/40-dev-loop/runbooks/gates/` 目录
 
 ### 2. 创建 11 个门禁 Runbook 文档
 
 | Gate ID | 文件 | 说明 |
 |---------|------|------|
-| G-STATIC-001 | `docs/runbook/gates/ruff.md` | Ruff Lint 静态检查 |
-| G-STATIC-002 | `docs/runbook/gates/mypy.md` | Mypy 类型检查 |
-| G-UNIT-001 | `docs/runbook/gates/vote-tests.md` | vote-service 单元测试 |
-| G-UNIT-002 | `docs/runbook/gates/world-tests.md` | world-service 单元测试 |
-| G-UNIT-003 | `docs/runbook/gates/content-tests.md` | content-service 单元测试 |
-| G-UNIT-004 | `docs/runbook/gates/workers-tests.md` | workers 单元测试 |
-| G-CONTENT-001 | `docs/runbook/gates/world_consistency.md` | 世界一致性检查 |
-| G-CONTENT-002 | `docs/runbook/gates/reward_boundary.md` | 数值平衡检查 |
-| G-CONTENT-003 | `docs/runbook/gates/content_safety.md` | 内容安全检查 |
-| G-CONTENT-004 | `docs/runbook/gates/duplication.md` | 重复度检查 |
-| G-E2E-001 | `docs/runbook/gates/critical_e2e.md` | 关键路径 E2E 测试 |
+| G-STATIC-001 | `docs/40-dev-loop/runbooks/gates/ruff.md` | Ruff Lint 静态检查 |
+| G-STATIC-002 | `docs/40-dev-loop/runbooks/gates/mypy.md` | Mypy 类型检查 |
+| G-UNIT-001 | `docs/40-dev-loop/runbooks/gates/vote-tests.md` | vote-service 单元测试 |
+| G-UNIT-002 | `docs/40-dev-loop/runbooks/gates/world-tests.md` | world-service 单元测试 |
+| G-UNIT-003 | `docs/40-dev-loop/runbooks/gates/content-tests.md` | content-service 单元测试 |
+| G-UNIT-004 | `docs/40-dev-loop/runbooks/gates/workers-tests.md` | workers 单元测试 |
+| G-CONTENT-001 | `docs/40-dev-loop/runbooks/gates/world_consistency.md` | 世界一致性检查 |
+| G-CONTENT-002 | `docs/40-dev-loop/runbooks/gates/reward_boundary.md` | 数值平衡检查 |
+| G-CONTENT-003 | `docs/40-dev-loop/runbooks/gates/content_safety.md` | 内容安全检查 |
+| G-CONTENT-004 | `docs/40-dev-loop/runbooks/gates/duplication.md` | 重复度检查 |
+| G-E2E-001 | `docs/40-dev-loop/runbooks/gates/critical_e2e.md` | 关键路径 E2E 测试 |
 
 每个 runbook 包含：
 - 门禁概述（ID、名称、类型、触发条件、执行命令）
@@ -58,18 +58,18 @@
 ## 修改的文件清单
 
 ### 新增文件
-- `docs/runbook/README.md`
-- `docs/runbook/gates/ruff.md`
-- `docs/runbook/gates/mypy.md`
-- `docs/runbook/gates/vote-tests.md`
-- `docs/runbook/gates/world-tests.md`
-- `docs/runbook/gates/content-tests.md`
-- `docs/runbook/gates/workers-tests.md`
-- `docs/runbook/gates/world_consistency.md`
-- `docs/runbook/gates/reward_boundary.md`
-- `docs/runbook/gates/content_safety.md`
-- `docs/runbook/gates/duplication.md`
-- `docs/runbook/gates/critical_e2e.md`
+- `docs/40-dev-loop/runbooks/README.md`
+- `docs/40-dev-loop/runbooks/gates/ruff.md`
+- `docs/40-dev-loop/runbooks/gates/mypy.md`
+- `docs/40-dev-loop/runbooks/gates/vote-tests.md`
+- `docs/40-dev-loop/runbooks/gates/world-tests.md`
+- `docs/40-dev-loop/runbooks/gates/content-tests.md`
+- `docs/40-dev-loop/runbooks/gates/workers-tests.md`
+- `docs/40-dev-loop/runbooks/gates/world_consistency.md`
+- `docs/40-dev-loop/runbooks/gates/reward_boundary.md`
+- `docs/40-dev-loop/runbooks/gates/content_safety.md`
+- `docs/40-dev-loop/runbooks/gates/duplication.md`
+- `docs/40-dev-loop/runbooks/gates/critical_e2e.md`
 - `tools/playtest/__init__.py`
 - `tools/playtest/run_vote_flow.sh`
 - `tools/playtest/test_vote_flow.py`

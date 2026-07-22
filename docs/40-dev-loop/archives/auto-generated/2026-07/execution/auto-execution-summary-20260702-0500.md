@@ -31,5 +31,5 @@
 
 根据 `project-status.md`，下一阶段最高优先级工作：
 
-1. **P1**：基于最小投票链路生成第一版需求包（`docs/packages/first-slice/`）
+1. **P1**：基于最小投票链路生成第一版需求包（`docs/10-requirements/packages/first-slice/`）
 2. **P2**：补异步任务和事件的 payload schema（内容链路需要）

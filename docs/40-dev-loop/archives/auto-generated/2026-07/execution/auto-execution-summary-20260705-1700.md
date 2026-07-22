@@ -33,11 +33,11 @@
 - **升级路径**：问题级别与处理方式对照表
 
 新增文件：
-- `docs/runbook/gates/generation-tests.md`
-- `docs/runbook/gates/review-tests.md`
-- `docs/runbook/gates/player-tests.md`
-- `docs/runbook/gates/ops-tests.md`
-- `docs/runbook/gates/gateway-tests.md`
+- `docs/40-dev-loop/runbooks/gates/generation-tests.md`
+- `docs/40-dev-loop/runbooks/gates/review-tests.md`
+- `docs/40-dev-loop/runbooks/gates/player-tests.md`
+- `docs/40-dev-loop/runbooks/gates/ops-tests.md`
+- `docs/40-dev-loop/runbooks/gates/gateway-tests.md`
 
 ### 3. 更新项目状态文档
 
@@ -57,11 +57,11 @@
 
 | 文件 | 说明 |
 |------|------|
-| `docs/runbook/gates/generation-tests.md` | generation-service 单元测试门禁运行手册 |
-| `docs/runbook/gates/review-tests.md` | review-service 单元测试门禁运行手册 |
-| `docs/runbook/gates/player-tests.md` | player-service 单元测试门禁运行手册 |
-| `docs/runbook/gates/ops-tests.md` | ops-service 单元测试门禁运行手册 |
-| `docs/runbook/gates/gateway-tests.md` | gateway-service 单元测试门禁运行手册 |
+| `docs/40-dev-loop/runbooks/gates/generation-tests.md` | generation-service 单元测试门禁运行手册 |
+| `docs/40-dev-loop/runbooks/gates/review-tests.md` | review-service 单元测试门禁运行手册 |
+| `docs/40-dev-loop/runbooks/gates/player-tests.md` | player-service 单元测试门禁运行手册 |
+| `docs/40-dev-loop/runbooks/gates/ops-tests.md` | ops-service 单元测试门禁运行手册 |
+| `docs/40-dev-loop/runbooks/gates/gateway-tests.md` | gateway-service 单元测试门禁运行手册 |
 | `docs/40-dev-loop/auto-execution-summary-20260705-1700.md` | 执行摘要 |
 
 ## 遗留问题与下一步建议

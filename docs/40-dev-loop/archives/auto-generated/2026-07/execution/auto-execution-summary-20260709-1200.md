@@ -11,31 +11,31 @@
 ## 本轮完成的工作清单
 
 ### 1. 创建灰度发布操作 Runbook
-- 文件：`docs/runbook/operations/gray-release.md`
+- 文件：`docs/40-dev-loop/runbooks/operations/gray-release.md`
 - 内容：灰度发布概述、前置条件、操作步骤（发布前检查、执行灰度发布、发布后验证）、回滚方案、常见问题与解决方案
 
 ### 2. 创建全量发布操作 Runbook
-- 文件：`docs/runbook/operations/full-release.md`
+- 文件：`docs/40-dev-loop/runbooks/operations/full-release.md`
 - 内容：全量发布概述、前置条件、操作步骤（灰度验证确认、执行全量发布、发布后监控）、回滚方案、常见问题与解决方案
 
 ### 3. 创建内容包回滚操作 Runbook
-- 文件：`docs/runbook/operations/rollback.md`
+- 文件：`docs/40-dev-loop/runbooks/operations/rollback.md`
 - 内容：回滚概述、触发条件、操作步骤（评估影响、执行回滚、验证回滚、事后复盘）、常见问题与解决方案
 
 ### 4. 创建服务部署操作 Runbook
-- 文件：`docs/runbook/operations/service-deployment.md`
+- 文件：`docs/40-dev-loop/runbooks/operations/service-deployment.md`
 - 内容：部署概述、前置条件、部署步骤（滚动更新、健康检查、流量切换）、回滚方案、常见问题与解决方案
 
 ### 5. 创建数据库迁移操作 Runbook
-- 文件：`docs/runbook/operations/db-migration.md`
+- 文件：`docs/40-dev-loop/runbooks/operations/db-migration.md`
 - 内容：迁移概述、前置条件、迁移步骤（备份、验证脚本、执行迁移、验证结果）、回滚方案、常见问题与解决方案
 
 ### 6. 创建首期内容包初始化操作 Runbook
-- 文件：`docs/runbook/operations/seed-content.md`
+- 文件：`docs/40-dev-loop/runbooks/operations/seed-content.md`
 - 内容：初始化概述、前置条件、操作步骤（内容文件校验、执行初始化脚本、数据完整性检查）、回滚方案、常见问题与解决方案
 
 ### 7. 更新 Runbook 目录 README
-- 文件：`docs/runbook/README.md`
+- 文件：`docs/40-dev-loop/runbooks/README.md`
 - 补充"运维操作 Runbook"分类
 - 添加新增的 6 个运维 Runbook 链接
 - 补充运维操作 Runbook 规范
@@ -50,17 +50,17 @@
 ## 修改的文件清单
 
 ### 新增文件（7个）
-- `docs/runbook/operations/gray-release.md`
-- `docs/runbook/operations/full-release.md`
-- `docs/runbook/operations/rollback.md`
-- `docs/runbook/operations/service-deployment.md`
-- `docs/runbook/operations/db-migration.md`
-- `docs/runbook/operations/seed-content.md`
+- `docs/40-dev-loop/runbooks/operations/gray-release.md`
+- `docs/40-dev-loop/runbooks/operations/full-release.md`
+- `docs/40-dev-loop/runbooks/operations/rollback.md`
+- `docs/40-dev-loop/runbooks/operations/service-deployment.md`
+- `docs/40-dev-loop/runbooks/operations/db-migration.md`
+- `docs/40-dev-loop/runbooks/operations/seed-content.md`
 - `docs/40-dev-loop/auto-plan-20260709-1200.md`
 - `docs/40-dev-loop/auto-execution-summary-20260709-1200.md`
 
 ### 修改文件（2个）
-- `docs/runbook/README.md`
+- `docs/40-dev-loop/runbooks/README.md`
 - `docs/00-governance/project-status.md`
 
 ## 验收结果

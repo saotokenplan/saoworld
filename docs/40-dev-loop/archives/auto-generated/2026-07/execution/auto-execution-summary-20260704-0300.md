@@ -7,13 +7,13 @@
 
 ## 任务概述
 
-基于最小投票链路生成第一版需求包，创建 `docs/packages/first-slice/` 目录，包含投票链路的完整规范子集、API 接口清单、数据模型定义、业务流程说明和验收标准，为后续开发和测试提供明确的需求基线。
+基于最小投票链路生成第一版需求包，创建 `docs/10-requirements/packages/first-slice/` 目录，包含投票链路的完整规范子集、API 接口清单、数据模型定义、业务流程说明和验收标准，为后续开发和测试提供明确的需求基线。
 
 ## 本轮完成的工作清单
 
 ### 1. 创建需求包目录结构
 
-成功创建 `docs/packages/first-slice/` 目录，包含完整的目录结构：
+成功创建 `docs/10-requirements/packages/first-slice/` 目录，包含完整的目录结构：
 - `README.md` - 需求包说明
 - `scope.md` - 需求范围界定
 - `features/` - 功能特性说明
@@ -64,26 +64,26 @@
 
 ### 新增文件
 
-- `docs/packages/first-slice/README.md`
-- `docs/packages/first-slice/scope.md`
-- `docs/packages/first-slice/features/voting-cycle.md`
-- `docs/packages/first-slice/features/vote-submission.md`
-- `docs/packages/first-slice/features/vote-counting.md`
-- `docs/packages/first-slice/features/vote-results.md`
-- `docs/packages/first-slice/features/audit-logging.md`
-- `docs/packages/first-slice/api/vote-endpoints.md`
-- `docs/packages/first-slice/api/auth-requirements.md`
-- `docs/packages/first-slice/api/error-codes.md`
-- `docs/packages/first-slice/data/vote-models.md`
-- `docs/packages/first-slice/data/audit-model.md`
-- `docs/packages/first-slice/data/enums.md`
-- `docs/packages/first-slice/workflows/vote-lifecycle.md`
-- `docs/packages/first-slice/workflows/vote-submission-flow.md`
-- `docs/packages/first-slice/workflows/vote-finalization-flow.md`
-- `docs/packages/first-slice/workflows/audit-trail.md`
-- `docs/packages/first-slice/acceptance/vote-acceptance.md`
-- `docs/packages/first-slice/acceptance/api-acceptance.md`
-- `docs/packages/first-slice/acceptance/security-acceptance.md`
+- `docs/10-requirements/packages/first-slice/README.md`
+- `docs/10-requirements/packages/first-slice/scope.md`
+- `docs/10-requirements/packages/first-slice/features/voting-cycle.md`
+- `docs/10-requirements/packages/first-slice/features/vote-submission.md`
+- `docs/10-requirements/packages/first-slice/features/vote-counting.md`
+- `docs/10-requirements/packages/first-slice/features/vote-results.md`
+- `docs/10-requirements/packages/first-slice/features/audit-logging.md`
+- `docs/10-requirements/packages/first-slice/api/vote-endpoints.md`
+- `docs/10-requirements/packages/first-slice/api/auth-requirements.md`
+- `docs/10-requirements/packages/first-slice/api/error-codes.md`
+- `docs/10-requirements/packages/first-slice/data/vote-models.md`
+- `docs/10-requirements/packages/first-slice/data/audit-model.md`
+- `docs/10-requirements/packages/first-slice/data/enums.md`
+- `docs/10-requirements/packages/first-slice/workflows/vote-lifecycle.md`
+- `docs/10-requirements/packages/first-slice/workflows/vote-submission-flow.md`
+- `docs/10-requirements/packages/first-slice/workflows/vote-finalization-flow.md`
+- `docs/10-requirements/packages/first-slice/workflows/audit-trail.md`
+- `docs/10-requirements/packages/first-slice/acceptance/vote-acceptance.md`
+- `docs/10-requirements/packages/first-slice/acceptance/api-acceptance.md`
+- `docs/10-requirements/packages/first-slice/acceptance/security-acceptance.md`
 - `docs/40-dev-loop/auto-plan-20260704-0300.md`
 - `docs/40-dev-loop/auto-execution-summary-20260704-0300.md`
 
