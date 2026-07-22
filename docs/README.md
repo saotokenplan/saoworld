@@ -41,6 +41,19 @@
   - 技术选型、方案比较和历史决策依据
   - 适合做引擎、后端和基础设施决策参考
 
+## 过渡目录
+
+当前仓库除六层主结构外，还保留以下历史或专题目录：
+
+- `runbook/`
+  - 历史保留的运行手册目录，包含门禁排障和运维操作说明
+  - 当前作为补充材料保留，不视为新的一级权威层
+- `packages/`
+  - 历史保留的需求包/规范子集目录，适合承载专题打包产物
+  - 当前作为规范的再包装出口保留，不替代 `20-specs/` 与 `30-api/`
+
+后续若对这两个目录进行结构迁移，应先更新治理文档，再执行迁移。
+
 ## 建议阅读顺序
 
 以下顺序用于按层浏览完整文档体系；如果你只需要最小阅读路径和最小实施顺序，优先查看 `00-governance/quick-start.md`。
@@ -52,11 +65,14 @@
 5. `00-governance/project-status.md`
 6. `00-governance/quick-start.md`
 7. `20-specs/README.md`
-8. `30-api/api-overview.md`
-9. `30-api/openapi-draft.md`
-10. `10-requirements/需求概述.md`
-11. `40-dev-loop/loop-engineering-plan.md`
-12. `50-research/stack-research-ai-game-dev.md`
+8. `30-api/README.md`
+9. `30-api/api-overview.md`
+10. `10-requirements/README.md`
+11. `10-requirements/需求概述.md`
+12. `40-dev-loop/README.md`
+13. `40-dev-loop/loop-engineering-plan.md`
+14. `50-research/README.md`
+15. `50-research/stack-research-ai-game-dev.md`
 
 ## 使用原则
 
@@ -65,6 +81,7 @@
 - `30-api/` 承担接口参考索引，不替代 `20-specs/` 的后端规范。
 - `40-dev-loop/` 保留研发治理、门禁和 AI Coding 流程设计。
 - `50-research/` 保留技术选型依据和历史决策背景。
+- `runbook/` 和 `packages/` 当前视为过渡保留目录，不作为新的一级权威层扩展。
 
 ## 与其他文档的关系
 
@@ -78,3 +95,5 @@
   - 最小阅读路径与最小实施顺序。
 - `00-governance/document-template-maintenance.md`
   - 模板持续维护规则。
+- `40-dev-loop/README.md`
+  - 研发闭环目录入口，区分方法论文档与自动产物。
