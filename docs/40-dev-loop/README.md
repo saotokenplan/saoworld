@@ -47,6 +47,8 @@
   - 已正式并入的运行手册目录，包含门禁排障与运维操作
 - `p2-agent-design/`
   - 特定阶段或专题的 Agent 设计资料
+- `player-guide/`
+  - 公测、公告、FAQ 和玩家沟通模板资料
 - `archives/auto-generated/`
   - 自动规划、执行摘要和状态快照的归档目录
 - `auto-progress-log.md`

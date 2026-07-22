@@ -374,7 +374,7 @@ def test_error_handler_generic_error():
 
 def test_extract_insights_from_reports():
     agent = OpsAgent()
-    result = agent.extract_insights(["docs/reports/analytics-2026-q2.md"])
+    result = agent.extract_insights(["docs/40-dev-loop/weekly-report-2026-07-21.md"])
 
     assert "insights" in result
     assert "insights_count" in result
@@ -455,4 +455,3 @@ def test_execute_requirement_generation_no_upstream():
     )
 
     assert result["requirements_count"] == 2
-

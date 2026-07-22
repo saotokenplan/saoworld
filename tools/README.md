@@ -1,6 +1,16 @@
 # tools/ - 工具脚本与离线工具
 
+> 文档状态：active
+> 适用阶段：当前
+> 维护要求：持续维护
+
 离线脚本、校验器、Git hooks 安装器、打包工具、一次性数据迁移脚本，以及 AI 研发闭环工具模块。
+
+## 当前定位
+
+- 本文档是 `tools/` 目录入口，用于解释当前有哪些工具模块、它们解决什么问题、应该回到哪些上游规范查正式约束。
+- 本文档不替代 `docs/20-specs/` 的执行规范，也不替代 `docs/40-dev-loop/` 的流程、门禁和 runbook 文档。
+- 当工具职责、门禁来源或目录结构变化时，应与根 `README.md`、`services/README.md` 和 `docs/` 治理入口同步更新。
 
 ## 目录结构
 
@@ -255,6 +265,11 @@ python tools/validate-commit-msg.py --message "feat(vote): 增加投票提交接
 
 ## 相关文档
 
+- 仓库入口：`README.md`
+- 文档总导航：`docs/README.md`
+- 项目状态：`docs/00-governance/project-status.md`
+- 文档治理规则：`.trae/rules/52-documentation.md`
+- 后端与工程规范：`docs/20-specs/backend-data-spec.md`
 - 门禁 Runbook：`docs/40-dev-loop/runbooks/gates/`
 - 门禁注册表：`docs/40-dev-loop/gate_registry.yaml`
 - 代理角色规范：`docs/40-dev-loop/p2-agent-design/`

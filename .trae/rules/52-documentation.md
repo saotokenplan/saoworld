@@ -67,14 +67,25 @@ docs/
 
 ### 修改规范文档后必须同步检查
 
-修改 `20-specs/` 或其他核心文档后，必须检查以下文件是否需要同步更新：
+修改 `20-specs/`、治理入口文档或其他核心文档后，必须检查以下文件是否需要同步更新：
 
 - [ ] [docs/README.md](file:///docs/README.md) - 目录导航是否需要更新
 - [ ] [docs/00-governance/document-map.md](file:///docs/00-governance/document-map.md) - 文档映射关系是否需要更新
 - [ ] [docs/00-governance/project-status.md](file:///docs/00-governance/project-status.md) - 项目状态是否需要更新
+- [ ] [README.md](file:///README.md) - 仓库根入口、阶段判断和目录结构是否需要更新
+- [ ] [tools/README.md](file:///tools/README.md) - 工具目录入口与规范回链是否需要更新
+- [ ] [services/README.md](file:///services/README.md) - 服务总入口与当前服务现状是否需要更新
 - [ ] [docs/00-governance/spec-skill-mapping.md](file:///docs/00-governance/spec-skill-mapping.md) - spec 与 skill 的映射是否需要更新
 - [ ] `.trae/rules/` 下的对应规则文件 - 如果规范变更涉及工程规则，必须同步更新规则
 - [ ] `.trae/skills/` 下的对应 SKILL.md - 如果规范变更涉及技能引用源，必须同步更新
+
+### README 族群同步规则
+
+- 根 `README.md` 负责仓库总入口，只保留项目定位、当前阶段、根目录结构与阅读顺序，不复制完整规范正文。
+- `tools/README.md` 负责工具目录入口，需回指 `docs/40-dev-loop/`、`docs/20-specs/` 等上游规范或流程文档。
+- `services/README.md` 负责服务目录入口，需说明当前服务列表、整体状态，并回指 `docs/20-specs/` 和 `docs/30-api/`。
+- `services/*/README.md` 属于模块级入口，至少应说明本服务定位、启动方式，以及对应的 spec / API 来源。
+- 当项目阶段、仓库结构或权威来源发生变化时，上述 README 必须与 `docs/00-governance/project-status.md`、`docs/README.md` 同步收口。
 
 ### 文档状态变更规则
 

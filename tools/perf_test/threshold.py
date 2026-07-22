@@ -118,7 +118,7 @@ def check_thresholds(
     return summary
 
 
-# 项目默认阈值（参考 docs/20-specs/backend-data-spec.md、docs/packages/first-slice/acceptance/）
+# 项目默认阈值（参考 docs/20-specs/backend-data-spec.md、docs/10-requirements/packages/first-slice/acceptance/）
 DEFAULT_THRESHOLDS: dict[str, list[Threshold]] = {
     "vote_submit": [
         Threshold(name="vote_submit_p95", metric="p95_ms", max_value=300.0, severity="blocker"),

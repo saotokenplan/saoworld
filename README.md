@@ -10,12 +10,24 @@
 
 ## 当前定位
 
-- 当前仓库是文档与规范仓库，不是可直接运行的业务工程仓库。
-- 根 `README.md` 负责提供最外层导航；详细阅读顺序以 `docs/README.md` 为准，治理规则以 `docs/00-governance/` 下的文档为准。
-- 后续进入拆任务、建仓库、写代码和接入 CI 时，执行基线以 `docs/20-specs/` 为准。
+- 当前仓库是面向开放世界 AI 游戏项目的单仓工程，已经同时包含文档、客户端、后端服务、异步任务、工具脚本和基础设施目录。
+- 当前阶段为“Sprint 9 公测准备收尾 / 灰度发布前校准”；项目重点已从持续补功能转向发布闭环与真实环境验证。
+- 根 `README.md` 负责提供最外层导航；详细阅读顺序以 `docs/README.md` 为准，项目现状以 `docs/00-governance/project-status.md` 为准，执行基线以 `docs/20-specs/` 为准。
 
 ## 目录结构
 
+- `game/`
+  - Godot 4 客户端工程与场景、脚本、测试
+- `services/`
+  - 八个后端微服务与各自 README、代码和测试
+- `workers/`
+  - 异步任务 Worker 与任务执行入口
+- `tools/`
+  - 工具脚本、校验器、压测工具、Agent 模块与 Git hooks
+- `infra/`
+  - Docker Compose 与部署相关配置
+- `telemetry/`
+  - 遥测、SLO、日志与告警定义
 - `docs/00-governance/`
   - 文档治理、项目状态、快速开始、目录规范、变更流程、生命周期、归属责任、评审清单、模板规范、模板对齐复查、模板维护规则和 spec/skill 映射
 - `docs/10-requirements/`
@@ -31,9 +43,9 @@
 
 ## 建议阅读顺序
 
-1. `docs/README.md`
-2. `docs/00-governance/document-map.md`
-3. `docs/00-governance/project-status.md`
+1. `docs/00-governance/project-status.md`
+2. `docs/README.md`
+3. `docs/00-governance/document-map.md`
 4. `docs/00-governance/quick-start.md`
 5. `docs/20-specs/README.md`
 6. `docs/30-api/api-overview.md`

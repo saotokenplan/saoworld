@@ -2,6 +2,12 @@
 
 Voting microservice for the open-world AI game. Handles vote cycles, candidates, and player vote submissions.
 
+## Documentation Positioning
+
+- This README is the local entry for `vote-service`: it summarizes the service, startup flow, and implemented capabilities.
+- It does not replace the authoritative constraints in `docs/20-specs/backend-data-spec.md` and `docs/20-specs/product-spec.md`.
+- API scopes, endpoint references, and standard error codes should be checked against `docs/30-api/`.
+
 ## Tech Stack
 
 - FastAPI 0.111+
@@ -115,3 +121,12 @@ API documentation available at `/docs` when `VOTE_DEBUG=true`.
 
 - [ ] Connect to real PostgreSQL and run end-to-end runtime verification in a deployed environment
 - [ ] Wire the tally result to downstream content generation pipeline via the event bus
+
+## Related Docs
+
+- `docs/20-specs/backend-data-spec.md` - Vote-related data model, state machine, and async/event baseline
+- `docs/20-specs/product-spec.md` - Voting loop, MVP scope, and product acceptance baseline
+- `docs/30-api/api-overview.md` - Current vote API catalog and upstream interface map
+- `docs/30-api/api-permissions.md` - Scope requirements for vote endpoints
+- `docs/30-api/api-error-codes.md` - Standard API error codes and conflict handling
+- `docs/10-requirements/packages/first-slice/README.md` - Non-authoritative reading package for the minimum voting slice
