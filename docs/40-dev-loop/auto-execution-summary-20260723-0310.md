@@ -34,10 +34,11 @@
 ## 四、提交与合并记录
 
 - 提交拆分：
-  1. `docs(requirements)`：M4 审核效率看板指标定义主交付物 + 引用同步
-  2. `docs(dev-loop)`：本轮自动化过程材料（计划/摘要/日志/循环日志/遥测收拢）
-- 合并结果：`--no-ff` 合并回 `feature-prd` 成功，无冲突；合并提交 hash 见下文回填。
-- 远程推送状态：工作分支两笔提交均推送 `origin/auto/auto-20260723-0310`；合并提交推送 `origin/feature-prd` 并经 `git fetch` + `merge-base --is-ancestor` 校验确认。
+  1. `docs(requirements)` 05078a6：M4 审核效率看板指标定义主交付物 + 引用同步
+  2. `docs(dev-loop)` 6a4df3d：本轮自动化过程材料（计划/摘要/进度日志/循环日志）
+- 合并结果：`--no-ff` 合并回 `feature-prd` 成功，无冲突；合并提交 hash `e443f25`。
+- 远程推送状态：工作分支两笔提交均推送 `origin/auto/auto-20260723-0310`；合并提交 `e443f25` 已推送 `origin/feature-prd` 并经 `git fetch` + `merge-base --is-ancestor` 校验确认（首次推送即成功，无重试）。
+- 备注：第二笔过程材料提交首次被 commit-msg hook 拦截（混入 .workbuddy 遥测导致 scope 推断漂移），按 0040/0200 轮先例将遥测剔出提交后通过；遥测留待周期性收拢轮次处理。
 
 ## 五、后续建议
 
