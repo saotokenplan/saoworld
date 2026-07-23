@@ -228,8 +228,8 @@ class QualityScorer:
 
         name = payload.get("name", "")
         description = payload.get("description", "")
-        difficulty = payload.get("difficulty", "")
-        features = payload.get("features", [])
+        danger_level = payload.get("danger_level", "")
+        landmarks = payload.get("landmarks", [])
 
         if not name or len(name) < 3:
             score -= 0.2
@@ -239,14 +239,38 @@ class QualityScorer:
             score -= 0.25
             reasons.append("Region description is too short or missing")
 
-        valid_difficulties = ["easy", "normal", "hard", "extreme"]
-        if difficulty and difficulty.lower() not in valid_difficulties:
+        # F1 修复：live prompt 与 region_data_adapter 产出 danger_level
+        # （peaceful/low/medium/high/extreme），原 difficulty 字段已不产出，
+        # 枚举校验须对齐，否则场景评分维度名存实亡。
+        valid_danger_levels = ["peaceful", "low", "medium", "high", "extreme"]
+        if danger_level and danger_level.lower() not in valid_danger_levels:
             score -= 0.15
-            reasons.append(f"Invalid difficulty: {difficulty}")
+            reasons.append(f"Invalid danger_level: {danger_level}")
 
-        if not isinstance(features, list) or len(features) == 0:
+        # F1 修复：landmarks 为 live prompt / 适配器实际产出字段（原 features 已不产出）。
+        # 校验非空列表与元素结构（landmark_key/name/description/type/significance）。
+        if not isinstance(landmarks, list) or len(landmarks) == 0:
             score -= 0.2
-            reasons.append("Region features are missing or invalid")
+            reasons.append("Region landmarks are missing or invalid")
+        else:
+            required_landmark_fields = [
+                "landmark_key",
+                "name",
+                "description",
+                "type",
+                "significance",
+            ]
+            for idx, landmark in enumerate(landmarks):
+                if not isinstance(landmark, dict):
+                    score -= 0.05
+                    reasons.append(f"Landmark #{idx} is not an object")
+                    continue
+                missing = [f for f in required_landmark_fields if not landmark.get(f)]
+                if missing:
+                    score -= 0.05
+                    reasons.append(
+                        f"Landmark #{idx} missing fields: {', '.join(missing)}"
+                    )
 
         return QualityScoreResult(max(0.0, min(1.0, score)), reasons)
 
