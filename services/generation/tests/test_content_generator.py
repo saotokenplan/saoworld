@@ -148,12 +148,22 @@ class TestContentGenerator:
     async def test_generate_region(self, generator):
         """测试区域生成。"""
         generator.llm_adapter.mock_response = {
+            "region_key": "region_forest",
             "name": "迷雾森林",
-            "difficulty": "normal",
-            "region_id": "region_forest",
             "chapter_id": "chapter_01",
+            "region_type": "core",
             "description": "一片神秘的森林，充满危险和机遇。古老的树木遮蔽了阳光，各种神秘的生物在此栖息。",
-            "features": ["神秘遗迹", "危险生物", "隐藏宝藏"],
+            "danger_level": "medium",
+            "recommended_level": "1-10",
+            "landmarks": [
+                {
+                    "landmark_key": "landmark_ruin",
+                    "name": "失落遗迹",
+                    "description": "埋藏在密林深处的古老石构建筑。",
+                    "type": "ruin",
+                    "significance": "蕴含上古文明的线索。",
+                }
+            ],
         }
         region = await generator.generate_region(
             chapter_id="chapter_01",
@@ -161,19 +171,29 @@ class TestContentGenerator:
 
         assert isinstance(region, dict)
         assert "name" in region
-        assert "difficulty" in region
-        assert "features" in region
+        assert "danger_level" in region
+        assert "landmarks" in region
 
     @pytest.mark.asyncio
     async def test_generate_region_with_context(self, generator):
         """测试带上下文的区域生成。"""
         generator.llm_adapter.mock_response = {
+            "region_key": "region_dark_forest",
             "name": "幽暗森林",
-            "difficulty": "normal",
-            "region_id": "region_dark_forest",
             "chapter_id": "chapter_01",
+            "region_type": "expansion",
             "description": "一片幽暗的森林，阳光难以穿透茂密的树冠。",
-            "features": ["古老树木", "神秘生物", "隐藏路径"],
+            "danger_level": "high",
+            "recommended_level": "5-15",
+            "landmarks": [
+                {
+                    "landmark_key": "landmark_tree",
+                    "name": "千年古树",
+                    "description": "林中最为古老的树木，被视为神圣。",
+                    "type": "natural",
+                    "significance": "当地生物的庇护所。",
+                }
+            ],
         }
         region = await generator.generate_region(
             chapter_id="chapter_01",
