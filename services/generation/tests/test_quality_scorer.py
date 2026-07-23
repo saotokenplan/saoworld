@@ -211,27 +211,80 @@ class TestQualityScorer:
         scorer = QualityScorer()
         payload = {
             "name": "迷雾森林",
-            "difficulty": "normal",
+            "danger_level": "medium",
             "region_id": "region_forest",
             "chapter_id": "chapter_01",
-            "description": "一片神秘的森林，充满危险和机遇。",
-            "features": ["神秘遗迹", "危险生物", "宝藏"],
+            "description": (
+                "一片被浓雾笼罩的古老森林，树木参天，藤蔓缠绕，"
+                "深处传来得低吼与未知生物的窸窣声，传说埋藏着失落的遗迹。"
+            ),
+            "landmarks": [
+                {
+                    "landmark_key": "landmark_ruin",
+                    "name": "失落遗迹",
+                    "description": "埋藏在密林深处的古老石构建筑。",
+                    "type": "ruin",
+                    "significance": "蕴含上古文明的线索。",
+                }
+            ],
         }
         result = scorer.score_region(payload)
         assert result.is_acceptable()
-        assert result.score >= 0.75
+        assert result.score >= 0.9
 
-    def test_score_region_invalid_difficulty(self):
+    def test_score_region_invalid_danger_level(self):
         scorer = QualityScorer()
         payload = {
             "name": "测试区域",
-            "difficulty": "super_hard",
-            "description": "测试描述。",
-            "features": ["测试"],
+            "danger_level": "super_hard",
+            "description": (
+                "这是一段用于单元测试的测试描述文本，"
+                "长度需要达到至少五十个字符以上才能通过基础校验。"
+            ),
+            "landmarks": [
+                {
+                    "landmark_key": "landmark_x",
+                    "name": "测试地标",
+                    "description": "测试用的地标描述文本。",
+                    "type": "natural",
+                    "significance": "用于测试。",
+                }
+            ],
         }
         result = scorer.score_region(payload)
         assert not result.is_acceptable()
-        assert any("Invalid difficulty" in r for r in result.reasons)
+        assert any("Invalid danger_level" in r for r in result.reasons)
+
+    def test_score_region_missing_landmarks(self):
+        scorer = QualityScorer()
+        payload = {
+            "name": "空地标区域",
+            "danger_level": "low",
+            "description": (
+                "这是一段用于单元测试的测试描述文本，"
+                "长度需要达到至少五十个字符以上才能通过基础校验。"
+            ),
+            "landmarks": [],
+        }
+        result = scorer.score_region(payload)
+        assert not result.is_acceptable()
+        assert any("Region landmarks are missing or invalid" in r for r in result.reasons)
+
+    def test_score_region_landmark_missing_fields(self):
+        scorer = QualityScorer()
+        payload = {
+            "name": "残缺地标区域",
+            "danger_level": "high",
+            "description": (
+                "这是一段用于单元测试的测试描述文本，"
+                "长度需要达到至少五十个字符以上才能通过基础校验。"
+            ),
+            "landmarks": [
+                {"name": "无名遗迹", "description": "缺少 landmark_key/type/significance。"}
+            ],
+        }
+        result = scorer.score_region(payload)
+        assert any("missing fields" in r for r in result.reasons)
 
     def test_score_generic(self):
         scorer = QualityScorer()
@@ -335,7 +388,7 @@ class TestQualityScorer:
         assert isinstance(quest_result, QualityScoreResult)
 
         region_result = scorer.score(
-            "region", {"name": "Test", "description": "Test", "difficulty": "normal", "features": ["Test"]}
+            "region", {"name": "Test", "description": "Test", "danger_level": "medium", "landmarks": []}
         )
         assert isinstance(region_result, QualityScoreResult)
 
