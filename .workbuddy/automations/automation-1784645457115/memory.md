@@ -5,6 +5,21 @@
 
 ## 最近执行摘要
 
+### 2026-07-24 21:41 — auto-20260724-2141（无新工作·优雅结束 + 周期性收拢）
+- 判定：与 2026-07-23 23:18 以来各轮持平——project-status.md「下一阶段建议」未删除线项（#3 M4 工作包推进 / #4 运行时验证）首两个可执行项（WP1-A1 双源收口迁移、WP2 审核规则调优）均依赖真实运行时环境。独立复测：PG 5432 无响应、Docker 未运行、Redis 不可用；现存 6 个 auto-plan（均 2026-07-23）均已完成合并，无实时待办。
+- 动作（周期性收拢）：距上次真实代码合并（bc58f5d，07-23 23:18）约 22h，远超约 5h 收拢阈值；2 个 `.workbuddy` 记忆文件自 23:18 起长期滞留脏树。创建 `auto/auto-20260724-2141`，收拢状态报告 + 进度日志 + 自动化记忆（memory.md / 2026-07-23.md），按主题拆分提交推送 origin 工作分支，`--no-ff` 合并回 origin/feature-prd 并删除本地工作分支，恢复干净树。
+- 工程经验（沿用 21:46 / 23:18 先例）：收拢提交按文件多数派选 scope——docs 文件（状态报告 + 进度日志）占优用 `docs(dev-loop)`，纯 `.workbuddy` 遥测用 `docs(docs)`；合并提交须用 `docs(dev-loop): merge auto-<id> <简述>` 格式（默认 "Merge auto task:..." 被 hook 驳回）。
+- 交付物：docs/40-dev-loop/auto-status-report-20260724-2141.md（经 present_files 交付）；auto-progress-log.md 近期快照追加一条，并修正累计结论（灰度决策已于 21:46 解除、真实阻塞转为运行时验证）。
+- 真实阻塞（延续）：运行时验证销项为 M4 实施与发布闭环共享前提；A1 双源收口迁移仍依赖真实运行时环境。
+- 下一轮预判：维持「无新工作·优雅结束」常态；遥测随本轮收拢清零，下一轮若再累积≥3 份状态报告或距本次收拢≥约 5h 将再次周期性收拢。
+
+### 2026-07-23 23:18 — auto-20260723-2246（M4 实施期首个代码项 A2 · 接续 22:46 收尾并合并推送）
+- 判定：接续完成 22:46 中断轮次（该轮在代码编写完成后中断于提交前）。任务为 M4 实施期首个可自主代码项 WP1-A2（F1 缺陷修复：`score_region` 字段口径对齐 danger_level/landmarks）。project-status.md 自 21:46 决策后已标记 WP1 首个实施代码项落地。
+- 动作：复用既有 `auto/auto-20260723-2246` 工作分支（本地已存在、脏树已含代码+测试+文档改动）。本地 venv（saoworld-gen）安装 `generation-service[dev]`+`greenlet` 后跑通 `services/generation` pytest **45 passed**（无回归）。创建执行摘要与进度日志；按主题拆 5 笔提交（fix(generation)/test(generation)/docs(requirements)/docs(docs)/docs(dev-loop)）逐笔推送 origin 工作分支；切 feature-prd pull 后 `--no-ff` 合并，合并提交须用 `fix(generation)`（payload 含代码，docs 前缀被 hook 驳回后改 fix 通过），推送 origin/feature-prd（bc58f5d），fetch 校验 origin 含本次合并，删本地工作分支，树仅余 .workbuddy 遥测。
+- 工程经验（修正 0200 条）：merge commit hook 不仅校验格式，还会比对 payload 性质与 type——以代码为主的合并须用 fix/feat 而非 docs(dev-loop)；21:46 轮的 docs(dev-loop) 合并能过是因 payload 为纯文档。另：本仓库无 .git/hooks 实体文件，但 pre-commit 校验在线生效（提交信息格式 + type 匹配），提交时仍会拦截。
+- 真实阻塞（延续）：灰度发布运营决策已于 21:46 解除；运行时验证销项为 M4 实施与发布闭环共享前提；A1 双源收口迁移仍依赖真实运行时环境。
+- 下一轮预判：M4 实施期已解锁，按 WP1→WP5 顺序推进；A2 已完成，下一可执行项倾向 WP1-A1（双源收口迁移，需运行时）或 WP2 审核规则调优，待评估可自主范围。
+
 ### 2026-07-23 21:16 — auto-20260723-2116（无新工作·优雅结束）
 - 判定：与 20:17 / 19:18 / 17:39 / 16:00 / 14:19 / 13:20 / 12:13 / 09:04 连续持平——project-status.md「下一阶段建议」6 项均不可自动化自主执行（#2 灰度决策唯一硬阻塞；#3/#4 本轮实测 docker 未运行、PG 5432 / Redis 6379 无监听；#5 规划期 06:45 已收口且实施侧不抢跑；#6 每周审查已自动化；#1 元治理）。project-status.md 自 06:45 起无更新；本地与 origin/feature-prd 完全一致（0/0，HEAD=72bdabe）；今日 5 个 auto-plan 均已完成合并，无实时待办。
 - 动作：未创建分支 / 未提交 / 未合并 / 未推送（节流指引；距上次真实代码提交 06:45 约 14.5h，距上次收拢合并 17:39 约 3.6h，遥测累积 3 份状态报告，尚不满足约 5h 收拢条件）。
