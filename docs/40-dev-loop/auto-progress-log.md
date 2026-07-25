@@ -28,6 +28,13 @@
 - 动作：创建 `auto/auto-20260725-2334`，修改 `content_generator.py`（四类 prompt）+ 新增 `TestPromptHardening`（pytest 14 passed / ruff 通过），按 `feat(generation)` / `test(generation)` / `docs(requirements)` / `docs(docs)` / `docs(dev-loop)` 主题拆分 5 笔提交推送 `origin` 工作分支，`--no-ff` 合并回 `origin/feature-prd` 并删除本地工作分支。
 - 详细报告：`auto-execution-summary-20260725-2334.md`
 
+### 2026-07-26 00:00（WP2 DuplicateDetectionRule 死参数接线）
+
+- 结论：M4 实施期 WP2 推进——`services/review` 的 `DuplicateDetectionRule.max_similarity=0.8` 死参数（M4 阈值调优预案登记的「实施期改造前置项」）已接线为单对象自相似度阈值，默认值 0.8 正式生效；补充 `self_similarity` / `cross_similarity`（字符级 Jaccard）纯函数，为 WP2 场景 D 跨样本相似度接线提供可单测基础。WP2 进入实施期。
+- 核查：该参数为规划期已识别的代码缺口，接线不依赖真实运行时，可由 pytest 完全验证；本轮仅接线默认 0.8，未做数值调优（需真实样本回放），跨样本语料接线留待运行时验证。另修复 review dev extras 缺失 `greenlet`（异步 SQLAlchemy 必需）导致测试套件无法运行的既有缺口。
+- 动作：创建 `auto/auto-20260726-0000`，修改 `auto_review_engine.py`（接线 max_similarity + 补充纯函数）+ 新增 `test_duplicate_detection_rule.py`（14 passed）+ 补 `greenlet` 至 pyproject dev extras；review 服务全量 pytest 79 passed；按 `feat(review)` / `test(review)` / `fix(review)` / `docs(requirements)` / `docs(docs)` / `docs(dev-loop)` 主题拆分 6 笔提交推送 `origin` 工作分支，`--no-ff` 合并回 `origin/feature-prd` 并删除本地工作分支。
+- 详细报告：`auto-execution-summary-20260726-0000.md`
+
 ### 2026-07-24 21:41（无新工作·优雅结束 + 周期性收拢）
 
 - 结论：无新工作，与 2026-07-23 23:18 以来各轮持平；因距上次真实代码合并约 22h、累计遥测（2 个 `.workbuddy` 记忆文件）长期滞留脏树，触发周期性收拢（远超约 5h 阈值）。
