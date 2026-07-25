@@ -189,3 +189,20 @@
   - 自动产物归档入口
 - `docs/40-dev-loop/archives/auto-generated/2026-07/status/`
   - 逐轮状态快照归档
+
+---
+
+## 2026-07-26 01:21 — auto-20260726-0121（WP3 审核效率监控指标埋点 M1–M6）
+
+- **判定**：project-status.md「当前待办」WP3 审核效率监控「未开始，按序」；07-26 00:00 轮次（WP2）已预判 WP3 指标埋点（M1–M6）部分可自主。核查确认 M1–M6 埋点/配置/看板均为纯代码或文件变更，可由 review 服务 sqlite 测试底座 pytest 验证，无需运行时。
+- **动作**：在 `services/review` 落地 WP3 实施期首批——
+  - M1 `review_duration_seconds` 耗时 Histogram（auto/manual 终结点记录，兼容 sqlite naive 时间戳）；
+  - M2 `reviews_total` 补 `review_type` 标签并修复 auto 路径全终局计数（含 manual_review，修复 K1 分母/K3 分子失真）；
+  - M3 `telemetry/metrics/metrics.yaml` 标签与代码对齐（reviews_total: result+review_type；review_operations_total: action）；
+  - M4 `review_rule_decisions_total{rule,result}` 规则归因 Counter，引擎评估处埋点；
+  - M5 新建 `telemetry/dashboards/review-efficiency-dashboard.json`（四层 L1–L4，10 面板）并登记 README；
+  - M6 `alerts.yaml` 增补 4 条 review 告警、`slo-definitions.yaml` 增补 SLO-REVIEW-001/002。
+  - 新增 `services/review/tests/test_review_metrics.py`（8 例）；review 服务全量 pytest **87 passed**；ruff 无新增问题（既有 B008/BLE001/RUF012/SIM114/RUF010/UP017 历史代码）。
+- **遗留**：ops 看板三字段增补（services/ops 改造）属 M4-审核效率看板指标定义.md 第七节动作 5，本轮未抢跑，留待下一轮分离推进；在线指标值真实读数验证仍依赖运行时。
+- **提交与合并**：feat/review + test/review + fix(review) + docs(telemetry) + docs(requirements) + docs(dev-loop) 主题拆分，逐笔推送 origin 工作分支；`--no-ff` 合并回 origin/feature-prd（合并 hash 见执行摘要），fetch 校验通过；删本地工作分支。
+- **下一轮预判**：WP3 收尾（ops 看板三字段）→ WP4 发布自动化串联；均部分依赖运行时或跨服务改造，自主空间收窄，预计若无新运行时解锁将逐步回到「无新工作·优雅结束」常态。

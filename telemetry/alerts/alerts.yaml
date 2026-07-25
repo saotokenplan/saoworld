@@ -158,6 +158,54 @@ business_metrics_alerts:
       summary: "High generation failure rate"
       description: "Generation failure rate exceeds 10%"
 
+  review_auto_pass_rate_low:
+    severity: medium
+    description: "Auto review pass rate below acceptance line"
+    condition: "sum(rate(reviews_total{result=\"approved\",review_type=\"auto\"}[1h])) / sum(rate(reviews_total{review_type=\"auto\"}[1h])) < 0.7"
+    duration: "1h"
+    labels:
+      service: "review"
+      alert_type: "business"
+    annotations:
+      summary: "Auto review pass rate low"
+      description: "Auto review pass rate dropped below 70% acceptance line"
+
+  review_duration_slo_breach:
+    severity: high
+    description: "Review turnaround P95 exceeds 30 minutes"
+    condition: "histogram_quantile(0.95, sum(rate(review_duration_seconds_bucket[1h])) by (le)) > 1800"
+    duration: "1h"
+    labels:
+      service: "review"
+      alert_type: "business"
+    annotations:
+      summary: "Review duration SLO breach"
+      description: "Review turnaround P95 exceeds 1800s (30 minutes)"
+
+  review_manual_intervention_rate_rising:
+    severity: medium
+    description: "Manual intervention rate rising week-over-week"
+    condition: "(sum(rate(reviews_total{result=\"manual_review\",review_type=\"auto\"}[7d])) / sum(rate(reviews_total{review_type=\"auto\"}[7d]))) > 1.2 * (sum(rate(reviews_total{result=\"manual_review\",review_type=\"auto\"}[7d] offset 7d)) / sum(rate(reviews_total{review_type=\"auto\"}[7d] offset 7d)))"
+    duration: "1d"
+    labels:
+      service: "review"
+      alert_type: "business"
+    annotations:
+      summary: "Manual intervention rate rising"
+      description: "Manual intervention rate this week exceeds 1.2x last week"
+
+  review_backlog_growing:
+    severity: low
+    description: "Review backlog continuously growing"
+    condition: "sum(pending_review_count) > 50 and increase(pending_review_count[2h]) > 0"
+    duration: "2h"
+    labels:
+      service: "review"
+      alert_type: "business"
+    annotations:
+      summary: "Review backlog growing"
+      description: "Pending review count exceeds 50 and keeps growing for 2h"
+
 task_alerts:
   task_failure_rate:
     severity: high
