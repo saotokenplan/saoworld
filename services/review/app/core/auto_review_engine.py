@@ -3,6 +3,8 @@
 import logging
 from typing import Any
 
+from app.core.metrics import record_rule_decision
+
 logger = logging.getLogger(__name__)
 
 
@@ -209,6 +211,9 @@ class AutoReviewEngine:
                 rule_name = rule.__class__.__name__
                 results.append({"rule": rule_name, "result": result})
 
+                # M4: 规则归因埋点（规则不适用记 not_applied，用于 A3 归因面板）
+                record_rule_decision(rule_name, result if result is not None else "not_applied")
+
                 if result is not None and final_result is None:
                     final_result = result
                     if result == "approved":
@@ -220,6 +225,7 @@ class AutoReviewEngine:
             except Exception as e:
                 logger.error(f"Rule evaluation failed: {rule.__class__.__name__}, error: {e}")
                 results.append({"rule": rule.__class__.__name__, "result": None, "error": str(e)})
+                record_rule_decision(rule_name, "error")
 
         if final_result is None:
             final_result = "manual_review"

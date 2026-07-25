@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 
 import structlog
 from fastapi import APIRouter, Depends, Header, Query, Request, status
@@ -8,11 +9,11 @@ from app.core.db import get_db
 from app.core.deps import RequireOpsRole, RequireReviewApproveScope, UserPayload
 from app.core.errors import ReviewErrorCodes, raise_review_error
 from app.core.event_publisher import event_publisher
-from app.core.metrics import record_review_create, record_review_result
+from app.core.metrics import record_review_create, record_review_duration, record_review_result
 from app.repositories.audit_repo import (
     ACTION_REVIEW_APPROVE,
-    ACTION_REVIEW_REJECT,
     ACTION_REVIEW_RECORD_CREATE,
+    ACTION_REVIEW_REJECT,
     ACTION_REVIEW_RESULT_UPDATE,
     RESOURCE_REVIEW_RECORD,
     AuditRepository,
@@ -51,6 +52,18 @@ def _make_request_id(prefix: str) -> str:
 
 def _get_trace_id(request: Request) -> str | None:
     return request.headers.get("X-Trace-Id")
+
+
+def _duration_since(created_at: datetime | None) -> float:
+    """审核耗时（秒）：now(UTC) - created_at。
+
+    兼容 SQLite 测试底座返回 naive 时间戳的场景（不抛 offset-naive/aware 混合相减错误）。
+    """
+    if created_at is None:
+        return 0.0
+    now = datetime.now(UTC)
+    ref = created_at.replace(tzinfo=UTC) if created_at.tzinfo is None else created_at
+    return (now - ref).total_seconds()
 
 
 @router.get("/health", tags=["health"])
@@ -292,6 +305,10 @@ async def update_review_result(
             operator_id=current_user.user_id,
             operator_role=current_user.role.value,
         )
+
+        # M1: 记录人工审核耗时（单条审核从创建到本次终结）
+        duration = _duration_since(updated_review.created_at)
+        record_review_duration("manual", updated_review.object_type, duration)
     except ValueError as e:
         if str(e) == "INVALID_REVIEW_STATUS":
             raise_review_error(
@@ -396,7 +413,12 @@ async def approve_review_object(
             status_code=status.HTTP_409_CONFLICT,
         )
 
-    record_review_result("approved")
+    record_review_result("approved", "manual")
+
+    # M1: 记录人工审核耗时（从创建到本次批准终结）
+    for updated_review in updated_reviews:
+        duration = _duration_since(updated_review.created_at)
+        record_review_duration("manual", updated_review.object_type, duration)
 
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(
@@ -416,8 +438,8 @@ async def approve_review_object(
 
     # 事件发布：批量审核完成
     try:
-        from datetime import datetime, timezone
         import uuid
+        from datetime import datetime, timezone
         await event_publisher.publish_review_batch_completed(
             batch_id=str(uuid.uuid4()),
             request_id="",
@@ -504,7 +526,12 @@ async def reject_review_object(
             status_code=status.HTTP_409_CONFLICT,
         )
 
-    record_review_result("rejected")
+    record_review_result("rejected", "manual")
+
+    # M1: 记录人工审核耗时（从创建到本次拒绝终结）
+    for updated_review in updated_reviews:
+        duration = _duration_since(updated_review.created_at)
+        record_review_duration("manual", updated_review.object_type, duration)
 
     audit_repo = AuditRepository(db)
     await audit_repo.create_audit_log(
@@ -525,8 +552,8 @@ async def reject_review_object(
 
     # 事件发布：批量审核完成
     try:
-        from datetime import datetime, timezone
         import uuid
+        from datetime import datetime, timezone
         await event_publisher.publish_review_batch_completed(
             batch_id=str(uuid.uuid4()),
             request_id="",
@@ -609,8 +636,12 @@ async def auto_review(
 
         record_review_create()
 
-        if result["is_automatic"]:
-            record_review_result(result["auto_result"])
+        # M1: 记录审核耗时（auto 路径创建即终结，时长近似引擎处理耗时）
+        duration = _duration_since(review.created_at)
+        record_review_duration("auto", body.object_type, duration)
+
+        # M2: auto 路径对所有终局判定统一计数（含 manual_review），并标记 review_type=auto
+        record_review_result(result["auto_result"], "auto")
 
         audit_repo = AuditRepository(db)
         await audit_repo.create_audit_log(
