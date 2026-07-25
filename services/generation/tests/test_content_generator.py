@@ -8,67 +8,68 @@ from app.core.quality_scorer import QualityScorer
 from app.core.template_manager import TemplateManager
 
 
+@pytest.fixture
+def generator():
+    """创建内容生成器实例。"""
+    llm_adapter = MockLLMAdapter()
+    llm_adapter.mock_response = {
+        "npc_key": "npc_test",
+        "name": "Test NPC",
+        "title": "Test",
+        "gender": "male",
+        "age": 30,
+        "race": "human",
+        "faction_key": "faction_ironward",
+        "region_key": "region_core",
+        "role": "blacksmith",
+        "location_key": "loc_test",
+        "description": (
+            "A skilled blacksmith who has worked in the forge for over 20 years. "
+            "He is known for his exceptional craftsmanship and gruff but honest demeanor."
+        ),
+        "personality": ["gruff", "skilled", "honest"],
+        "traits": ["strong", "meticulous"],
+        "voice": "deep and gruff",
+        "backstory": (
+            "Test NPC was born into a family of skilled craftsmen. From a young age, "
+            "he showed exceptional talent for working with metal, spending countless hours "
+            "in the forge alongside his father."
+        ),
+        "motivation": "To craft the finest weapons and armor.",
+        "relationship_map": {},
+        "dialog_style": "direct",
+        "dialog_nodes": {
+            "first_meet": {"id": "first_meet", "text": "Hello!", "speaker": "npc", "choices": []},
+            "about_work": {
+                "id": "about_work", "text": "I've been forging for years.",
+                "speaker": "npc", "choices": [],
+            },
+            "has_quest": {"id": "has_quest", "text": "I need materials.", "speaker": "npc", "choices": []},
+            "quest_accepted": {"id": "quest_accepted", "text": "Great!", "speaker": "npc", "choices": []},
+            "quest_completed": {"id": "quest_completed", "text": "Thank you!", "speaker": "npc", "choices": []},
+            "default": {"id": "default", "text": "Welcome!", "speaker": "npc", "choices": []},
+            "goodbye": {"id": "goodbye", "text": "", "speaker": "npc", "choices": [], "is_end": True},
+        },
+        "quests_given": [],
+        "quests_related": [],
+        "shop_items": [],
+        "services_offered": [],
+        "location_x": 100,
+        "location_y": 200,
+        "interaction_radius": 30,
+    }
+    template_manager = TemplateManager()
+    quality_scorer = QualityScorer()
+    return ContentGenerator(
+        llm_adapter=llm_adapter,
+        template_manager=template_manager,
+        quality_scorer=quality_scorer,
+        quality_threshold=0.75,
+    )
+
+
 class TestContentGenerator:
     """内容生成器测试。"""
-
-    @pytest.fixture
-    def generator(self):
-        """创建内容生成器实例。"""
-        llm_adapter = MockLLMAdapter()
-        llm_adapter.mock_response = {
-            "npc_key": "npc_test",
-            "name": "Test NPC",
-            "title": "Test",
-            "gender": "male",
-            "age": 30,
-            "race": "human",
-            "faction_key": "faction_ironward",
-            "region_key": "region_core",
-            "role": "blacksmith",
-            "location_key": "loc_test",
-            "description": (
-                "A skilled blacksmith who has worked in the forge for over 20 years. "
-                "He is known for his exceptional craftsmanship and gruff but honest demeanor."
-            ),
-            "personality": ["gruff", "skilled", "honest"],
-            "traits": ["strong", "meticulous"],
-            "voice": "deep and gruff",
-            "backstory": (
-                "Test NPC was born into a family of skilled craftsmen. From a young age, "
-                "he showed exceptional talent for working with metal, spending countless hours "
-                "in the forge alongside his father."
-            ),
-            "motivation": "To craft the finest weapons and armor.",
-            "relationship_map": {},
-            "dialog_style": "direct",
-            "dialog_nodes": {
-                "first_meet": {"id": "first_meet", "text": "Hello!", "speaker": "npc", "choices": []},
-                "about_work": {
-                    "id": "about_work", "text": "I've been forging for years.",
-                    "speaker": "npc", "choices": [],
-                },
-                "has_quest": {"id": "has_quest", "text": "I need materials.", "speaker": "npc", "choices": []},
-                "quest_accepted": {"id": "quest_accepted", "text": "Great!", "speaker": "npc", "choices": []},
-                "quest_completed": {"id": "quest_completed", "text": "Thank you!", "speaker": "npc", "choices": []},
-                "default": {"id": "default", "text": "Welcome!", "speaker": "npc", "choices": []},
-                "goodbye": {"id": "goodbye", "text": "", "speaker": "npc", "choices": [], "is_end": True},
-            },
-            "quests_given": [],
-            "quests_related": [],
-            "shop_items": [],
-            "services_offered": [],
-            "location_x": 100,
-            "location_y": 200,
-            "interaction_radius": 30,
-        }
-        template_manager = TemplateManager()
-        quality_scorer = QualityScorer()
-        return ContentGenerator(
-            llm_adapter=llm_adapter,
-            template_manager=template_manager,
-            quality_scorer=quality_scorer,
-            quality_threshold=0.75,
-        )
 
     @pytest.mark.asyncio
     async def test_generate_npc(self, generator):
@@ -284,6 +285,55 @@ class TestContentGenerator:
         assert isinstance(settlement, dict)
         assert "name" in settlement
         assert settlement["settlement_type"] == "town"
+
+
+class TestPromptHardening:
+    """WP1 提示词硬化（A3/A4/A5）落盘校验。
+
+    验证 M4-模板文本细化.md 3.1/3.2/3.3/3.4 硬化文本已写入对应 live prompt 构造函数。
+    真实 LLM 输出分布回归（A6）依赖运行时，不在本单测范围。
+    """
+
+    def test_item_prompt_contains_anchors(self, generator):
+        """装备 prompt 应含 F2 数值锚定、F4 章节上限、F6 格式硬化。"""
+        prompt = generator._build_item_prompt(
+            region_id="region_core", chapter_id="chapter_03", item_type="weapon", context=None
+        )
+        assert "【数值锚定要求（F2）】" in prompt
+        assert "weapon 的 attack 基值 = 6 + 4 × level_requirement" in prompt
+        assert "稀有度系数：common=1.0" in prompt
+        assert "【章节一致性约束（F4）】" in prompt
+        assert "10 × N" in prompt
+        assert "【输出格式要求（F6）】" in prompt
+        assert "markdown 代码围栏" in prompt
+
+    def test_monster_prompt_contains_anchors(self, generator):
+        """怪物 prompt 应含 F3 数值锚定、F4 章节上限、F6 格式硬化。"""
+        prompt = generator._build_monster_prompt(
+            region_id="region_core", chapter_id="chapter_05", monster_type="dragon", context=None
+        )
+        assert "【数值锚定要求（F3）】" in prompt
+        assert "hp 基值 = 40 + 26 × level" in prompt
+        assert "类型系数：beast=1.0" in prompt
+        assert "【章节一致性约束（F4）】" in prompt
+        assert "输出格式要求（F6）" in prompt
+
+    def test_boss_prompt_contains_anchors(self, generator):
+        """Boss prompt 应显式引用 3.2 公式、含 F4 章节上限、F6 格式硬化。"""
+        prompt = generator._build_boss_prompt(
+            region_id="region_core", chapter_id="chapter_07", boss_rank="legendary", context=None
+        )
+        assert "Boss 数值锚定要求（F3 引用）" in prompt
+        assert "hp ≥ 5 × 同等级普通怪物基值" in prompt
+        assert "【章节一致性约束（F4）】" in prompt
+        assert "输出格式要求（F6）" in prompt
+
+    def test_region_prompt_contains_anchors(self, generator):
+        """场景 prompt 应含 F4 章节上限（推荐等级带对齐）、F6 格式硬化。"""
+        prompt = generator._build_region_prompt(chapter_id="chapter_04", context=None)
+        assert "【章节一致性约束（F4）】" in prompt
+        assert "recommended_level 必须与同章节怪物等级带" in prompt
+        assert "输出格式要求（F6）" in prompt
 
 
 class TestContentGenerationError:

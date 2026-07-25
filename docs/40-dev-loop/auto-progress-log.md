@@ -21,6 +21,13 @@
 
 ## 近期快照
 
+### 2026-07-25 23:34（WP1 A3/A4/A5 提示词硬化落地）
+
+- 结论：M4 实施期 WP1 推进——A3/A4/A5 提示词硬化文本（数值锚定 / 章节上限 / 输出格式硬化，对应 F2/F3/F4/F6）落地至 generation 服务 live prompt 构造函数；WP1 首个实施代码项（A2）之后，首个不依赖运行时的提示词硬化批次完成。
+- 核查：project-status.md「当前待办」明确 A3/A4/A5「不依赖运行时可立即推进」；A1（双源收口）/A6（真实 LLM 实测）仍依赖真实运行时，本轮不可为；few-shot 开关（A5 第二段）因依赖 WP2 样本 JSON 内容推迟，未制造空开关。
+- 动作：创建 `auto/auto-20260725-2334`，修改 `content_generator.py`（四类 prompt）+ 新增 `TestPromptHardening`（pytest 14 passed / ruff 通过），按 `feat(generation)` / `test(generation)` / `docs(requirements)` / `docs(docs)` / `docs(dev-loop)` 主题拆分 5 笔提交推送 `origin` 工作分支，`--no-ff` 合并回 `origin/feature-prd` 并删除本地工作分支。
+- 详细报告：`auto-execution-summary-20260725-2334.md`
+
 ### 2026-07-24 21:41（无新工作·优雅结束 + 周期性收拢）
 
 - 结论：无新工作，与 2026-07-23 23:18 以来各轮持平；因距上次真实代码合并约 22h、累计遥测（2 个 `.workbuddy` 记忆文件）长期滞留脏树，触发周期性收拢（远超约 5h 阈值）。

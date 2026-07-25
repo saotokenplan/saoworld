@@ -673,6 +673,18 @@ class ContentGenerator:
         prompt_parts.append("- climate: 气候描述（温度、天气特点）")
         prompt_parts.append("- notable_locations: 著名地点数组（5-10个简短地点名称）")
 
+        # === WP1 实施期提示词硬化（A4/A5，详见 docs/10-requirements/M4-模板文本细化.md）===
+        # A4 (F4) 章节强度上限条款（场景部分）
+        prompt_parts.append("")
+        prompt_parts.append("【章节一致性约束（F4）】")
+        prompt_parts.append("- 本章为 chapter_N 时，场景 recommended_level 必须与同章节怪物等级带 [10 × (N-1) + 1, 10 × N + 2] 一致")
+        prompt_parts.append("- 生成后请自检：上述数值字段是否满足章节上限，不满足请修正后再返回")
+        # A5 (F6) 输出格式硬化
+        prompt_parts.append("")
+        prompt_parts.append("【输出格式要求（F6）】")
+        prompt_parts.append("- 仅返回一个 JSON 对象，不要返回任何解释文字、前后缀或 markdown 代码围栏")
+        prompt_parts.append("- 返回前逐项自检上述必需字段：缺失任一字段即视为不合格输出，请补全后再返回")
+
         return "\n".join(prompt_parts)
 
     def _build_settlement_prompt(
@@ -770,6 +782,27 @@ class ContentGenerator:
         prompt_parts.append("- loot_table: 掉落表数组（每个元素包含item_key、drop_rate、quantity_min、quantity_max）")
         prompt_parts.append("- skills: 技能数组（每个技能包含skill_key、name、description、damage_multiplier、cooldown）")
 
+        # === WP1 实施期提示词硬化（A3/A4/A5，详见 docs/10-requirements/M4-模板文本细化.md）===
+        # A3 (F3) 怪物数值锚定表
+        prompt_parts.append("")
+        prompt_parts.append("【数值锚定要求（F3）】怪物数值必须落在以下区间，允许 ±20% 浮动：")
+        prompt_parts.append("- hp 基值 = 40 + 26 × level，乘以类型系数")
+        prompt_parts.append("- attack 基值 = 3 + 2.2 × level，乘以类型系数")
+        prompt_parts.append("- defense 基值 = 2 + 1.5 × level（不乘类型系数）")
+        prompt_parts.append("- 类型系数：beast=1.0，humanoid=0.9，undead=1.1，mechanical=1.2，elemental=0.95，demon=1.15，dragon=1.3")
+        prompt_parts.append("- speed 维持 1-20，与体型/类型相符（dragon/mechanical 偏慢，elemental 偏快）")
+        prompt_parts.append("- skills 的 damage_multiplier 区间 0.8-2.0（普通怪物），cooldown ≥ 3 秒")
+        # A4 (F4) 章节强度上限条款（怪物部分）
+        prompt_parts.append("")
+        prompt_parts.append("【章节一致性约束（F4）】")
+        prompt_parts.append("- 本章为 chapter_N 时，怪物 level 必须落在 [10 × (N-1) + 1, 10 × N + 2] 区间")
+        prompt_parts.append("- 生成后请自检：上述数值字段是否同时满足数值锚定与章节上限，不满足请修正后再返回")
+        # A5 (F6) 输出格式硬化
+        prompt_parts.append("")
+        prompt_parts.append("【输出格式要求（F6）】")
+        prompt_parts.append("- 仅返回一个 JSON 对象，不要返回任何解释文字、前后缀或 markdown 代码围栏")
+        prompt_parts.append("- 返回前逐项自检上述必需字段：缺失任一字段即视为不合格输出，请补全后再返回")
+
         return "\n".join(prompt_parts)
 
     def _build_boss_prompt(
@@ -823,6 +856,24 @@ class ContentGenerator:
         prompt_parts.append("  - items: 物品奖励列表（包含稀有装备或材料）")
         prompt_parts.append("- min_reputation: 最低声望要求（0或正数）")
 
+        # === WP1 实施期提示词硬化（A3/A4/A5，详见 docs/10-requirements/M4-模板文本细化.md）===
+        # A3 (F3) Boss 显式引用 3.2 怪物数值锚定公式
+        prompt_parts.append("")
+        prompt_parts.append("【Boss 数值锚定要求（F3 引用）】")
+        prompt_parts.append("- 同等级普通怪物基值：hp 基值 = 40 + 26 × level，attack 基值 = 3 + 2.2 × level，defense 基值 = 2 + 1.5 × level（类型系数同 3.2）")
+        prompt_parts.append("- Boss 须达到：hp ≥ 5 × 同等级普通怪物基值，attack ≥ 2 × 同等级普通怪物基值")
+        prompt_parts.append("- reward.experience 应为同等级普通怪物的 3-5 ×")
+        # A4 (F4) 章节强度上限条款（Boss 部分）
+        prompt_parts.append("")
+        prompt_parts.append("【章节一致性约束（F4）】")
+        prompt_parts.append("- 本章为 chapter_N 时，Boss level 必须落在 [10 × (N-1) + 1, 10 × N + 2] 区间内（且应高于同区域普通怪物）")
+        prompt_parts.append("- 生成后请自检：上述数值字段是否同时满足数值锚定与章节上限，不满足请修正后再返回")
+        # A5 (F6) 输出格式硬化
+        prompt_parts.append("")
+        prompt_parts.append("【输出格式要求（F6）】")
+        prompt_parts.append("- 仅返回一个 JSON 对象，不要返回任何解释文字、前后缀或 markdown 代码围栏")
+        prompt_parts.append("- 返回前逐项自检上述必需字段：缺失任一字段即视为不合格输出，请补全后再返回")
+
         return "\n".join(prompt_parts)
 
     def _build_item_prompt(
@@ -864,6 +915,28 @@ class ContentGenerator:
         prompt_parts.append("- effects: 效果对象（包含effect_type、duration、cooldown、description）")
         prompt_parts.append("- sell_price: 售卖价格（非负整数）")
         prompt_parts.append("- stackable: 是否可堆叠（consumable和material为true，其他为false）")
+
+        # === WP1 实施期提示词硬化（A3/A4/A5，详见 docs/10-requirements/M4-模板文本细化.md）===
+        # A3 (F2) 装备数值锚定表
+        prompt_parts.append("")
+        prompt_parts.append("【数值锚定要求（F2）】装备数值必须落在以下区间，允许 ±20% 浮动：")
+        prompt_parts.append("- weapon 的 attack 基值 = 6 + 4 × level_requirement，再乘以稀有度系数")
+        prompt_parts.append("- armor 的 defense 基值 = 3 + 2.5 × level_requirement，再乘以稀有度系数")
+        prompt_parts.append("- 稀有度系数：common=1.0，uncommon=1.2，rare=1.5，epic=1.9，legendary=2.4")
+        prompt_parts.append("- max_hp 加成 ≤ 50 × level_requirement × 稀有度系数；max_mp 同理上限减半")
+        prompt_parts.append("- critical_rate 上限：common 0.05 / uncommon 0.08 / rare 0.12 / epic 0.16 / legendary 0.20")
+        prompt_parts.append("- critical_damage 区间 1.2-2.5，随稀有度递增")
+        prompt_parts.append("- sell_price 基值 = 10 × level_requirement × 稀有度系数（取整）")
+        # A4 (F4) 章节强度上限条款（装备部分）
+        prompt_parts.append("")
+        prompt_parts.append("【章节一致性约束（F4）】")
+        prompt_parts.append("- 本章为 chapter_N 时，装备 level_requirement 不得高于 10 × N")
+        prompt_parts.append("- 生成后请自检：上述数值字段是否同时满足数值锚定与章节上限，不满足请修正后再返回")
+        # A5 (F6) 输出格式硬化
+        prompt_parts.append("")
+        prompt_parts.append("【输出格式要求（F6）】")
+        prompt_parts.append("- 仅返回一个 JSON 对象，不要返回任何解释文字、前后缀或 markdown 代码围栏")
+        prompt_parts.append("- 返回前逐项自检上述必需字段：缺失任一字段即视为不合格输出，请补全后再返回")
 
         return "\n".join(prompt_parts)
 
