@@ -134,24 +134,51 @@ class FieldCompletenessRule(AutoReviewRule):
 
 
 class DuplicateDetectionRule(AutoReviewRule):
-    """基于重复度检测的自动审核规则。"""
+    """基于重复度检测的自动审核规则。
+
+    `max_similarity` 为可调度阈值（默认 0.8），表示「自相似度」上限：
+    当 description 的字符自相似度 >= max_similarity 时判 rejected。
+    自相似度以 `1 - 字符多样度` 近似，作为单对象内重复 / 低质文本的快速拦截；
+    跨样本相似度（WP2 场景 D 改造项）由 `cross_similarity` 提供纯函数能力，
+    待运行时语料注入引擎后接线，当前 `evaluate` 仅使用单对象自相似度口径。
+    """
 
     def __init__(self, max_similarity: float = 0.8):
         self.max_similarity = max_similarity
+
+    @staticmethod
+    def self_similarity(description: str) -> float:
+        """单对象内自相似度近似：1 - 字符多样度。
+
+        字符越单一（重复 / 堆砌），自相似度越高，越接近 1.0；空串返回 0.0。
+        """
+        text = str(description)
+        total = len(text)
+        if total == 0:
+            return 0.0
+        diversity = len(set(text)) / total
+        return 1.0 - diversity
+
+    @staticmethod
+    def cross_similarity(a: str, b: str) -> float:
+        """两个文本的字符级 Jaccard 相似度，用于跨样本重复检测。
+
+        返回 0.0~1.0；任意一方为空串返回 0.0。
+        """
+        set_a = set(str(a))
+        set_b = set(str(b))
+        if not set_a or not set_b:
+            return 0.0
+        return len(set_a & set_b) / len(set_a | set_b)
 
     def evaluate(self, object_type: str, object_payload: dict[str, Any], quality_score: float | None) -> str | None:
         description = str(object_payload.get("description", ""))
         if len(description) < 20:
             return None
 
-        unique_chars = len(set(description))
-        total_chars = len(description)
-        if total_chars == 0:
-            return None
-
-        diversity_ratio = unique_chars / total_chars
-        if diversity_ratio < 0.3:
-            logger.warning(f"Low content diversity detected: {diversity_ratio:.2%}")
+        similarity = self.self_similarity(description)
+        if similarity >= self.max_similarity:
+            logger.warning(f"High self-similarity detected: {similarity:.2f} >= {self.max_similarity:.2f}")
             return "rejected"
 
         return None
