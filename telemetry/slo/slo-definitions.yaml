@@ -98,6 +98,29 @@ slos:
     owner: Backend Agent
     severity: blocker
 
+  # 审核服务 SLO（WP3 审核效率监控）
+  - id: SLO-REVIEW-001
+    name: Review Turnaround Latency
+    service: review
+    target: 0.95  # 95% 的审核在 P95 < 30 分钟内终结
+    indicator:
+      metric: histogram_quantile(0.95, sum(rate(review_duration_seconds_bucket{review_type="auto"}[5m])) by (le))
+      threshold_s: 1800
+    window: 30d
+    owner: Backend Agent
+    severity: blocker
+
+  - id: SLO-REVIEW-002
+    name: Auto Review Pass Rate
+    service: review
+    target: 0.70  # 自动审核通过率 >= 70%
+    indicator:
+      metric: sum(rate(reviews_total{result="approved",review_type="auto"}[5m])) / sum(rate(reviews_total{review_type="auto"}[5m]))
+      threshold: 0.70
+    window: 30d
+    owner: Backend Agent
+    severity: blocker
+
   # 错误预算策略
 error_budget_policy:
   fast_burn_rate: 14.4  # 1小时内消耗超过 14.4x 预算速率

@@ -169,14 +169,14 @@ review_service_metrics:
     labels:
       - name: result
         description: "Review result (approved/rejected/manual_review)"
-      - name: risk_level
-        description: "Risk level (low/medium/high/critical)"
+      - name: review_type
+        description: "Review type (auto/manual)"
 
   review_operations_total:
     type: counter
     description: "Total review operations"
     labels:
-      - name: operation
+      - name: action
         description: "Operation type (create/approve/reject)"
 
   reviews_by_risk_level:
