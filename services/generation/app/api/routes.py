@@ -27,6 +27,9 @@ from app.repositories.generation_repo import GenerationRepository
 from datetime import datetime
 
 from app.schemas.generation import (
+    BatchGenerateRequest,
+    BatchGenerateResponse,
+    BatchItemResponse,
     CreateGenerationRequestRequest,
     CreateGenerationRequestResponse,
     CreateGeneratedObjectRequest,
@@ -881,3 +884,130 @@ async def generate_region(
             request_id,
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+@ops_router.post(
+    "/generation/batch",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"description": "Invalid request"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden"},
+        429: {"description": "Budget exceeded"},
+        500: {"description": "Internal error"},
+    },
+    tags=["ops"],
+)
+async def batch_generate(
+    body: BatchGenerateRequest,
+    request: Request,
+    x_trace_id: str | None = Header(default=None, alias="X-Trace-Id"),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserPayload = RequireOpsRole,
+) -> EnvelopeResponse[BatchGenerateResponse]:
+    from datetime import timezone
+
+    from app.core.content_generator import (
+        BatchItemSpec,
+        ContentGenerationError,
+        SUPPORTED_BATCH_TARGETS,
+        get_content_generator,
+    )
+
+    request_id = _make_request_id("req_ops_gen_batch")
+    trace_id = x_trace_id or _make_request_id("trace")
+
+    # 校验 target_type
+    invalid = [item.target_type for item in body.items if item.target_type not in SUPPORTED_BATCH_TARGETS]
+    if invalid:
+        raise_generation_error(
+            GenerationErrorCodes.INVALID_ARGUMENT,
+            f"包含不支持的 target_type: {invalid}",
+            request_id,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            details=[
+                ErrorDetail(
+                    location="body",
+                    field="items",
+                    issue="unsupported_target_type",
+                    rejected_value=invalid,
+                )
+            ],
+        )
+
+    # 成本门禁：读取当前真实用量
+    repo = GenerationRepository(db)
+    now = datetime.now(timezone.utc)
+    daily_usage = await repo.get_daily_token_usage(now)
+    monthly_usage = await repo.get_monthly_token_usage(now)
+
+    try:
+        generator = get_content_generator()
+        specs = [BatchItemSpec(target_type=item.target_type, params=item.params) for item in body.items]
+        result = await generator.generate_batch(
+            specs,
+            max_concurrency=body.max_concurrency,
+            daily_used_tokens=daily_usage["total_tokens"],
+            monthly_used_tokens=monthly_usage["total_tokens"],
+        )
+    except ContentGenerationError as e:
+        logger.error("batch_generation_rejected", error=str(e), request_id=request_id)
+        raise_generation_error(
+            GenerationErrorCodes.BATCH_REJECTED,
+            str(e),
+            request_id,
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
+
+    # 可选持久化：成功项写入 generated_objects
+    batch_request_id = uuid.uuid4()
+    if body.persist:
+        for item in result.items:
+            if item.status == "success" and item.data is not None:
+                await repo.create_generated_object(
+                    request_id=batch_request_id,
+                    object_type=item.target_type,
+                    object_payload=item.data,
+                    schema_version=1,
+                    quality_score=item.quality_score,
+                )
+
+    # 事件发布（best-effort，不阻塞响应）
+    try:
+        generated_objects = [
+            {"object_id": "", "object_type": it.target_type, "status": it.status}
+            for it in result.items
+        ]
+        await event_publisher.publish_generation_batch_completed(
+            request_id=str(batch_request_id),
+            generated_objects=generated_objects,
+            completed_at=datetime.now(timezone.utc).isoformat(),
+            status="succeeded" if result.failed == 0 else "partial",
+            trace_id=trace_id,
+        )
+    except Exception as exc:
+        logger.error(
+            "event_publish_failed",
+            event_type="generation_batch_completed",
+            request_id=request_id,
+            error=str(exc),
+        )
+
+    response_data = BatchGenerateResponse(
+        total=result.total,
+        succeeded=result.succeeded,
+        failed=result.failed,
+        items=[
+            BatchItemResponse(
+                index=it.index,
+                target_type=it.target_type,
+                status=it.status,
+                data=it.data,
+                error=it.error,
+                quality_score=it.quality_score,
+            )
+            for it in result.items
+        ],
+    )
+
+    return EnvelopeResponse(request_id=request_id, data=response_data, trace_id=trace_id)
