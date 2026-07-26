@@ -1,8 +1,12 @@
 """基于 LLM 的内容生成器模块。"""
 
+import asyncio
+import inspect
 import logging
+from dataclasses import dataclass, field
 from typing import Any
 
+from app.core.budget_alert import budget_alert_manager
 from app.core.config import settings
 from app.core.llm_adapter import (
     LLMAPIError,
@@ -456,6 +460,89 @@ class ContentGenerator:
 
         adapted = self.item_adapter.adapt(response)
         return adapted
+
+    async def generate_batch(
+        self,
+        specs: list["BatchItemSpec"],
+        max_concurrency: int | None = None,
+        fail_fast: bool = False,
+        daily_used_tokens: int | None = None,
+        monthly_used_tokens: int | None = None,
+    ) -> "BatchResult":
+        """批量生成多个内容对象（WP5）。
+
+        单条生成失败被隔离，不影响其余条目；支持并发上限与成本上限。
+        """
+        if len(specs) > settings.batch_max_items:
+            raise ContentGenerationError(
+                f"批量条目数 {len(specs)} 超过上限 {settings.batch_max_items}"
+            )
+
+        estimated_tokens = len(specs) * settings.batch_token_budget_per_item
+        if daily_used_tokens is not None and monthly_used_tokens is not None:
+            if budget_alert_manager.should_pause_generation(daily_used_tokens, monthly_used_tokens):
+                raise ContentGenerationError("预算已达暂停阈值，批量生成被拒绝")
+        elif settings.batch_token_budget > 0 and estimated_tokens > settings.batch_token_budget:
+            raise ContentGenerationError(
+                f"批量预估 Token {estimated_tokens} 超过上限 {settings.batch_token_budget}"
+            )
+
+        semaphore = asyncio.Semaphore(max_concurrency or settings.batch_max_concurrency)
+
+        async def _run(index: int, spec: "BatchItemSpec") -> "BatchItemResult":
+            async with semaphore:
+                return await self._generate_one(index, spec)
+
+        results = await asyncio.gather(*[_run(i, s) for i, s in enumerate(specs)])
+        batch_result = BatchResult(items=list(results))
+
+        if fail_fast and batch_result.failed > 0:
+            first_failed = next(r for r in results if r.status == "failed")
+            raise ContentGenerationError(
+                f"fail_fast 模式下 {batch_result.failed} 条失败: {first_failed.error}"
+            )
+        return batch_result
+
+    async def _generate_one(self, index: int, spec: "BatchItemSpec") -> "BatchItemResult":
+        """生成单条内容，失败隔离。"""
+        target_type = spec.target_type
+        if target_type not in SUPPORTED_BATCH_TARGETS:
+            return BatchItemResult(
+                index=index,
+                target_type=target_type,
+                status="failed",
+                error=f"不支持的 target_type: {target_type}",
+            )
+        try:
+            method = getattr(self, f"generate_{target_type}")
+            sig = inspect.signature(method)
+            accepted = {p for p in sig.parameters if p != "self"}
+            kwargs = {k: v for k, v in (spec.params or {}).items() if k in accepted}
+            data = await method(**kwargs)
+            quality_score = self.quality_scorer.score(target_type, data).score
+            return BatchItemResult(
+                index=index,
+                target_type=target_type,
+                status="success",
+                data=data,
+                quality_score=quality_score,
+            )
+        except ContentGenerationError as e:
+            return BatchItemResult(
+                index=index,
+                target_type=target_type,
+                status="failed",
+                error=str(e),
+                quality_score=e.quality_score,
+            )
+        except Exception as e:  # 兜底隔离，避免单条异常中断整批
+            logger.error("batch_item_failed", target_type=target_type, index=index, error=str(e))
+            return BatchItemResult(
+                index=index,
+                target_type=target_type,
+                status="failed",
+                error=f"生成失败: {str(e)}",
+            )
 
     def _build_system_prompt(self, content_type: str) -> str:
         """构建系统提示。"""
@@ -939,6 +1026,44 @@ class ContentGenerator:
         prompt_parts.append("- 返回前逐项自检上述必需字段：缺失任一字段即视为不合格输出，请补全后再返回")
 
         return "\n".join(prompt_parts)
+
+
+SUPPORTED_BATCH_TARGETS = ("npc", "quest", "region", "settlement", "monster", "boss", "item")
+
+
+@dataclass
+class BatchItemSpec:
+    """批量生成单条请求。"""
+
+    target_type: str
+    params: dict[str, object] = field(default_factory=dict)
+
+
+@dataclass
+class BatchItemResult:
+    """批量生成单条结果。"""
+
+    index: int
+    target_type: str
+    status: str  # "success" | "failed"
+    data: dict[str, object] | None = None
+    error: str | None = None
+    quality_score: float | None = None
+
+
+@dataclass
+class BatchResult:
+    """批量生成整体结果。"""
+
+    items: list[BatchItemResult]
+    total: int = 0
+    succeeded: int = 0
+    failed: int = 0
+
+    def __post_init__(self) -> None:
+        self.total = len(self.items)
+        self.succeeded = sum(1 for i in self.items if i.status == "success")
+        self.failed = sum(1 for i in self.items if i.status == "failed")
 
 
 _generator: ContentGenerator | None = None

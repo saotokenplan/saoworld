@@ -44,6 +44,12 @@ class Settings(BaseSettings):
     cost_model_price_per_1k_prompt_tokens: float = 0.00015  # 每1000个提示词Token的价格（美元）
     cost_model_price_per_1k_completion_tokens: float = 0.0006  # 每1000个完成Token的价格（美元）
 
+    # 批量生成配置（WP5）
+    batch_max_items: int = 50  # 单次批量请求最大条目数
+    batch_max_concurrency: int = 4  # 批量生成最大并发数
+    batch_token_budget_per_item: int = 4000  # 单条目预估 Token 上限（用于批量成本预估）
+    batch_token_budget: int = 200000  # 单批次预估 Token 上限（默认成本上限）
+
 
 settings = Settings()
 

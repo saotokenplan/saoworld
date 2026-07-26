@@ -5,6 +5,8 @@ from typing import Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.core.config import settings
+
 T = TypeVar("T")
 
 
@@ -226,3 +228,31 @@ class GenerateRegionResponse(BaseModel):
     accessibility: str | None
     climate: str | None
     notable_locations: list[str] = []
+
+
+# === WP5 批量生成（batch）===
+class BatchItemRequest(BaseModel):
+    target_type: str = Field(min_length=1, max_length=32)
+    params: dict[str, object] = {}
+
+
+class BatchGenerateRequest(BaseModel):
+    items: list[BatchItemRequest] = Field(min_length=1, max_length=settings.batch_max_items)
+    persist: bool = False
+    max_concurrency: int | None = Field(default=None, ge=1, le=32)
+
+
+class BatchItemResponse(BaseModel):
+    index: int
+    target_type: str
+    status: str  # success | failed
+    data: dict[str, object] | None = None
+    error: str | None = None
+    quality_score: float | None = None
+
+
+class BatchGenerateResponse(BaseModel):
+    total: int
+    succeeded: int
+    failed: int
+    items: list[BatchItemResponse]
