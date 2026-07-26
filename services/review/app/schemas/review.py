@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -53,6 +53,15 @@ class EnvelopeResponse(BaseModel, Generic[T]):
     data: T
     meta: PaginatedMeta | None = None
     trace_id: str | None = None
+
+
+class ReviewEfficiencyResponse(BaseModel):
+    """WP3 ops 看板三字段：审核效率派生指标（数据源为 review 服务 Prometheus 指标）。"""
+
+    auto_pass_rate: float | None = None
+    manual_intervention_rate: float | None = None
+    review_p95_minutes: float | None = None
+    raw: dict[str, Any] | None = None
 
 
 class ReviewRecordResponse(BaseModel):

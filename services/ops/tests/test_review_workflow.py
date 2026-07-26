@@ -64,6 +64,47 @@ async def test_get_review_stats_success(async_client, test_token):
 
 
 @pytest.mark.asyncio
+async def test_get_review_stats_includes_efficiency(async_client, test_token):
+    """WP3 ops 看板三字段：代理端点应将 review 返回的三项指标映射到 review_efficiency。"""
+    with patch("app.core.review_service_client.ReviewServiceClient.get_review_stats", new_callable=AsyncMock) as mock:
+        mock.return_value = {
+            "data": {
+                "total_pending": 5,
+                "total_approved": 10,
+                "total_rejected": 2,
+                "total_needs_revision": 1,
+                "auto_pass_rate": 0.81,
+                "manual_intervention_rate": 0.19,
+                "review_p95_minutes": 12.5,
+            }
+        }
+        resp = await async_client.get(
+            f"{REVIEW_URL}/stats",
+            headers={"Authorization": f"Bearer {test_token}"},
+        )
+        assert resp.status_code == 200
+        body = resp.json()["data"]
+        eff = body["review_efficiency"]
+        assert eff["auto_pass_rate"] == pytest.approx(0.81)
+        assert eff["manual_intervention_rate"] == pytest.approx(0.19)
+        assert eff["review_p95_minutes"] == pytest.approx(12.5)
+
+
+@pytest.mark.asyncio
+async def test_get_review_stats_efficiency_absent_when_not_provided(async_client, test_token):
+    """review 未返回三字段时，review_efficiency 为 None（不报错）。"""
+    with patch("app.core.review_service_client.ReviewServiceClient.get_review_stats", new_callable=AsyncMock) as mock:
+        mock.return_value = {"data": {"total_pending": 0, "total_approved": 0, "total_rejected": 0, "total_needs_revision": 0}}
+        resp = await async_client.get(
+            f"{REVIEW_URL}/stats",
+            headers={"Authorization": f"Bearer {test_token}"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["data"]["review_efficiency"] is None
+
+
+
+@pytest.mark.asyncio
 async def test_review_approve_upstream_error(async_client, test_token):
     obj_id = uuid.uuid4()
     with patch("app.core.review_service_client.ReviewServiceClient.approve_review_object", new_callable=AsyncMock) as mock:

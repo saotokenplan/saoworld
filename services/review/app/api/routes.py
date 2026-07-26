@@ -10,6 +10,7 @@ from app.core.deps import RequireOpsRole, RequireReviewApproveScope, UserPayload
 from app.core.errors import ReviewErrorCodes, raise_review_error
 from app.core.event_publisher import event_publisher
 from app.core.metrics import record_review_create, record_review_duration, record_review_result
+from app.core.review_efficiency import collect_review_efficiency
 from app.repositories.audit_repo import (
     ACTION_REVIEW_APPROVE,
     ACTION_REVIEW_RECORD_CREATE,
@@ -32,6 +33,7 @@ from app.schemas.review import (
     PaginatedMeta,
     RejectReviewRequest,
     RejectReviewResponse,
+    ReviewEfficiencyResponse,
     ReviewRecordListResponse,
     ReviewRecordResponse,
     ReviewResult,
@@ -691,3 +693,30 @@ async def auto_review(
             request_id,
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+@router.get(
+    "/review/stats",
+    responses={503: {"description": "指标采集不可用"}},
+    tags=["review"],
+)
+async def get_review_efficiency_stats(
+    request: Request,
+) -> EnvelopeResponse[ReviewEfficiencyResponse]:
+    """审核效率派生指标（WP3 ops 看板三字段数据源）。
+
+    供 ops-service 内部调用，从 review 服务 Prometheus 指标派生：
+    - auto_pass_rate: 自动审核通过率
+    - manual_intervention_rate: 人工介入率
+    - review_p95_minutes: 审核耗时 P95（分钟）
+
+    无鉴权：属内部服务间调用（ops 不携带鉴权头调用本端点）。
+    """
+    request_id = _make_request_id("req")
+    trace_id = _get_trace_id(request)
+    data = collect_review_efficiency()
+    return EnvelopeResponse(
+        request_id=request_id,
+        data=ReviewEfficiencyResponse(**data),
+        trace_id=trace_id,
+    )

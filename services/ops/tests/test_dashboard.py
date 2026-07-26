@@ -89,3 +89,17 @@ async def test_dashboard_history_pagination(async_client, test_token):
     assert data["meta"]["limit"] == 10
     assert data["meta"]["offset"] == 0
     assert len(data["data"]) <= 10
+
+
+@pytest.mark.asyncio
+async def test_dashboard_includes_review_efficiency_field(async_client, test_token):
+    """WP3 ops 看板三字段：主看板 metrics 模型支持 review_efficiency（默认 None）。"""
+    response = await async_client.get(
+        "/api/v1/ops/dashboard",
+        headers={"Authorization": f"Bearer {test_token}"},
+    )
+    assert response.status_code == 200
+    metrics = response.json()["data"]["metrics"]
+    assert "review_efficiency" in metrics
+    assert metrics["review_efficiency"] is None
+

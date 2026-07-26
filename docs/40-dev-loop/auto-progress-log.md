@@ -206,3 +206,13 @@
 - **遗留**：ops 看板三字段增补（services/ops 改造）属 M4-审核效率看板指标定义.md 第七节动作 5，本轮未抢跑，留待下一轮分离推进；在线指标值真实读数验证仍依赖运行时。
 - **提交与合并**：feat/review + test/review + fix(review) + docs(telemetry) + docs(requirements) + docs(dev-loop) 主题拆分，逐笔推送 origin 工作分支；`--no-ff` 合并回 origin/feature-prd（合并 hash 见执行摘要），fetch 校验通过；删本地工作分支。
 - **下一轮预判**：WP3 收尾（ops 看板三字段）→ WP4 发布自动化串联；均部分依赖运行时或跨服务改造，自主空间收窄，预计若无新运行时解锁将逐步回到「无新工作·优雅结束」常态。
+
+---
+
+## 2026-07-26 08:56 — auto-20260726-0856（WP3 ops 看板三字段增补 auto_pass_rate / review_p95_minutes / manual_intervention_rate）
+
+- **判定**：project-status.md「当前待办」WP3 收尾项「ops 看板三字段」明确「待下一轮（services/ops 改造，分离推进）」；07-26 01:21 轮（WP3 M1–M6）已预判此收尾项留待分离推进。核查确认三项指标（auto_pass_rate / manual_intervention_rate / review_p95_minutes）可由 review 服务 Prometheus 指标纯代码派生并经接口暴露，ops 侧仅做 schema 接入与代理映射，无需运行时，符合自主推进条件。
+- **动作**：review 服务新增 `app/core/review_efficiency.py`（纯函数 `compute_review_efficiency` + `histogram_quantile` 线性插值 + `collect_review_efficiency` 读 REGISTRY）、`ReviewEfficiencyResponse` schema、`GET /api/v1/review/stats` 端点（公共路由，供 ops 内部无鉴权调用）；ops 服务新增 `ReviewEfficiencyMetrics` schema，`ReviewStatsResponse.review_efficiency` 与 `DashboardMetrics.review_efficiency` 接入，代理端点 `/ops/review/stats` 映射三项字段。新增/扩展测试：review `test_review_efficiency.py`（10 例）、ops `test_review_workflow.py`（+2）、ops `test_dashboard.py`（+1）。
+- **验证**：review 全量 pytest **97 passed**（原 87+10）；ops 全量 pytest **130 passed**；ruff 改动文件无新增问题（既有 B008/I001 历史代码）。
+- **提交与合并**：feat(review) + feat(ops) + test(review) + test(ops) + docs(docs) + docs(dev-loop) 主题拆分，逐笔推送 origin 工作分支；`--no-ff` 合并回 origin/feature-prd（合并 hash 见执行摘要），fetch 校验通过；删本地工作分支。
+- **下一轮预判**：WP3 全闭环；下一可执行项回到按序的 **WP4 发布自动化与周更节奏**（审核→打包→发布串联，依赖运行时/跨服务）与 **WP5 批量生成能力**；自主空间收窄，预计若无新运行时解锁将逐步回到「无新工作·优雅结束」常态。

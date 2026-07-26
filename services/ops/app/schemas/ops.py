@@ -89,6 +89,14 @@ class TopTraderItem(BaseModel):
     trade_count: int
 
 
+class ReviewEfficiencyMetrics(BaseModel):
+    """WP3 ops 看板三字段：审核效率派生指标（来自 review 服务 /stats 端点）。"""
+
+    auto_pass_rate: float | None = None
+    manual_intervention_rate: float | None = None
+    review_p95_minutes: float | None = None
+
+
 class DashboardMetrics(BaseModel):
     total_players: int = 0
     total_vote_cycles: int = 0
@@ -100,6 +108,7 @@ class DashboardMetrics(BaseModel):
     active_generation_requests: int = 0
     pending_review_count: int = 0
     economy: EconomicOverview | None = None
+    review_efficiency: ReviewEfficiencyMetrics | None = None
 
 
 class DashboardResponse(BaseModel):
@@ -444,6 +453,7 @@ class ReviewStatsResponse(BaseModel):
     total_rejected: int = 0
     total_needs_revision: int = 0
     by_risk_level: dict[str, int] | None = None
+    review_efficiency: ReviewEfficiencyMetrics | None = None
 
 
 # ---- 运营事件 Schema ----

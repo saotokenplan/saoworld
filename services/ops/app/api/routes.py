@@ -86,6 +86,7 @@ from app.schemas.ops import (
     ReviewApproveRequest,
     ReviewObjectResponse,
     ReviewRejectRequest,
+    ReviewEfficiencyMetrics,
     ReviewStatsResponse,
     SystemServiceStatus,
     SystemStatusResponse,
@@ -2010,7 +2011,27 @@ async def get_review_stats(
         )
 
     stats_data = result.get("data", result)
-    response_data = ReviewStatsResponse(**stats_data) if isinstance(stats_data, dict) else ReviewStatsResponse()
+    if isinstance(stats_data, dict):
+        efficiency = None
+        if any(
+            key in stats_data
+            for key in ("auto_pass_rate", "manual_intervention_rate", "review_p95_minutes")
+        ):
+            efficiency = ReviewEfficiencyMetrics(
+                auto_pass_rate=stats_data.get("auto_pass_rate"),
+                manual_intervention_rate=stats_data.get("manual_intervention_rate"),
+                review_p95_minutes=stats_data.get("review_p95_minutes"),
+            )
+        response_data = ReviewStatsResponse(
+            total_pending=stats_data.get("total_pending", 0),
+            total_approved=stats_data.get("total_approved", 0),
+            total_rejected=stats_data.get("total_rejected", 0),
+            total_needs_revision=stats_data.get("total_needs_revision", 0),
+            by_risk_level=stats_data.get("by_risk_level"),
+            review_efficiency=efficiency,
+        )
+    else:
+        response_data = ReviewStatsResponse()
 
     record_review_op("stats")
 
