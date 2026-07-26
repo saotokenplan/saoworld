@@ -5,6 +5,74 @@
 
 ## 最近执行摘要
 
+### 2026-07-26 23:54 — auto-20260726-2354（无新工作·周期性收拢）
+- 判定：与 13:20 / 14:21 / 15:21 轮一致——按序下一未开始项 WP4 发布自动化与周更节奏及全部剩余子任务（WP1-A1/A6、WP2 调优、WP5 异步串联、运行时验证）均依赖真实运行时；现存 12 个 auto-plan 全部已合并，无实时待办。本轮实测 docker 未运行、PG 5432 无响应、Redis 6379 无监听。
+- 动作：距上次真实代码合并 f14b5c6 约 11.5h，远超约 5h 收拢阈值；工作树累积 3 份状态报告（1320/1421/1521）+ 进度日志 + 自动化记忆 + 2 份 workspace 记忆文件长期滞留，触发周期性收拢。创建 `auto/auto-20260726-2354`，收拢上述遥测，按主题拆分提交推送 origin 工作分支，`--no-ff` 合并回 origin/feature-prd（合并 hash 见第七/八步），fetch 校验通过，删本地工作分支，恢复干净树。
+- 工程经验（沿用）：合并提交混合 docs/40-dev-loop 与 .workbuddy 时，docs 文件占优（5 vs 3）按 17:39 先例须用 `docs(dev-loop)`（单一 docs 提交用 `docs(dev-loop)`、纯遥测提交用 `docs(docs)`）；勿 `git commit -a` 误吞无关文件。
+- 交付物：docs/40-dev-loop/auto-status-report-20260726-2354.md（经 present_files 交付）；auto-plan 无新增（非工程轮），进度日志追加一条。
+- 真实阻塞（延续）：运行时验证为 WP4/WP1-A1/WP2/WP5 剩余子任务共同前置；无新解锁信号。
+- 下一轮预判：恢复「无新工作·优雅结束」常态；一旦 PostgreSQL/Redis/Docker/workers 可用或运营决策/外部需求输入，按序推进 WP4 → WP1-A1 → WP2 → WP5。
+
+### 2026-07-26 13:20 — auto-20260726-1320（无新工作·优雅结束）
+- 判定：project-status.md「当前待办」按序下一未开始项 **WP4 发布自动化与周更节奏** 标注「未开始，按序」，但其依赖 `M4-规模化内容生成规划.md` 行 102「WP2 通过率达标、灰度发布完成」与跨服务运行时（行 126「全部工作包依赖真实运行时环境」），不可自主推进。其余活跃项剩余子任务（WP1-A1 双源收口/A6 真实 LLM 实测/A5 few-shot 开关、WP2 数值调优与跨样本语料接线、WP5 批量+workers 异步串联、运行时验证）均依赖真实运行时。WP1 A5 few-shot 开关曾因「依赖 WP2 样本 JSON 内容」推迟，核查确认 WP2 样本集仅为设计文档（`M4-审核样本集设计.md`），仓库内无实际 sample JSON，仍无可落地内容。
+- 动作：独立复测运行时——docker 未运行、PG 5432 无响应、Redis 6379 无监听；确认无新可执行工作。未创建分支 / 未提交 / 未合并 / 未推送（节流指引；距上次真实代码合并 f14b5c6 仅约 1h，未达周期性收拢阈值）。工作树仅余 `.workbuddy` 自动化遥测，留待周期性收拢。
+- 交付物：docs/40-dev-loop/auto-status-report-20260726-1320.md（经 present_files 交付）；auto-progress-log.md 追加本轮快照。
+- 真实阻塞（延续）：运行时验证为 M4 实施与发布闭环共享前提，亦为 WP4/WP1-A1/WP2/WP5 剩余子任务共同前置；无新解锁信号。
+- 下一轮预判：维持「无新工作·优雅结束」常态；一旦 PostgreSQL/Redis/Docker/workers 可用或运营决策/外部需求输入，按序推进 WP4 发布自动化串联 → WP1-A1 双源收口 → WP2 数值调优 → WP5 异步串联。
+
+### 2026-07-26 14:21 — auto-20260726-1421（无新工作·优雅结束）
+- 判定：与 13:20 轮二次复核一致——按序下一未开始项 WP4 发布自动化与周更节奏标注「未开始，按序」，其实施期启动信号（`M4-周更运营流程草案.md` 第八节）为「灰度发布窗口确认 + WP2 通过率达标」，二者均未解锁；跨服务运行时（审核→打包→发布串联）不可用。其余活跃项剩余子任务（WP1-A1/A6/A5 few-shot、WP2 调优、WP5 异步串联、运行时验证）均依赖真实运行时；WP2 样本集仍为设计文档、无实际样本 JSON，A5 few-shot 仍无可落地内容。现存 13 个 auto-plan 全部已合并，无实时待办。
+- 动作：独立复测运行时——docker 未运行、PG 5432 无响应、Redis 6379 无监听；确认无新可执行工作。未创建分支 / 未提交 / 未合并 / 未推送（节流；距上次真实代码合并 f14b5c6 约 2h < 约 5h 收拢阈值；累计状态报告 2 份 < 3 份）。工作树仅余 `.workbuddy` 遥测 + 过程材料，留待周期性收拢。
+- 交付物：docs/40-dev-loop/auto-status-report-20260726-1421.md（经 present_files 交付）；auto-progress-log.md 追加本轮快照。
+- 真实阻塞（延续）：运行时验证为 WP4/WP1-A1/WP2/WP5 剩余子任务共同前置；无新解锁信号。
+- 下一轮预判：维持「无新工作·优雅结束」常态。
+
+### 2026-07-26 15:21 — auto-20260726-1521（无新工作·优雅结束）
+- 判定：与 13:20 / 14:21 轮三次独立复核一致——按序下一未开始项 WP4 发布自动化与周更节奏标注「未开始，按序」，其实施期启动信号（周更运营流程草案第八节「灰度发布窗口确认 + WP2 通过率达标」）均未解锁；跨服务运行时（审核→打包→发布串联）不可用。其余活跃项剩余子任务（WP1-A1/A6/A5 few-shot、WP2 调优、WP5 异步串联、运行时验证）均依赖真实运行时；WP2 样本集仅为设计文档、无实际样本 JSON，A5 few-shot 仍无可落地内容。现存 13 个 auto-plan 全部已合并，无实时待办。规划文档行 126–127 明确「全部工作包依赖真实运行时环境」「运行时验证销项是 M4 实施的硬阻塞」。
+- 动作：独立复测运行时——docker 未运行、PG 5432 无监听、Redis 6379 无监听；`git fetch` 确认本地 `feature-prd` 与 `origin/feature-prd` 均 `bd40285`，无分叉。未创建分支 / 未提交 / 未合并 / 未推送（节流；距上次真实代码合并 f14b5c6 约 3.2h < 约 5h 收拢阈值；累计状态报告 3 份已达份数门槛但时间门槛未达，维持优雅结束）。工作树仅余 `.workbuddy` 遥测 + 过程材料，留待周期性收拢。
+- 交付物：docs/40-dev-loop/auto-status-report-20260726-1521.md（经 present_files 交付）；auto-progress-log.md 追加本轮快照。
+- 真实阻塞（延续）：运行时验证为 WP4/WP1-A1/WP2/WP5 剩余子任务共同前置；无新解锁信号。
+- 下一轮预判：维持「无新工作·优雅结束」常态；约 17:10 轮（距 f14b5c6 约 5h）满足时间 + 份数双门槛后由收拢轮统一合并遥测至 origin/feature-prd。
+
+### 2026-07-24 22:45 — auto-20260724-2245（文档重基线·M4 实施期口径对齐）
+- 判定：project-status.md 2026-07-24 PM 评审标记的"文档重基线（待办）"为唯一可执行且无需运行时的活跃工作；WP1 A3/A4/A5 提示词文本编辑按「规划期不落地」约定不抢跑；现存 6 个 auto-plan（均 2026-07-23）已完成合并，无实时待办。
+- 动作：创建 `auto/auto-20260724-2245`，重基线 `需求迭代计划.md`（阶段改为 M4 实施期 + 灰度跳过标注、路线图 Sprint 0【已跳过】、S9/S10/S11 口径 banner、新增 §十五 产品战略例外记录固化 M1 验收绕过、修正重复章节号），同步 `project-status.md`（待办标记完成、M1/文档漂移阻塞行更新）；按 `docs(requirements)`/`docs(docs)`/`docs(dev-loop)` 主题拆分 3 笔提交推送 origin 工作分支，`--no-ff` 合并回 `origin/feature-prd`（合并 efef880），fetch 校验通过，删本地工作分支，工作树仅余兄弟自动化 1784645846171 脏文件。
+- 工程经验：纯文档治理任务无需运行时、无需专家（无 doc-writer 专家）；commit scope 按多数派——requirements/doc/dev-loop 混合 payload 以 dev-loop 占优用 `docs(dev-loop)` 合并通过（无 `.workbuddy` 混入，避开 2141 轮 scope 漂移坑）。
+- 交付物：docs/40-dev-loop/auto-execution-summary-20260724-2245.md（经 present_files 交付）；auto-plan-20260724-2245.md、进度日志追加一条。
+- 下一轮预判：文档重基线已闭环；下一可执行项回到 WP1 A3/A4/A5（依赖 A1 双源收口或实施期实测）或运行时验证，均依赖真实运行时环境；预计回到「无新工作·优雅结束」常态，遥测累积后择机周期性收拢。
+
+### 2026-07-26 08:56 — auto-20260726-0856（WP3 ops 看板三字段增补 auto_pass_rate / review_p95_minutes / manual_intervention_rate）
+- 判定：project-status.md「当前待办」WP3 收尾项「ops 看板三字段」明确「待下一轮（services/ops 改造，分离推进）」；07-26 01:21 轮（WP3 M1–M6）已预判此收尾项留待分离推进。三项指标可由 review 服务 Prometheus 指标纯代码派生并经接口暴露，ops 侧仅做 schema 接入与代理映射，无需运行时，符合自主推进条件。
+- 动作：review 服务新增 `app/core/review_efficiency.py`（`compute_review_efficiency` 纯函数 + `histogram_quantile` 线性插值近似分位 + `collect_review_efficiency` 读 REGISTRY）、`ReviewEfficiencyResponse` schema、`GET /api/v1/review/stats` 端点（公共路由供 ops 内部无鉴权调用）；ops 服务新增 `ReviewEfficiencyMetrics` schema，`ReviewStatsResponse.review_efficiency` 与 `DashboardMetrics.review_efficiency` 接入，代理端点 `/ops/review/stats` 映射三项字段。新增/扩展测试：review `test_review_efficiency.py`（10 例）、ops `test_review_workflow.py`（+2）、ops `test_dashboard.py`（+1）。
+- 验证：review 全量 pytest **97 passed**（原 87+10）；ops 全量 pytest **130 passed**；ruff 改动文件无新增问题（既有 B008/I001 历史代码）。
+- 工程经验：合并提交标题受 100 字符上限拦截（首轮 112 字符被拒），改用短标题 `feat(review): merge auto-20260726-0856 WP3 ops 看板三字段` 一次通过——合并提交须用代码 type（feat/review）而非 docs，且标题需 ≤100 字符。实测 `.workbuddy` 遥测文件须 `git stash` 暂存后方能切 feature-prd 合并，避免 checkout 被未提交遥测阻塞；合并后再 pop 恢复（不提交、留待周期性收拢）。测试复用既有 `review` venv（含 fastapi/sqlalchemy/prometheus_client/ruff）可同时跑 review 与 ops 服务 pytest。
+- 交付物：docs/40-dev-loop/auto-execution-summary-20260726-0856.md（经 present_files 交付）；auto-plan-20260726-0856.md、进度日志追加一条。
+- 下一轮预判：WP3 全闭环；下一可执行项回到按序的 **WP4 发布自动化与周更节奏**（审核→打包→发布串联，依赖运行时/跨服务）与 **WP5 批量生成能力**；自主空间收窄，预计若无新运行时解锁将逐步回到「无新工作·优雅结束」常态。
+
+### 2026-07-26 12:10 — auto-20260726-1029（WP5 批量生成能力 · 接续 10:29 中断轮）
+- 判定：当前位于 `auto/auto-20260726-1029` 工作分支，10:29 轮已完成 WP5 全部代码与测试编写但未提交/合并即中断（无 origin 分支）；按历史先例（0200 接续 0040）复用既有分支完成验证/提交/合并，不新建重复分支。WP5 首个子任务（批量入口）不依赖真实运行时，符合自主推进。
+- 动作：generation `ContentGenerator.generate_batch`（失败隔离 + 并发上限 Semaphore + 成本上限，复用 `budget_alert_manager.should_pause_generation`）、批量 schema、`POST /api/v1/ops/generation/batch` 运营端点（校验 + 成本门禁 + 可选持久化写 `generated_objects` + best-effort 事件发布）；`errors.py` 增 `BATCH_REJECTED`。新增 `tests/test_batch_generation.py`（11 例）。
+- 测试修复（接续轮）：① `MockLLMAdapter(mock_response=...)` 构造参数错误→实例化后设属性；② 端点测试 `patch("app.api.routes.get_content_generator")` 无效（路由局部导入）→改为 `patch("app.core.content_generator.get_content_generator")`；③ `generate_npc` 按 `settings.quality_threshold` 拒绝低分 mock 致批量全失败→增 autouse fixture `monkeypatch.setattr(settings, "quality_threshold", 0.1)` 隔离质量门禁（实现行为本身正确）。
+- 验证：generation 全量 pytest **266 passed**（无回归）；ruff 改动文件无新增问题。
+- 合并：feature-prd 在 10:29→12:10 间被兄弟自动化推进，`project-status.md` 出现两处「WP5 在制」占位冲突；以本分支（已完成）版本解决（占位笔记已过时）。合并提交 `feat(generation): merge auto-20260726-1029 WP5 批量生成能力`（**f14b5c6**），fetch 校验已落 origin/feature-prd；删本地工作分支；`.workbuddy` 遥测 stash 后 pop 恢复（不提交，留待周期性收拢）。
+- 交付物：docs/40-dev-loop/auto-execution-summary-20260726-1029.md（经 present_files 交付）；auto-plan-20260726-1029.md、进度日志追加一条。
+- 下一轮预判：WP5 批量入口落地，但「批量 + workers 异步串联」「真实 LLM 批量质量稳定性」仍依赖运行时；按序下一未开始项 **WP4 发布自动化与周更节奏**（跨服务运行时依赖）；预计若无新运行时解锁将回到「无新工作·优雅结束」常态。
+
+### 2026-07-26 00:00 — auto-20260726-0000（WP2 DuplicateDetectionRule 死参数接线 + greenlet 测试依赖修复）
+- 判定：project-status.md「当前待办」WP2 由「未开始」转为本轮可执行；M4 阈值调优预案第二节登记的死参数 `DuplicateDetectionRule.max_similarity=0.8` 为规划期已识别、实施期待落地的代码缺口，且接线不依赖真实运行时（纯标准库逻辑，pytest 可验证）。A1 双源收口 / A6 真实 LLM 实测 / 跨样本语料接线仍依赖运行时。
+- 动作：创建 `auto/auto-20260726-0000`，接线 max_similarity 为单对象自相似度阈值（默认 0.8 生效）+ 补充 `self_similarity`/`cross_similarity` 纯函数（WP2 场景 D 基础）；新增 `test_duplicate_detection_rule.py`（14 passed）；review 全量 pytest 79 passed（先补 greenlet 至 dev extras 修复异步 SQLAlchemy 测试依赖缺口）。按 `feat(review)`/`test(review)`/`fix(review)`/`docs(requirements)`/`docs(docs)`/`docs(dev-loop)` 主题拆分 6 笔提交推送 origin 工作分支，`--no-ff` 合并回 origin/feature-prd（合并 0b08798，已 fetch 校验），删本地工作分支。
+- 工程经验：review 服务 `dev` extras 缺 `greenlet`（sqlalchemy 异步引擎必需），导致 `setup_db` 夹具抛 `ValueError: greenlet required`；已补 `greenlet>=3.0.0` 至 pyproject dev extras，复现性修复（P1 测试基础设施，非运行时依赖）。变更文件无新增 ruff 问题（既有 5 处 RUF012/SIM114/BLE001 为历史代码）。
+- 交付物：docs/40-dev-loop/auto-execution-summary-20260726-0000.md（经 present_files 交付）；auto-plan-20260726-0000.md、进度日志追加一条。
+- 下一轮预判：WP2 数值调优需真实样本回放（sampleset_v2）+ 跨样本语料接线需运行时，均不自主；WP3 指标埋点（M1–M6）部分可自主，待下一轮评估；预计若无新运行时解锁则回到「无新工作·优雅结束」常态。
+
+### 2026-07-25 23:34 — auto-20260725-2334（WP1 A3/A4/A5 提示词硬化落地 live prompt）
+- 判定：project-status.md「当前待办」明确 WP1 A3/A4/A5「不依赖运行时可立即推进」；A1 双源收口与 A6 真实 LLM 实测仍依赖真实运行时环境，本轮不可为。WP1 自 A2（07-23）后首个可自主推进的代码/文本批次。
+- 动作：创建 `auto/auto-20260725-2334`，将 M4-模板文本细化.md 3.1/3.2/3.3/3.4 硬化文本落地至 `services/generation/app/core/content_generator.py` 的 `_build_item/monster/boss/region_prompt` 尾部（F2/F3/F4/F6）；`generator` fixture 提级为模块级并新增 `TestPromptHardening` 4 例；pytest 14 passed / ruff 通过。按 `feat(generation)`/`test(generation)`/`docs(requirements)`/`docs(docs)`/`docs(dev-loop)` 主题拆分 5 笔提交推送 origin 工作分支，`--no-ff` 合并回 origin/feature-prd（合并 dbbaa05，含计划状态置已完成补合并 3c12f20），fetch 校验通过，删本地工作分支。
+- 工程经验：纯文本追加不破坏调用链；A5 few-shot 开关因依赖 WP2 样本 JSON 内容而推迟，避免空开关半成品。合并提交 payload 含代码用 `feat(generation)` 通过（印证 2246 条：代码为主合并须 fix/feat）。
+- 交付物：docs/40-dev-loop/auto-execution-summary-20260725-2334.md（经 present_files 交付）；auto-plan-20260725-2334.md、进度日志追加一条。
+- 真实阻塞（延续）：A1 双源收口 / A6 真实 LLM 实测 / WP2–WP5 真实环境验证仍依赖 PostgreSQL/Redis/Docker 预发布运行时。
+- 下一轮预判：WP1 文本硬化已闭环（A3/A4/A5 落盘、A2 已落地）；下一可执行项为 WP2 审核规则调优或 A1/A6 运行时验证，均依赖真实运行时环境；预计若环境未解锁则回到「无新工作·优雅结束」常态，遥测累积后择机周期性收拢。
+
 ### 2026-07-24 21:41 — auto-20260724-2141（无新工作·优雅结束 + 周期性收拢）
 - 判定：与 2026-07-23 23:18 以来各轮持平——project-status.md「下一阶段建议」未删除线项（#3 M4 工作包推进 / #4 运行时验证）首两个可执行项（WP1-A1 双源收口迁移、WP2 审核规则调优）均依赖真实运行时环境。独立复测：PG 5432 无响应、Docker 未运行、Redis 不可用；现存 6 个 auto-plan（均 2026-07-23）均已完成合并，无实时待办。
 - 动作（周期性收拢）：距上次真实代码合并（bc58f5d，07-23 23:18）约 22h，远超约 5h 收拢阈值；2 个 `.workbuddy` 记忆文件自 23:18 起长期滞留脏树。创建 `auto/auto-20260724-2141`，收拢状态报告 + 进度日志 + 自动化记忆（memory.md / 2026-07-23.md），按主题拆分 2 笔提交推送 origin 工作分支，`--no-ff` 合并回 origin/feature-prd（合并 6bf54f0，已 fetch 校验通过）并删除本地工作分支，恢复干净树（仅余并发兄弟自动化 1784645846171 的脏文件，非本任务范围）。
