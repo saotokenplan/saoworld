@@ -54,7 +54,7 @@ M4 工作包 **WP5 批量生成能力**（差距 G8：批量生成多个区域/�
 
 - 工作分支提交：`feat(generation)` / `test(generation)` / `docs(docs)` / `docs(requirements)` / `docs(dev-loop)` 五笔，均已推送 `origin/auto/auto-20260726-1029`
 - 合并提交：`feat(generation): merge auto-20260726-1029 WP5 批量生成能力`
-- 合并提交 hash：_<待合并后回填>_
+- 合并提交 hash：`f14b5c6`
 - 远程推送状态：成功（已 `git fetch origin feature-prd` 校验）
 - 本地工作分支：已删除
 
