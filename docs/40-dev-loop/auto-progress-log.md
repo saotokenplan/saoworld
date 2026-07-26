@@ -216,3 +216,14 @@
 - **验证**：review 全量 pytest **97 passed**（原 87+10）；ops 全量 pytest **130 passed**；ruff 改动文件无新增问题（既有 B008/I001 历史代码）。
 - **提交与合并**：feat(review) + feat(ops) + test(review) + test(ops) + docs(docs) + docs(dev-loop) 主题拆分，逐笔推送 origin 工作分支；`--no-ff` 合并回 origin/feature-prd（合并 hash 见执行摘要），fetch 校验通过；删本地工作分支。
 - **下一轮预判**：WP3 全闭环；下一可执行项回到按序的 **WP4 发布自动化与周更节奏**（审核→打包→发布串联，依赖运行时/跨服务）与 **WP5 批量生成能力**；自主空间收窄，预计若无新运行时解锁将逐步回到「无新工作·优雅结束」常态。
+
+---
+
+## 2026-07-26 12:10 — auto-20260726-1029（WP5 批量生成能力 · 接续 10:29 中断轮）
+
+- **判定（接续）**：当前位于 `auto/auto-20260726-1029` 工作分支，10:29 轮已完成 WP5 全部代码与测试文件编写但未提交/合并即中断（无 `origin/auto/auto-20260726-1029`）。按历史先例（0200 接续 0040）复用既有分支完成验证/提交/合并，不新建重复分支。WP5 首个子任务（批量入口）不依赖真实运行时，符合自主推进条件。
+- **动作**：`ContentGenerator.generate_batch`（失败隔离 + 并发上限 `Semaphore` + 成本上限，复用 `budget_alert_manager.should_pause_generation`）、批量 schema（`BatchItemRequest/Generate/Response/ItemResponse`）、`POST /api/v1/ops/generation/batch` 运营端点（校验 + 成本门禁 + 可选持久化写 `generated_objects` + best-effort 事件发布）；`errors.py` 增 `BATCH_REJECTED`。新增 `tests/test_batch_generation.py`（11 例）。
+- **测试修复（接续轮）**：① `MockLLMAdapter(mock_response=...)` 构造参数错误 → 改为实例化后设属性；② 端点测试 `patch("app.api.routes.get_content_generator")` 无效（路由为局部导入）→ 改为 `patch("app.core.content_generator.get_content_generator")`；③ `generate_npc` 按 `settings.quality_threshold` 拒绝低分 mock 致批量全失败 → 增 autouse fixture `monkeypatch.setattr(settings, "quality_threshold", 0.1)` 隔离质量门禁（实现行为本身正确）。
+- **验证**：generation 全量 pytest **266 passed**（无回归）；ruff 改动文件无新增问题。
+- **提交与合并**：feat(generation) + test(generation) + docs(docs) + docs(requirements) + docs(dev-loop) 主题拆分，逐笔推送 origin 工作分支；`--no-ff` 合并回 origin/feature-prd（合并 hash 见执行摘要），fetch 校验通过；删本地工作分支。
+- **下一轮预判**：WP5 批量入口落地，但「批量 + workers 异步串联」「真实 LLM 批量质量稳定性」仍依赖运行时；按序下一未开始项为 **WP4 发布自动化与周更节奏**（跨服务运行时依赖）；预计若无新运行时解锁将回到「无新工作·优雅结束」常态。
