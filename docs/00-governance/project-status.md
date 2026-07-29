@@ -3,7 +3,7 @@
 > 文档状态：active
 > 适用阶段：当前
 > 维护要求：持续维护
-> 最后整理：2026-07-24（PM 每日评审）
+> 最后整理：2026-07-29（PM 每日评审）
 
 ## 目的
 
@@ -15,7 +15,7 @@
 
 - 当前阶段：M4 规模化内容生成实施期（跳过灰度阶段，直接抢跑实施）
 - 当前判断：核心研发链路已完成；管理决策已明确：直接越过灰度发布阶段，全力推进 M4 实施；M4 规划期白名单五项已于 2026-07-23 全部落地，即日起 M4 进入正式实施
-- 当前状态：灰度阶段已明确跳过，M4 实施正式启动；现状盘点/差距分析/工作包分解已完成，五项产出文档（模板细化/样本集/阈值预案/看板指标/运营流程草案）全部就位，按工作包顺序逐项推进。WP1 首个实施代码项（A2：`score_region` 字段口径对齐 danger_level/landmarks，修复 F1 缺陷）已于 2026-07-23 落地，场景评分维度恢复生效。2026-07-25，A3/A4/A5 提示词硬化（装备/怪物数值锚定、章节强度上限、输出格式硬化）已落地至 generation 服务 live prompt 构造函数（_build_item/monster/boss/region_prompt），生成测试 14 passed（含新增硬化落盘校验）。2026-07-26，WP2 首个代码项落地——`services/review` 的 `DuplicateDetectionRule.max_similarity` 死参数已接线为默认 0.8 生效（自相似度阈值口径），review 服务新增判定测试 14 passed，WP2 进入实施期。2026-07-26，WP3 审核效率监控首个代码批落地——`services/review` 新增 `review_duration_seconds` 耗时 Histogram（M1）、`reviews_total` 补 `review_type` 标签并修复 auto 路径全终局计数（M2）、`metrics.yaml` 标签同步（M3）、`review_rule_decisions_total` 规则归因 Counter（M4），并落 `review-efficiency-dashboard.json`（M5）与 review 告警/SLO（M6）；review 服务全量 pytest 87 passed，WP3 进入实施期；2026-07-26，WP3 收尾项落地——review 服务派生 `auto_pass_rate` / `manual_intervention_rate` / `review_p95_minutes` 并经 `GET /api/v1/review/stats` 暴露，ops 审核统计面板（`ReviewStatsResponse.review_efficiency`）与主看板模型（`DashboardMetrics.review_efficiency`）接入三项字段（auto-20260726-0856），WP3 全闭环。2026-07-26，WP5 首个代码批落地——generation 服务新增 `generate_batch` 批量入口与 `POST /api/v1/ops/generation/batch` 运营端点（失败隔离/并发上限/成本上限/可选持久化/事件发布），generation 全量 pytest 266 passed，WP5 进入实施期（auto-20260726-1029）。
+- 当前状态：灰度阶段已明确跳过，M4 实施正式启动；现状盘点/差距分析/工作包分解已完成，五项产出文档（模板细化/样本集/阈值预案/看板指标/运营流程草案）全部就位，按工作包顺序逐项推进。WP1 首个实施代码项（A2：`score_region` 字段口径对齐 danger_level/landmarks，修复 F1 缺陷）已于 2026-07-23 落地，场景评分维度恢复生效。2026-07-25，A3/A4/A5 提示词硬化（装备/怪物数值锚定、章节强度上限、输出格式硬化）已落地至 generation 服务 live prompt 构造函数（_build_item/monster/boss/region_prompt），生成测试 14 passed（含新增硬化落盘校验）。2026-07-26，WP2 首个代码项落地——`services/review` 的 `DuplicateDetectionRule.max_similarity` 死参数已接线为默认 0.8 生效（自相似度阈值口径），review 服务新增判定测试 14 passed，WP2 进入实施期。2026-07-26，WP3 审核效率监控首个代码批落地——`services/review` 新增 `review_duration_seconds` 耗时 Histogram（M1）、`reviews_total` 补 `review_type` 标签并修复 auto 路径全终局计数（M2）、`metrics.yaml` 标签同步（M3）、`review_rule_decisions_total` 规则归因 Counter（M4），并落 `review-efficiency-dashboard.json`（M5）与 review 告警/SLO（M6）；review 服务全量 pytest 87 passed，WP3 进入实施期；2026-07-26，WP3 收尾项落地——review 服务派生 `auto_pass_rate` / `manual_intervention_rate` / `review_p95_minutes` 并经 `GET /api/v1/review/stats` 暴露，ops 审核统计面板（`ReviewStatsResponse.review_efficiency`）与主看板模型（`DashboardMetrics.review_efficiency`）接入三项字段（auto-20260726-0856），WP3 全闭环。2026-07-26，WP5 首个代码批落地——generation 服务新增 `generate_batch` 批量入口与 `POST /api/v1/ops/generation/batch` 运营端点（失败隔离/并发上限/成本上限/可选持久化/事件发布），generation 全量 pytest 266 passed，WP5 进入实施期（auto-20260726-1029）。2026-07-27 起研发闭环进入节流/优雅结束常态——Docker/PostgreSQL/Redis/workers 运行时环境不可用，WP4 与 WP1-A1/WP2/WP5 剩余子任务共同前置阻塞，已连续多日无新代码合并；截至 2026-07-29 仍处此硬阻塞状态，M4 实施实质停滞，等待运行时环境就绪解锁（详见 `docs/40-dev-loop/daily-progress/daily-progress-2026-07-29.md`）。
 
 ## 当前结论
 
@@ -55,7 +55,7 @@
 
 | 项目 | 类型 | 当前判断 | 说明 |
 |------|------|----------|------|
-| 运行时验证未闭环 | 交付风险 | 高 | 仍有约 15 项依赖 PostgreSQL / Redis / Docker / 客户端导出环境的验证未完成；灰度阶段已跳过，验证将在 M4 实施中内嵌推进 |
+| 运行时验证未闭环 | 交付风险 | 高 | 仍有约 15 项依赖 PostgreSQL / Redis / Docker / 客户端导出环境的验证未完成；自 2026-07-27 起已升级为硬阻塞——研发闭环因运行时不可用无新代码合并，M4 实施实质停滞，验证将在运行时就绪后内嵌推进 |
 | 客户端构建验证缺失 | 交付风险 | 中 | 三平台导出验证未闭环，影响公测发布物可信度 |
 | PostgreSQL 预发布迁移未实跑 | 技术风险 | 中 | Alembic 迁移链路已补齐，但仍需在预发布环境执行 |
 | 数据库故障 runbook 缺口 | 运维风险 | 中 | 发布前回滚与故障应对材料还需补齐 |
@@ -74,7 +74,7 @@
 
 ## 当前待办（活跃工作）
 
-> 最近更新：2026-07-24（PM 每日评审）
+> 最近更新：2026-07-29（PM 每日评审）
 
 - **M4 WP1 模板验收收口（进行中）**：A2（F1 修复）已落地；A3/A4/A5 提示词硬化文本（3.1/3.2/3.3/3.4）已于 2026-07-25 落地至 live prompt（14 passed，含新增硬化落盘校验），few-shot 开关因依赖 WP2 样本内容推迟；A1 双源收口迁移依赖真实运行时环境；A6 需真实 LLM 实测。
 - **M4 WP2 审核规则调优（进行中）**：首个代码项已于 2026-07-26 落地——`DuplicateDetectionRule.max_similarity=0.8` 死参数已接线为单对象自相似度阈值（默认 0.8 生效），并补充 `self_similarity`/`cross_similarity` 纯函数（WP2 场景 D 跨样本接线基础）；尚未做数值调优（需真实样本回放），跨样本语料接线待运行时验证。
