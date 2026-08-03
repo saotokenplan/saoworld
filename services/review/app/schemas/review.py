@@ -152,6 +152,9 @@ class AutoReviewRequest(BaseModel):
     object_payload: dict[str, object]
     quality_score: float | None = Field(default=None, ge=0, le=1)
     trace_id: str = Field(min_length=1, max_length=128)
+    # WP4：内容包引用。携带时，自动审核通过将发布 review.auto.approved 事件，
+    # 由 workers 侧串联至发布队列；缺省时降级为「仅审核不发布」。
+    content_package_id: uuid.UUID | None = None
 
 
 class AutoReviewRuleResult(BaseModel):

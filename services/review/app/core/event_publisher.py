@@ -64,5 +64,35 @@ class EventPublisher:
             trace_id=trace_id,
         )
 
+    async def publish_review_auto_approved(
+        self,
+        object_id: str,
+        object_type: str,
+        content_package_id: str,
+        approved_at: str,
+        quality_score: float | None = None,
+        risk_level: str = "low",
+        release_mode: str = "gray",
+        trace_id: str = "",
+    ) -> str:
+        """WP4：自动审核通过事件。
+
+        由 workers 侧 `handle_review_auto_approved` 消费，将内容包送入发布队列。
+        `risk_level` 非 low 时下游不会自动入队，留人工确认。
+        """
+        return await self.publish(
+            "review.auto.approved",
+            {
+                "object_id": object_id,
+                "object_type": object_type,
+                "content_package_id": content_package_id,
+                "quality_score": quality_score,
+                "risk_level": risk_level,
+                "release_mode": release_mode,
+                "approved_at": approved_at,
+            },
+            trace_id=trace_id,
+        )
+
 
 event_publisher = EventPublisher()
