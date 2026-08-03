@@ -93,6 +93,10 @@ class ReviewBatchCompletedEvent(Event):
         default_factory=lambda: {
             "batch_id": "",
             "request_id": "",
+            # WP4：内容包引用，与生产侧
+            # services/review 的 publish_review_batch_completed 负载口径对齐。
+            # handle_review_batch_completed 依赖该键触发全量复审。
+            "content_package_id": None,
             "approved_count": 0,
             "rejected_count": 0,
             "needs_revision_count": 0,

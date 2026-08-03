@@ -56,6 +56,13 @@ async def handle_generation_batch_completed(event: Event) -> None:
 
 
 async def handle_review_batch_completed(event: Event) -> None:
+    """WP4：人工审核批次完成 → 全量复审串联。
+
+    仅当负载携带内容包引用且本批存在通过项时触发复审。生产侧
+    `services/review` 的 `publish_review_batch_completed` 此前从不写入
+    `content_package_id`，导致守卫恒为假、本处理器长期为死代码；
+    该键已于 auto-20260803-2243 补齐。缺引用时维持「仅审核不复审」降级行为。
+    """
     logger.info(f"Handling review batch completed event: {event.event_id}")
     payload = event.payload
     content_package_id = payload.get("content_package_id")
@@ -128,16 +135,17 @@ async def handle_player_event(event_data: dict) -> None:
 
     try:
         await store_player_event(event_data)
+        # 注意：本模块 logger 为标准库 logging.Logger，不接受 structlog 风格的
+        # 任意关键字参数（会抛 TypeError），上下文一律内联进消息体。
         logger.info(
-            "Player event stored successfully",
-            event_type=event_data.get("event_type"),
-            player_id=event_data.get("player_id"),
+            "Player event stored successfully, "
+            f"event_type={event_data.get('event_type')}, "
+            f"player_id={event_data.get('player_id')}"
         )
     except Exception as exc:
         logger.error(
-            "Failed to store player event",
-            error=str(exc),
-            event_type=event_data.get("event_type"),
+            "Failed to store player event, "
+            f"error={exc}, event_type={event_data.get('event_type')}"
         )
         raise
 
