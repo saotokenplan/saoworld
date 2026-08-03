@@ -439,12 +439,19 @@ async def approve_review_object(
     )
 
     # 事件发布：批量审核完成
+    # WP4：携带 content_package_id 时，下游 handle_review_batch_completed
+    # 守卫成立并触发全量复审；缺省时保持「仅审核不复审」的既有行为。
     try:
         import uuid
         from datetime import datetime, timezone
         await event_publisher.publish_review_batch_completed(
             batch_id=str(uuid.uuid4()),
-            request_id="",
+            request_id=body.request_id or "",
+            content_package_id=(
+                str(body.content_package_id)
+                if body.content_package_id is not None
+                else None
+            ),
             approved_count=len(updated_reviews),
             rejected_count=0,
             needs_revision_count=0,
@@ -553,12 +560,19 @@ async def reject_review_object(
     )
 
     # 事件发布：批量审核完成
+    # 拒绝路径 approved_count 恒为 0，下游守卫不会触发复审；
+    # 携带内容包引用仅用于事件溯源，口径与批准路径保持一致。
     try:
         import uuid
         from datetime import datetime, timezone
         await event_publisher.publish_review_batch_completed(
             batch_id=str(uuid.uuid4()),
-            request_id="",
+            request_id=body.request_id or "",
+            content_package_id=(
+                str(body.content_package_id)
+                if body.content_package_id is not None
+                else None
+            ),
             approved_count=0,
             rejected_count=len(updated_reviews),
             needs_revision_count=0,

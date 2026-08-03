@@ -49,13 +49,23 @@ class EventPublisher:
         rejected_count: int,
         needs_revision_count: int,
         completed_at: str,
+        content_package_id: str | None = None,
         trace_id: str = "",
     ) -> str:
+        """人工审核批次完成事件。
+
+        WP4：负载补齐 `content_package_id`。消费侧
+        `workers.events.handlers.handle_review_batch_completed` 以
+        `content_package_id and approved_count > 0` 为守卫触发全量复审，
+        此前该键从未写入，守卫恒为假、复审链路实际断开。
+        该字段可选，缺省时保持「仅审核不复审」的既有行为。
+        """
         return await self.publish(
             "review.batch.completed",
             {
                 "batch_id": batch_id,
                 "request_id": request_id,
+                "content_package_id": content_package_id,
                 "approved_count": approved_count,
                 "rejected_count": rejected_count,
                 "needs_revision_count": needs_revision_count,

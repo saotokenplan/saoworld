@@ -124,6 +124,12 @@ class UpdateReviewResultResponse(BaseModel):
 
 class ApproveReviewRequest(BaseModel):
     reason: str | None = None
+    # WP4：内容包引用。携带时 review.batch.completed 事件负载会带上该引用，
+    # 由 workers 侧 handle_review_batch_completed 串联至全量复审；
+    # 缺省时降级为「仅审核不复审」，与既有行为一致。
+    content_package_id: uuid.UUID | None = None
+    # 来源生成请求 ID，便于消费侧回溯批次来源；缺省为空字符串。
+    request_id: str | None = None
 
 
 class ApproveReviewResponse(BaseModel):
@@ -136,6 +142,10 @@ class ApproveReviewResponse(BaseModel):
 class RejectReviewRequest(BaseModel):
     reason: str | None = None
     risk_level: RiskLevel = RiskLevel.MEDIUM
+    # WP4：内容包引用与来源请求 ID，口径与 ApproveReviewRequest 一致。
+    # 拒绝路径 approved_count 恒为 0，下游守卫不会触发复审，此处仅用于事件溯源。
+    content_package_id: uuid.UUID | None = None
+    request_id: str | None = None
 
 
 class RejectReviewResponse(BaseModel):
