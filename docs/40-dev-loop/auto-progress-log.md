@@ -605,7 +605,7 @@
 ## 2026-08-03 21:18 — auto-20260803-2118（有新工作 · 完整执行 · 已合并推送）
 
 - **判定（推翻沿用多轮的阻塞结论）**：本轮对 `project-status.md` 按序下一未开始项 **WP4 发布自动化与周更节奏** 做**代码级排查**，确认其首个条目「自动审核通过内容自动进入发布队列（审核→打包→发布串联）」**并不依赖真实运行时**——两端（review 审核终局、workers `release_content_package`）均已就位，缺的只是中间事件接线；相关单测全部基于 SQLite 内存库 + Celery eager + Mock HTTP，可离线验证。该缺口自 2026-07-23 以 **W1** 登记于 `auto-execution-summary-20260723-0443.md`，历时 11 天未销项。运行时探测仍为 docker 未运行 / PG 5432 无监听 / Redis 6379 无监听，但**不构成本项阻塞**。
-- **动作（规划 + 完整执行 + 合并推送）**：从 `feature-prd`（`aec5f83`）切出 `auto/auto-20260803-2118`，实施 5 处代码变更 + 2 个新测试文件，分主题提交后推 `origin/auto/auto-20260803-2118`，`--no-ff` 合并回 `feature-prd`（合并提交 `9d99b26`）并推 `origin/feature-prd`，`git fetch` 校验后删除本地工作分支。
+- **动作（规划 + 完整执行 + 合并推送）**：从 `feature-prd`（`aec5f83`）切出 `auto/auto-20260803-2118`，实施 5 处代码变更 + 2 个新测试文件，分主题提交后推 `origin/auto/auto-20260803-2118`，`--no-ff` 合并回 `feature-prd`（合并提交 `d0dc0db`）并推 `origin/feature-prd`，`git fetch` 校验后删除本地工作分支。
 - **交付物**：`docs/40-dev-loop/auto-plan-20260803-2118.md`、`auto-execution-summary-20260803-2118.md`；代码见 `services/review/{schemas,core,api}`、`workers/events/{schemas,handlers}.py`；测试见 `services/review/tests/test_review_auto_release.py`、`workers/tests/test_review_auto_approved_handler.py`；`project-status.md` WP4 条目由「未开始」更新为「进行中」。同轮收拢遗留遥测 `auto-status-report-20260803-0944.md`。
 - **验证**：review 全量 **103 passed**（基线 97，+6）；workers 全量 **44 passed / 5 failed**（基线 35 passed / 5 failed，+9）。5 项失败为 `test_event_bus.py` 强依赖真实 Redis 的**既有环境型失败**，已在 `aec5f83` 独立 worktree 复跑确认失败集合完全一致，与本轮变更无关。
 - **顺带修复**：`workers/events/handlers.py::handle_vote_result_finalized` 以 structlog 风格关键字参数调用标准库 logger，运行期必抛 `TypeError`，本轮修正并加回归测试锁定。
