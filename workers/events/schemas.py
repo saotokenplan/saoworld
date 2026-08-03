@@ -12,6 +12,7 @@ class EventType(str, Enum):
     GENERATION_REQUEST_CREATED = "generation.request.created"
     GENERATION_BATCH_COMPLETED = "generation.batch.completed"
     REVIEW_BATCH_COMPLETED = "review.batch.completed"
+    REVIEW_AUTO_APPROVED = "review.auto.approved"
     CONTENT_PACKAGE_RELEASED = "content.package.released"
     CONTENT_PACKAGE_ROLLED_BACK = "content.package.rolled_back"
 
@@ -96,6 +97,23 @@ class ReviewBatchCompletedEvent(Event):
             "rejected_count": 0,
             "needs_revision_count": 0,
             "completed_at": "",
+        }
+    )
+
+
+class ReviewAutoApprovedEvent(Event):
+    """WP4：自动审核通过事件，用于串联审核 → 发布队列。"""
+
+    event_type: EventType = EventType.REVIEW_AUTO_APPROVED
+    payload: dict[str, Any] = Field(
+        default_factory=lambda: {
+            "object_id": "",
+            "object_type": "",
+            "content_package_id": "",
+            "quality_score": None,
+            "risk_level": "low",
+            "release_mode": "gray",
+            "approved_at": "",
         }
     )
 
