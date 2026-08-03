@@ -78,7 +78,7 @@
 | 提交拆分 | `feat(review)` / `feat(workers)` / `test` / `docs` / `docs(dev-loop)` 遥测收拢 |
 | 工作分支推送 | 成功 → `origin/auto/auto-20260803-2118` |
 | 合并方式 | `--no-ff` 合并回 `feature-prd` |
-| 合并提交 | `9d99b26` |
+| 合并提交 | `d0dc0db` |
 | feature-prd 推送 | 成功（0 次重试）→ `origin/feature-prd` |
 | 远程校验 | `git fetch` 确认 `origin/feature-prd` 已含合并提交 |
 | 本地工作分支 | 校验通过后已删除 |
