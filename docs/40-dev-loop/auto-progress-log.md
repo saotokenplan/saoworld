@@ -611,3 +611,19 @@
 - **顺带修复**：`workers/events/handlers.py::handle_vote_result_finalized` 以 structlog 风格关键字参数调用标准库 logger，运行期必抛 `TypeError`，本轮修正并加回归测试锁定。
 - **残留缺口**：`handle_review_batch_completed` 因 payload 缺 `content_package_id` 恒为死代码（另立任务）；WP4 剩余「周更运营流程」「灰度周更演练」仍依赖运行时与运营决策；`test_event_bus.py` 建议 mock 化以便离线全绿。
 - **方法论修正（重要）**：「运行时不可用」≠「无工作可做」。后续轮次判定阻塞前须先做代码级排查，确认待办项是否真依赖运行时，而非沿用上一轮结论；其余 WP 剩余子任务可能同样存在可离线实施的纯代码切片。
+
+---
+
+## 2026-08-03 22:43 — auto-20260803-2243（有新工作 · 完整执行 · 已合并推送）
+
+- **判定**：延续上一轮方法论修正，直接销项 `auto-execution-summary-20260803-2118.md` §九 登记的**两个纯代码残留缺口**，二者均经代码级确认**不依赖真实运行时**：（1）`handle_review_batch_completed` 恒为死代码；（2）`test_event_bus.py` 强依赖真实 Redis。
+- **缺口 1（P0）**：消费侧守卫 `content_package_id and approved_count > 0` 所依赖的 `content_package_id`，在生产侧 `services/review` 的 `publish_review_batch_completed` 负载中**从未写入**，守卫恒为假——「人工审核批量通过 → 全量复审」链路**实际断开**。附带 `routes.py` 两处硬编码 `request_id=""` 导致无法回溯来源。
+- **缺口 2（P1）**：`test_event_bus.py` 5 个用例直连 `localhost:6379`，离线固定 5 failed，长期掩盖真实回归信号。
+- **顺带修复（同类缺陷复发）**：上一轮修复了 `handle_vote_result_finalized` 的 stdlib logger 关键字参数误用，但**遗漏同文件 `handle_player_event`**（`logger.info` 与 `logger.error` 各一处）。其 `except` 分支的 `logger.error` 会在异常处理时再抛 `TypeError`、**掩盖原始异常**，危害更甚。本轮修复后以 **AST 全量扫描** `workers/` 确认零残留。
+- **动作**：从 `feature-prd`（`8adf4c6`）切出 `auto/auto-20260803-2243`，5 处代码变更 + 2 个新测试文件 + 1 个测试文件改造，分主题提交后推 `origin/auto/auto-20260803-2243`，`--no-ff` 合并回 `feature-prd` 并推 `origin/feature-prd`，`git fetch` 校验后删除本地工作分支。
+- **验证**：review 全量 **109 passed**（基线 103，+6）；workers 全量 **59 passed / 0 failed**（基线 44 passed / 5 failed）——**workers 首次实现离线全绿**，套件耗时由 10.70s 降至 3.17s。另以脚本串联两侧**真实实现**验证跨服务契约：review 真实发布器产出的负载喂给 workers 真实处理器，确认触发 `run_full_content_review`，死代码确已复活。
+- **设计取舍**：`test_event_bus.py` 选择在 **Redis 客户端边界打桩**而非注入假 EventBus，保留 `EventBus.publish` 的事件包构造与频道命名真实逻辑，并新增频道/负载断言，覆盖强于原用例；未改动 `workers/events/event_publisher.py` 生产代码。新增字段一律可选，既有调用方行为不变。
+- **交付物**：`docs/40-dev-loop/auto-plan-20260803-2243.md`、`auto-execution-summary-20260803-2243.md`；代码见 `services/review/{schemas,core,api}`、`workers/events/{schemas,handlers}.py`；测试见 `services/review/tests/test_review_batch_package.py`、`workers/tests/test_review_batch_completed_handler.py`、`workers/tests/test_event_bus.py`。
+- **残留缺口**：人工审核路径的 `content_package_id` 仍需运营侧显式传入，若要全自动需在审核记录/内容包侧建立反查关系（涉数据模型变更，建议运行时可用后结合真实数据口径设计）；WP4 剩余「周更运营流程」「灰度周更演练」仍依赖运行时与运营决策。
+- **流程改进**：本轮**不预填合并 hash 占位值**（上一轮因占位 hash 额外产生回填分支与二次合并），改为合并完成后在摘要文末统一回填。
+- **下一轮预判**：继续对 WP1-A1 / WP2 / WP5 剩余子任务做代码级排查，识别可离线实施的纯代码切片。
