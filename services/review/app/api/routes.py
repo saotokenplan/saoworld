@@ -663,6 +663,37 @@ async def auto_review(
             result_status=200,
         )
 
+        # WP4 事件发布：自动审核通过 → 发布队列串联
+        # 仅在判定为 approved 且请求携带 content_package_id 时发布；
+        # 沿用既有容错惯例，事件发布失败不影响审核主流程。
+        if result["auto_result"] == "approved":
+            if body.content_package_id is not None:
+                try:
+                    await event_publisher.publish_review_auto_approved(
+                        object_id=str(body.object_id),
+                        object_type=body.object_type,
+                        content_package_id=str(body.content_package_id),
+                        approved_at=review.created_at.isoformat(),
+                        quality_score=body.quality_score,
+                        risk_level=risk_level,
+                        trace_id=trace_id,
+                    )
+                except Exception as exc:
+                    logger.error(
+                        "event_publish_failed",
+                        event_type="review_auto_approved",
+                        object_id=str(body.object_id),
+                        content_package_id=str(body.content_package_id),
+                        error=str(exc),
+                    )
+            else:
+                logger.info(
+                    "auto_approved_without_content_package",
+                    object_id=str(body.object_id),
+                    object_type=body.object_type,
+                    trace_id=trace_id,
+                )
+
         return EnvelopeResponse(
             request_id=request_id,
             data=AutoReviewResponse(

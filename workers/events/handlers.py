@@ -2,6 +2,7 @@ import logging
 
 from workers.events.schemas import Event, EventType, PlayerBehaviorEventType
 from workers.tasks.content_generation import generate_content_batch
+from workers.tasks.content_release import release_content_package
 from workers.tasks.content_review import run_full_content_review
 from workers.tasks.content_packaging import package_content_batch
 from workers.tasks.player_event_ingestion import store_player_event
@@ -19,10 +20,11 @@ async def handle_vote_result_finalized(event: Event) -> None:
     chapter_id = payload.get("chapter_id")
 
     if vote_cycle_id:
+        # 注意：本模块 logger 为标准库 logging.Logger，不接受 structlog 风格的
+        # 任意关键字参数（会抛 TypeError），上下文一律内联进消息体。
         logger.info(
-            f"Triggering content generation for vote cycle: {vote_cycle_id}",
-            generated_params=generated_params,
-            region_scope=region_scope,
+            f"Triggering content generation for vote cycle: {vote_cycle_id}, "
+            f"generated_params={generated_params}, region_scope={region_scope}"
         )
         region_id = region_scope[0] if region_scope else None
         template_type = generated_params.get("template_type", "npc")
@@ -67,6 +69,41 @@ async def handle_review_batch_completed(event: Event) -> None:
         )
 
 
+async def handle_review_auto_approved(event: Event) -> None:
+    """WP4：自动审核通过 → 发布队列串联。
+
+    仅当内容包引用存在且风险等级为 low 时自动入队；高风险内容按
+    `docs/20-specs/content-generation-spec.md` 要求留人工确认，不自动发布。
+    自动链路默认走灰度发布，全量发布仍需人工 `promote_to_full_release`。
+    """
+    logger.info(f"Handling review auto approved event: {event.event_id}")
+    payload = event.payload
+    content_package_id = payload.get("content_package_id")
+    risk_level = payload.get("risk_level", "low")
+    release_mode = payload.get("release_mode") or "gray"
+
+    if not content_package_id:
+        logger.warning(
+            "Review auto approved event without content_package_id, skip release, "
+            f"object_id={payload.get('object_id')}"
+        )
+        return
+
+    if risk_level != "low":
+        logger.info(
+            f"Content package {content_package_id} risk_level={risk_level}, "
+            "requires manual confirmation, skip auto release"
+        )
+        return
+
+    logger.info(f"Triggering auto release for content package: {content_package_id}")
+    release_content_package.delay(
+        content_package_id=content_package_id,
+        release_mode=release_mode,
+        trace_id=event.trace_id,
+    )
+
+
 async def handle_content_package_released(event: Event) -> None:
     logger.info(f"Handling content package released event: {event.event_id}")
     payload = event.payload
@@ -109,6 +146,7 @@ event_handlers = {
     EventType.VOTE_RESULT_FINALIZED: handle_vote_result_finalized,
     EventType.GENERATION_BATCH_COMPLETED: handle_generation_batch_completed,
     EventType.REVIEW_BATCH_COMPLETED: handle_review_batch_completed,
+    EventType.REVIEW_AUTO_APPROVED: handle_review_auto_approved,
     EventType.CONTENT_PACKAGE_RELEASED: handle_content_package_released,
     EventType.CONTENT_PACKAGE_ROLLED_BACK: handle_content_package_rolled_back,
 }
