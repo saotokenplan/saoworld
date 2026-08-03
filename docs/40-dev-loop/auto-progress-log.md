@@ -589,3 +589,25 @@
 - **交付物**：docs/40-dev-loop/auto-status-report-20260802-2248.md、auto-status-report-20260802-2348.md、auto-status-report-20260803-0050.md、auto-status-report-20260803-0748.md（本轮新增）；auto-progress-log.md 追加 4 轮快照；`.workbuddy/automations/automation-1784645457115/memory.md` 增量。
 - **真实阻塞（延续）**：运行时验证为 WP4/WP1-A1/WP2/WP5 剩余子任务共同前置；无新解锁信号。远程余 4 个 2026-07-09～07-19 历史孤儿 `auto/*` 分支，非当前序列，不纳入。
 - **下一轮预判**：本轮收拢后遥测清零；后续再累积达双门槛将再次周期性收拢；一旦 PostgreSQL/Redis/Docker/workers 可用或运营决策/外部需求输入，按序推进 WP4 → WP1-A1 → WP2 → WP5。
+
+---
+
+## 2026-08-03 09:44 — auto-20260803-0944（无新工作 · 优雅结束）
+
+- **判定**：与 0748 轮一致——WP4 及全部剩余子任务均依赖真实运行时；12 个活跃 auto-plan 全部已合并，无实时待办。本轮独立复测 docker 未运行、PG 5432 无监听、redis-cli 不可用；`git fetch` 确认本地与 `origin/feature-prd` 均为 `aec5f83`，0/0 无分叉。
+- **动作（双门槛未达 → 优雅结束）**：距上次收拢合并 aec5f83 约 **2.0h < 约 5h（时间门槛未达）**；自 0748 收拢后累计未提交状态报告 **0 份 < 3 份（计数门槛未达）**，双门槛均未达 → 仅生成状态报告 + 进度日志快照，**不创建分支 / 不提交 / 不合并 / 不推送**；兄弟自动化 memory.md 与 project-status.md 遗留脏改动非本任务范围，不纳入。
+- **交付物**：docs/40-dev-loop/auto-status-report-20260803-0944.md（本轮新增，留待收拢）；auto-progress-log.md 追加本轮快照。
+- **真实阻塞（延续）**：运行时验证为 WP4/WP1-A1/WP2/WP5 剩余子任务共同前置；无新解锁信号。
+- **下一轮预判**：维持「无新工作·优雅结束」常态；双门槛齐达（时间 ≥ 约 5h 且报告 ≥ 3 份）将再次周期性收拢；一旦运行时可用或外部需求输入，按序推进 WP4 → WP1-A1 → WP2 → WP5。
+
+---
+
+## 2026-08-03 21:18 — auto-20260803-2118（有新工作 · 完整执行 · 已合并推送）
+
+- **判定（推翻沿用多轮的阻塞结论）**：本轮对 `project-status.md` 按序下一未开始项 **WP4 发布自动化与周更节奏** 做**代码级排查**，确认其首个条目「自动审核通过内容自动进入发布队列（审核→打包→发布串联）」**并不依赖真实运行时**——两端（review 审核终局、workers `release_content_package`）均已就位，缺的只是中间事件接线；相关单测全部基于 SQLite 内存库 + Celery eager + Mock HTTP，可离线验证。该缺口自 2026-07-23 以 **W1** 登记于 `auto-execution-summary-20260723-0443.md`，历时 11 天未销项。运行时探测仍为 docker 未运行 / PG 5432 无监听 / Redis 6379 无监听，但**不构成本项阻塞**。
+- **动作（规划 + 完整执行 + 合并推送）**：从 `feature-prd`（`aec5f83`）切出 `auto/auto-20260803-2118`，实施 5 处代码变更 + 2 个新测试文件，分主题提交后推 `origin/auto/auto-20260803-2118`，`--no-ff` 合并回 `feature-prd`（合并提交 `9d99b26`）并推 `origin/feature-prd`，`git fetch` 校验后删除本地工作分支。
+- **交付物**：`docs/40-dev-loop/auto-plan-20260803-2118.md`、`auto-execution-summary-20260803-2118.md`；代码见 `services/review/{schemas,core,api}`、`workers/events/{schemas,handlers}.py`；测试见 `services/review/tests/test_review_auto_release.py`、`workers/tests/test_review_auto_approved_handler.py`；`project-status.md` WP4 条目由「未开始」更新为「进行中」。同轮收拢遗留遥测 `auto-status-report-20260803-0944.md`。
+- **验证**：review 全量 **103 passed**（基线 97，+6）；workers 全量 **44 passed / 5 failed**（基线 35 passed / 5 failed，+9）。5 项失败为 `test_event_bus.py` 强依赖真实 Redis 的**既有环境型失败**，已在 `aec5f83` 独立 worktree 复跑确认失败集合完全一致，与本轮变更无关。
+- **顺带修复**：`workers/events/handlers.py::handle_vote_result_finalized` 以 structlog 风格关键字参数调用标准库 logger，运行期必抛 `TypeError`，本轮修正并加回归测试锁定。
+- **残留缺口**：`handle_review_batch_completed` 因 payload 缺 `content_package_id` 恒为死代码（另立任务）；WP4 剩余「周更运营流程」「灰度周更演练」仍依赖运行时与运营决策；`test_event_bus.py` 建议 mock 化以便离线全绿。
+- **方法论修正（重要）**：「运行时不可用」≠「无工作可做」。后续轮次判定阻塞前须先做代码级排查，确认待办项是否真依赖运行时，而非沿用上一轮结论；其余 WP 剩余子任务可能同样存在可离线实施的纯代码切片。
