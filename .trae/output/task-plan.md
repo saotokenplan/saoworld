@@ -1,114 +1,97 @@
-# feature-prd 分支整合计划
+# 周六产品管理任务执行规划
 
-## 目标
+## 任务目标
 
-将当前仓库中其他分支上的改动尽可能整合到 `feature-prd`，同时控制误并入临时分支、自动化分支和无共同历史分支的风险。
+在 2026-08-29（周六）基于项目现有需求、路线图、里程碑、项目状态与最近 7 天执行资料，完成一次周度产品管理复盘，输出本周评估、下周重点、必要的后续迭代规划，并同步更新状态文档与周报；如满足条件再执行 Git 提交、推送与分支合并。
 
-## 当前发现
+## 约束与原则
 
-### 本地跟踪状态
+- 所有结论必须基于仓库内真实文档，缺失信息一律标注“待补充”
+- 统计窗口默认为最近 7 天
+- 本次执行日期为 2026-08-29
+- 若当日周报已存在，则跳过重复生成，仅更新必要状态并输出简要结果
+- 若非当月第一个周六，则不生成月报
+- 变更文档前先完成输入读取与偏差分析
+- Git 提交、推送、分支切换与合并仅在文档产出完成且用户确认后执行
 
-- 当前本地仅跟踪 `feature-prd`
-- 远程 `origin` 实际存在多条分支，但仓库 fetch 配置仅拉取 `feature-prd`
+## 六阶段执行计划
 
-### 已发现远程分支
+### 阶段 1：输入盘点
 
-#### 与 `feature-prd` 共享历史的分支
+- 读取以下文档并确认是否存在：
+  - `docs/10-requirements/产品发展战略.md`
+  - 路线图相关文档
+  - `docs/10-requirements/需求迭代计划.md`
+  - `docs/10-requirements/项目里程碑与验收标准.md`
+  - 最近 7 天 `docs/40-dev-loop/auto-execution-summary-*.md`
+  - 最近 7 天 `docs/40-dev-loop/daily-progress/daily-progress-*.md`
+  - 最近一份 `docs/40-dev-loop/weekly-report-*.md`
+  - `docs/10-requirements/核心功能需求文档.md`
+  - `docs/10-requirements/投票与社区需求文档.md`
+  - `docs/00-governance/project-status.md`
+- 输出缺失清单与可用资料范围
 
-1. `origin/product-daily-update-20260721`
-   - 相对 `origin/feature-prd`：`0/1`
-   - 说明：`feature-prd` 落后 1 个提交
-   - 最新提交：`feat: 产品经理每日工作流程`
+### 阶段 2：周度分析
 
-2. `origin/trae/agent-YjTKYj`
-   - 相对 `origin/feature-prd`：`0/1`
-   - 说明：`feature-prd` 落后 1 个提交
-   - 最新提交：`feat: 自动化项目推进任务`
+- 评估 Sprint 当前阶段、目标、完成度
+- 统计本周任务状态：已完成、进行中、未开始
+- 分析偏差、阻塞、风险、依赖、资源冲突
+- 判断需求蔓延、优先级错位、关键任务滞后情况
+- 评估核心需求完成率与里程碑达成情况
 
-#### 与 `feature-prd` 无共同历史的分支
+### 阶段 3：方向校准
 
-- `origin/main`
-- `origin/sprint-0`
-- `origin/auto/auto-20260717-0500`
-- `origin/auto/auto-20260717-0800`
-- `origin/auto/auto-20260719-0000`
-- 多条 `origin/trae/agent-*` 分支
+- 对比产品战略、Sprint 目标与本周执行结果
+- 输出迭代方向评估：正常 / 需关注 / 偏离
+- 给出纠偏建议、下周优先级调整建议与工作重心
 
-这些分支如需并入，必须使用 `--allow-unrelated-histories` 或改为按文件级 cherry-pick / patch 整理，风险明显更高。
+### 阶段 4：后续迭代规划
 
-## 候选变更摘要
+- 判断当前迭代是否接近完成（完成率 >= 85% 或核心链路已完成）
+- 若接近完成，提前规划下一周或下一迭代重点
+- 明确核心目标、关键任务、前置依赖、验收信号
+- 确保规划符合渐进式价值交付、主链路优先与风险收敛原则
 
-### `origin/product-daily-update-20260721`
+### 阶段 5：文档更新
 
-- 修改需求文档
-- 修改 `services/generation` 下的 API、生成器、schema
-- 新增 `region_data_adapter.py`
-- 新增区域模板和测试
-- 修改 `services/review` 下的 API、schema
-- 新增 `auto_review_engine.py`
+- 更新 `docs/00-governance/project-status.md`
+- 生成或跳过 `docs/40-dev-loop/weekly-report-2026-08-29.md`
+- 若满足“月度首个周六”条件则生成月报；本次需先校验日期条件
 
-### `origin/trae/agent-YjTKYj`
+### 阶段 6：校验与 Git 流程
 
-- 新增 `docs/40-dev-loop/auto-execution-summary-20260721-1000.md`
-- 修改 `docs/40-dev-loop/auto-progress-log.md`
-- 新增 `docs/40-dev-loop/auto-status-report-20260721-1000.md`
+- 自检文档结论与来源一致性
+- 检查新增或修改文件是否完整
+- 执行 Git 提交与推送
+- 切换 `feature-prd` 并拉取最新代码
+- 使用 `--no-ff` 合并当前分支
+- 删除当前临时分支（本地与远程）
 
-## 风险判断
+## 涉及文件范围
 
-1. “全部分支全部整合”若按字面执行，会包含自动化分支和无共同历史分支，极易引入无关提交。
-2. `origin/main` 与 `feature-prd` 无共同历史，说明当前仓库分支结构存在特殊情况，不能直接假定普通 merge 可用。
-3. `trae/agent-*` 很可能是临时工作分支，是否需要入主线需人工确认。
-4. 当前工作区干净，适合执行整合，但实际 merge 前仍应先明确分支范围。
+### 只读输入
 
-## 建议执行方案
+- `docs/10-requirements/`
+- `docs/40-dev-loop/`
+- `docs/00-governance/project-status.md`
 
-### 方案 A：仅整合共享历史且明确有新增提交的分支
+### 计划修改
 
-按以下顺序执行：
+- `docs/00-governance/project-status.md`
+- `docs/40-dev-loop/weekly-report-2026-08-29.md`（若不存在）
+- `docs/40-dev-loop/monthly-report-2026-08-29.md`（仅在满足首个周六时）
 
-1. `git checkout feature-prd`
-2. `git merge --no-ff origin/product-daily-update-20260721`
-3. 处理冲突并验证
-4. `git merge --no-ff origin/trae/agent-YjTKYj`
-5. 处理冲突并验证
-6. 运行基础验证
-7. 如验证通过，再 push 到 `origin/feature-prd`
+## 风险与阻塞预案
 
-这是当前最稳妥的默认方案。
+- 文档缺失：在分析与输出中明确标记“待补充”
+- 周报已存在：跳过重复生成，仅保留状态更新
+- Git 推送或分支合并失败：记录失败原因并暂停 destructive 操作
+- 当前工作区存在意外变更：立即停止并请求用户指示
 
-### 方案 B：把所有远程分支都并入 `feature-prd`
+## 交付物
 
-仅在你明确确认后执行。需要额外步骤：
-
-1. 对每个无共同历史分支单独评估
-2. 决定使用 `--allow-unrelated-histories` 还是摘取文件/提交
-3. 每合并一条分支就做一次验证和提交点记录
-4. 准备明确的回滚方案
-
-## 验证计划
-
-优先执行：
-
-1. `git status --short --branch`
-2. 与 Python 服务相关的定向测试
-3. 若依赖完整，再补 `pytest`
-
-## 回滚路径
-
-若 merge 后未 push：
-
-- 使用 merge 前的提交 SHA 创建恢复点
-- 必要时回退到整合前的 `feature-prd` HEAD
-
-若 merge 后已 push：
-
-- 使用反向提交或回滚 merge commit 的方式撤销
-- 不使用破坏性重写远程历史
-
-## 待你确认
-
-请明确以下之一：
-
-1. 只整合共享历史且有新增提交的 2 个分支
-2. 指定还要纳入哪些 `unrelated_history` 分支
-3. 真正按“所有远程分支”执行，并接受高风险整合
+- 周度分析结论
+- 更新后的 `project-status.md`
+- 周报文件（如需生成）
+- 月报文件（如触发）
+- Git 提交、推送与分支处理记录
